@@ -106,6 +106,25 @@
             height: 100%;
         }
 
+        .logo-container {
+            width: 36px;
+            height: 36px;
+            opacity: 1;
+            pointer-events: none;
+            transition: opacity 200ms ease;
+            margin-bottom: 10px;
+        }
+
+        .logo-container:hover {
+            opacity: 1;
+        }
+
+        .logo-container svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
         .controls-wrapper {
             flex: 1;
             display: flex;
@@ -257,7 +276,9 @@
         .footer {
             padding: 0 30px 12px 30px;
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
+            align-items: flex-end;
+            position: relative;
         }
 
         .footer-container {
@@ -268,10 +289,11 @@
             display: flex;
             align-items: center;
             gap: 14px;
+            margin: 0 auto;
         }
 
         .dropdown {
-            width: 95px;
+            width: 120px;
             height: 30px;
             background: var(--bg-primary);
             border: 1px solid var(--bg-raised);
@@ -389,14 +411,6 @@
 </head>
 
 <body>
-    <!-- DEBUG OVERLAY -->
-    <div class="debug-overlay active" id="debugOverlay">
-        <div class="debug-status">
-            <div class="debug-indicator" id="debugIndicator"></div>
-            <span id="debugMessage">Initializing...</span>
-        </div>
-    </div>
-
     <div class="header">
         <div class="plugin-title">CLOUDWASH</div>
         <div class="mode-tabs">
@@ -459,7 +473,7 @@
 
                 <div class="knob-container">
                     <div class="knob-label">DENSITY</div>
-                    <div class="knob" data-param="density" data-min="0" data-max="1" data-default="0.5">
+                    <div class="knob" data-param="density" data-min="0" data-max="1" data-default="0.5" id="densityKnob">
                         <div class="knob-marker"></div>
                         <svg width="70" height="70" viewBox="0 0 70 70">
                             <path class="knob-track" />
@@ -467,7 +481,7 @@
                         </svg>
                         <div class="knob-indicator"></div>
                     </div>
-                    <div class="knob-value">50%</div>
+                    <div class="knob-value" id="densityValue">0%</div>
                 </div>
 
                 <div class="knob-container">
@@ -553,7 +567,7 @@
 
     <div class="footer">
         <div class="footer-container">
-            <select class="dropdown" id="presetSelect" style="width: 160px;">
+            <select class="dropdown" id="presetSelect" style="width: 200px;">
                 <option value="" disabled selected>Select Preset</option>
                 <option value="init">01 - Init</option>
                 <option value="cloud">02 - Ethereal Cloud</option>
@@ -583,14 +597,38 @@
                 <option value="3">Lo-Fi Mono (8s)</option>
                 <option value="4" selected>Ultra HQ (Long)</option>
             </select>
-            <select class="dropdown" id="blendModeSelect" data-param="blend_mode">
-                <option value="0" selected>Blend: Wet/Dry</option>
-                <option value="1">Blend: Spread</option>
-                <option value="2">Blend: Feedback</option>
-                <option value="3">Blend: Reverb</option>
-            </select>
             <button class="freeze-button" id="freezeButton" data-param="freeze">FREEZE</button>
             <div class="freeze-led" id="freezeLED"></div>
+        </div>
+
+        <div class="logo-container">
+            <svg viewBox="0 0 89.98 89.84" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                <defs>
+                    <style>
+                        .st0 { fill: #fff200; fill-rule: evenodd; }
+                        .st1 { fill: #b1b3b6; fill-rule: evenodd; }
+                        .st2 { fill: #808285; fill-rule: evenodd; }
+                        .st3 { fill: #464547; fill-rule: evenodd; }
+                    </style>
+                    <symbol id="Logo_2" viewBox="0 0 900 900">
+                        <path class="st3" d="M471.6.45c115,4.84,213.87,48.62,296.6,131.35,85.12,85.12,129.03,187.32,131.72,306.6.05,3.86.08,7.72.08,11.6v.45c0,5.18-.04,10.35-.12,15.5-3.7,117.41-47.59,218.16-131.67,302.25-87.76,87.76-193.68,131.69-317.75,131.8h-.45c-124.27,0-230.33-43.93-318.2-131.8C44.04,680.44.11,574.52,0,450.45v-.45c0-124.27,43.93-230.33,131.8-318.2C214.53,49.07,313.4,5.29,428.4.45c7.14-.3,14.34-.45,21.6-.45h.45c7.11,0,14.16.16,21.15.45Z"/>
+                    </symbol>
+                    <symbol id="Logo_3" viewBox="0 0 801.9 899.55">
+                        <path class="st1" d="M396,361.05v1.05l69.9,69.9h-96.9v-37.12c.27-9.45,3.78-17.56,10.55-24.33,4.81-4.81,10.29-7.97,16.45-9.5ZM740.35,677.35l-209.35-209.35v-36l222.23,222.23c-4.03,7.82-8.32,15.53-12.87,23.12ZM369,468l299.98,299.98c-6.06,6.06-12.21,11.91-18.45,17.55-12.88,11.64-26.13,22.39-39.75,32.25l-262.87-262.87c14.07-14.07,21.1-31.03,21.1-50.9v-36ZM351,899.55c-9.51,0-18.92-.26-28.23-.77L0,576v-180.92c.22-9.54,3.74-17.71,10.55-24.53,5.03-5.03,10.79-8.26,17.3-9.7l502.83,502.82c-12.81,5.57-25.88,10.5-39.22,14.78-25.6,8.2-52.18,14.01-79.75,17.42l-18.83,1.95c-13.58,1.14-27.38,1.71-41.42,1.72h-.45Z"/>
+                        <path class="st1" d="M796.52,382.52c1.81,13.05,3.08,26.31,3.8,39.8l-62.33-62.33v-36l58.52,58.52Z"/>
+                    </symbol>
+                    <symbol id="Logo_4" viewBox="0 0 837.9 898.77">
+                        <path class="st2" d="M432,362.1v-1.05c2.85-.7,5.85-1.05,9-1.05h333l62.92,62.92v15.03c.05,3.86.08,7.72.08,11.6v.45c0,5.18-.04,10.35-.12,15.5-2.16,68.6-18.04,131.51-47.65,188.73l-222.23-222.23h-65.1l-69.9-69.9ZM704.98,767.98l-299.98-299.98h162l209.35,209.35c-19.18,32.01-42.9,62.15-71.15,90.4-.08.08-.15.15-.23.23ZM602.8,845.8c-11.79,6.56-23.83,12.52-36.12,17.87L63.85,360.85c2.6-.57,5.32-.85,8.15-.85,7.49,0,14.16,2,20,6,1.91,1.31,3.72,2.82,5.45,4.55,1.73,1.73,4.23,4.21,7.5,7.45l166.25,166.05c4.96,4.93,8.6,8.55,10.9,10.85s4.69,4.42,7.15,6.35c12.55,9.83,27.14,14.75,43.75,14.75,19.87,0,36.83-7.03,50.9-21.1l262.87,262.87c-14.25,10.32-28.91,19.66-43.98,28.02ZM36,576l322.77,322.77c-13.52-.75-26.81-2.04-39.88-3.87L0,576h36Z"/>
+                    </symbol>
+                    <symbol id="Logo_5" viewBox="0 0 774 252">
+                        <path class="st0" d="M441,0h333v36h-333c-9.93,0-18.42,3.52-25.45,10.55-7.03,7.03-10.55,15.52-10.55,25.45v36h162v36h-162v36c0,19.87-7.03,36.83-21.1,50.9-14.07,14.07-31.03,21.1-50.9,21.1-16.61,0-31.2-4.92-43.75-14.75-2.46-1.93-4.85-4.05-7.15-6.35s-5.94-5.92-10.9-10.85L104.95,54c-3.27-3.24-5.77-5.72-7.5-7.45-1.73-1.73-3.54-3.24-5.45-4.55-5.84-4-12.51-6-20-6-9.93,0-18.42,3.52-25.45,10.55-7.03,7.03-10.55,15.52-10.55,25.45v180H0V72c0-19.87,7.03-36.83,21.1-50.9C35.17,7.03,52.13,0,72,0c16.61,0,31.2,4.92,43.75,14.75,2.46,1.93,4.85,4.05,7.15,6.35s5.44,5.42,9.4,9.35l164.7,164.45c5.31,5.31,8.82,8.82,10.55,10.55,1.73,1.73,3.54,3.24,5.45,4.55,5.84,4,12.51,6,20,6,9.93,0,18.42-3.52,25.45-10.55,7.03-7.03,10.55-15.52,10.55-25.45v-108c0-19.87,7.03-36.83,21.1-50.9,14.07-14.07,31.03-21.1,50.9-21.1Z"/>
+                    </symbol>
+                </defs>
+                <use width="900" height="900" transform="translate(0 -.04) scale(.1)" xlink:href="#Logo_2"/>
+                <use width="801.9" height="899.55" transform="translate(9.89) scale(.1)" xlink:href="#Logo_3"/>
+                <use width="837.9" height="898.77" transform="translate(6.29) scale(.1)" xlink:href="#Logo_4"/>
+                <use width="774" height="252" transform="translate(6.29 32.36) scale(.1)" xlink:href="#Logo_5"/>
+            </svg>
         </div>
     </div>
 
@@ -862,40 +900,6 @@
         // ============================================================================
         console.log("CloudWash Starting initialization...");
 
-        // Debug UI helper (with null-safety)
-        function updateDebugStatus(connected, message) {
-            try {
-                const overlay = document.getElementById('debugOverlay');
-                const indicator = document.getElementById('debugIndicator');
-                const messageEl = document.getElementById('debugMessage');
-
-                // Null-safety checks
-                if (!overlay || !indicator || !messageEl) {
-                    console.error("Debug UI elements not found!");
-                    return;
-                }
-
-                if (connected) {
-                    overlay.classList.add('connected');
-                    indicator.classList.add('connected');
-                } else {
-                    overlay.classList.remove('connected');
-                    indicator.classList.remove('connected');
-                }
-
-                messageEl.textContent = message;
-
-                // Hide debug overlay after 3 seconds if connected
-                if (connected) {
-                    setTimeout(() => {
-                        if (overlay) overlay.classList.remove('active');
-                    }, 3000);
-                }
-            } catch (e) {
-                console.error("Error in updateDebugStatus:", e);
-            }
-        }
-
         document.addEventListener("DOMContentLoaded", () => {
             console.log("=== CloudWash Initialization ===");
 
@@ -908,26 +912,23 @@
                     const hasBackend = juceNowAvailable && window.__JUCE__.backend;
 
                     if (hasBackend) {
-                        console.log("✓ JUCE backend is CONNECTED");
-                        updateDebugStatus(true, "✓ JUCE Connected - Parameters Active");
-                    } else {
-                        console.warn("⚠ JUCE backend NOT CONNECTED");
-
-                        // Detailed diagnostics
-                        if (!juceNowAvailable) {
-                            errorDetails = "window.__JUCE__ does not exist - Native integration not enabled";
-                            console.error("CRITICAL: window.__JUCE__ is undefined");
-                            console.error("This means .withNativeIntegrationEnabled() is not working");
-                        } else if (!window.__JUCE__.backend) {
-                            errorDetails = "window.__JUCE__ exists but .backend is missing";
-                            console.error("CRITICAL: window.__JUCE__.backend is undefined");
-                            console.error("window.__JUCE__ contents:", window.__JUCE__);
+                            console.log("✓ JUCE backend is CONNECTED");
+                        } else {
+                            console.warn("⚠ JUCE backend NOT CONNECTED");
+    
+                            // Detailed diagnostics
+                            if (!juceNowAvailable) {
+                                errorDetails = "window.__JUCE__ does not exist - Native integration not enabled";
+                                console.error("CRITICAL: window.__JUCE__ is undefined");
+                                console.error("This means .withNativeIntegrationEnabled() is not working");
+                            } else if (!window.__JUCE__.backend) {
+                                errorDetails = "window.__JUCE__ exists but .backend is missing";
+                                console.error("CRITICAL: window.__JUCE__.backend is undefined");
+                                console.error("window.__JUCE__ contents:", window.__JUCE__);
+                            }
                         }
-
-                        updateDebugStatus(false, "⚠ JUCE NOT Connected - " + errorDetails);
-                    }
-
-                    // Try to initialize UI anyway (knobs will work visually but not control audio)
+    
+                        // Try to initialize UI anyway (knobs will work visually but not control audio)
                     // Wrap each init function to find which one fails
                     try {
                         console.log("Initializing knobs...");
@@ -997,7 +998,6 @@
                 } catch (error) {
                     console.error("Initialization Error:", error);
                     console.error("Error stack:", error.stack);
-                    updateDebugStatus(false, "✗ Init Error: " + error.message);
                 }
             }, 100); // 100ms delay to ensure WebView2 backend is ready
         });
@@ -1152,11 +1152,28 @@
                     indicator.style.left = `${indicatorX}px`;
                     indicator.style.top = `${indicatorY}px`;
 
-                    // Update value display
+                    // Update value display and visualization
                     if (paramName === 'pitch') {
                         valueDisplay.textContent = value >= 0 ? `+${value.toFixed(2)}` : value.toFixed(2);
+                    } else if (paramName === 'density') {
+                        // Density: show as +/- percentage from center (50%)
+                        const densityOffset = (value - 0.5) * 200; // -100% to +100%
+                        if (Math.abs(densityOffset) < 1) {
+                            valueDisplay.textContent = "0%";
+                        } else {
+                            valueDisplay.textContent = (densityOffset >= 0 ? "+" : "") + densityOffset.toFixed(0) + "%";
+                        }
+                        // Update visualization
+                        updateDensityVisualization(value);
                     } else {
                         valueDisplay.textContent = `${Math.round(normalized * 100)}%`;
+                    }
+
+                    // Update visualization for all parameters
+                    if (window.updateVisualizationParams) {
+                        const params = {};
+                        params[paramName] = value;
+                        window.updateVisualizationParams(params);
                     }
                 }
 
@@ -1294,6 +1311,7 @@
             if (toggleState) {
                 toggleState.addValueChangedListener(() => {
                     const isActive = toggleState.getValue();
+                    freezeActive = isActive;
                     freezeButton.classList.toggle('active', isActive);
                     freezeLED.classList.toggle('active', isActive);
                 });
@@ -1307,14 +1325,16 @@
                 } else {
                     // Standalone mode
                     const isActive = freezeButton.classList.contains('active');
-                    freezeButton.classList.toggle('active', !isActive);
-                    freezeLED.classList.toggle('active', !isActive);
+                    freezeActive = !isActive;
+                    freezeButton.classList.toggle('active', freezeActive);
+                    freezeLED.classList.toggle('active', freezeActive);
                 }
             });
 
             // Initialize from JUCE state
             if (toggleState) {
                 const initialValue = toggleState.getValue();
+                freezeActive = initialValue;
                 freezeButton.classList.toggle('active', initialValue);
                 freezeLED.classList.toggle('active', initialValue);
             }
@@ -1351,28 +1371,8 @@
                 });
             }
 
-            // CRITICAL FIX: Blend Mode dropdown for VCV Rack compatibility
-            // VCV Rack: blendMode determines which parameter the BLEND_INPUT modulates
-            const blendModeState = window.Juce ? window.Juce.getSliderState('blend_mode') : null;
-            if (blendModeState && blendModeSelect) {
-                blendModeState.addValueChangedListener(() => {
-                    const normalized = blendModeState.getNormalisedValue();
-                    if (blendModeSelect) blendModeSelect.selectedIndex = Math.round(normalized * 3.0); // 0-3 for 4 options
-                });
-
-                blendModeSelect.addEventListener('change', () => {
-                    blendModeState.setNormalisedValue(blendModeSelect.selectedIndex / 3.0); // 0-3 for 4 options
-                });
-
-                // Initialize
-                blendModeSelect.selectedIndex = Math.round(blendModeState.getNormalisedValue() * 3.0);
-            } else if (blendModeSelect) {
-                blendModeSelect.addEventListener('change', () => {
-                    console.log('Blend mode changed (standalone):', blendModeSelect.value);
-                });
-            }
-
-            // Sample Mode dropdown - removed because it doesn't exist in the UI
+            // Note: Blend Mode dropdown removed - blend parameters are controlled directly by their respective knobs
+            // (Blend, Spread, Feedback, Reverb) in the main control grid
             // The sample_mode parameter exists but we don't have a UI control for it
 
             console.log("✓ Dropdowns");
@@ -1423,16 +1423,32 @@
             console.log("✓ Meters (connected to real audio levels)");
         }
 
+        // ============================================================
+        // GRAIN VISUALIZATION - UNIFIED WINDOW WITH PARAMETER RESPONSE
+        // All knobs affect the visualization in meaningful ways
+        // ============================================================
+        let currentDensityValue = 0.5; // Start at center (50%)
+        let currentTextureValue = 0.5;
+        let currentReverbValue = 0;
+        let currentSpreadValue = 0;
+        let currentSizeValue = 0.5;
+        let currentFeedbackValue = 0;
+        let freezeActive = false;
+
+        function updateDensityVisualization(densityValue) {
+            currentDensityValue = densityValue;
+        }
+
         function initializeGrainVisualization() {
             const canvas = document.getElementById('grainCanvas');
             const ctx = canvas.getContext('2d');
             canvas.width = 680;
             canvas.height = 60;
 
-            const MAX_PARTICLES = 64; // Match MAX_GRAINS from C++
+            const MAX_PARTICLES = 50;
             const particles = [];
 
-            // Initialize particle pool
+            // Initialize single particle pool for unified visualization
             for (let i = 0; i < MAX_PARTICLES; i++) {
                 particles.push({
                     x: Math.random() * canvas.width,
@@ -1441,77 +1457,174 @@
                     vy: (Math.random() - 0.5) * 0.3,
                     size: 2 + Math.random() * 3,
                     opacity: 0.3 + Math.random() * 0.3,
-                    active: false
+                    active: false,
+                    // For reverb tail effect
+                    trail: []
                 });
             }
 
-            let currentActiveCount = 0;
-            let currentDensity = 0.5;
-            let currentTexture = 0.5;
+            // Track parameter values from knobs
+            const paramValues = {
+                density: 0.5,
+                texture: 0.5,
+                reverb: 0,
+                spread: 0,
+                size: 0.5,
+                feedback: 0
+            };
+
+            // Update parameter values when knobs change
+            window.updateVisualizationParams = function(params) {
+                if (params.density !== undefined) {
+                    paramValues.density = params.density;
+                    currentDensityValue = params.density;
+                }
+                if (params.texture !== undefined) paramValues.texture = params.texture;
+                if (params.reverb !== undefined) {
+                    paramValues.reverb = params.reverb;
+                    currentReverbValue = params.reverb;
+                }
+                if (params.spread !== undefined) {
+                    paramValues.spread = params.spread;
+                    currentSpreadValue = params.spread;
+                }
+                if (params.size !== undefined) {
+                    paramValues.size = params.size;
+                    currentSizeValue = params.size;
+                }
+                if (params.feedback !== undefined) {
+                    paramValues.feedback = params.feedback;
+                    currentFeedbackValue = params.feedback;
+                }
+            };
 
             // Called from C++ at 30 Hz with real grain data
             window.updateGrainVisualization = function (activeGrains, density, texture) {
-                currentActiveCount = activeGrains;
-                currentDensity = density;
-                currentTexture = texture;
+                if (density !== undefined) {
+                    currentDensityValue = density;
+                    paramValues.density = density;
+                }
+                if (texture !== undefined) {
+                    paramValues.texture = texture;
+                    currentTextureValue = texture;
+                }
             };
 
             function animateGrains() {
-                // Fade trail effect
-                ctx.fillStyle = 'rgba(26, 26, 46, 0.15)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                // COMPLETE CLEAR - no trail tint left behind
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                // Calculate how many particles should be visible based on active grain count
-                const targetVisibleCount = Math.min(currentActiveCount, MAX_PARTICLES);
+                // Calculate how "far" from center we are (0.0 to 1.0)
+                // 50% = 0, 0% or 100% = 1.0
+                const distanceFromCenter = Math.abs(currentDensityValue - 0.5) * 2;
 
-                // Update particle activity states
-                for (let i = 0; i < particles.length; i++) {
-                    particles[i].active = i < targetVisibleCount;
-                }
+                // Calculate number of active particles based on distance from center
+                const activeParticleCount = Math.floor(distanceFromCenter * MAX_PARTICLES);
 
-                // Animate active particles
-                particles.forEach(p => {
+                // Determine base velocity direction based on density
+                // < 50% = move left, > 50% = move right
+                const baseVelocityX = (currentDensityValue - 0.5) * 4; // -2 to +2
+
+                // Texture affects particle roughness/jitter and size variation
+                const textureRoughness = paramValues.texture * 2.0;
+                const sizeVariation = 1.0 + paramValues.texture * 3.0;
+
+                // Reverb affects glow and trail length
+                const reverbGlow = paramValues.reverb * 20;
+                const trailLength = Math.floor(paramValues.reverb * 8);
+
+                // Spread affects vertical movement
+                const spreadAmount = paramValues.spread * 2.0;
+
+                // Size affects particle base size
+                const baseSizeMultiplier = 0.5 + paramValues.size * 2.0;
+
+                // Feedback affects opacity and persistence
+                const opacityBoost = paramValues.feedback * 0.4;
+
+                // Update and draw particles
+                particles.forEach((p, index) => {
+                    // Activate particles based on density distance from center
+                    p.active = index < activeParticleCount;
+
                     if (!p.active) return;
 
-                    // Speed influenced by density (more density = faster movement)
-                    const speedMultiplier = 0.5 + currentDensity * 1.5;
-                    p.x += p.vx * speedMultiplier;
-                    p.y += p.vy * speedMultiplier;
+                    if (!freezeActive) {
+                        // Store position for trail
+                        if (trailLength > 0) {
+                            p.trail.push({ x: p.x, y: p.y });
+                            if (p.trail.length > trailLength) {
+                                p.trail.shift();
+                            }
+                        } else {
+                            p.trail = [];
+                        }
 
-                    // Bounce off edges
-                    if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-                    if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+                        // Apply velocity with texture-based jitter
+                        const jitterX = (Math.random() - 0.5) * textureRoughness;
+                        const jitterY = (Math.random() - 0.5) * textureRoughness;
 
-                    // Size influenced by texture (0 = small/smooth, 1 = large/rough)
-                    const sizeMultiplier = 1.0 + currentTexture * 2.0;
-                    const displaySize = p.size * sizeMultiplier;
+                        p.x += baseVelocityX + jitterX;
+                        p.y += p.vy * spreadAmount + jitterY;
 
-                    // Opacity influenced by density
-                    const displayOpacity = 0.2 + currentDensity * 0.6;
+                        // Wrap around edges
+                        if (baseVelocityX > 0 && p.x > canvas.width + 10) {
+                            p.x = -10;
+                            p.y = Math.random() * canvas.height;
+                            p.trail = [];
+                        } else if (baseVelocityX < 0 && p.x < -10) {
+                            p.x = canvas.width + 10;
+                            p.y = Math.random() * canvas.height;
+                            p.trail = [];
+                        } else if (baseVelocityX === 0) {
+                            // At center (50%), particles drift randomly
+                            if (p.x < -10) p.x = canvas.width + 10;
+                            if (p.x > canvas.width + 10) p.x = -10;
+                        }
 
-                    // Color variation based on texture
-                    // Smooth (low texture) = pure cyan, Rough (high texture) = more teal
-                    const hue = 185 - currentTexture * 15; // 185 = cyan, 170 = teal
-                    ctx.fillStyle = `hsla(${hue}, 70%, 65%, ${displayOpacity})`;
+                        if (p.y < 0) p.y = canvas.height;
+                        if (p.y > canvas.height) p.y = 0;
+                    }
+
+                    // Calculate display properties
+                    const displaySize = p.size * baseSizeMultiplier * (1 + Math.random() * sizeVariation * 0.3);
+                    const displayOpacity = Math.min(0.9, p.opacity + opacityBoost);
+
+                    // Color based on texture - smooth = cyan, rough = teal/white
+                    const hue = 185 - paramValues.texture * 25; // 185 (cyan) to 160 (teal)
+                    const saturation = 70 - paramValues.texture * 30; // 70% to 40%
+                    const lightness = 65 + paramValues.texture * 15; // 65% to 80%
+
+                    // Draw trail (reverb effect)
+                    if (p.trail.length > 1) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.trail[0].x, p.trail[0].y);
+                        for (let i = 1; i < p.trail.length; i++) {
+                            ctx.lineTo(p.trail[i].x, p.trail[i].y);
+                        }
+                        ctx.strokeStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, ${displayOpacity * 0.3})`;
+                        ctx.lineWidth = displaySize * 0.5;
+                        ctx.stroke();
+                    }
+
+                    // Draw particle with glow
+                    ctx.shadowBlur = reverbGlow;
+                    ctx.shadowColor = `hsla(${hue}, ${saturation}%, ${lightness}%, ${displayOpacity * 0.5})`;
+                    ctx.fillStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, ${displayOpacity})`;
 
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, displaySize, 0, Math.PI * 2);
                     ctx.fill();
 
-                    // Add glow effect for active grains
-                    if (currentDensity > 0.5) {
-                        ctx.shadowBlur = 8 * currentDensity;
-                        ctx.shadowColor = `hsla(${hue}, 70%, 65%, ${displayOpacity * 0.5})`;
-                    } else {
-                        ctx.shadowBlur = 0;
-                    }
+                    // Reset shadow for next particle
+                    ctx.shadowBlur = 0;
                 });
 
                 requestAnimationFrame(animateGrains);
             }
 
             animateGrains();
-            console.log("✓ Grain visualization (connected to real grain data)");
+            console.log("✓ Grain visualization (unified window, all parameters affect visuals)");
         }
 
         // ============================================================================

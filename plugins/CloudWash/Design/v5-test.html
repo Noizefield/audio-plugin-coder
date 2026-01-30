@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudWash v5 - Granular Texture Processor</title>
+    <style>
+        /* ============================================================
+           CLOUDWASH v5 - DESIGN PREVIEW
+           Fixed density visualization: 50% = no particles
+           ============================================================ */
+
+        :root {
+            /* Background Layers */
+            --bg-primary: #1A1A2E;
+            --bg-surface: #2A2A3E;
+            --bg-raised: #3A3A4E;
+
+            /* Brand Colors */
+            --brand-teal: #427E88;
+            --brand-cyan: #5AC8D8;
+
+            /* Text Colors */
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0A0B0;
+            --text-muted: #707085;
+
+            /* Semantic Colors */
+            --color-active: #427E88;
+            --color-success: #4CAF50;
+            --color-warning: #FFC107;
+            --color-danger: #FF4444;
+
+            /* Visualization Gradient */
+            --viz-top: #3A4A6E;
+            --viz-bottom: #1A1A2E;
+
+            /* Transparency */
+            --glow-teal: rgba(66, 126, 136, 0.4);
+
+            /* Typography */
+            --font-primary: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-primary);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            width: 800px;
+            height: 500px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+        }
+
+        /* ============ HEADER ============ */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: var(--bg-primary);
+        }
+
+        .plugin-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--text-primary);
+        }
+
+        /* ============ MODE TABS ============ */
+        .mode-tabs {
+            display: flex;
+            gap: 2px;
+            background: var(--bg-surface);
+            border-radius: 6px;
+            padding: 2px;
+        }
+
+        .mode-tab {
+            width: 100px;
+            height: 32px;
+            background: transparent;
+            border: none;
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 200ms ease-in-out;
+        }
+
+        .mode-tab:hover {
+            background: var(--bg-raised);
+        }
+
+        .mode-tab.active {
+            background: var(--brand-teal);
+            box-shadow: 0 2px 8px var(--glow-teal);
+        }
+
+        /* ============ GRAIN VISUALIZATION ============ */
+        .grain-visualization {
+            width: calc(100% - 60px);
+            height: 60px;
+            margin: 0 30px 15px 30px;
+            background: linear-gradient(to bottom, var(--viz-top), var(--viz-bottom));
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #grainCanvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ============ CONTROLS LAYOUT (5 COLUMNS x 2 ROWS) ============ */
+        .controls-wrapper {
+            flex: 1;
+            display: flex;
+            padding: 0 30px;
+            gap: 15px;
+        }
+
+        /* LEFT METER */
+        .left-meter-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* CENTER CONTROLS - 5x2 GRID */
+        .controls-center {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);  /* 5 COLUMNS */
+            gap: 12px 18px;  /* row gap, column gap */
+        }
+
+        /* RIGHT METER */
+        .right-meter-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ============ KNOB COMPONENT ============ */
+        .knob-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .knob-label {
+            font-size: 10px;  /* Slightly smaller for 5 columns */
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .knob {
+            width: 70px;  /* Slightly smaller for 5 columns */
+            height: 70px;
+            cursor: ns-resize;
+            position: relative;
+        }
+
+        .knob:hover .knob-arc {
+            filter: drop-shadow(0 0 8px var(--glow-teal));
+        }
+
+        .knob.active .knob-arc {
+            filter: drop-shadow(0 0 12px var(--glow-teal));
+        }
+
+        .knob-track {
+            fill: none;
+            stroke: var(--bg-surface);
+            stroke-width: 6;
+            stroke-linecap: round;
+        }
+
+        .knob-arc {
+            fill: none;
+            stroke: var(--brand-teal);
+            stroke-width: 6;
+            stroke-linecap: round;
+            transition: all 50ms ease;
+        }
+
+        .knob-arc.pitch {
+            stroke: var(--brand-cyan);
+        }
+
+        .knob-indicator {
+            width: 7px;
+            height: 7px;
+            background: var(--text-primary);
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+        }
+
+        .knob-value {
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ============ METERS ============ */
+        .meter-label {
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .meter {
+            width: 32px;
+            height: 240px;
+            background: var(--bg-surface);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        .meter-segment {
+            width: 100%;
+            height: 4.17%;
+            background: var(--bg-raised);
+            margin-top: 1px;
+            transition: background 20ms ease;
+        }
+
+        .meter-segment.active.green {
+            background: var(--color-success);
+            box-shadow: 0 0 3px var(--color-success);
+        }
+
+        .meter-segment.active.yellow {
+            background: var(--color-warning);
+            box-shadow: 0 0 3px var(--color-warning);
+        }
+
+        .meter-segment.active.red {
+            background: var(--color-danger);
+            box-shadow: 0 0 4px var(--color-danger);
+        }
+
+        /* ============ FOOTER CONTAINER ============ */
+        .footer {
+            padding: 0 30px 12px 30px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .footer-container {
+            background: var(--bg-surface);
+            border: 1px solid var(--bg-raised);
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        /* ============ DROPDOWNS ============ */
+        .dropdown {
+            width: 95px;
+            height: 30px;
+            background: var(--bg-primary);
+            border: 1px solid var(--bg-raised);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            font-size: 10px;
+            padding: 0 10px;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23A0A0B0' d='M2 4l4 4 4-4z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+        }
+
+        .dropdown:hover {
+            background: var(--bg-surface);
+            border-color: var(--brand-teal);
+        }
+
+        /* ============ FREEZE BUTTON ============ */
+        .freeze-button {
+            width: 140px;
+            height: 36px;
+            background: var(--bg-raised);
+            border: 2px solid var(--bg-surface);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 150ms ease;
+        }
+
+        .freeze-button:hover {
+            background: var(--bg-surface);
+            border-color: var(--brand-teal);
+        }
+
+        .freeze-button.active {
+            background: var(--brand-teal);
+            border-color: var(--brand-cyan);
+            box-shadow: 0 4px 12px var(--glow-teal);
+        }
+
+        .freeze-led {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--bg-surface);
+            border: 2px solid var(--bg-raised);
+            transition: all 150ms ease;
+        }
+
+        .freeze-led.active {
+            background: var(--color-danger);
+            border-color: var(--color-danger);
+            box-shadow: 0 0 8px var(--color-danger), 0 0 16px rgba(255, 68, 68, 0.4);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1.0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <div class="header">
+        <div class="plugin-title">CLOUDWASH</div>
+        <div class="mode-tabs">
+            <button class="mode-tab active" data-mode="0">GRANULAR</button>
+            <button class="mode-tab" data-mode="1">PITCH</button>
+            <button class="mode-tab" data-mode="2">DELAY</button>
+            <button class="mode-tab" data-mode="3">SPECTRAL</button>
+        </div>
+    </div>
+
+    <!-- GRAIN VISUALIZATION -->
+    <div class="grain-visualization">
+        <canvas id="grainCanvas"></canvas>
+    </div>
+
+    <!-- CONTROLS WITH METERS (5x2 GRID) -->
+    <div class="controls-wrapper">
+        <!-- LEFT METER -->
+        <div class="left-meter-container">
+            <div class="meter-label">IN</div>
+            <div class="meter" id="inputMeter"></div>
+        </div>
+
+        <!-- CENTER CONTROLS - 5 COLUMNS x 2 ROWS -->
+        <div class="controls-center">
+            <div class="controls-grid">
+                <!-- ROW 1 -->
+                <!-- POSITION (Col 1) -->
+                <div class="knob-container">
+                    <div class="knob-label">POSITION</div>
+                    <div class="knob" data-param="position" data-min="0" data-max="1" data-default="0.5">
+                        <svg width="70" height="70" viewBox="0 0 70 70">
+                            <path class="knob-track" />
+                            <path class="knob-arc" />
+                        </svg>
+                        <div class="knob-indicator"></div>
+                    </div>
+                    <div class="knob-value">50%</div>
+                </div>
+
+                <!-- TEXTURE (Col 2) -->
+                <div class="knob-container">
+                    <div class="knob-label">TEXTURE</div>
+                    <div class="knob" data-param="texture" data-min="0" data-max="1" data-default="0.5">
+                        <svg width="70" height="70" viewBox="0 0 70 70">
+                            <path class="knob-track" />
+                            <path class="knob-arc" />
+                        </svg>
+                        <div class="knob-indicator"></div>
+                    </div>
+                    <div class="knob-value">50%</div>
+                </div>
+
+                <!-- PITCH (Col 3) -->
+                <div class="knob-container">
+                    <div class="knob-label">PITCH</div>
+                    <div class="knob" data-param="pitch" data-min="-2" data-max="2" data-default="0">
+                        <svg width="70" height="70" viewBox="0 0 70 70">
+                            <path class="knob-track" />
+                            <path class="knob-arc pitch" />
+                        </svg>
+                        <div class="knob-indicator"></div>
+                    </div>
+                    <div class="knob-value">+0.00</div>
+                </div>
+
+                <!-- DENSITY (Col 4) - CENTERED AT 50% = ZERO -->
+                <div class="knob-container">
+                    <div class="knob-label">DENSITY</div>
+                    <div class="knob" data-param="density" data-min="0" data-max="1" data-default="0.5" id="densityKnob">
+                        <svg width="70" height="70" viewBox="0 0 70 70">
+                            <path class="knob-track" />
+                            <path class="knob-arc" />
+                        </svg>
+                        <div class="knob-indicator"></div>
+                    </div>
+                    <div class="knob-value" id="densityValue">0%</div>
+                </div>
+
+                <!-- FEEDBACK (Col 5) -->
+                <div class="knob-container">
+                    <div class="knob-label">FEEDBACK</div>
+                    <div class="knob" data-param="feedback" data-min="0" data-max="1" data-default="0">
+                        <svg width="70" height="70" viewBox="0 0 70 70">
+                            <path class="knob-track" />
+                            <path class="knob-arc" />
+                        </svg>
+                        <div class="knob-indicator"></div>
+                    </div>
+                    <div class="knob-value">0%</div>
+                </div>
+
+                <!-- ROW 2 -->
+                <!-- SIZE (Col 1) -->
+                <div class="knob-container">
+                    <div class="knob-label">SIZE</div>
+                    <div class="knob" data-param="size" data-min="0" data-max="1" data-default="0.5">
+                        <svg width="70" height="70" viewBox="0 0 70 70">
+                            <path class="knob-track" />
+                            <path class="knob-arc" />
+                        </svg>
+                        <div class="knob-indicator"></div>
+                    </div>
+                    <div class="knob-value">50%</div>
+                </div>
+
+                <!-- IN GAIN (Col 2) -->
+                <div class="knob-container">
+                    <div class="knob-label">IN GAIN</div>
+                    <div class="knob" data-param="in_gain" data-min="0" data-max="1" data-default="0.8">
+                        <svg width="70" height="70" viewBox="0 0 70 70">
+                            <path class="knob-track" />
+                            <path class="knob-arc" />
+                        </svg>
+                        <div class="knob-indicator"></div>
+                    </div>
+                    <div class="knob-value">80%</div>
+                </div>
+
+                <!-- BLEND (Col 3) -->
+                <div class="knob-container">
+                    <div class="knob-label">BLEND</div>
+                    <div class="knob" data-param="blend" data-min="0" data-max="1" data-default="0.5">
+                        <svg width="70" height="70" viewBox="0 0 70 70">
+                            <path class="knob-track" />
+                            <path class="knob-arc" />
+                        </svg>
+                        <div class="knob-indicator"></div>
+                    </div>
+                    <div class="knob-value">50%</div>
+                </div>
+
+                <!-- SPREAD (Col 4) -->
+                <div class="knob-container">
+                    <div class="knob-label">SPREAD</div>
+                    <div class="knob" data-param="spread" data-min="0" data-max="1" data-default="0">
+                        <svg width="70" height="70" viewBox="0 0 70 70">
+                            <path class="knob-track" />
+                            <path class="knob-arc" />
+                        </svg>
+                        <div class="knob-indicator"></div>
+                    </div>
+                    <div class="knob-value">0%</div>
+                </div>
+
+                <!-- REVERB (Col 5) -->
+                <div class="knob-container">
+                    <div class="knob-label">REVERB</div>
+                    <div class="knob" data-param="reverb" data-min="0" data-max="1" data-default="0">
+                        <svg width="70" height="70" viewBox="0 0 70 70">
+                            <path class="knob-track" />
+                            <path class="knob-arc" />
+                        </svg>
+                        <div class="knob-indicator"></div>
+                    </div>
+                    <div class="knob-value">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT METER -->
+        <div class="right-meter-container">
+            <div class="meter-label">OUT</div>
+            <div class="meter" id="outputMeter"></div>
+        </div>
+    </div>
+
+    <!-- FOOTER: COMBINED CONTROLS -->
+    <div class="footer">
+        <div class="footer-container">
+            <select class="dropdown" id="qualitySelect">
+                <option value="0">High Fidelity</option>
+                <option value="1">Balanced</option>
+                <option value="2" selected>Extended</option>
+                <option value="3">Maximum</option>
+            </select>
+            <select class="dropdown" id="sampleModeSelect">
+                <option value="0" selected>Vintage</option>
+                <option value="1">Modern</option>
+            </select>
+            <button class="freeze-button" id="freezeButton">FREEZE</button>
+            <div class="freeze-led" id="freezeLED"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // ============================================================
+        // CLOUDWASH v5 - DENSITY VISUALIZATION FIX
+        // 50% density = 0 particles (centered/bipolar behavior)
+        // < 50% = particles flow from left
+        // > 50% = particles flow from right
+        // ============================================================
+
+        const knobs = document.querySelectorAll('.knob');
+        knobs.forEach(knob => {
+            const param = knob.dataset.param;
+            const min = parseFloat(knob.dataset.min);
+            const max = parseFloat(knob.dataset.max);
+            const defaultValue = parseFloat(knob.dataset.default);
+
+            let value = defaultValue;
+            let isDragging = false;
+            let startY = 0;
+            let startValue = 0;
+
+            const track = knob.querySelector('.knob-track');
+            const arc = knob.querySelector('.knob-arc');
+            const indicator = knob.querySelector('.knob-indicator');
+            const valueDisplay = knob.parentElement.querySelector('.knob-value');
+
+            const ARC_START = 120;
+            const ARC_RANGE = 300;
+            const KNOB_RADIUS = 31;  // Adjusted for 70px diameter
+
+            function updateKnob(newValue) {
+                value = Math.max(min, Math.min(max, newValue));
+                const normalized = (value - min) / (max - min);
+
+                const trackPath = describeArc(35, 35, KNOB_RADIUS, ARC_START, ARC_START + ARC_RANGE);
+                track.setAttribute('d', trackPath);
+
+                const endAngle = ARC_START + (ARC_RANGE * normalized);
+                const arcPath = describeArc(35, 35, KNOB_RADIUS, ARC_START, endAngle);
+                arc.setAttribute('d', arcPath);
+
+                const angle = (ARC_START + (ARC_RANGE * normalized)) * Math.PI / 180;
+                const indicatorX = 35 + KNOB_RADIUS * Math.cos(angle) - 3.5;
+                const indicatorY = 35 + KNOB_RADIUS * Math.sin(angle) - 3.5;
+                indicator.style.left = `${indicatorX}px`;
+                indicator.style.top = `${indicatorY}px`;
+
+                if (param === 'pitch') {
+                    valueDisplay.textContent = value >= 0 ? `+${value.toFixed(2)}` : value.toFixed(2);
+                } else if (param === 'density') {
+                    // Density: show as +/- percentage from center (50%)
+                    const densityOffset = (value - 0.5) * 200; // -100% to +100%
+                    if (Math.abs(densityOffset) < 1) {
+                        valueDisplay.textContent = "0%";
+                    } else {
+                        valueDisplay.textContent = (densityOffset >= 0 ? "+" : "") + densityOffset.toFixed(0) + "%";
+                    }
+                    // Update visualization
+                    updateDensityVisualization(value);
+                } else {
+                    valueDisplay.textContent = `${Math.round(normalized * 100)}%`;
+                }
+            }
+
+            function describeArc(x, y, radius, startAngle, endAngle) {
+                const start = polarToCartesian(x, y, radius, endAngle);
+                const end = polarToCartesian(x, y, radius, startAngle);
+                const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+                return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+            }
+
+            function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+                const angleInRadians = (angleInDegrees) * Math.PI / 180.0;
+                return {
+                    x: centerX + (radius * Math.cos(angleInRadians)),
+                    y: centerY + (radius * Math.sin(angleInRadians))
+                };
+            }
+
+            knob.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startY = e.clientY;
+                startValue = value;
+                knob.classList.add('active');
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const deltaY = startY - e.clientY;
+                    const sensitivity = 0.005;
+                    const newValue = startValue + deltaY * (max - min) * sensitivity;
+                    updateKnob(newValue);
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    knob.classList.remove('active');
+                }
+            });
+
+            knob.addEventListener('dblclick', () => {
+                updateKnob(defaultValue);
+            });
+
+            updateKnob(defaultValue);
+        });
+
+        // Mode tabs
+        const modeTabs = document.querySelectorAll('.mode-tab');
+        modeTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                modeTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+            });
+        });
+
+        // Freeze
+        const freezeButton = document.getElementById('freezeButton');
+        const freezeLED = document.getElementById('freezeLED');
+        let freezeActive = false;
+
+        freezeButton.addEventListener('click', () => {
+            freezeActive = !freezeActive;
+            freezeButton.classList.toggle('active', freezeActive);
+            freezeLED.classList.toggle('active', freezeActive);
+        });
+
+        // Meters
+        function createMeter(meterId) {
+            const meter = document.getElementById(meterId);
+            for (let i = 0; i < 24; i++) {
+                const segment = document.createElement('div');
+                segment.className = 'meter-segment';
+                meter.appendChild(segment);
+            }
+        }
+
+        createMeter('inputMeter');
+        createMeter('outputMeter');
+
+        function updateMeter(meterId, level) {
+            const meter = document.getElementById(meterId);
+            const segments = meter.querySelectorAll('.meter-segment');
+            const activeSegments = Math.floor(level * 24);
+
+            segments.forEach((segment, index) => {
+                segment.classList.remove('active', 'green', 'yellow', 'red');
+                if (index < activeSegments) {
+                    segment.classList.add('active');
+                    if (index < 19) segment.classList.add('green');
+                    else if (index < 23) segment.classList.add('yellow');
+                    else segment.classList.add('red');
+                }
+            });
+        }
+
+        setInterval(() => {
+            updateMeter('inputMeter', 0.3 + Math.random() * 0.4);
+            updateMeter('outputMeter', 0.4 + Math.random() * 0.3);
+        }, 50);
+
+        // ============================================================
+        // DENSITY VISUALIZATION - BIPOLAR/CENTERED BEHAVIOR
+        // ============================================================
+        
+        const canvas = document.getElementById('grainCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 680;
+        canvas.height = 60;
+
+        // Maximum particles when at extremes (0% or 100%)
+        const MAX_PARTICLES = 40;
+        let currentDensityValue = 0.5; // Start at center (50%)
+
+        // Particle pools for left and right sides
+        const leftParticles = [];
+        const rightParticles = [];
+
+        // Initialize particle pools
+        for (let i = 0; i < MAX_PARTICLES; i++) {
+            // Left side particles (for density < 50%)
+            leftParticles.push({
+                x: Math.random() * (canvas.width * 0.4), // Left 40% of canvas
+                y: Math.random() * canvas.height,
+                vx: -0.5 - Math.random() * 1.0, // Move left (negative velocity)
+                vy: (Math.random() - 0.5) * 0.3,
+                size: 2 + Math.random() * 3,
+                opacity: 0.3 + Math.random() * 0.3,
+                active: false
+            });
+
+            // Right side particles (for density > 50%)
+            rightParticles.push({
+                x: canvas.width * 0.6 + Math.random() * (canvas.width * 0.4), // Right 40% of canvas
+                y: Math.random() * canvas.height,
+                vx: 0.5 + Math.random() * 1.0, // Move right (positive velocity)
+                vy: (Math.random() - 0.5) * 0.3,
+                size: 2 + Math.random() * 3,
+                opacity: 0.3 + Math.random() * 0.3,
+                active: false
+            });
+        }
+
+        // Update density visualization based on knob value
+        function updateDensityVisualization(densityValue) {
+            currentDensityValue = densityValue;
+        }
+
+        function animateGrains() {
+            // Fade trail effect
+            ctx.fillStyle = 'rgba(26, 26, 46, 0.15)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Calculate how "far" from center we are (0.0 to 1.0)
+            // 50% = 0, 0% or 100% = 1.0
+            const distanceFromCenter = Math.abs(currentDensityValue - 0.5) * 2;
+
+            // Calculate number of active particles based on distance from center
+            const activeParticleCount = Math.floor(distanceFromCenter * MAX_PARTICLES);
+
+            // Determine which side to show particles based on density direction
+            const isLeftSide = currentDensityValue < 0.5;
+            const isRightSide = currentDensityValue > 0.5;
+
+            // Update and draw particles
+            const allParticles = [...leftParticles, ...rightParticles];
+            
+            // Activate/deactivate particles based on density
+            for (let i = 0; i < leftParticles.length; i++) {
+                leftParticles[i].active = isLeftSide && i < activeParticleCount;
+            }
+            for (let i = 0; i < rightParticles.length; i++) {
+                rightParticles[i].active = isRightSide && i < activeParticleCount;
+            }
+
+            // Animate left particles
+            leftParticles.forEach(p => {
+                if (!p.active) return;
+
+                if (!freezeActive) {
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    // Wrap around when particle goes off left edge
+                    if (p.x < -10) {
+                        p.x = canvas.width * 0.4;
+                        p.y = Math.random() * canvas.height;
+                    }
+                    if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+                }
+
+                const tint = freezeActive ? '180, 200, 210' : '90, 200, 216';
+                ctx.fillStyle = `rgba(${tint}, ${freezeActive ? p.opacity * 0.3 : p.opacity})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Animate right particles
+            rightParticles.forEach(p => {
+                if (!p.active) return;
+
+                if (!freezeActive) {
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    // Wrap around when particle goes off right edge
+                    if (p.x > canvas.width + 10) {
+                        p.x = canvas.width * 0.6;
+                        p.y = Math.random() * canvas.height;
+                    }
+                    if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+                }
+
+                const tint = freezeActive ? '180, 200, 210' : '90, 200, 216';
+                ctx.fillStyle = `rgba(${tint}, ${freezeActive ? p.opacity * 0.3 : p.opacity})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            requestAnimationFrame(animateGrains);
+        }
+
+        animateGrains();
+
+        console.log('CloudWash v5 UI Preview Loaded');
+        console.log('Density Visualization: 50% = 0 particles, < 50% = left flow, > 50% = right flow');
+    </script>
+</body>
+</html>

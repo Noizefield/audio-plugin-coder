@@ -376,20 +376,20 @@ void CloudWashAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     }
     
     // Note: Input gain is now applied during the resampling loop (around line 450)
-    // to match VCV Rack's behavior: gain is applied per-sample during voltage-to-audio
-    // conversion, not as a post-normalization gain.
-    // See: inputFrame.l = sampleL * inGain / 5.0f; in the resampling section below.
+    // VCV Rack applies gain during voltage-to-audio conversion.
+    // VST audio is already normalized to ±1.0, so we apply gain directly without /5.0 scaling.
+    // See: inputFrame.l = sampleL * inGain; in the resampling section below.
     
-    // Note: No need to keep dry buffer copy - Clouds handles dry/wet internally 
+    // Note: No need to keep dry buffer copy - Clouds handles dry/wet internally
 
     // Update Processor Parameters
     clouds::Parameters* p = processor->mutable_parameters();
     p->position = position;
     p->size = size;
-    // CRITICAL FIX: Clamp pitch to ±48 semitones (±4 octaves) to match VCV Rack behavior
+    // Pitch: Convert octaves to semitones (multiply by 12), clamp to ±48 semitones
     // VCV Rack: p->pitch = clamp((params[PITCH_PARAM].getValue() + inputs[PITCH_INPUT].getVoltage()) * 12.0f, -48.0f, 48.0f);
-    // Parameter range is now -4.0 to 4.0 octaves, giving us ±48 semitones when multiplied by 12
-    p->pitch = juce::jlimit(-48.0f, 48.0f, pitch * 12.0f); // Convert -4..4 octaves to semitones, clamped
+    // Parameter range is -2.0 to 2.0 octaves, giving us ±24 semitones when multiplied by 12
+    p->pitch = juce::jlimit(-48.0f, 48.0f, pitch * 12.0f); // Convert octaves to semitones, clamped
     p->density = density;
     p->texture = texture;
 
@@ -426,15 +426,19 @@ void CloudWashAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     int num32kSamples = static_cast<int>(numHostSamples * conversionRatio + 0.5);
     num32kSamples = juce::jlimit(1, resampledInputBuffer.getNumSamples(), num32kSamples);
     
-    // Apply gain inline during resampling (matches VCV Rack behavior)
+    // Apply gain inline during resampling
     // VCV Rack: inputFrame.samples[0] = inputs[IN_L_INPUT].getVoltage() * params[IN_GAIN_PARAM].getValue() / 5.0;
+    // Note: VST audio is ±1.0 normalized (unlike Eurorack ±5V), so no /5.0 scaling needed
     const float* inL = buffer.getReadPointer(0);
     const float* inR = buffer.getReadPointer(totalNumInputChannels > 1 ? 1 : 0);
     float* outL = resampledInputBuffer.getWritePointer(0);
     float* outR = resampledInputBuffer.getWritePointer(1);
     
-    // Simple linear resampling with gain application (VCV Rack style)
-    // This avoids the temporary buffer allocation and handles arbitrary ratios
+    // Clear output buffer first
+    resampledInputBuffer.clear();
+    
+    // Simple linear resampling with gain application
+    // For 48kHz -> 32kHz, this processes samples and applies gain
     double phase = 0.0;
     double phaseIncrement = hostSampleRate / internalSampleRate;  // e.g., 48000/32000 = 1.5
     
@@ -445,9 +449,9 @@ void CloudWashAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
             float sampleL = inL[i] + frac * (inL[i + 1] - inL[i]);
             float sampleR = inR[i] + frac * (inR[i + 1] - inR[i]);
             
-            // Apply gain inline (matches VCV Rack)
-            outL[outSample] = sampleL * inGain / 5.0f;
-            outR[outSample] = sampleR * inGain / 5.0f;
+            // Apply gain inline (VST: no /5.0 scaling needed)
+            outL[outSample] = sampleL * inGain;
+            outR[outSample] = sampleR * inGain;
             
             ++outSample;
             phase += phaseIncrement;
@@ -457,8 +461,8 @@ void CloudWashAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     
     // Fill remaining samples if any
     while (outSample < num32kSamples) {
-        outL[outSample] = inL[numHostSamples - 1] * inGain / 5.0f;
-        outR[outSample] = inR[numHostSamples - 1] * inGain / 5.0f;
+        outL[outSample] = inL[numHostSamples - 1] * inGain;
+        outR[outSample] = inR[numHostSamples - 1] * inGain;
         ++outSample;
     }
     
@@ -644,12 +648,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout CloudWashAudioProcessor::cre
         "size", "Size",
         juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.5f));
 
-    // CRITICAL FIX: Extended pitch range to ±4.0 octaves (±48 semitones) to match VCV Rack
+    // Pitch range: ±2.0 octaves (±24 semitones) to match VCV Rack
     // VCV Rack: p->pitch = clamp((params[PITCH_PARAM].getValue() + inputs[PITCH_INPUT].getVoltage()) * 12.0f, -48.0f, 48.0f);
-    // The pitch parameter represents octaves, and we need ±4 octaves to reach ±48 semitones
+    // Note: VCV Rack PITCH_PARAM range is -2.0 to 2.0, multiplied by 12 gives ±48 semitones max
     layout.add(std::make_unique<juce::AudioParameterFloat>(
         "pitch", "Pitch",
-        juce::NormalisableRange<float>(-4.0f, 4.0f, 0.01f), 0.0f));
+        juce::NormalisableRange<float>(-2.0f, 2.0f, 0.01f), 0.0f));
 
     layout.add(std::make_unique<juce::AudioParameterFloat>(
         "density", "Density",
