@@ -1,5 +1,5 @@
 # Audio Plugin Coder (APC)
-![Audio Plugin Coder Logo](https://github.com/NFInstruments/audio-plugin-coder/blob/main/assets/APC_Logo.gif)
+![Audio Plugin Coder Logo](https://github.com/Noizefield/audio-plugin-coder/blob/main/assets/APC_Logo.gif)
 
 > AI-powered framework for vibe-coding audio plugins from concept to shipped product
 
