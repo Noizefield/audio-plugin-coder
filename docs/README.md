@@ -1,314 +1,202 @@
 # APC Documentation
 
-Welcome to the Audio Plugin Coder (APC) documentation. This guide covers everything you need to know about building, packaging, and distributing cross-platform audio plugins.
+Welcome to the comprehensive documentation for Audio Plugin Coder (APC) - the AI-powered framework for building professional audio plugins.
 
-## Table of Contents
+## Quick Start
 
-1. [Getting Started](#getting-started)
-2. [Build System](#build-system)
-3. [GitHub Actions CI/CD](#github-actions-cicd)
-4. [Ship Workflow](#ship-workflow)
-5. [Platform Support](#platform-support)
-6. [Troubleshooting](#troubleshooting)
+New to APC? Start here:
 
----
+1. **[Project Overview](../README.md)** - What is APC and key features
+2. **[Plugin Development Lifecycle](plugin-development-lifecycle.md)** - The five-phase workflow
+3. **[Command Reference](command-reference.md)** - All available commands
+4. **[FAQ](FAQ.md)** - Common questions answered
 
-## Getting Started
+## Documentation Index
 
-### Prerequisites
+### Getting Started
 
-- **Windows**: Visual Studio 2022, CMake 3.22+, PowerShell 7+
-- **macOS**: Xcode, CMake 3.22+
-- **Linux**: GCC, CMake 3.22+, development libraries
+| Document | Description |
+|----------|-------------|
+| [Project Structure](PROJECT_STRUCTURE.md) | Complete directory layout and file organization |
+| [Plugin Development Lifecycle](plugin-development-lifecycle.md) | Detailed guide to all five phases |
+| [Command Reference](command-reference.md) | All slash commands and PowerShell scripts |
+| [FAQ](FAQ.md) | Frequently asked questions |
 
-### Project Structure
+### Core Concepts
+
+| Document | Description |
+|----------|-------------|
+| [State Management Deep Dive](state-management-deep-dive.md) | How APC tracks and manages project state |
+| [Build System](build-system.md) | CMake configuration and build scripts |
+| [WebView Framework](webview-framework.md) | Building plugins with HTML/CSS/JS UIs |
+
+### Workflows & Processes
+
+| Document | Description |
+|----------|-------------|
+| [Ship Workflow](ship-workflow.md) | Packaging and distribution process |
+| [GitHub Actions](github-actions.md) | CI/CD for cross-platform builds |
+| [Icon Management](icon-management-guide.md) | Adding icons to plugins |
+| [Installer Creation](installer-creation.md) | Creating platform installers |
+
+### Troubleshooting & Support
+
+| Document | Description |
+|----------|-------------|
+| [Troubleshooting Guide](troubleshooting-guide.md) | Common issues and solutions |
+| [Known Issues](../.kilocode/troubleshooting/known-issues.yaml) | Database of known problems |
+
+### Reference
+
+| Document | Location | Description |
+|----------|----------|-------------|
+| Agent Rules | [.kilocode/rules/agent.md](../.kilocode/rules/agent.md) | Critical rules for AI agents |
+| File Naming | [.kilocode/rules/file-naming-conventions.md](../.kilocode/rules/file-naming-conventions.md) | Naming conventions |
+| JUCE Protocols | [.kilocode/rules/juce-build-protocols.md](../.kilocode/rules/juce-build-protocols.md) | Build system rules |
+| State Guide | [.kilocode/guides/state-management-guide.md](../.kilocode/guides/state-management-guide.md) | State management guide |
+| WebView Templates | [.kilocode/templates/webview/](../.kilocode/templates/webview/) | Starter templates |
+
+## The Five-Phase Workflow
+
+APC uses a structured workflow for plugin development:
 
 ```
-audio-plugin-coder/
-├── _tools/                 # JUCE, Visage, and other tools
-├── docs/                   # This documentation
-├── plugins/                # Your plugin projects
-├── scripts/                # Build and utility scripts
-├── .github/workflows/      # CI/CD configuration
-└── CMakeLists.txt          # Root CMake configuration
+💭 DREAM → 📋 PLAN → 🎨 DESIGN → 💻 IMPLEMENT → 🚀 SHIP
 ```
 
----
+| Phase | Command | Output |
+|-------|---------|--------|
+| **DREAM** | `/dream MyPlugin` | Concept + Parameters |
+| **PLAN** | `/plan MyPlugin` | Architecture + Framework |
+| **DESIGN** | `/design MyPlugin` | UI Specifications |
+| **IMPLEMENT** | `/impl MyPlugin` | Working Code |
+| **SHIP** | `/ship MyPlugin` | Distribution Package |
 
-## Build System
+Learn more: [Plugin Development Lifecycle](plugin-development-lifecycle.md)
 
-### Local Development Build
+## Common Commands
 
-For Windows development:
+### Slash Commands (AI Agent)
+
+```
+/dream MyPlugin      # Start new plugin
+/plan MyPlugin       # Define architecture
+/design MyPlugin     # Create UI design
+/impl MyPlugin       # Implement code
+/ship MyPlugin       # Package and distribute
+/status MyPlugin     # Check progress
+/resume MyPlugin     # Continue development
+/test MyPlugin       # Run validation
+/debug MyPlugin      # Debug issues
+```
+
+### PowerShell Scripts
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build-and-install.ps1 -PluginName [Plugin Name]
+# Build plugin
+powershell -ExecutionPolicy Bypass -File .\scripts\build-and-install.ps1 -PluginName MyPlugin
+
+# Validate setup
+.\scripts\validate-plugin-status.ps1 -PluginName MyPlugin
+
+# Check system
+.\scripts\system-check.ps1
 ```
 
-Options:
-- `-NoInstall` - Build without installing to system
-- `-SkipTests` - Skip PluginVal validation
-- `-Strict` - Fail on any validation warning
+Full reference: [Command Reference](command-reference.md)
 
-### CMake Configuration
+## UI Frameworks
 
-The build system uses CMake with JUCE. Each plugin has its own `CMakeLists.txt`:
+APC supports two UI frameworks:
 
-```cmake
-juce_add_plugin(PluginName
-    COMPANY_NAME "APC"
-    FORMATS VST3 Standalone
-    PRODUCT_NAME "Plugin Name"
-    NEEDS_WEBVIEW2 TRUE
-)
-```
+### WebView (HTML/CSS/JS)
+- Modern web technologies
+- Fast iteration with hot reload
+- Rich visualizations
+- Best for: Complex UIs, real-time graphics
 
----
+Learn more: [WebView Framework Guide](webview-framework.md)
 
-## GitHub Actions CI/CD
+### Visage (Pure C++)
+- Native JUCE components
+- Maximum performance
+- Full C++ control
+- Best for: Simple UIs, performance-critical plugins
 
-APC uses GitHub Actions for cross-platform builds. This allows you to build for macOS and Linux even when developing on Windows.
-
-### Workflows
-
-| Workflow | File | Purpose |
-|----------|------|---------|
-| Build Release | `.github/workflows/build-release.yml` | Create release builds for distribution |
-| Build PR | `.github/workflows/build-pr.yml` | Validate PR changes |
-
-### Triggering a Build
-
-#### Option 1: Manual Trigger (Recommended)
-
-1. Go to your GitHub repository
-2. Click **Actions** tab
-3. Select **"Build and Release"** workflow
-4. Click **"Run workflow"**
-5. Fill in the parameters:
-   - **Plugin name**: Your plugin folder name (e.g., `CloudWash`)
-   - **Platforms**: Choose which platforms to build
-
-#### Platform Selection
-
-When triggering manually, you can select specific platforms:
-
-| Option | Builds |
-|--------|--------|
-| `all` | Windows, macOS, Linux |
-| `windows` | Windows only |
-| `macos` | macOS only |
-| `linux` | Linux only |
-| `windows,macos` | Windows + macOS |
-| `windows,linux` | Windows + Linux |
-| `macos,linux` | macOS + Linux |
-
-**Use Case Example**: You're on Windows with a local build. You only need macOS and Linux from GitHub:
-- Select `macos,linux` from the dropdown
-- GitHub skips Windows, saving CI minutes
-
-#### Option 2: Tag Push (Automatic Release)
-
-Push a tag to automatically trigger a release build:
-
-```bash
-git tag -a v1.0.0-CloudWash -m "Release CloudWash v1.0.0"
-git push origin v1.0.0-CloudWash
-```
-
-The workflow will:
-1. Build for all platforms
-2. Create platform-specific ZIP files
-3. Create a GitHub Release with all artifacts
-
-### Build Outputs
-
-After a successful build, you'll find artifacts in:
-
-- **GitHub Actions**: Download from the workflow run page
-- **GitHub Release**: Attached to the release (if triggered by tag)
-
-Artifacts are named:
-- `{PluginName}-{Version}-Windows.zip`
-- `{PluginName}-{Version}-macOS.zip`
-- `{PluginName}-{Version}-Linux.zip`
-
----
-
-## Ship Workflow
-
-The Ship phase creates professional installers for distribution.
-
-### Supported Platforms & Formats
-
-| Platform | VST3 | AU | Standalone | LV2 | Build Method |
-|----------|------|-----|------------|-----|--------------|
-| Windows  | ✓    | -   | ✓          | -   | Local or GitHub |
-| macOS    | ✓    | ✓   | ✓          | -   | GitHub only |
-| Linux    | ✓    | -   | ✓          | ✓   | GitHub only |
-
-### Shipping Process
-
-#### Step 1: Complete Implementation
-
-Ensure your plugin is complete:
-- Phase 4 (CODE) finished
-- All tests passing
-- Local build successful
-
-#### Step 2: Trigger Ship Workflow
-
-```powershell
-# Option 1: Use the skill
-/ship CloudWash
-
-# Option 2: Run manually
-powershell -ExecutionPolicy Bypass -File .\scripts\ship-local.ps1 -PluginName CloudWash
-```
-
-#### Step 3: Platform Selection
-
-The workflow will ask which platforms to include:
-
-```
-Current Platform: Windows
-Local Build Status: Found
-
-Select platforms to include:
-[1] Current Platform - USE LOCAL BUILD
-[2] Current Platform - BUILD WITH GITHUB ACTIONS  
-[3] Windows - GITHUB ACTIONS
-[4] macOS (VST3, AU, Standalone) - GITHUB ACTIONS
-[5] Linux (VST3, LV2, Standalone) - GITHUB ACTIONS
-[6] ALL PLATFORMS - Use local for current, GitHub for others
-
-Enter numbers (comma-separated) or 'all':
-```
-
-**Example selections:**
-- `1,4,5` - Use local Windows build, GitHub for macOS + Linux
-- `6` - Use local for current platform, GitHub for all others
-- `4,5` - Only build macOS and Linux on GitHub
-
-#### Step 4: Wait for Builds
-
-- **Local build**: Immediate, creates installer
-- **GitHub Actions**: Monitor progress on GitHub
-
-#### Step 5: Download Artifacts
-
-For GitHub builds, download artifacts when complete:
-
-```powershell
-# Using GitHub CLI
-gh run download --dir dist/github-artifacts --pattern "*-$PluginName"
-```
-
-#### Step 6: Create Installers
-
-The workflow creates:
-- **Windows**: `.exe` installer with license agreement
-- **macOS**: `.zip` with VST3/AU bundles (prepare PKG/DMG on Mac)
-- **Linux**: `.zip` with binaries (prepare AppImage/DEB on Linux)
-
-#### Step 7: Final Distribution
-
-Output structure:
-```
-dist/{PluginName}-v{version}/
-├── {PluginName}-{version}-Windows-Setup.exe
-├── {PluginName}-{version}-macOS.zip
-├── {PluginName}-{version}-Linux.zip
-├── README.md
-├── CHANGELOG.md
-├── LICENSE.txt
-└── INSTALL.md
-```
-
----
+*Note: Visage integration is planned for future release.*
 
 ## Platform Support
 
-### Windows
+| Platform | Local Build | GitHub Actions | Formats |
+|----------|-------------|----------------|---------|
+| Windows 11 | ✅ Native | ✅ | VST3, Standalone |
+| macOS | ❌ | ✅ | VST3, AU, Standalone |
+| Linux | ❌ | ✅ | VST3, LV2, Standalone |
 
-**Requirements:**
-- Windows 10/11 64-bit
-- WebView2 Runtime (pre-installed on Windows 11)
-- VST3-compatible DAW
+## Project Structure
 
-**Build locally:** Yes (native)
-**Build via GitHub:** Yes
+```
+audio-plugin-coder/
+├── .kilocode/              # AI agent configuration
+│   ├── skills/             # Domain knowledge
+│   ├── workflows/          # Slash commands
+│   ├── rules/              # System constraints
+│   └── troubleshooting/    # Known issues
+├── _tools/                 # JUCE, pluginval
+├── docs/                   # This documentation
+├── plugins/                # Your plugins
+├── scripts/                # Build automation
+└── build/                  # Build artifacts
+```
 
-### macOS
+Learn more: [Project Structure](PROJECT_STRUCTURE.md)
 
-**Requirements:**
-- macOS 10.13+
-- Intel or Apple Silicon (Universal Binary)
-- VST3 or AU compatible DAW
+## State Management
 
-**Build locally:** No (requires macOS)
-**Build via GitHub:** Yes
+Every plugin has a `status.json` file that tracks:
+- Current development phase
+- UI framework selection
+- Validation checkpoints
+- Error recovery points
 
-### Linux
+This enables:
+- Resume development anytime
+- Switch AI agents without losing context
+- Automatic prerequisite validation
+- Rollback capabilities
 
-**Requirements:**
-- Ubuntu 20.04+ or equivalent
-- WebKitGTK
-- VST3 or LV2 compatible DAW
-
-**Build locally:** No (requires Linux)
-**Build via GitHub:** Yes
-
----
+Learn more: [State Management Deep Dive](state-management-deep-dive.md)
 
 ## Troubleshooting
 
-### GitHub Actions Issues
+Having issues? Check these resources:
 
-#### "Workflow not found"
-Ensure `.github/workflows/build-release.yml` exists and is committed to the repository.
-
-#### "No artifacts found"
-Check that the plugin name matches exactly (case-sensitive).
-
-#### Build fails on one platform
-The release job will still package successful builds. Check individual job logs for errors.
-
-### Local Build Issues
-
-#### "CMake not found"
-Install CMake 3.22 or later from https://cmake.org/download/
-
-#### "JUCE not found"
-Ensure submodules are initialized:
-```bash
-git submodule update --init --recursive
-```
-
-### Installer Issues
-
-#### Inno Setup not found
-Download and install from https://jrsoftware.org/isdl.php
-
-#### macOS/Linux installers can't be created on Windows
-These require their respective platforms for final packaging. The workflow prepares the structure; finalize on the target OS.
-
----
-
-## Additional Resources
-
-- [JUCE Documentation](https://docs.juce.com/)
-- [VST3 SDK](https://developer.steinberg.help/display/VST/VST+3+Home)
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-
----
+1. **[Troubleshooting Guide](troubleshooting-guide.md)** - Common problems and solutions
+2. **[Known Issues](../.kilocode/troubleshooting/known-issues.yaml)** - Database of known problems
+3. **Validation Scripts:**
+   ```powershell
+   .\scripts\validate-plugin-status.ps1 -PluginName MyPlugin
+   .\scripts\validate-webview-setup.ps1 -PluginName MyPlugin
+   ```
 
 ## Contributing
 
-To contribute to APC:
+Want to improve APC? See [CONTRIBUTING.md](../CONTRIBUTING.md) for:
+- Adding new skills
+- Reporting bugs
+- Improving documentation
+- Testing on different platforms
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+## External Resources
 
-The PR workflow will automatically build and test your changes.
+- [JUCE Documentation](https://docs.juce.com/) - Audio plugin framework
+- [VST3 SDK](https://developer.steinberg.help/display/VST/VST+3+Home) - Steinberg's VST3 docs
+- [WebView2 Documentation](https://docs.microsoft.com/en-us/microsoft-edge/webview2/) - Microsoft's WebView2
+
+## License
+
+APC is licensed under the MIT License. See [LICENSE](../LICENCE.md) for details.
+
+---
+
+**Need help?** Check the [FAQ](FAQ.md) or review the [troubleshooting guide](troubleshooting-guide.md).

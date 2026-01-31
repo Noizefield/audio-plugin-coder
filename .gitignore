@@ -29,6 +29,7 @@ out/
 github/
 
 # User Specific
+PRESS_RELEASE.md
 .vscode/
 *.user
 *.suo

@@ -14,7 +14,7 @@
 
 While developing software instruments and effects has always been a dream, building real-world VSTs (with robust DSP, UI, state handling, and packaging) is notoriously complex. Over time, and especially with the rapid advancement of AI-assisted development, that barrier has finally crumbled.
 
-Over the past 18 months, APC has been continuously designed, tested, and re-iterated as a practical **AI-first framework** for building audio plugins. This involved thousands of hours of experimentation, trial-and-error, and yes—occasionally yelling at LLMs to finally render the UI correctly.
+Over the past 18 months, APC has been continuously designed, tested, and re-iterated as a practical **AI-first framework** for building audio plugins. This involved thousands of hours of experimentation, trial-and-error, and yes... occasionally yelling at LLMs to finally render the UI correctly.
 
 **Midway through development, I stumbled upon the excellent work of [TÂCHES (glittercowboy)](https://github.com/glittercowboy).** His approach to context engineering was a revelation. I adopted some of his core ideas, particularly regarding meta prompting and structured agent workflows and integrated them directly into APC's DNA to create a more robust system.
 
@@ -30,7 +30,7 @@ Use APC for development and experimentation purposes only until a stable release
 
 **Audio Plugin Coder (APC)** is a structured, AI-driven workflow system that guides LLM agents through the entire audio plugin development lifecycle.
 
-It enables the creation of VST3 / AU / CLAP plugins using natural language, predefined workflows, and domain-specific skills—without constantly re-explaining context, architecture, or best practices to the AI.
+It enables the creation of VST3 / AU / CLAP plugins using natural language, predefined workflows, and domain-specific skills- without constantly re-explaining context, architecture, or best practices to the AI.
 
 Instead of manually juggling DSP architecture, UI frameworks, build systems, state tracking, and packaging, APC provides a unified framework where AI agents can operate with **long-term context, validation, and self-improving knowledge.**
 
@@ -48,12 +48,12 @@ Instead of manually juggling DSP architecture, UI frameworks, build systems, sta
 
 ### Prerequisites
 
-- Windows 11 (macOS coming soon)
+- Windows 11 (macOS/Linux via GitHub Actions)
 - PowerShell 7+
 - Visual Studio 2022 (with C++ development tools)
 - CMake 3.22+
-- JUCE 8
-- **An LLM coding agent** (Antigravity, Kilo, Claude Code, etc.)
+- Git
+- **An LLM coding agent** (Claude Code, Kilo, etc.)
 
 ### Installation
 
@@ -72,14 +72,14 @@ cd audio-plugin-coder
 
 2. **Initialize your LLM agent:**
 
-For **Antigravity** (Google):
-```powershell
-# Workflows are automatically discovered from .agent/workflows/
-```
-
 For **Kilo**:
 ```powershell
 # Workflows are automatically discovered from .kilocode/workflows/
+```
+
+For **Claude Code**:
+```powershell
+# The agent will discover workflows from .kilocode/workflows/
 ```
 
 3. **Create your first plugin:**
@@ -157,7 +157,7 @@ APC uses a unique State Management system (status.json) to track development acr
 
 ```
 audio-plugin-coder/
-├── .agent/                      # Antigravity configuration
+├── .[Agent]/                    # AI agent configuration
 │   ├── workflows/               # Slash command orchestrators
 │   │   ├── dream.md
 │   │   ├── plan.md
@@ -179,6 +179,7 @@ audio-plugin-coder/
 │   │   ├── known-issues.yaml
 │   │   └── resolutions/
 │   └── templates/
+├── docs/                        # Comprehensive documentation
 ├── plugins/                     # Generated plugins
 │   └── [YourPlugin]/
 │       ├── .ideas/              # Specs and planning
@@ -250,7 +251,7 @@ APC includes an **auto-capture system** that learns from problems:
 4. **After 3 attempts** → Auto-creates issue entry
 5. **When solved** → Documents solution for future use
 
-**Location:** `.agent/troubleshooting/`
+**Location:** `.kilocode/troubleshooting/`
 
 **Result:** The system gets smarter with every issue encountered!
 
@@ -263,36 +264,50 @@ APC works with any LLM-based coding agent that supports:
 
 **Tested with:**
 - ✅ Claude Code (Anthropic)
-- ✅ Antigravity (Google)
 - ✅ Kilo (kilo.ai)
 - [ ] Cursor
-- [ ] tbc.
+- [ ] Others welcome!
 
 ## 🛠️ Technology Stack
 
 - **JUCE 8** - Audio plugin framework
 - **CMake** - Build system
 - **PowerShell** - Automation scripting
-- **Visage** - Native C++ UI framework
+- **JUCE 8** - Audio plugin framework (includes DSP, GUI, etc.)
 - **WebView2** - Chromium-based web UI
 - **YAML** - Knowledge base format
 - **Markdown** - Documentation and workflows
 
 ## 📋 Supported Plugin Formats
 
-- ✅ VST3
-- ✅ Standalone applications
-- [ ] Audio Unit (AU)
-- [ ] CLAP
+| Format | Windows | macOS | Linux |
+|--------|---------|-------|-------|
+| VST3 | ✅ | ✅ | ✅ |
+| Standalone | ✅ | ✅ | ✅ |
+| AU | ❌ | ✅ | ❌ |
+| LV2 | ❌ | ❌ | ✅ |
+
+*CLAP support planned for future release.*
+
+## 📚 Documentation
+
+Comprehensive documentation is available in the [`docs/`](docs/) directory:
+
+- **[Getting Started](docs/README.md)** - Documentation index and quick start
+- **[Plugin Development Lifecycle](docs/plugin-development-lifecycle.md)** - Detailed phase guide
+- **[Command Reference](docs/command-reference.md)** - All commands and scripts
+- **[FAQ](docs/FAQ.md)** - Frequently asked questions
+- **[Troubleshooting](docs/troubleshooting-guide.md)** - Common issues and solutions
 
 ## 🔮 Roadmap
 
-- [ ] macOS support
-- [ ] Linux support
-- [ ] VST2 legacy format
+- [x] Windows support
+- [x] GitHub Actions CI/CD
+- [x] Comprehensive documentation
+- [ ] macOS local build support
+- [ ] Linux local build support
+- [ ] CLAP format support
 - [ ] Preset management system
-- [ ] Multi-plugin project templates
-- [ ] CI/CD integration
 - [ ] Plugin marketplace integration
 - [ ] Real-time collaboration features
 
@@ -310,15 +325,14 @@ If APC saves you time, helps you learn JUCE, or helps you ship a plugin, please 
 
 ## 🤝 Contributing & Community
 
-Contributions are welcome!
+Contributions are welcome! Join our [GitHub Discussions](https://github.com/Noizefield/audio-plugin-coder/discussions) to connect with the community.
 
-- Add Skills: Create new domain knowledge modules.
+- **Add Skills:** Create new domain knowledge modules
+- **Test Platforms:** Verify compatibility with different AI agents
+- **Improve Docs:** Help us improve documentation
+- **Share Plugins:** Showcase what you've built
 
-- Test Platforms: Verify compatibility with different AI agents.
-
-- Mac Users: Help us test the upcoming macOS build scripts.
-
-See CONTRIBUTING.md for details.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 
 
