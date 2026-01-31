@@ -46,6 +46,8 @@ Thumbs.db
 logs/
 APC_CRASH_REPORT.txt
 build_log.txt
+*_log.txt
+cloudwash_crash_log.txt
 
 # Backups
 _backups/
