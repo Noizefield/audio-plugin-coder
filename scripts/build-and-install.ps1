@@ -134,6 +134,21 @@ if (-not $NoInstall) {
     $Exe = Get-ChildItem -Path "$BuildDir" -Recurse -Filter "$($PluginName).exe" | Select-Object -First 1
     if ($Exe) {
         Write-Host "STANDALONE built at: $($Exe.FullName)" -ForegroundColor Green
+
+        # Add icon to standalone executable
+        $IconPath = "$RootPath\plugins\$PluginName\Assets\icon.ico"
+        if (Test-Path $IconPath) {
+            Write-Host "Adding icon to standalone executable..." -ForegroundColor Yellow
+            try {
+                & "$PSScriptRoot\add-icon-to-exe.ps1" -ExePath $Exe.FullName -IconPath $IconPath
+                Write-Host "[OK] Icon embedded in executable" -ForegroundColor Green
+            } catch {
+                Write-Warning "Failed to add icon to executable: $_"
+            }
+        } else {
+            Write-Host "No icon found at $IconPath - skipping icon embedding" -ForegroundColor Gray
+        }
+
         Write-Host "Tip: You can run this to bypass VST3 caching issues." -ForegroundColor Cyan
     }
 }

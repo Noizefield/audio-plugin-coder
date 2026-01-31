@@ -1,0 +1,120 @@
+================================================================================
+                    {PLUGIN_NAME} END USER LICENSE AGREEMENT
+================================================================================
+
+Version: {VERSION}
+Date: {DATE}
+
+IMPORTANT: PLEASE READ THIS LICENSE CAREFULLY BEFORE USING THIS SOFTWARE.
+
+BY INSTALLING, COPYING, OR OTHERWISE USING THIS SOFTWARE, YOU AGREE TO BE
+BOUND BY THE TERMS OF THIS LICENSE AGREEMENT. IF YOU DO NOT AGREE TO THE
+TERMS OF THIS LICENSE, DO NOT INSTALL OR USE THE SOFTWARE.
+
+================================================================================
+1. GRANT OF LICENSE
+================================================================================
+
+This software is licensed, not sold. {COMPANY_NAME} grants you a non-exclusive,
+non-transferable license to:
+
+- Install and use this software on multiple computers that you own or control
+- Use this software for both commercial and non-commercial purposes
+- Create and distribute audio content, recordings, and productions using
+  this software
+- Make one copy of the software for backup purposes
+
+================================================================================
+2. RESTRICTIONS
+================================================================================
+
+You may NOT:
+
+- Reverse engineer, decompile, disassemble, or attempt to derive the source
+  code of this software
+- Modify, adapt, translate, or create derivative works based on the software
+- Rent, lease, lend, sell, redistribute, or sublicense the software
+- Remove or alter any proprietary notices or labels on the software
+- Use the software in any way that violates applicable laws
+
+================================================================================
+3. INTELLECTUAL PROPERTY
+================================================================================
+
+This software is protected by copyright laws and international copyright
+treaties, as well as other intellectual property laws and treaties.
+{COMPANY_NAME} retains all rights, title, and interest in and to the software,
+including all intellectual property rights.
+
+================================================================================
+4. DISCLAIMER OF WARRANTY
+================================================================================
+
+THIS SOFTWARE IS PROVIDED "AS IS" AND WITHOUT WARRANTIES OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+{COMPANY_NAME} DOES NOT WARRANT THAT THE SOFTWARE WILL BE ERROR-FREE OR
+THAT DEFECTS WILL BE CORRECTED.
+
+================================================================================
+5. LIMITATION OF LIABILITY
+================================================================================
+
+IN NO EVENT SHALL {COMPANY_NAME} BE LIABLE FOR ANY INDIRECT, INCIDENTAL,
+SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO
+LOSS OF PROFITS, DATA, OR USE, ARISING OUT OF OR IN CONNECTION WITH THIS
+LICENSE OR THE USE OR PERFORMANCE OF THE SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGES.
+
+================================================================================
+6. TERMINATION
+================================================================================
+
+This license is effective until terminated. Your rights under this license
+will terminate automatically without notice if you fail to comply with any
+term(s) of this license. Upon termination, you must cease all use of the
+software and destroy all copies.
+
+================================================================================
+7. GOVERNING LAW
+================================================================================
+
+This license shall be governed by and construed in accordance with the laws
+of the jurisdiction in which {COMPANY_NAME} is established, without regard
+to its conflict of law provisions.
+
+================================================================================
+8. THIRD-PARTY SOFTWARE
+================================================================================
+
+This software may include third-party libraries and components, including but
+not limited to:
+- JUCE Framework (https://juce.com/)
+- VST3 SDK (Steinberg)
+
+These components are subject to their respective licenses.
+
+================================================================================
+9. SUPPORT AND UPDATES
+================================================================================
+
+{COMPANY_NAME} may provide support and updates at its discretion. This license
+does not grant you any right to receive updates, upgrades, or technical support.
+
+================================================================================
+10. ACKNOWLEDGMENT
+================================================================================
+
+BY INSTALLING OR USING THIS SOFTWARE, YOU ACKNOWLEDGE THAT YOU HAVE READ
+THIS LICENSE AGREEMENT, UNDERSTAND IT, AND AGREE TO BE BOUND BY ITS TERMS
+AND CONDITIONS.
+
+================================================================================
+
+Copyright (c) {YEAR} {COMPANY_NAME}
+All rights reserved.
+
+For support and inquiries:
+{COMPANY_URL}
+
+================================================================================

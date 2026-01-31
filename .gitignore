@@ -32,7 +32,9 @@ github/
 *.user
 *.suo
 nul
-WEBVIEW_FRAMEWORK_ANALYSIS.md
+
+# plans
+plans/
 
 # System
 .DS_Store

@@ -61,7 +61,14 @@
       "Bash(Select-String -Pattern \"\\(MSBuild|ERROR|FAILED|SUCCESS|Installing\\)\" -CaseSensitive:$false)",
       "Bash(Test-Path \"R:\\\\_VST_Development_2026\\\\audio-plugin-coder\\\\build\\\\plugins\\\\CloudWash\\\\CloudWash_artefacts\\\\Release\\\\VST3\\\\CloudWash.vst3\\\\Contents\\\\x86_64-win\\\\CloudWash.vst3\")",
       "Bash(Select-String -Pattern \"Build succeeded|error C|Build failed\")",
-      "Bash(Select-Object -Last 5)"
+      "Bash(Select-Object -Last 5)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(git add:*)",
+      "Bash(tree:*)",
+      "Bash(Test-Path \"R:\\\\_VST_Development_2026\\\\audio-plugin-coder\\\\plugins\\\\CloudWash\\\\Source\\\\PluginProcessor.cpp\")",
+      "Bash(Get-ChildItem -Path \".kilocode\" -Recurse -Filter \"*.md\")",
+      "Bash(Get-ChildItem \"R:\\\\_VST_Development_2026\\\\audio-plugin-coder\\\\plugins\\\\CloudWash\\\\Assets\" -ErrorAction SilentlyContinue)"
     ]
   }
 }

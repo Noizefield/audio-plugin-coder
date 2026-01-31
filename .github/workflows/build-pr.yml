@@ -1,0 +1,219 @@
+name: Build PR
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+  push:
+    branches: [main, master, develop]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  # ============================================
+  # DETECT CHANGED PLUGINS
+  # ============================================
+  detect-plugins:
+    runs-on: ubuntu-latest
+    outputs:
+      plugins: ${{ steps.detect.outputs.plugins }}
+      matrix: ${{ steps.detect.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed plugins
+        id: detect
+        run: |
+          # Get list of changed files
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+          fi
+          
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+          
+          # Extract unique plugin names from changes in plugins/ directory
+          PLUGINS=$(echo "$CHANGED_FILES" | grep -E "^plugins/" | cut -d'/' -f2 | sort -u | jq -R . | jq -s .)
+          
+          echo "Detected plugins: $PLUGINS"
+          echo "plugins=$PLUGINS" >> $GITHUB_OUTPUT
+          
+          # Create matrix for subsequent jobs
+          MATRIX=$(echo "$PLUGINS" | jq -c '{plugin: .}')
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
+  # ============================================
+  # BUILD WINDOWS
+  # ============================================
+  build-windows:
+    needs: detect-plugins
+    if: ${{ needs.detect-plugins.outputs.plugins != '[]' }}
+    runs-on: windows-latest
+    strategy:
+      matrix: ${{fromJson(needs.detect-plugins.outputs.matrix)}}
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+
+      - name: Build VST3
+        run: |
+          cmake --build build --config Release --target "${{ matrix.plugin }}_VST3"
+
+      - name: Build Standalone
+        run: |
+          cmake --build build --config Release --target "${{ matrix.plugin }}_Standalone"
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.plugin }}-pr
+          path: |
+            build/*_artefacts/Release/*.vst3
+            build/*_artefacts/Release/*.exe
+          retention-days: 7
+
+  # ============================================
+  # BUILD MACOS
+  # ============================================
+  build-macos:
+    needs: detect-plugins
+    if: ${{ needs.detect-plugins.outputs.plugins != '[]' }}
+    runs-on: macos-latest
+    strategy:
+      matrix: ${{fromJson(needs.detect-plugins.outputs.matrix)}}
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Dependencies
+        run: |
+          brew install cmake
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build -G Xcode \
+            -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13
+
+      - name: Build VST3
+        run: |
+          cmake --build build --config Release --target "${{ matrix.plugin }}_VST3"
+
+      - name: Build AU
+        run: |
+          cmake --build build --config Release --target "${{ matrix.plugin }}_AU"
+
+      - name: Build Standalone
+        run: |
+          cmake --build build --config Release --target "${{ matrix.plugin }}_Standalone"
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.plugin }}-pr
+          path: |
+            build/*_artefacts/Release/*.vst3
+            build/*_artefacts/Release/*.component
+            build/*_artefacts/Release/*.app
+          retention-days: 7
+
+  # ============================================
+  # BUILD LINUX
+  # ============================================
+  build-linux:
+    needs: detect-plugins
+    if: ${{ needs.detect-plugins.outputs.plugins != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.detect-plugins.outputs.matrix)}}
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            libasound2-dev \
+            libfreetype6-dev \
+            libgl1-mesa-dev \
+            libx11-dev \
+            libxcomposite-dev \
+            libxcursor-dev \
+            libxext-dev \
+            libxinerama-dev \
+            libxrandr-dev \
+            libwebkit2gtk-4.0-dev
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build VST3
+        run: |
+          cmake --build build --target "${{ matrix.plugin }}_VST3"
+
+      - name: Build LV2
+        run: |
+          cmake --build build --target "${{ matrix.plugin }}_LV2"
+
+      - name: Build Standalone
+        run: |
+          cmake --build build --target "${{ matrix.plugin }}_Standalone"
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.plugin }}-pr
+          path: |
+            build/*_artefacts/*.vst3
+            build/*_artefacts/*.lv2
+            build/*_artefacts/${{ matrix.plugin }}
+          retention-days: 7
+
+  # ============================================
+  # SUMMARY
+  # ============================================
+  summary:
+    needs: [detect-plugins, build-windows, build-macos, build-linux]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.detect-plugins.outputs.plugins }}" == "[]" ]; then
+            echo "No plugin changes detected." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Plugins to build: ${{ needs.detect-plugins.outputs.plugins }}" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Windows | ${{ needs.build-windows.result }} |" >> $GITHUB_STEP_SUMMARY
+            echo "| macOS | ${{ needs.build-macos.result }} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Linux | ${{ needs.build-linux.result }} |" >> $GITHUB_STEP_SUMMARY
+          fi

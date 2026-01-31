@@ -1,7 +1,34 @@
 # CloudWash - Granular Texture Processor
 # WebView-based UI with multi-mode DSP architecture
+# Cross-platform: Windows (VST3), macOS (VST3/AU), Linux (VST3/LV2)
 
-# Embed web UI files as binary data
+# ============================================
+# PLATFORM-SPECIFIC CONFIGURATION
+# ============================================
+if(WIN32)
+    set(PLUGIN_FORMATS VST3 Standalone)
+    set(NEEDS_WEBVIEW2 TRUE)
+    set(WEBVIEW_BACKEND "WebView2")
+elseif(APPLE)
+    set(PLUGIN_FORMATS VST3 AU Standalone)
+    set(NEEDS_WEBVIEW2 FALSE)
+    set(WEBVIEW_BACKEND "WKWebView")
+    set(AU_MAIN_TYPE kAudioUnitType_Effect)
+elseif(UNIX)
+    set(PLUGIN_FORMATS VST3 LV2 Standalone)
+    set(NEEDS_WEBVIEW2 FALSE)
+    set(WEBVIEW_BACKEND "WebKitGTK")
+    set(LV2_URI "https://github.com/noizefield/audio-plugin-coder/CloudWash")
+else()
+    message(FATAL_ERROR "Unsupported platform")
+endif()
+
+message(STATUS "CloudWash: Building for ${PLUGIN_FORMATS}")
+message(STATUS "CloudWash: WebView backend: ${WEBVIEW_BACKEND}")
+
+# ============================================
+# BINARY DATA (Web UI Resources)
+# ============================================
 juce_add_binary_data(CloudWash_WebUI
     SOURCES
         Source/ui/public/index.html
@@ -10,18 +37,27 @@ juce_add_binary_data(CloudWash_WebUI
         Source/ui/public/js/juce/check_native_interop.js
 )
 
-# Create the plugin target
+# ============================================
+# PLUGIN DEFINITION
+# ============================================
 juce_add_plugin(CloudWash
     COMPANY_NAME "APC"
     PLUGIN_MANUFACTURER_CODE Apco
     PLUGIN_CODE CldW
-    FORMATS VST3 Standalone
+    FORMATS ${PLUGIN_FORMATS}
     PRODUCT_NAME "CloudWash"
-    NEEDS_WEBVIEW2 TRUE
+    NEEDS_WEBVIEW2 ${NEEDS_WEBVIEW2}
     VST3_CATEGORIES Fx Delay Modulation
+    AU_MAIN_TYPE ${AU_MAIN_TYPE}
+    LV2URI ${LV2_URI}
+
+    # Icon for standalone executable (will be added post-build)
+    # ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/Assets/icon.ico"
 )
 
-# Add source files
+# ============================================
+# SOURCE FILES
+# ============================================
 target_sources(CloudWash
     PRIVATE
         Source/PluginProcessor.cpp
@@ -38,22 +74,32 @@ target_sources(CloudWash
         Source/dsp/stmlib/dsp/units.cc
 )
 
-# Include directories for DSP
+# ============================================
+# INCLUDE DIRECTORIES
+# ============================================
 target_include_directories(CloudWash
     PRIVATE
         Source/dsp
 )
 
-# Link JUCE modules
+# ============================================
+# LINK LIBRARIES
+# ============================================
 target_link_libraries(CloudWash
     PRIVATE
         CloudWash_WebUI
         juce::juce_audio_basics
         juce::juce_audio_devices
         juce::juce_audio_formats
+        juce::juce_audio_plugin_client
         juce::juce_audio_processors
         juce::juce_audio_utils
+        juce::juce_core
+        juce::juce_data_structures
         juce::juce_dsp
+        juce::juce_events
+        juce::juce_graphics
+        juce::juce_gui_basics
         juce::juce_gui_extra
     PUBLIC
         juce::juce_recommended_config_flags
@@ -61,11 +107,49 @@ target_link_libraries(CloudWash
         juce::juce_recommended_warning_flags
 )
 
-# WebView2 compile definitions (CRITICAL for WebView functionality)
+# ============================================
+# COMPILE DEFINITIONS (Platform-Specific)
+# ============================================
+
+# Base definitions for all platforms
 target_compile_definitions(CloudWash
     PUBLIC
         JUCE_WEB_BROWSER=1
-        JUCE_USE_WIN_WEBVIEW2_WITH_STATIC_LINKING=1
         JUCE_VST3_CAN_REPLACE_VST2=0
         _USE_MATH_DEFINES=1
 )
+
+# Windows-specific definitions
+if(WIN32)
+    target_compile_definitions(CloudWash
+        PUBLIC
+            JUCE_USE_WIN_WEBVIEW2_WITH_STATIC_LINKING=1
+    )
+endif()
+
+# macOS-specific definitions
+if(APPLE)
+    target_compile_definitions(CloudWash
+        PUBLIC
+            JUCE_USE_CURL=0
+    )
+endif()
+
+# Linux-specific definitions
+if(UNIX AND NOT APPLE)
+    target_compile_definitions(CloudWash
+        PUBLIC
+            JUCE_USE_CURL=0
+            JUCE_JACK=1
+    )
+endif()
+
+# ============================================
+# MACOS UNIVERSAL BINARY SUPPORT
+# ============================================
+if(APPLE)
+    set_target_properties(CloudWash PROPERTIES
+        XCODE_ATTRIBUTE_ARCHS "x86_64;arm64"
+        XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH NO
+    )
+endif()

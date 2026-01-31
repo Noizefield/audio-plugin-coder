@@ -1,0 +1,250 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      plugin_name:
+        description: 'Plugin name to build'
+        required: true
+        type: string
+      platforms:
+        description: 'Platforms to build (windows,macos,linux,all)'
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - windows
+          - macos
+          - linux
+          - windows,macos
+          - windows,linux
+          - macos,linux
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  # ============================================
+  # WINDOWS BUILD
+  # ============================================
+  build-windows:
+    if: github.event.inputs.platforms == 'all' || contains(github.event.inputs.platforms, 'windows') || github.event_name == 'push'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+
+      - name: Build VST3
+        run: |
+          cmake --build build --config Release --target "${{ inputs.plugin_name }}_VST3"
+
+      - name: Build Standalone
+        run: |
+          cmake --build build --config Release --target "${{ inputs.plugin_name }}_Standalone"
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ inputs.plugin_name }}
+          path: |
+            build/*_artefacts/Release/*.vst3
+            build/*_artefacts/Release/*.exe
+          retention-days: 30
+
+  # ============================================
+  # MACOS BUILD
+  # ============================================
+  build-macos:
+    if: github.event.inputs.platforms == 'all' || contains(github.event.inputs.platforms, 'macos') || github.event_name == 'push'
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Dependencies
+        run: |
+          brew install cmake
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build -G Xcode \
+            -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13
+
+      - name: Build VST3
+        run: |
+          cmake --build build --config Release --target "${{ inputs.plugin_name }}_VST3"
+
+      - name: Build AU
+        run: |
+          cmake --build build --config Release --target "${{ inputs.plugin_name }}_AU"
+
+      - name: Build Standalone
+        run: |
+          cmake --build build --config Release --target "${{ inputs.plugin_name }}_Standalone"
+
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ inputs.plugin_name }}
+          path: |
+            build/*_artefacts/Release/*.vst3
+            build/*_artefacts/Release/*.component
+            build/*_artefacts/Release/*.app
+          retention-days: 30
+
+  # ============================================
+  # LINUX BUILD
+  # ============================================
+  build-linux:
+    if: github.event.inputs.platforms == 'all' || contains(github.event.inputs.platforms, 'linux') || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            libasound2-dev \
+            libfreetype6-dev \
+            libgl1-mesa-dev \
+            libx11-dev \
+            libxcomposite-dev \
+            libxcursor-dev \
+            libxext-dev \
+            libxinerama-dev \
+            libxrandr-dev \
+            libwebkit2gtk-4.0-dev
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build VST3
+        run: |
+          cmake --build build --target "${{ inputs.plugin_name }}_VST3"
+
+      - name: Build LV2
+        run: |
+          cmake --build build --target "${{ inputs.plugin_name }}_LV2"
+
+      - name: Build Standalone
+        run: |
+          cmake --build build --target "${{ inputs.plugin_name }}_Standalone"
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ inputs.plugin_name }}
+          path: |
+            build/*_artefacts/*.vst3
+            build/*_artefacts/*.lv2
+            build/*_artefacts/${{ inputs.plugin_name }}
+          retention-days: 30
+
+  # ============================================
+  # CREATE RELEASE
+  # ============================================
+  release:
+    needs: [build-windows, build-macos, build-linux]
+    if: always() && (needs.build-windows.result == 'success' || needs.build-macos.result == 'success' || needs.build-linux.result == 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: "*-${{ inputs.plugin_name }}"
+
+      - name: List Downloaded Artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          find artifacts -type f
+
+      - name: Create Release Archives
+        run: |
+          PLUGIN_NAME="${{ inputs.plugin_name }}"
+          VERSION="${{ github.ref_name }}"
+          
+          mkdir -p release
+          
+          # Package Windows artifacts
+          if [ -d "artifacts/windows-${PLUGIN_NAME}" ]; then
+            cd "artifacts/windows-${PLUGIN_NAME}"
+            zip -r "../../release/${PLUGIN_NAME}-${VERSION}-Windows.zip" .
+            cd ../..
+          fi
+          
+          # Package macOS artifacts
+          if [ -d "artifacts/macos-${PLUGIN_NAME}" ]; then
+            cd "artifacts/macos-${PLUGIN_NAME}"
+            zip -r "../../release/${PLUGIN_NAME}-${VERSION}-macOS.zip" .
+            cd ../..
+          fi
+          
+          # Package Linux artifacts
+          if [ -d "artifacts/linux-${PLUGIN_NAME}" ]; then
+            cd "artifacts/linux-${PLUGIN_NAME}"
+            zip -r "../../release/${PLUGIN_NAME}-${VERSION}-Linux.zip" .
+            cd ../..
+          fi
+          
+          echo "Release archives created:"
+          ls -la release/
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release/*
+          generate_release_notes: true
+          body: |
+            ## ${{ inputs.plugin_name }} Release
+            
+            ### Installation
+            - **Windows**: Extract the ZIP and run the installer or copy VST3 to your plugins folder
+            - **macOS**: Extract the ZIP and install VST3/AU components to the appropriate folders
+            - **Linux**: Extract the ZIP and copy VST3/LV2 to your plugins folder
+            
+            ### Supported Formats
+            - VST3 (All platforms)
+            - AU (macOS only)
+            - LV2 (Linux only)
+            - Standalone (All platforms)
+            
+            ### System Requirements
+            - **Windows**: Windows 10/11, 64-bit, WebView2 Runtime
+            - **macOS**: macOS 10.13+, Intel or Apple Silicon
+            - **Linux**: Ubuntu 20.04+ or equivalent, WebKitGTK
+
+      - name: Upload Release Artifacts (Manual Trigger)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ inputs.plugin_name }}
+          path: release/*
+          retention-days: 30
