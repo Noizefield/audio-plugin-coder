@@ -77,7 +77,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          brew install cmake
+          brew install cmake || true
 
       - name: Configure CMake
         run: |
