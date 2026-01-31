@@ -17,7 +17,7 @@ if ($state.current_phase -ne "code_complete") {
 ```
 
 **Execute Skill:**
-Load and execute `..claude\skills\skill_packaging\SKILL.md`
+Load and execute `..claude\skills\ship\SKILL.md`
 
 **Validation:**
 - Verify all formats built (VST3/AU/CLAP)

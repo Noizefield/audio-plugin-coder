@@ -20,7 +20,7 @@ Backup-PluginState -PluginPath "plugins\$PluginName"
 ```
 
 **Execute Skill:**
-Load and execute `..claude\skills\skill_implementation\SKILL.md`
+Load and execute `..claude\skills\impl\SKILL.md`
 
 **Key Steps:**
 1. **Design Conversion:** Convert approved design specs to framework-specific code (WebView HTML/JS or Visage C++)

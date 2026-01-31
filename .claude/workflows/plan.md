@@ -9,7 +9,7 @@ description: "PHASE 2: Architecture - Define structure and UI framework"
 2. Check required files exist from ideation phase
 
 **Execute Skill:**
-Load and follow `..claude/skills/skill_planning.md` exactly.
+Load and follow `..claude/skills/plan/SKILL.md` exactly.
 
 **CRITICAL UI Framework Decision:**
 - Read user requirements

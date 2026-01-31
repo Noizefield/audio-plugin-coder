@@ -24,7 +24,7 @@ if ($state.ui_framework -eq "pending") {
 **Framework Router:**
 
 **FOR ALL FRAMEWORKS (Visage and WebView):**
-- Load `..claude\skills\skill_design\SKILL.md`
+- Load `..claude\skills\design\SKILL.md`
 - Create framework-agnostic design specifications and browser-previewable mockup
 - NO production framework-specific code generation
 - Design phase focuses on creative iteration and approval

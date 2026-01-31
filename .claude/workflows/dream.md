@@ -17,7 +17,7 @@ if (Test-Path "plugins\$PluginName") {
 ```
 
 **Execute Skill:**
-Load and execute `..claude\skills\skill_ideation\SKILL.md`
+Load and execute `..claude\skills\dream\SKILL.md`
 
 **Validation:**
 - Verify `plugins\[Name]\status.json` exists
@@ -54,7 +54,7 @@ if (-not (Test-PluginState -PluginPath "plugins\$PluginName" -RequiredPhase "ide
 ```
 
 **Execute Skill:**
-Load and execute `..claude\skills\skill_planning\SKILL.md`
+Load and execute `..claude\skills\plan\SKILL.md`
 
 **Critical Decision Point:**
 This phase MUST determine and set `ui_framework` in status.json:
