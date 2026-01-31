@@ -42,7 +42,7 @@ audio-plugin-coder/
 For Windows development:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build-and-install.ps1 -PluginName CloudWash
+powershell -ExecutionPolicy Bypass -File .\scripts\build-and-install.ps1 -PluginName [Plugin Name]
 ```
 
 Options:

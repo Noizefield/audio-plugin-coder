@@ -110,9 +110,11 @@
             width: 36px;
             height: 36px;
             opacity: 1;
-            pointer-events: none;
+            pointer-events: auto;
             transition: opacity 200ms ease;
             margin-bottom: 10px;
+            display: block;
+            cursor: pointer;
         }
 
         .logo-container:hover {
@@ -601,7 +603,7 @@
             <div class="freeze-led" id="freezeLED"></div>
         </div>
 
-        <div class="logo-container">
+        <div class="logo-container" id="logoLink">
             <svg viewBox="0 0 89.98 89.84" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                 <defs>
                     <style>
@@ -900,6 +902,36 @@
         // ============================================================================
         console.log("CloudWash Starting initialization...");
 
+        // ============================================================================
+        // LOGO LINK HANDLER - Opens noizefield.com in External Browser
+        // ============================================================================
+        function initializeLogoLink() {
+            const logoElement = document.getElementById('logoLink');
+
+            if (!logoElement) {
+                console.warn('Logo element not found');
+                return;
+            }
+
+            // Make logo clickable
+            logoElement.style.cursor = 'pointer';
+
+            logoElement.addEventListener('click', () => {
+                console.log('Logo clicked - opening noizefield.com');
+
+                // Send event to JUCE backend to open URL in default browser
+                if (window.__JUCE__ && window.__JUCE__.backend) {
+                    window.__JUCE__.backend.emitEvent("openExternalURL", {
+                        url: "https://noizefield.com"
+                    });
+                } else {
+                    console.warn('JUCE backend not available - cannot open external URL');
+                }
+            });
+
+            console.log('✓ Logo is clickable (opens https://noizefield.com in external browser)');
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
             console.log("=== CloudWash Initialization ===");
 
@@ -991,6 +1023,15 @@
                     } catch (e) {
                         console.error("✗ Presets init failed:", e);
                         throw new Error("Presets: " + e.message);
+                    }
+
+                    try {
+                        console.log("Initializing logo link...");
+                        initializeLogoLink();
+                        console.log("✓ Logo link initialized");
+                    } catch (e) {
+                        console.error("✗ Logo link init failed:", e);
+                        // Non-critical, don't throw
                     }
 
                     console.log("✓ CloudWash UI fully initialized");

@@ -145,12 +145,16 @@ if (-not (Test-Path $TemplatePath)) {
 
 $Template = Get-Content $TemplatePath -Raw
 
+# Get absolute path to icon file
+$IconAbsolutePath = (Resolve-Path $IconPath).Path
+
 # Replace placeholders
 $IssContent = $Template `
     -replace '{#PluginName}', $PluginName `
     -replace '{#PluginVersion}', $Version `
     -replace '{#CompanyName}', $CompanyName `
-    -replace '{#PluginURL}', $PluginURL
+    -replace '{#PluginURL}', $PluginURL `
+    -replace '{#IconPath}', $IconAbsolutePath
 
 # Create build directory for installer
 $InstallerBuildDir = "build\installer"

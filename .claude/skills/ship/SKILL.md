@@ -96,6 +96,64 @@ Write-Host "  GitHub Actions: $($PlatformsNeedingGitHub -join ', ')" -Foreground
 
 ## STEP 3: LOCAL BUILD PROCESS (If Selected)
 
+### 3.0 Prepare Documentation (AUTOMATIC)
+
+**CRITICAL**: This step runs BEFORE installer creation and ensures documentation exists.
+
+```powershell
+# Check if Documentation folder exists
+$DocPath = "plugins\$PluginName\Documentation"
+
+if (-not (Test-Path $DocPath)) {
+    Write-Host "Creating Documentation folder..." -ForegroundColor Yellow
+    New-Item -ItemType Directory -Path $DocPath -Force | Out-Null
+
+    # Generate basic USER_MANUAL.md from plugin metadata
+    Write-Host "Generating basic documentation..." -ForegroundColor Yellow
+    $ManualContent = @"
+# $PluginName User Manual
+
+**Version $Version**
+
+## Installation
+See the installer for installation instructions.
+
+## Parameters
+[Auto-generated parameter list would go here]
+
+## Credits
+Built with Audio Plugin Coder (APC)
+
+**© $(Get-Date -Format yyyy)** - https://noizefield.com
+"@
+    Set-Content -Path "$DocPath\USER_MANUAL.md" -Value $ManualContent
+
+    Write-Host "✓ Basic documentation created" -ForegroundColor Green
+    Write-Host "  You can edit: $DocPath\USER_MANUAL.md" -ForegroundColor Cyan
+} else {
+    Write-Host "✓ Documentation folder exists" -ForegroundColor Green
+
+    # List what will be included
+    $DocFiles = Get-ChildItem -Path $DocPath -File -Recurse
+    if ($DocFiles.Count -gt 0) {
+        Write-Host "  Files to include in installer:" -ForegroundColor Cyan
+        foreach ($file in $DocFiles) {
+            Write-Host "    - $($file.Name)" -ForegroundColor Gray
+        }
+    } else {
+        Write-Warning "Documentation folder is empty! Add files to: $DocPath"
+    }
+}
+```
+
+**Philosophy**:
+- Documentation folder is ALWAYS created (even if empty)
+- If empty, basic documentation is auto-generated
+- User can add/edit files in Documentation\ folder
+- Installer automatically includes ALL files from Documentation\
+
+---
+
 ### 3.1 Validate Local Build
 
 ```powershell

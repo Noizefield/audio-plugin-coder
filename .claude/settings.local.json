@@ -68,7 +68,9 @@
       "Bash(tree:*)",
       "Bash(Test-Path \"R:\\\\_VST_Development_2026\\\\audio-plugin-coder\\\\plugins\\\\CloudWash\\\\Source\\\\PluginProcessor.cpp\")",
       "Bash(Get-ChildItem -Path \".kilocode\" -Recurse -Filter \"*.md\")",
-      "Bash(Get-ChildItem \"R:\\\\_VST_Development_2026\\\\audio-plugin-coder\\\\plugins\\\\CloudWash\\\\Assets\" -ErrorAction SilentlyContinue)"
+      "Bash(Get-ChildItem \"R:\\\\_VST_Development_2026\\\\audio-plugin-coder\\\\plugins\\\\CloudWash\\\\Assets\" -ErrorAction SilentlyContinue)",
+      "Bash(New-Item -ItemType Directory -Path \"R:\\\\_VST_Development_2026\\\\audio-plugin-coder\\\\plugins\\\\CloudWash\\\\Documentation\" -Force)",
+      "Bash(Test-Path \"R:\\\\_VST_Development_2026\\\\audio-plugin-coder\\\\plugins\\\\CloudWash\\\\Assets\\\\icon.ico\")"
     ]
   }
 }

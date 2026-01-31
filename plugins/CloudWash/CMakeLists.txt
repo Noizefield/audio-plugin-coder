@@ -41,8 +41,8 @@ juce_add_binary_data(CloudWash_WebUI
 # PLUGIN DEFINITION
 # ============================================
 juce_add_plugin(CloudWash
-    COMPANY_NAME "APC"
-    PLUGIN_MANUFACTURER_CODE Apco
+    COMPANY_NAME "Noizefield"
+    PLUGIN_MANUFACTURER_CODE Nfld
     PLUGIN_CODE CldW
     FORMATS ${PLUGIN_FORMATS}
     PRODUCT_NAME "CloudWash"
@@ -50,9 +50,6 @@ juce_add_plugin(CloudWash
     VST3_CATEGORIES Fx Delay Modulation
     AU_MAIN_TYPE ${AU_MAIN_TYPE}
     LV2URI ${LV2_URI}
-
-    # Icon for standalone executable (will be added post-build)
-    # ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/Assets/icon.ico"
 )
 
 # ============================================

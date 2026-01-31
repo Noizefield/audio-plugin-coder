@@ -87,6 +87,14 @@ CloudWashAudioProcessorEditor::CloudWashAudioProcessorEditor (CloudWashAudioProc
             .withOptionsFrom(freezeRelay)
             .withOptionsFrom(qualityRelay)
             .withOptionsFrom(sampleModeRelay)
+            .withEventListener("openExternalURL", [this](const juce::var& event) {
+                // Extract URL from event data
+                if (event.hasProperty(juce::Identifier("url")))
+                {
+                    juce::String url = event.getProperty(juce::Identifier("url"), juce::var()).toString();
+                    openExternalURL(url);
+                }
+            })
     );
 
     // CRITICAL: addAndMakeVisible AFTER attachments are created
@@ -175,6 +183,19 @@ void CloudWashAudioProcessorEditor::timerCallback()
         // Silently ignore WebView errors during timer callback
         // This prevents crashes if WebView isn't fully ready
     }
+}
+
+//==============================================================================
+// EXTERNAL URL HANDLER
+//==============================================================================
+
+void CloudWashAudioProcessorEditor::openExternalURL(const juce::String& url)
+{
+    DBG("Opening external URL: " + url);
+
+    // Use JUCE's URL class to open in system's default browser
+    juce::URL externalUrl(url);
+    externalUrl.launchInDefaultBrowser();
 }
 
 //==============================================================================

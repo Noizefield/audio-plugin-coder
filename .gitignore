@@ -3,6 +3,7 @@
 # plugin folder
 plugins/AngelGrain
 plugins/gainknob
+plugins/CloudWash/Org_Code
 
 # _tools folder
 _tools/DebugView/

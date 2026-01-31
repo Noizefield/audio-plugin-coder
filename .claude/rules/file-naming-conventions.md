@@ -48,6 +48,18 @@ plugins\[Name]\
 - **PluginEditor.cpp** - UI editor implementation
 - **VisageControls.h** - Custom Visage widgets (Visage only)
 
+### Documentation\ Directory
+- **USER_MANUAL.md** - Main user manual (auto-generated or user-created)
+- **QUICKSTART.md** - Quick start guide (optional)
+- **[Any files]** - All files automatically included in installer
+- **Purpose**: User-facing documentation, shipped with plugin
+- **Auto-inclusion**: Installer template automatically copies all files from this folder
+
+### Assets\ Directory
+- **icon.ico** - Plugin icon for Windows installer and shortcuts
+- **Purpose**: Graphics and branding assets
+- **Required**: icon.ico must exist for professional installer
+
 ### Root Level
 - **status.json** - Project state and configuration
 - **README.md** - Plugin documentation and usage

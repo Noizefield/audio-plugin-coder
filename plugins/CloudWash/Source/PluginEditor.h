@@ -80,6 +80,9 @@ private:
     static const char* getMimeForExtension(const juce::String& extension);
     static juce::String getExtension(juce::String filename);
 
+    // External URL handler for logo link
+    void openExternalURL(const juce::String& url);
+
     // Reference to processor
     CloudWashAudioProcessor& audioProcessor;
 

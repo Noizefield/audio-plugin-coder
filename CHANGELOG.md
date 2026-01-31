@@ -12,7 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 4 processing modes (Granular, Pitch Shifter, Looping Delay, Spectral)
   - WebView-based UI with real-time visualization
   - 13 parameters with JUCE backend integration
-  - Noizefield branding integration
+  - Noizefield branding with clickable logo (opens https://noizefield.com in external browser)
+  - Comprehensive 300+ line USER_MANUAL.md with full documentation
+- **Automatic Documentation System**
+  - `Documentation/` folder auto-created for all plugins
+  - All files in Documentation/ automatically included in installer
+  - Documentation placed inside plugin bundle (keeps VST3 root clean)
+  - Start Menu shortcuts to User Manual and Documentation folder
+  - Auto-generation of basic manual if folder is empty
+  - Documentation system integrated into `/ship` workflow
+  - New guide: `.claude/guides/documentation-system.md`
+- **WebView External URL Support**
+  - Plugins can now open URLs in system's default browser
+  - Implemented via `window.__JUCE__.backend.emitEvent()` and `juce::URL::launchInDefaultBrowser()`
+  - Example: CloudWash logo opens noizefield.com when clicked
 - Troubleshooting auto-capture system
   - Known issues database (`.claude/troubleshooting/known-issues.yaml`)
   - Auto-documentation of solutions after 3 failed attempts
@@ -21,11 +34,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `status.json` tracking for all plugins
   - Phase gating and validation
   - Backup and rollback capabilities
-- **Automatic icon embedding for Windows executables**
-  - New script `scripts/add-icon-to-exe.ps1` using rcedit tool
-  - Automatic download and integration of rcedit-x64.exe
-  - Build script automatically embeds icons in standalone .exe files
-  - Icons now display correctly in Windows Explorer, taskbar, and shortcuts
+- GitHub Actions cross-platform build workflow
+  - Automated builds for Windows, macOS, and Linux
+  - Manual trigger via workflow_dispatch
+  - Automatic releases on git tags
+
+### Changed
+- **Installer template improvements**
+  - Documentation now placed inside plugin bundle instead of VST3 root folder
+  - Fixed desktop shortcut icons (now references icon.ico correctly)
+  - Added Start Menu shortcuts to documentation
+  - SetupIconFile now uses absolute path for reliability
+  - Icon files copied to both VST3 and Standalone installation folders
+- **File naming conventions updated**
+  - Added `Documentation/` and `Assets/` to standard plugin structure
+  - Standardized icon.ico location in `Assets/` folder
+- CloudWash plugin enhancements
+  - Updated user manual with platform information and APC credits
+  - Clickable Noizefield logo in bottom-right corner
 
 ### Changed
 - Improved README with correct repository links
@@ -127,6 +153,12 @@ The following features were designed but not fully implemented:
   - Windows installer (.exe) created locally via PowerShell script
   - **TODO**: Add installer creation steps to GitHub Actions for all platforms
   - This would enable fully automated release with installers
+
+- **GitHub Actions Build Failures** - KNOWN ISSUES
+  - macOS build fails: `JUCEModuleSupport.cmake` not found during CMake configuration
+  - Linux build fails: `libwebkit2gtk` package compatibility issues on Ubuntu 24.04
+  - **TODO**: Fix submodule checkout and WebKit package dependencies for CI builds
+  - Windows builds are working correctly
 
 ---
 

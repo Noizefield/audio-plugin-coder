@@ -34,7 +34,7 @@ SolidCompression=yes
 WizardStyle=modern
 
 ; Appearance
-SetupIconFile=..\..\plugins\{#PluginName}\Assets\icon.ico
+SetupIconFile={#IconPath}
 UninstallDisplayIcon={commoncf}\VST3\{#PluginName}.vst3\icon.ico
 UninstallDisplayName={#PluginName} {#PluginVersion}
 
@@ -90,33 +90,56 @@ Source: "..\..\build\plugins\{#PluginName}\{#PluginName}_artefacts\Release\Stand
     Components: standalone; \
     Flags: ignoreversion
 
+; Copy icon.ico to standalone folder for shortcut icons
+Source: "..\..\plugins\{#PluginName}\Assets\icon.ico"; \
+    DestDir: "{autopf}\{#PluginName}"; \
+    Components: standalone; \
+    Flags: ignoreversion
+
 ; Presets (optional - only if they exist)
 Source: "..\..\plugins\{#PluginName}\Presets\*"; \
     DestDir: "{commonappdata}\{#PluginName}\Presets"; \
     Components: presets; \
     Flags: recursesubdirs createallsubdirs skipifsourcedoesntexist
 
-; Documentation (optional)
-Source: "..\..\plugins\{#PluginName}\README.md"; \
-    DestDir: "{app}\.."; \
+; Documentation - Auto-include ALL files from Documentation folder
+; This goes INSIDE the plugin bundle, not in VST3 root (keeps VST3 folder clean)
+Source: "..\..\plugins\{#PluginName}\Documentation\*"; \
+    DestDir: "{app}\Documentation"; \
+    Components: documentation; \
+    Flags: recursesubdirs createallsubdirs skipifsourcedoesntexist ignoreversion
+
+; Also copy documentation to Standalone folder (if standalone is installed)
+Source: "..\..\plugins\{#PluginName}\Documentation\*"; \
+    DestDir: "{autopf}\{#PluginName}\Documentation"; \
+    Components: standalone documentation; \
+    Flags: recursesubdirs createallsubdirs skipifsourcedoesntexist ignoreversion
+
+; Root-level license files (required for compliance)
+Source: "..\..\dist\LICENSE.txt"; \
+    DestDir: "{app}\Documentation"; \
     Components: documentation; \
     Flags: ignoreversion skipifsourcedoesntexist
 
 Source: "..\..\CHANGELOG.md"; \
-    DestDir: "{app}\.."; \
+    DestDir: "{app}\Documentation"; \
     Components: documentation; \
-    Flags: ignoreversion
-
-Source: "..\..\dist\LICENSE.txt"; \
-    DestDir: "{app}\.."; \
-    Components: documentation; \
-    Flags: ignoreversion
+    Flags: ignoreversion skipifsourcedoesntexist
 
 [Icons]
 ; Start Menu shortcuts
 Name: "{group}\{#PluginName}"; \
     Filename: "{autopf}\{#PluginName}\{#PluginName}.exe"; \
+    IconFilename: "{autopf}\{#PluginName}\icon.ico"; \
     Components: standalone
+
+Name: "{group}\User Manual"; \
+    Filename: "{app}\Documentation\USER_MANUAL.md"; \
+    Components: documentation
+
+Name: "{group}\Documentation Folder"; \
+    Filename: "{app}\Documentation"; \
+    Components: documentation
 
 Name: "{group}\Uninstall {#PluginName}"; \
     Filename: "{uninstallexe}"
@@ -124,6 +147,7 @@ Name: "{group}\Uninstall {#PluginName}"; \
 ; Desktop shortcut (optional, user can uncheck)
 Name: "{autodesktop}\{#PluginName}"; \
     Filename: "{autopf}\{#PluginName}\{#PluginName}.exe"; \
+    IconFilename: "{autopf}\{#PluginName}\icon.ico"; \
     Components: standalone; \
     Tasks: desktopicon
 

@@ -28,7 +28,7 @@ This guide covers how to create installers for all platforms.
 ```powershell
 # Navigate to project root
 # Run the installer creation script
-.\scripts\installer\create-windows-installer.ps1 -PluginName "CloudWash" -Version "1.0.0"
+.\scripts\installer\create-windows-installer.ps1 -PluginName [Plugin Name] -Version "1.0.0"
 ```
 
 ### Parameters
