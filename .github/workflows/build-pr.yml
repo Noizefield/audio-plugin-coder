@@ -3,8 +3,7 @@ name: Build PR
 on:
   pull_request:
     branches: [main, master, develop]
-  push:
-    branches: [main, master, develop]
+  workflow_dispatch:
 
 env:
   BUILD_TYPE: Release
