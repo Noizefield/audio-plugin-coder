@@ -166,7 +166,8 @@ jobs:
             libxinerama-dev \
             libxrandr-dev \
             libwebkit2gtk-4.1-dev \
-            libjack-jackd2-dev
+            libjack-jackd2-dev \
+            xvfb
 
       - name: Configure CMake
         run: |
@@ -178,11 +179,11 @@ jobs:
 
       - name: Build LV2
         run: |
-          cmake --build build --target "${{ matrix.plugin }}_LV2"
+          xvfb-run cmake --build build --target "${{ matrix.plugin }}_LV2"
 
       - name: Build Standalone
         run: |
-          cmake --build build --target "${{ matrix.plugin }}_Standalone"
+          xvfb-run cmake --build build --target "${{ matrix.plugin }}_Standalone"
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
