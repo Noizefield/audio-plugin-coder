@@ -1,5 +1,0 @@
-*.c     text eol=lf
-*.cpp   text eol=lf
-*.h     text eol=lf
-*.mm    text eol=lf
-*.cmake text eol=lf
