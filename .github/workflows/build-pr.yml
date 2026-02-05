@@ -38,7 +38,7 @@ jobs:
           echo "$CHANGED_FILES"
           
           # Extract unique plugin names from changes in plugins/ directory
-          PLUGINS=$(echo "$CHANGED_FILES" | grep -E "^plugins/" | cut -d'/' -f2 | sort -u | jq -R . | jq -s .)
+          PLUGINS=$(echo "$CHANGED_FILES" | grep -E "^plugins/" | cut -d'/' -f2 | sort -u | jq -R . | jq -sc .)
           
           echo "Detected plugins: $PLUGINS"
           echo "plugins=$PLUGINS" >> $GITHUB_OUTPUT
