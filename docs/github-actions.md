@@ -107,12 +107,21 @@ Built for both `x86_64` (Intel) and `arm64` (Apple Silicon) architectures.
 
 **Steps:**
 1. Checkout repository with submodules
-2. Install dependencies (ALSA, Freetype, OpenGL, X11, WebKitGTK)
+2. Install dependencies (ALSA, Freetype, OpenGL, X11, WebKitGTK, JACK, **xvfb**)
 3. Configure CMake
 4. Build VST3 target
-5. Build LV2 target
-6. Build Standalone target
+5. Build LV2 target (**with xvfb-run** — manifest gen needs display)
+6. Build Standalone target (**with xvfb-run**)
 7. Upload artifacts
+
+**Complete Dependencies:**
+```yaml
+cmake libasound2-dev libfreetype6-dev libgl1-mesa-dev libx11-dev
+libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev
+libwebkit2gtk-4.1-dev libjack-jackd2-dev xvfb
+```
+
+**Critical:** LV2 and Standalone builds use `xvfb-run cmake --build ...` because JUCE's LV2 manifest generator loads the plugin post-link to extract metadata. WebView plugins init GTK, which requires a display. Headless CI has none → `xvfb-run` provides virtual framebuffer.
 
 **Outputs:**
 - `{PluginName}.vst3` bundle
@@ -145,6 +154,12 @@ The release job runs after all platform builds complete (successfully or not).
 ├── {PluginName}.lv2/
 └── {PluginName}
 ```
+
+**Artifact Upload Paths:**
+
+Linux artifacts are nested deeper than Windows/macOS:
+- Actual output: `build/plugins/{PluginName}/{PluginName}_artefacts/Release/{VST3,LV2,Standalone}/`
+- Upload globs use `build/**/Release/VST3/` etc. to match regardless of plugin subdirectory depth
 
 ## Using the Workflows
 

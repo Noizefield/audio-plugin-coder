@@ -359,6 +359,117 @@ YourPluginEditor::YourPluginEditor(YourAudioProcessor& p)
 
 ---
 
+#### Linux: Missing gtk/gtk.h (WebView Plugins)
+
+**Issue ID:** `linux-001`
+
+**Symptoms:**
+```
+fatal error: gtk/gtk.h: No such file or directory
+```
+
+**Root Cause:** Plugin CMakeLists.txt sets `NEEDS_WEBVIEW2` but not `NEEDS_WEB_BROWSER`. JUCE 8 has separate flags: `NEEDS_WEBVIEW2` (Windows only) and `NEEDS_WEB_BROWSER` (Linux only). Without the latter, GTK/WebKit include paths are never added.
+
+**Solution:**
+In plugin CMakeLists.txt, add for Linux:
+```cmake
+elseif(UNIX)
+    set(NEEDS_WEB_BROWSER TRUE)  # ADD THIS
+    ...
+endif()
+
+juce_add_plugin(PluginName
+    ...
+    NEEDS_WEB_BROWSER ${NEEDS_WEB_BROWSER}  # ADD THIS
+)
+```
+
+**Prevention:** All WebView plugins need both flags for cross-platform builds.
+
+---
+
+#### Linux CI: LV2 Build Fails "cannot open display"
+
+**Issue ID:** `linux-002`
+
+**Symptoms:**
+```
+(juce_linux_subprocess): Gtk-WARNING: cannot open display:
+gmake: *** [libPluginName.so] Error 141
+```
+
+**Root Cause:** JUCE's LV2 post-link step runs `juce_linux_subprocess` to load the plugin and extract metadata for `.ttl` manifests. WebView plugins init GTK, which requires X11 display. GitHub Actions runners are headless.
+
+**Solution:**
+Wrap LV2 and Standalone builds with `xvfb-run`:
+```yaml
+- name: Install deps
+  run: sudo apt-get install -y ... xvfb
+
+- name: Build LV2
+  run: xvfb-run cmake --build build --target PluginName_LV2
+```
+
+**Prevention:** Always use `xvfb-run` for LV2/Standalone builds on headless Linux CI.
+
+---
+
+#### macOS: libPluginName_SharedCode.a Not Found (Universal Binary)
+
+**Issue ID:** `macos-001`
+
+**Symptoms:**
+```
+clang++: error: no such file or directory: '.../libPluginName_SharedCode.a'
+warning: None of the architectures in ARCHS (x86_64;arm64) are valid
+```
+
+**Root Cause:** Per-target `XCODE_ATTRIBUTE_ARCHS` in plugin CMakeLists.txt conflicts with workflow's global `-DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"`. Xcode misinterprets the format, causing intermediate libs not to build.
+
+**Solution:**
+Remove this from plugin CMakeLists.txt:
+```cmake
+# DELETE THIS SECTION:
+if(APPLE)
+    set_target_properties(PluginName PROPERTIES
+        XCODE_ATTRIBUTE_ARCHS "x86_64;arm64"
+        XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH NO
+    )
+endif()
+```
+
+Universal binary config is handled by the global CMake flag at configure time.
+
+**Prevention:** Never set `XCODE_ATTRIBUTE_ARCHS` on individual targets when using `CMAKE_OSX_ARCHITECTURES`.
+
+---
+
+#### Git Submodules Not Initializing (CI)
+
+**Issue ID:** `ci-001`
+
+**Symptoms:**
+```
+CMake Error: include could not find requested file:
+  extras/Build/CMake/JUCEModuleSupport.cmake
+```
+
+**Root Cause:** `_tools/JUCE` was committed as 4600+ regular files instead of a git submodule reference. GitHub Actions `submodules: recursive` had no gitlink to follow, so it checked out the incomplete snapshot with `extras/Build/` missing.
+
+**Solution:**
+Convert to proper submodules:
+```bash
+git rm -r --cached _tools/JUCE _tools/visage _tools/pluginval
+rm -rf _tools/JUCE _tools/visage _tools/pluginval
+git submodule add https://github.com/juce-framework/JUCE _tools/JUCE
+git submodule add https://github.com/VitalAudio/visage _tools/visage
+git submodule add https://github.com/Tracktion/pluginval _tools/pluginval
+```
+
+**Prevention:** Always use `git submodule add`, never commit framework directories as regular files.
+
+---
+
 ## Debugging Techniques
 
 ### Enable Debug Logging

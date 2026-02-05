@@ -78,7 +78,7 @@ The root [`CMakeLists.txt`](CMakeLists.txt) configures the global build environm
 
 ```cmake
 cmake_minimum_required(VERSION 3.22)
-project(AudioPluginCoder VERSION 0.1.0)
+project(AudioPluginCoder VERSION 0.1.0 LANGUAGES C CXX)
 
 # C++ Standard
 set(CMAKE_CXX_STANDARD 20)
@@ -103,6 +103,7 @@ endforeach()
 - JUCE is added as a subdirectory (not called via `find_package`)
 - Automatically discovers plugins in `plugins/` directory
 - Sets global C++20 standard
+- **MUST declare `LANGUAGES C CXX`** — JUCE needs C for Sheenbidi (text rendering) and juceaide (build tool). Without C, `CMAKE_C_COMPILE_OBJECT` will be undefined at generate time
 
 ---
 
@@ -182,6 +183,35 @@ target_compile_definitions(${PLUGIN_NAME}
         JUCE_USE_WIN_WEBVIEW2_WITH_STATIC_LINKING=1
 )
 ```
+
+### **CRITICAL: Platform-Specific WebView Requirements**
+
+JUCE 8 has **two separate flags** for WebView plugins:
+
+| Platform | Flag | Purpose |
+|----------|------|---------|
+| Windows | `NEEDS_WEBVIEW2 TRUE` | Static-links WebView2 SDK |
+| **Linux** | **`NEEDS_WEB_BROWSER TRUE`** | Links webkit2gtk + GTK, adds include paths |
+| macOS | (neither) | Uses WKWebView (system framework) |
+
+**Linux plugins MUST set both flags:**
+
+```cmake
+elseif(UNIX)
+    set(PLUGIN_FORMATS VST3 LV2 Standalone)
+    set(NEEDS_WEBVIEW2 FALSE)
+    set(NEEDS_WEB_BROWSER TRUE)  # REQUIRED for Linux WebView
+    set(WEBVIEW_BACKEND "WebKitGTK")
+endif()
+
+juce_add_plugin(${PLUGIN_NAME}
+    ...
+    NEEDS_WEBVIEW2 ${NEEDS_WEBVIEW2}
+    NEEDS_WEB_BROWSER ${NEEDS_WEB_BROWSER}  # MUST pass this to juce_add_plugin
+)
+```
+
+**Without `NEEDS_WEB_BROWSER TRUE` on Linux:** Compiler will get `JUCE_WEB_BROWSER=1` but never receive `-I/usr/include/gtk-3.0` → `gtk/gtk.h: No such file or directory` → build fails.
 
 ### Format-Specific Settings
 
@@ -477,8 +507,16 @@ build-macos:
 
 **Requirements:**
 - GCC/Clang
-- CMake
-- Development libraries
+- CMake 3.22+
+- Development libraries (complete list below)
+- **xvfb** (for LV2/Standalone builds on headless CI)
+
+**Complete Linux Dependencies:**
+```bash
+cmake libasound2-dev libfreetype6-dev libgl1-mesa-dev libx11-dev
+libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev
+libwebkit2gtk-4.1-dev libjack-jackd2-dev xvfb
+```
 
 **GitHub Actions:**
 ```yaml
@@ -492,10 +530,20 @@ build-linux:
       run: |
         sudo apt-get update
         sudo apt-get install -y cmake libasound2-dev libfreetype6-dev \
-          libgl1-mesa-dev libx11-dev libwebkit2gtk-4.0-dev
-    - name: Build
+          libgl1-mesa-dev libx11-dev libxcomposite-dev libxcursor-dev \
+          libxext-dev libxinerama-dev libxrandr-dev libwebkit2gtk-4.1-dev \
+          libjack-jackd2-dev xvfb
+    - name: Configure
+      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+    - name: Build VST3
       run: cmake --build build --target MyPlugin_VST3
+    - name: Build LV2
+      run: xvfb-run cmake --build build --target MyPlugin_LV2
+    - name: Build Standalone
+      run: xvfb-run cmake --build build --target MyPlugin_Standalone
 ```
+
+**Why xvfb?** LV2 and Standalone builds run JUCE's manifest helper post-link, which loads the plugin to extract metadata. WebView plugins init GTK, requiring a display. `xvfb-run` provides a virtual framebuffer on headless CI. VST3 doesn't need it (no post-link subprocess).
 
 ---
 
