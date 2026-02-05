@@ -190,9 +190,9 @@ jobs:
         with:
           name: linux-${{ matrix.plugin }}-pr
           path: |
-            build/*_artefacts/*.vst3
-            build/*_artefacts/*.lv2
-            build/*_artefacts/${{ matrix.plugin }}
+            build/**/Release/VST3/
+            build/**/Release/LV2/
+            build/**/Release/Standalone/${{ matrix.plugin }}
           retention-days: 7
 
   # ============================================
