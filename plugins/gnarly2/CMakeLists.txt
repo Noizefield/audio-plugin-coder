@@ -16,6 +16,7 @@ elseif(APPLE)
 elseif(UNIX)
     set(PLUGIN_FORMATS VST3 LV2 Standalone)
     set(NEEDS_WEBVIEW2 FALSE)
+    set(NEEDS_WEB_BROWSER TRUE)
     set(WEBVIEW_BACKEND "WebKitGTK")
     set(LV2_URI "https://github.com/noizefield/audio-plugin-coder/gnarly2")
 else()
@@ -44,6 +45,7 @@ juce_add_plugin(gnarly2
     FORMATS ${PLUGIN_FORMATS}
     PRODUCT_NAME "Gnarly2"
     NEEDS_WEBVIEW2 ${NEEDS_WEBVIEW2}
+    NEEDS_WEB_BROWSER ${NEEDS_WEB_BROWSER}
     VST3_CATEGORIES Fx
     AU_MAIN_TYPE ${AU_MAIN_TYPE}
     LV2URI ${LV2_URI}

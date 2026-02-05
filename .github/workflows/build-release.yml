@@ -136,7 +136,8 @@ jobs:
             libxext-dev \
             libxinerama-dev \
             libxrandr-dev \
-            libwebkit2gtk-4.1-dev
+            libwebkit2gtk-4.1-dev \
+            libjack-jackd2-dev
 
       - name: Configure CMake
         run: |
