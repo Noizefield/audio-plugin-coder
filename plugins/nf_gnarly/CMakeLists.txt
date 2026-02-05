@@ -132,9 +132,4 @@ endif()
 # ============================================
 # MACOS UNIVERSAL BINARY SUPPORT
 # ============================================
-if(APPLE)
-    set_target_properties(nf_gnarly PROPERTIES
-        XCODE_ATTRIBUTE_ARCHS "x86_64;arm64"
-        XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH NO
-    )
-endif()
+# Handled via CMAKE_OSX_ARCHITECTURES at configure time (see workflow)
