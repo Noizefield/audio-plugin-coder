@@ -137,199 +137,89 @@ issues:
     critical_fix: "Order must be: 1. Relays 2. WebView 3. Attachments 4. addAndMakeVisible 5. goToURL 6. setSize"
     notes: "This is the #1 most critical WebView bug. Following AngelGrain pattern prevents this entirely."
 
-  - id: webview-005
-    title: "JUCE 8 WebView API - withUserDataFolder not a member of Options"
-    category: webview
-    severity: high
-    symptoms:
-      - "Compilation error: 'withUserDataFolder' is not a member of 'juce::WebBrowserComponent::Options'"
-      - "Build fails in PluginEditor.cpp"
-      - "Cannot convert from initializer list to WebBrowserComponent::Resource"
-    error_patterns:
-      - "withUserDataFolder"
-      - "is not a member"
-      - "C2039"
-    root_cause: "JUCE 8 API change: withUserDataFolder is not directly on Options class, it's on the nested WinWebView2 class"
-    resolution_status: solved
-    resolution_file: resolutions/webview-juce8-api-changes.md
-    frequency: 1
-    last_occurred: 2026-01-25
-    attempts_before_resolution: 3
-    prevention: "Use withWinWebView2Options(WinWebView2{}.withUserDataFolder(...)) instead"
-
-  - id: webview-006
-    title: "JUCE 8 WebView API - Resource requires std::vector<std::byte> not MemoryBlock"
-    category: webview
-    severity: high
-    symptoms:
-      - "Cannot convert from 'juce::MemoryBlock' to 'std::vector<std::byte>'"
-      - "Invalid aggregate initialization for WebBrowserComponent::Resource"
-      - "C2440 conversion error"
-    error_patterns:
-      - "cannot convert from 'juce::MemoryBlock'"
-      - "std::vector<std::byte>"
-      - "WebBrowserComponent::Resource"
-    root_cause: "JUCE 8 API change: Resource struct data field is now std::vector<std::byte> instead of MemoryBlock"
-    resolution_status: solved
-    resolution_file: resolutions/webview-juce8-api-changes.md
-    frequency: 1
-    last_occurred: 2026-01-25
-    attempts_before_resolution: 2
-    prevention: "Convert file data to std::vector<std::byte> before returning Resource"
-
-  - id: build-004
-    title: "JuceHeader.h not found - JUCE 8 migration"
-    category: build
-    severity: high
-    symptoms:
-      - "Cannot open include file: 'JuceHeader.h'"
-      - "C1083: Cannot open include file"
-      - "Build fails immediately"
-    error_patterns:
-      - "JuceHeader.h"
-      - "No such file or directory"
-      - "Cannot open include file"
-    root_cause: "JUCE 8 removed JuceHeader.h convenience header. Must include modules directly."
-    resolution_status: solved
-    resolution_file: resolutions/juce8-header-migration.md
-    frequency: 1
-    last_occurred: 2026-01-25
-    attempts_before_resolution: 1
-    prevention: "Use direct module includes: #include <juce_audio_processors/juce_audio_processors.h> etc"
-
-  - id: webview-007
-    title: "WebView shows black screen - embedded resources not loaded"
-    category: webview
-    severity: high
-    symptoms:
-      - "Plugin loads in DAW but shows only black screen"
-      - "No UI elements visible"
-      - "WebView component is created but content doesn't load"
-      - "Works during development but fails in DAW"
-    error_patterns:
-      - "black screen"
-      - "blank webview"
-      - "resources not loading"
-    root_cause: "Resource provider trying to load from file system using getCurrentWorkingDirectory() which is different in DAW than during development. Embedded BinaryData resources not being used."
-    resolution_status: solved
-    resolution_file: resolutions/webview-black-screen-resources.md
-    frequency: 1
-    last_occurred: 2026-01-25
-    attempts_before_resolution: 1
-    prevention: "Always use embedded BinaryData resources for production builds. Include BinaryData.h and map URL paths to BinaryData variables."
-  - id: webview-008
-    title: 'ES6 Modules fail in WebView - JavaScript not loading'
-    category: webview
-    severity: critical
-    symptoms:
-      - 'Plugin loads but UI incomplete (only dots visible, no knob arcs)'
-      - 'No animations or interactivity'
-      - 'JavaScript fails with CORS errors in browser tests'
-      - 'WebView shows static HTML but no JavaScript execution'
-      - 'file:// protocol blocks module loading'
-    error_patterns:
-      - 'Cross-Origin Request blocked'
-      - 'CORS request not http'
-      - 'script type="module"'
-      - 'import * as'
-    root_cause: 'ES6 modules require HTTP/HTTPS protocol. WebView uses custom protocol (juce://) which blocks ES6 imports. All JavaScript must be inline in HTML.'
-    resolution_status: solved
-    resolution_file: resolutions/webview-es6-modules-fail.md
-    frequency: 2
-    last_occurred: 2026-01-26
-    attempts_before_resolution: 4
-    prevention: 'ALWAYS use inline JavaScript in index.html. No external JS files. Embed JUCE library directly.'
-    critical_fix: 'Convert all external JS to inline <script> blocks. Copy JUCE library from js/juce/index.js and inline it.'
-    notes: 'Resolved in CloudWash by creating 978-line index.html with all JavaScript inline. This is #1 WebView issue for new developers.'
-
-  - id: crash-001
-    title: "Plugin crashes on load - nullptr dereference from non-existent parameter"
+  - id: linux-001
+    title: "Linux WebView plugin - gtk/gtk.h not found"
     category: build
     severity: critical
     symptoms:
-      - "Plugin crashes immediately when loaded in DAW"
-      - "Standalone crashes on launch"
-      - "Access violation in PluginEditor constructor"
-      - "Crash during parameter attachment creation"
+      - "fatal error: gtk/gtk.h: No such file or directory"
+      - "Compiler can't find GTK headers despite libwebkit2gtk installed"
+      - "JUCE_WEB_BROWSER=1 is defined but GTK includes missing"
     error_patterns:
-      - "Access violation reading location"
-      - "nullptr dereference"
-      - "getParameter returned null"
-    root_cause: "Code attempts to create parameter attachment for parameter that doesn't exist in createParameterLayout(). Calling apvts.getParameter('non_existent') returns nullptr, then dereferencing it crashes."
+      - "gtk/gtk.h: No such file"
+      - "fatal error: gtk"
+      - "webkit2gtk installed but headers not found"
+    root_cause: "JUCE 8 has TWO separate WebView flags: NEEDS_WEBVIEW2 (Windows) and NEEDS_WEB_BROWSER (Linux). Plugin only sets NEEDS_WEBVIEW2=FALSE on Linux, never sets NEEDS_WEB_BROWSER=TRUE. Without it, JUCE doesn't link webkit2gtk/GTK pkgconfig target, so include paths never get added."
     resolution_status: solved
-    resolution_file: resolutions/crash-001-nullptr-parameter.md
+    resolution_file: resolutions/linux-webview-needs-web-browser.md
     frequency: 1
-    last_occurred: 2026-01-29
-    attempts_before_resolution: 1
-    prevention: "ALWAYS verify parameter exists in createParameterLayout() before creating attachments. Use consistent parameter naming."
-    critical_fix: "Remove any parameter attachments that reference non-existent parameters. Check all getParameter() calls match layout."
-    notes: "Found in CloudWash - blend_mode parameter attachment created but parameter never added to layout."
+    last_occurred: 2026-02-05
+    attempts_before_resolution: 2
+    prevention: "ALWAYS set NEEDS_WEB_BROWSER TRUE in Linux section AND pass it to juce_add_plugin()"
+    critical_fix: "In plugin CMakeLists.txt: elseif(UNIX) set(NEEDS_WEB_BROWSER TRUE) ... juce_add_plugin(... NEEDS_WEB_BROWSER ${NEEDS_WEB_BROWSER})"
 
-  - id: performance-001
-    title: "Plugin causes audio dropouts - mutex blocking entire processBlock"
-    category: dsp
+  - id: linux-002
+    title: "Linux LV2 build - cannot open display (headless CI)"
+    category: build
     severity: high
     symptoms:
-      - "Audio dropouts during playback"
-      - "Editor hangs when opened during processing"
-      - "PluginVal hangs at 'Open editor whilst processing' test"
-      - "High CPU usage in audio thread"
+      - "Gtk-WARNING: cannot open display:"
+      - "Build fails after successful link of LV2 .so"
+      - "juce_linux_subprocess error 141"
+      - "Only happens on headless CI, not local build with X11"
     error_patterns:
-      - "processBlock timeout"
-      - "Editor creation timeout"
-      - "Lock contention"
-    root_cause: "std::lock_guard held for entire processBlock duration blocks other threads trying to access processor. Audio thread holds lock for ~10ms per block, preventing editor/parameter updates."
+      - "cannot open display"
+      - "juce_linux_subprocess"
+      - "Gtk-WARNING"
+      - "Error 141"
+    root_cause: "JUCE LV2 manifest generator runs POST-LINK to load the plugin and extract parameter metadata for .ttl files. WebView plugins init GTK, which requires X11 display. GitHub Actions runners are headless."
     resolution_status: solved
-    resolution_file: resolutions/performance-001-mutex-blocking.md
+    resolution_file: resolutions/linux-lv2-headless-xvfb.md
     frequency: 1
-    last_occurred: 2026-01-29
-    attempts_before_resolution: 2
-    prevention: "Only lock mutexes for minimal critical sections. Use atomics for thread-safe communication. Never hold locks during audio processing."
-    critical_fix: "Move mutex lock inside critical section only. Remove lock from processBlock scope. Use atomics for mode/quality changes."
-    notes: "Found in CloudWash - mutex locked at start of processBlock for entire 300+ line function. Fixed by locking only during Prepare() call."
+    last_occurred: 2026-02-05
+    attempts_before_resolution: 1
+    prevention: "Always use xvfb-run for LV2 and Standalone builds on headless Linux CI"
+    critical_fix: "Install xvfb, wrap build: xvfb-run cmake --build build --target Plugin_LV2"
 
-  - id: webview-009
-    title: "WebView plugin slow to initialize - takes 900ms+ to open editor"
-    category: webview
-    severity: medium
+  - id: macos-001
+    title: "macOS universal binary - libPluginName_SharedCode.a not found"
+    category: build
+    severity: high
     symptoms:
-      - "Plugin takes almost 1 second to open"
-      - "PluginVal times out on 'Open editor whilst processing' test"
-      - "Black screen for ~1 second before UI appears"
-      - "DAW feels sluggish when opening plugin"
+      - "clang++: error: no such file or directory: libPluginName_SharedCode.a"
+      - "warning: None of the architectures in ARCHS (x86_64;arm64) are valid"
+      - "Intermediate static library missing during link"
     error_patterns:
-      - "Open editor whilst processing timeout"
-      - "WebView initialization slow"
-      - "Time taken to open editor (cold): 900+ ms"
-    root_cause: "WebView2 runtime requires full Chromium initialization including process creation, IPC setup, and HTML/JS parsing. This is inherent to WebView2 architecture and cannot be avoided."
-    resolution_status: workaround
-    resolution_file: resolutions/webview-009-slow-initialization.md
+      - "SharedCode.a not found"
+      - "architectures in ARCHS"
+      - "VALID_ARCHS"
+    root_cause: "Per-target XCODE_ATTRIBUTE_ARCHS in plugin CMakeLists.txt conflicts with workflow's global CMAKE_OSX_ARCHITECTURES. Xcode misinterprets format (parens in warning), causing intermediate libs to not build or build to wrong location."
+    resolution_status: solved
+    resolution_file: resolutions/macos-archs-conflict.md
     frequency: 1
-    last_occurred: 2026-01-29
-    attempts_before_resolution: 0
-    prevention: "Accept as WebView2 limitation. Consider Visage for plugins requiring instant editor load. Use --skip-gui-tests flag for PluginVal."
-    workaround: "Use inline HTML/CSS/JS to minimize load time. Preload resources. Show loading indicator. Skip GUI tests in PluginVal if core DSP passes."
-    notes: "WebView2 cold start: ~941ms, warm start: ~344ms. This is acceptable for complex UIs but fails strict timing tests."
+    last_occurred: 2026-02-05
+    attempts_before_resolution: 1
+    prevention: "NEVER set XCODE_ATTRIBUTE_ARCHS on individual targets. Use CMAKE_OSX_ARCHITECTURES at configure time only."
+    critical_fix: "Remove set_target_properties(Plugin PROPERTIES XCODE_ATTRIBUTE_ARCHS ...) from plugin CMakeLists.txt"
 
-  - id: crash-002
-    title: "CloudWash Access Violation crash (0xc0000005)"
-    category: crash
+  - id: ci-001
+    title: "CI - JUCE submodule missing extras/Build/CMake"
+    category: build
     severity: critical
     symptoms:
-      - "Plugin crashes immediately on launch"
-      - "No UI appears"
-      - "Access Violation exception"
-      - "Crash in Debug and Release builds"
+      - "CMake Error: include could not find requested file: extras/Build/CMake/JUCEModuleSupport.cmake"
+      - "Unknown CMake command juce_add_modules"
+      - "JUCE directory exists but CMake support missing"
+      - "Works locally but fails on GitHub Actions"
     error_patterns:
-      - "0xc0000005"
-      - "ACCESS_VIOLATION"
-      - "CloudWash.exe faulting"
-    root_cause: "INVESTIGATING - Access violation during initialization. Suspected: Clouds processor Init(), sample rate converter, or preset loading."
-    resolution_status: investigating
-    resolution_file: resolutions/crash-002-cloudwash-access-violation.md
+      - "JUCEModuleSupport.cmake"
+      - "juce_add_modules"
+      - "extras/Build"
+    root_cause: "_tools/JUCE was committed as 4600+ regular files instead of git submodule reference. GitHub Actions submodules: recursive had no gitlink to follow, checked out incomplete snapshot missing extras/Build/."
+    resolution_status: solved
+    resolution_file: resolutions/ci-juce-submodule-not-proper.md
     frequency: 1
-    last_occurred: 2026-01-29
-    attempts_before_resolution: 5
-    prevention: "MUST run in Visual Studio debugger to identify exact crash location. Debug logging added but need debugger to see crash point."
-    critical_action_required: "Run: devenv /debugexe [path-to-CloudWash-Debug.exe] and share crash location + call stack"
-    notes: "Crash dump available at C:\\CrashDumps\\CloudWash.exe.*.dmp (133MB). Already fixed blend_mode nullptr, mutex blocking, timer safety - still crashes."
+    last_occurred: 2026-02-05
+    attempts_before_resolution: 1
+    prevention: "ALWAYS use git submodule add, NEVER commit framework directories as regular files"
+    critical_fix: "git rm -r --cached _tools/JUCE && rm -rf _tools/JUCE && git submodule add https://github.com/juce-framework/JUCE _tools/JUCE"

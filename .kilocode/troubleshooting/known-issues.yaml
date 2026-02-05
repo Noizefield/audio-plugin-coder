@@ -136,3 +136,90 @@ issues:
     prevention: "ALWAYS create ALL parameter attachments BEFORE calling addAndMakeVisible(webView)"
     critical_fix: "Order must be: 1. Relays 2. WebView 3. Attachments 4. addAndMakeVisible 5. goToURL 6. setSize"
     notes: "This is the #1 most critical WebView bug. Following AngelGrain pattern prevents this entirely."
+
+  - id: linux-001
+    title: "Linux WebView plugin - gtk/gtk.h not found"
+    category: build
+    severity: critical
+    symptoms:
+      - "fatal error: gtk/gtk.h: No such file or directory"
+      - "Compiler can't find GTK headers despite libwebkit2gtk installed"
+      - "JUCE_WEB_BROWSER=1 is defined but GTK includes missing"
+    error_patterns:
+      - "gtk/gtk.h: No such file"
+      - "fatal error: gtk"
+      - "webkit2gtk installed but headers not found"
+    root_cause: "JUCE 8 has TWO separate WebView flags: NEEDS_WEBVIEW2 (Windows) and NEEDS_WEB_BROWSER (Linux). Plugin only sets NEEDS_WEBVIEW2=FALSE on Linux, never sets NEEDS_WEB_BROWSER=TRUE. Without it, JUCE doesn't link webkit2gtk/GTK pkgconfig target, so include paths never get added."
+    resolution_status: solved
+    resolution_file: resolutions/linux-webview-needs-web-browser.md
+    frequency: 1
+    last_occurred: 2026-02-05
+    attempts_before_resolution: 2
+    prevention: "ALWAYS set NEEDS_WEB_BROWSER TRUE in Linux section AND pass it to juce_add_plugin()"
+    critical_fix: "In plugin CMakeLists.txt: elseif(UNIX) set(NEEDS_WEB_BROWSER TRUE) ... juce_add_plugin(... NEEDS_WEB_BROWSER ${NEEDS_WEB_BROWSER})"
+
+  - id: linux-002
+    title: "Linux LV2 build - cannot open display (headless CI)"
+    category: build
+    severity: high
+    symptoms:
+      - "Gtk-WARNING: cannot open display:"
+      - "Build fails after successful link of LV2 .so"
+      - "juce_linux_subprocess error 141"
+      - "Only happens on headless CI, not local build with X11"
+    error_patterns:
+      - "cannot open display"
+      - "juce_linux_subprocess"
+      - "Gtk-WARNING"
+      - "Error 141"
+    root_cause: "JUCE LV2 manifest generator runs POST-LINK to load the plugin and extract parameter metadata for .ttl files. WebView plugins init GTK, which requires X11 display. GitHub Actions runners are headless."
+    resolution_status: solved
+    resolution_file: resolutions/linux-lv2-headless-xvfb.md
+    frequency: 1
+    last_occurred: 2026-02-05
+    attempts_before_resolution: 1
+    prevention: "Always use xvfb-run for LV2 and Standalone builds on headless Linux CI"
+    critical_fix: "Install xvfb, wrap build: xvfb-run cmake --build build --target Plugin_LV2"
+
+  - id: macos-001
+    title: "macOS universal binary - libPluginName_SharedCode.a not found"
+    category: build
+    severity: high
+    symptoms:
+      - "clang++: error: no such file or directory: libPluginName_SharedCode.a"
+      - "warning: None of the architectures in ARCHS (x86_64;arm64) are valid"
+      - "Intermediate static library missing during link"
+    error_patterns:
+      - "SharedCode.a not found"
+      - "architectures in ARCHS"
+      - "VALID_ARCHS"
+    root_cause: "Per-target XCODE_ATTRIBUTE_ARCHS in plugin CMakeLists.txt conflicts with workflow's global CMAKE_OSX_ARCHITECTURES. Xcode misinterprets format (parens in warning), causing intermediate libs to not build or build to wrong location."
+    resolution_status: solved
+    resolution_file: resolutions/macos-archs-conflict.md
+    frequency: 1
+    last_occurred: 2026-02-05
+    attempts_before_resolution: 1
+    prevention: "NEVER set XCODE_ATTRIBUTE_ARCHS on individual targets. Use CMAKE_OSX_ARCHITECTURES at configure time only."
+    critical_fix: "Remove set_target_properties(Plugin PROPERTIES XCODE_ATTRIBUTE_ARCHS ...) from plugin CMakeLists.txt"
+
+  - id: ci-001
+    title: "CI - JUCE submodule missing extras/Build/CMake"
+    category: build
+    severity: critical
+    symptoms:
+      - "CMake Error: include could not find requested file: extras/Build/CMake/JUCEModuleSupport.cmake"
+      - "Unknown CMake command juce_add_modules"
+      - "JUCE directory exists but CMake support missing"
+      - "Works locally but fails on GitHub Actions"
+    error_patterns:
+      - "JUCEModuleSupport.cmake"
+      - "juce_add_modules"
+      - "extras/Build"
+    root_cause: "_tools/JUCE was committed as 4600+ regular files instead of git submodule reference. GitHub Actions submodules: recursive had no gitlink to follow, checked out incomplete snapshot missing extras/Build/."
+    resolution_status: solved
+    resolution_file: resolutions/ci-juce-submodule-not-proper.md
+    frequency: 1
+    last_occurred: 2026-02-05
+    attempts_before_resolution: 1
+    prevention: "ALWAYS use git submodule add, NEVER commit framework directories as regular files"
+    critical_fix: "git rm -r --cached _tools/JUCE && rm -rf _tools/JUCE && git submodule add https://github.com/juce-framework/JUCE _tools/JUCE"
