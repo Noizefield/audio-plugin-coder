@@ -9,6 +9,13 @@ juce_add_plugin({{PLUGIN_NAME_LOWER}}
     PRODUCT_NAME "{{PLUGIN_DISPLAY_NAME}}"
 )
 
+# Binary assets (fonts)
+juce_add_binary_data({{PLUGIN_NAME_LOWER}}_Assets
+    SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../_tools/visage/visage_graphics/fonts/Lato-Regular.ttf
+    NAMESPACE {{PLUGIN_NAME_LOWER}}_BinaryData
+)
+
 # Source files
 target_sources({{PLUGIN_NAME_LOWER}}
     PRIVATE
@@ -27,6 +34,7 @@ target_include_directories({{PLUGIN_NAME_LOWER}}
 # Required JUCE modules + Visage
 target_link_libraries({{PLUGIN_NAME_LOWER}}
     PRIVATE
+        {{PLUGIN_NAME_LOWER}}_Assets
         visage::visage
         juce::juce_audio_basics
         juce::juce_audio_devices

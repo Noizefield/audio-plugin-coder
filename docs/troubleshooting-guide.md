@@ -346,6 +346,39 @@ YourPluginEditor::YourPluginEditor(YourAudioProcessor& p)
 
 ---
 
+#### Visage Text Missing (VST/VST3)
+
+**Symptoms:**
+- Plugin name / knob labels not visible in VST host
+- Text appears in standalone preview but disappears in DAW
+
+**Root Cause:** Font file path lookup works in preview but fails inside the VST host. The working directory is different, so the font file isn’t found.
+
+**Solution:**
+1. Embed the font with `juce_add_binary_data` and link the asset target.
+2. Load the font from BinaryData instead of file paths.
+
+Example:
+```cmake
+juce_add_binary_data(MyPlugin_Assets
+    SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../_tools/visage/visage_graphics/fonts/Lato-Regular.ttf
+    NAMESPACE MyPlugin_BinaryData
+)
+target_link_libraries(MyPlugin PRIVATE MyPlugin_Assets)
+```
+
+```cpp
+title_font_ = visage::Font(20.0f,
+    MyPlugin_BinaryData::LatoRegular_ttf,
+    MyPlugin_BinaryData::LatoRegular_ttfSize,
+    dpi);
+```
+
+**Note:** JUCE converts `Lato-Regular.ttf` to `LatoRegular_ttf` (dash removed).
+
+---
+
 ### Packaging Issues
 
 #### VST3 Not Appearing in DAW

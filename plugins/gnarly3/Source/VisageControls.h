@@ -2,6 +2,7 @@
 
 #include <visage/ui.h>
 #include <visage/graphics.h>
+#include "BinaryData.h"
 #include <juce_core/juce_core.h>
 
 #include <algorithm>
@@ -309,40 +310,12 @@ private:
     }
 
     void updateFonts() {
-        auto fontFile = findFontFile();
-        if (!fontFile.existsAsFile()) {
-            fonts_ready_ = false;
-            return;
-        }
-
-        const std::string path = fontFile.getFullPathName().toStdString();
         const float dpi = std::max(1.0f, dpiScale());
-        title_font_ = visage::Font(24.0f, path, dpi);
-        label_font_ = visage::Font(14.0f, path, dpi);
-        value_font_ = visage::Font(12.0f, path, dpi);
+        const auto* font_data = reinterpret_cast<const unsigned char*>(gnarly3_BinaryData::LatoRegular_ttf);
+        title_font_ = visage::Font(24.0f, font_data, gnarly3_BinaryData::LatoRegular_ttfSize, dpi);
+        label_font_ = visage::Font(14.0f, font_data, gnarly3_BinaryData::LatoRegular_ttfSize, dpi);
+        value_font_ = visage::Font(12.0f, font_data, gnarly3_BinaryData::LatoRegular_ttfSize, dpi);
         fonts_ready_ = true;
-    }
-
-    static juce::File findFontFile() {
-        const char* rel = "_tools/visage/visage_graphics/fonts/Lato-Regular.ttf";
-
-        auto start = juce::File::getCurrentWorkingDirectory();
-        for (int i = 0; i < 8; ++i) {
-            auto candidate = start.getChildFile(rel);
-            if (candidate.existsAsFile())
-                return candidate;
-            start = start.getParentDirectory();
-        }
-
-        auto exeDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile).getParentDirectory();
-        for (int i = 0; i < 8; ++i) {
-            auto candidate = exeDir.getChildFile(rel);
-            if (candidate.existsAsFile())
-                return candidate;
-            exeDir = exeDir.getParentDirectory();
-        }
-
-        return {};
     }
 
     bool fonts_ready_ = false;

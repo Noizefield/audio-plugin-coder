@@ -38,6 +38,15 @@ juce_add_plugin(gnarly3
 )
 
 # ============================================
+# BINARY DATA (Embedded Assets)
+# ============================================
+juce_add_binary_data(gnarly3_Assets
+    SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../_tools/visage/visage_graphics/fonts/Lato-Regular.ttf
+    NAMESPACE gnarly3_BinaryData
+)
+
+# ============================================
 # SOURCE FILES
 # ============================================
 target_sources(gnarly3
@@ -63,6 +72,7 @@ target_include_directories(gnarly3
 # ============================================
 target_link_libraries(gnarly3
     PRIVATE
+        gnarly3_Assets
         visage::visage
         juce::juce_audio_basics
         juce::juce_audio_devices
