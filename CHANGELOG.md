@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Design workflow: Visage preview scaffold (no HTML), default yes
   - Implementation workflow: framework routing and Visage validation
   - Documentation updates for Visage preview flow and validation
+- Visage gnarly3 pilot UI (experimental)
+  - Knob interaction and parameter binding
+  - Live filter graph with non-linear “gnarly” response
+  - Windowless preview rendering path for stability
 - CloudWash plugin: Full-featured granular texture processor (Mutable Instruments Clouds adaptation)
   - 4 processing modes (Granular, Pitch Shifter, Looping Delay, Spectral)
   - WebView-based UI with real-time visualization
@@ -49,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Design phase now branches by framework: WebView generates HTML preview; Visage avoids HTML and uses C++ scaffold
 - Implementation phase now routes templates by framework and runs Visage validation for Visage plugins
+- Build and preview scripts now auto-enable `APC_ENABLE_VISAGE` when `ui_framework == visage`
 - **Installer template improvements**
   - Documentation now placed inside plugin bundle instead of VST3 root folder
   - Fixed desktop shortcut icons (now references icon.ico correctly)
@@ -78,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parameter binding between C++ backend and JavaScript frontend
 - Grain visualization connected to real audio processing
 - Build and installation scripts for Windows 11
+- Visage preview input routing (knobs receive mouse events)
 - **Windows installer icon issues**
   - Desktop shortcuts now display correct plugin icon (not default Windows icon)
   - Executable files now have embedded icons visible in Windows Explorer
