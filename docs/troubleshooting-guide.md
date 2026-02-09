@@ -17,7 +17,7 @@ APC includes an auto-capture system that learns from problems. This guide covers
 ### Location
 
 ```
-.kilocode/troubleshooting/
+.agent/troubleshooting/
 ├── known-issues.yaml           # Issue registry
 ├── _template.md                # Resolution template
 └── resolutions/                # Solution documents
@@ -87,7 +87,7 @@ Auto-capture triggers after:
 ```powershell
 # Generate unique issue ID
 $category = "build"  # or webview, packaging, etc.
-$existingIssues = (Get-Content .kilocode/troubleshooting/known-issues.yaml | 
+$existingIssues = (Get-Content .agent/troubleshooting/known-issues.yaml | 
     Select-String -Pattern "id: $category-" | Measure-Object).Count
 $newId = "$category-$(($existingIssues + 1).ToString('000'))"
 
@@ -111,7 +111,7 @@ $newIssue = @"
 "@
 
 # Append to known-issues.yaml
-Add-Content -Path .kilocode/troubleshooting/known-issues.yaml -Value $newIssue
+Add-Content -Path .agent/troubleshooting/known-issues.yaml -Value $newIssue
 ```
 
 ---
@@ -220,7 +220,7 @@ private:
 
 **Prevention:** Always declare members in order: Relays → WebView → Attachments.
 
-**See:** [webview-member-order-crash.md](.kilocode/troubleshooting/resolutions/webview-member-order-crash.md)
+**See:** [webview-member-order-crash.md](.agent/troubleshooting/resolutions/webview-member-order-crash.md)
 
 ---
 
@@ -270,7 +270,7 @@ YourPluginEditor::YourPluginEditor(YourAudioProcessor& p)
 
 **Prevention:** Always create ALL parameter attachments BEFORE calling `addAndMakeVisible(webView)`.
 
-**See:** [webview-attachment-order-crash.md](.kilocode/troubleshooting/resolutions/webview-attachment-order-crash.md)
+**See:** [webview-attachment-order-crash.md](.agent/troubleshooting/resolutions/webview-attachment-order-crash.md)
 
 ---
 
@@ -319,6 +319,30 @@ YourPluginEditor::YourPluginEditor(YourAudioProcessor& p)
 ```powershell
 .\scripts\validate-webview-setup.ps1 -PluginName MyPlugin
 ```
+
+---
+
+### Visage Issues
+
+#### Visage Preview: Knobs Don’t Move
+
+**Symptoms:**
+- UI renders but knobs are non-interactive
+- Graph doesn’t respond to dragging
+- No crashes, just no input
+
+**Root Cause:** In windowless preview mode, JUCE mouse events aren’t forwarded to Visage frames.
+
+**Solution:**
+1. Ensure the Visage host forwards JUCE mouse events to the root frame.
+2. In your editor `onInit()`, register the root frame for event routing:
+   ```cpp
+   mainView = std::make_unique<VisageMainView>();
+   setEventRoot(mainView.get());
+   addFrameToCanvas(mainView.get());
+   ```
+
+**Prevention:** Keep a single root frame and always register it for event routing in windowless preview mode.
 
 ---
 
@@ -576,7 +600,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build-and-install.ps1 -Plugin
 
 1. **Check known issues:**
    ```powershell
-   Get-Content .kilocode/troubleshooting/known-issues.yaml | Select-String "your error"
+   Get-Content .agent/troubleshooting/known-issues.yaml | Select-String "your error"
    ```
 
 2. **Run validation:**
@@ -627,7 +651,8 @@ When reporting an issue:
 
 ## Related Documentation
 
-- [Known Issues](.kilocode/troubleshooting/known-issues.yaml) - Full issue database
+- [Known Issues](.agent/troubleshooting/known-issues.yaml) - Full issue database
 - [WebView Framework](webview-framework.md) - WebView-specific troubleshooting
 - [Build System](build-system.md) - Build troubleshooting
 - [State Management](state-management-deep-dive.md) - State recovery
+

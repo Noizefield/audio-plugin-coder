@@ -44,17 +44,17 @@ New to APC? Start here:
 | Document | Description |
 |----------|-------------|
 | [Troubleshooting Guide](troubleshooting-guide.md) | Common issues and solutions |
-| [Known Issues](../.kilocode/troubleshooting/known-issues.yaml) | Database of known problems |
+| [Known Issues](../.agent/troubleshooting/known-issues.yaml) | Database of known problems |
 
 ### Reference
 
 | Document | Location | Description |
 |----------|----------|-------------|
-| Agent Rules | [.kilocode/rules/agent.md](../.kilocode/rules/agent.md) | Critical rules for AI agents |
-| File Naming | [.kilocode/rules/file-naming-conventions.md](../.kilocode/rules/file-naming-conventions.md) | Naming conventions |
-| JUCE Protocols | [.kilocode/rules/juce-build-protocols.md](../.kilocode/rules/juce-build-protocols.md) | Build system rules |
-| State Guide | [.kilocode/guides/state-management-guide.md](../.kilocode/guides/state-management-guide.md) | State management guide |
-| WebView Templates | [.kilocode/templates/webview/](../.kilocode/templates/webview/) | Starter templates |
+| Agent Rules | [.agent/rules/agent.md](../.agent/rules/agent.md) | Critical rules for AI agents |
+| File Naming | [.agent/rules/file-naming-conventions.md](../.agent/rules/file-naming-conventions.md) | Naming conventions |
+| JUCE Protocols | [.agent/rules/juce-build-protocols.md](../.agent/rules/juce-build-protocols.md) | Build system rules |
+| State Guide | [.agent/guides/state-management-guide.md](../.agent/guides/state-management-guide.md) | State management guide |
+| WebView Templates | [.agent/templates/webview/](../.agent/templates/webview/) | Starter templates |
 
 ## The Five-Phase Workflow
 
@@ -118,12 +118,12 @@ APC supports two UI frameworks:
 Learn more: [WebView Framework Guide](webview-framework.md)
 
 ### Visage (Pure C++)
-- Native JUCE components
+- Native C++ UI via Visage frames
 - Maximum performance
 - Full C++ control
 - Best for: Simple UIs, performance-critical plugins
 
-*Note: Visage integration is planned for future release.*
+*Note: Visage integration is in active testing and may be unstable on some hosts.*
 
 ## Platform Support
 
@@ -137,7 +137,7 @@ Learn more: [WebView Framework Guide](webview-framework.md)
 
 ```
 audio-plugin-coder/
-├── .kilocode/              # AI agent configuration
+├── .agent/              # AI agent configuration
 │   ├── skills/             # Domain knowledge
 │   ├── workflows/          # Slash commands
 │   ├── rules/              # System constraints
@@ -172,7 +172,7 @@ Learn more: [State Management Deep Dive](state-management-deep-dive.md)
 Having issues? Check these resources:
 
 1. **[Troubleshooting Guide](troubleshooting-guide.md)** - Common problems and solutions
-2. **[Known Issues](../.kilocode/troubleshooting/known-issues.yaml)** - Database of known problems
+2. **[Known Issues](../.agent/troubleshooting/known-issues.yaml)** - Database of known problems
 3. **Validation Scripts:**
    ```powershell
    .\scripts\validate-plugin-status.ps1 -PluginName MyPlugin
@@ -200,3 +200,4 @@ APC is licensed under the MIT License. See [LICENSE](../LICENCE.md) for details.
 ---
 
 **Need help?** Check the [FAQ](FAQ.md) or review the [troubleshooting guide](troubleshooting-guide.md).
+

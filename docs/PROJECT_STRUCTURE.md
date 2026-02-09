@@ -8,7 +8,7 @@ APC follows a monorepo architecture with clear separation between framework code
 
 ```
 audio-plugin-coder/
-├── .kilocode/              # AI agent configuration and skills
+├── .agent/              # AI agent configuration and skills
 ├── _tools/                 # External dependencies (JUCE, pluginval)
 ├── build/                  # Build artifacts (gitignored)
 ├── dist/                   # Distribution packages (gitignored)
@@ -24,12 +24,12 @@ audio-plugin-coder/
 
 ## Core Directories
 
-### `.kilocode/` - AI Agent Configuration
+### `.agent/` - AI Agent Configuration
 
 Contains all configuration, skills, and knowledge base for AI agents.
 
 ```
-.kilocode/
+.agent/
 ├── guides/                 # Reference documentation
 │   └── state-management-guide.md
 ├── rules/                  # System constraints and protocols
@@ -66,9 +66,9 @@ Contains all configuration, skills, and knowledge base for AI agents.
 ```
 
 **Key Files:**
-- [`agent.md`](.kilocode/rules/agent.md) - Critical rules for AI agents
-- [`known-issues.yaml`](.kilocode/troubleshooting/known-issues.yaml) - Database of known issues
-- [`status-template.json`](.kilocode/templates/status-template.json) - Plugin state schema
+- [`agent.md`](.agent/rules/agent.md) - Critical rules for AI agents
+- [`known-issues.yaml`](.agent/troubleshooting/known-issues.yaml) - Database of known issues
+- [`status-template.json`](.agent/templates/status-template.json) - Plugin state schema
 
 ---
 
@@ -396,4 +396,4 @@ _tools/pluginval
 - [State Management Guide](state-management-deep-dive.md) - Deep dive into state tracking
 - [Build System](build-system.md) - Detailed build documentation
 - [WebView Framework](webview-framework.md) - WebView-specific paths
-- [File Naming Conventions](.kilocode/rules/file-naming-conventions.md) - Complete naming rules
+- [File Naming Conventions](.agent/rules/file-naming-conventions.md) - Complete naming rules

@@ -427,4 +427,5 @@ gh run download --dir dist/github-artifacts
 
 - [GitHub Actions CI/CD](github-actions.md) - Detailed workflow documentation
 - [Main README](README.md) - Project overview
-- `.kilocode/skills/skill_packaging/SKILL.md` - Implementation details
+- `.agent/skills/skill_packaging/SKILL.md` - Implementation details
+

@@ -5,7 +5,9 @@
   ==============================================================================
 */
 #pragma once
-#include <JuceHeader.h>
+#include <juce_core/juce_core.h>
+#include <juce_gui_basics/juce_gui_basics.h>
+#include <juce_events/juce_events.h>
 #include "visage/app.h"
 #include "visage/ui.h"
 #include "visage/graphics.h"
@@ -31,7 +33,7 @@ static void npsCrashHandler(void*) {
  * 4. The redraw() mechanism triggers actual drawing via drawToRegion()
  */
 class VisagePluginEditor : public juce::AudioProcessorEditor,
-                           private juce::OpenGLRenderer
+                           private juce::Timer
 {
 public:
     VisagePluginEditor(juce::AudioProcessor& p) : AudioProcessorEditor(&p) {
@@ -41,118 +43,67 @@ public:
             crashHandlerSet = true;
         }
         
-        openGLContext.setOpenGLVersionRequired(juce::OpenGLContext::openGL3_2);
-        openGLContext.setRenderer(this);
-        
-        // We do NOT want JUCE's software renderer to draw on top.
-        openGLContext.setComponentPaintingEnabled(false); 
-        
-        openGLContext.setContinuousRepainting(true);
-        openGLContext.attachTo(*this);
+        setOpaque(true);
+        startTimerHz(60);
     }
 
     ~VisagePluginEditor() override {
-        // Detach OpenGL context first - this will trigger openGLContextClosing()
-        openGLContext.detach();
+        stopTimer();
+        teardownVisage();
     }
 
     void paint(juce::Graphics& g) override { 
-        // If you see RED, it means OpenGL is OFF and Software is ON.
-        g.fillAll(juce::Colours::red); 
+        g.fillAll(juce::Colours::black);
+
+        if (windowless_ && backbuffer_.isValid()) {
+            g.drawImageAt(backbuffer_, 0, 0);
+        }
+    }
+
+    void mouseDown(const juce::MouseEvent& e) override {
+        dispatchMouse(e, MouseDispatch::Down);
+    }
+
+    void mouseDrag(const juce::MouseEvent& e) override {
+        dispatchMouse(e, MouseDispatch::Drag);
+    }
+
+    void mouseUp(const juce::MouseEvent& e) override {
+        dispatchMouse(e, MouseDispatch::Up);
+    }
+
+    void mouseMove(const juce::MouseEvent& e) override {
+        dispatchMouse(e, MouseDispatch::Move);
     }
 
     void resized() override { 
         onResize(getWidth(), getHeight()); 
-    }
-
-    void newOpenGLContextCreated() override {
-        // Initialize Visage Renderer using JUCE's OpenGL context.
-        void* nativeWindow = getPeer() ? getPeer()->getNativeHandle() : nullptr;
-        void* glContext = openGLContext.getRawContext();
-        void* backBuffer = reinterpret_cast<void*>(static_cast<uintptr_t>(openGLContext.getFrameBufferID()));
-        
-        // Initialize the renderer with the external OpenGL context
-        visage::Renderer::instance().initialize(nativeWindow, nullptr, glContext, backBuffer);
-        
-        // Create the canvas
-        canvas_ = std::make_unique<visage::Canvas>();
-        
-        // Get dimensions with DPI scaling
-        const float scale = (float)openGLContext.getRenderingScale();
-        const int w = juce::roundToInt(getWidth() * scale);
-        const int h = juce::roundToInt(getHeight() * scale);
-        
-        // Pair canvas to the default back buffer (JUCE's FBO)
-        canvas_->pairToDefaultBackBuffer(w, h);
-        canvas_->setDpiScale(scale);
-        
-        // Set up the event handler for frame redraws
-        // This is CRITICAL - without this, redraw() calls won't work
-        eventHandler_.request_redraw = [this](visage::Frame* frame) {
-            // Add frame to stale list for redrawing
-            if (std::find(staleFrames_.begin(), staleFrames_.end(), frame) == staleFrames_.end())
-                staleFrames_.push_back(frame);
-        };
-        
-        eventHandler_.remove_from_hierarchy = [this](visage::Frame* frame) {
-            auto pos = std::find(staleFrames_.begin(), staleFrames_.end(), frame);
-            if (pos != staleFrames_.end())
-                staleFrames_.erase(pos);
-        };
-        
-        // Initialize the content frame
-        rendererInitialized_ = true;
-        onInit();
-    }
-    
-    void renderOpenGL() override { 
-        if (!rendererInitialized_ || !canvas_)
-            return;
-            
-        // Handle High-DPI scaling
-        const float scale = (float)openGLContext.getRenderingScale();
-        const int w = juce::roundToInt(getWidth() * scale);
-        const int h = juce::roundToInt(getHeight() * scale);
-        
-        // Update canvas dimensions if changed
-        if (w != canvas_->width() || h != canvas_->height()) {
-            canvas_->setDimensions(w, h);
-            canvas_->setDpiScale(scale);
-        }
-        
-        // Set OpenGL viewport
-        juce::gl::glViewport(0, 0, w, h);
-
-        // Clear to debug color - if you see this, Visage isn't drawing
-        juce::OpenGLHelpers::clear(juce::Colours::magenta);
-
-        // Let subclass prepare for render
-        onRender();
-        
-        // Draw all stale frames
-        drawStaleFrames();
-        
-        // Submit to GPU
-        canvas_->submit();
-    }
-    
-    void openGLContextClosing() override { 
-        rendererInitialized_ = false;
-        
-        // Clear stale frames list
-        staleFrames_.clear();
-        
-        // Let subclass clean up first
-        onDestroy();
-        
-        // Remove canvas from window before destroying
         if (canvas_) {
-            canvas_->removeFromWindow();
-            canvas_.reset();
+            if (windowless_) {
+                canvas_->setWindowless(getWidth(), getHeight());
+            } else {
+                canvas_->setDimensions(getWidth(), getHeight());
+            }
+        }
+    }
+
+    void timerCallback() override {
+        if (!rendererInitialized_) {
+            tryInitialize();
+            return;
         }
 
-        // Shutdown the renderer
-        visage::Renderer::instance().shutdown();
+        if (!canvas_)
+            return;
+
+        onRender();
+        drawStaleFrames();
+        canvas_->submit();
+
+        if (windowless_) {
+            updateBackbufferFromScreenshot(canvas_->takeScreenshot());
+            repaint();
+        }
     }
 
     // Override these in your subclass
@@ -162,9 +113,9 @@ public:
     virtual void onResize(int w, int h) {}
 
 protected:
-    juce::OpenGLContext& getOpenGLContext() { return openGLContext; }
     visage::Canvas& getCanvas() { return *canvas_; }
     visage::FrameEventHandler& getEventHandler() { return eventHandler_; }
+    void setEventRoot(visage::Frame* root) { event_root_ = root; }
     
     /**
      * Add a frame to the canvas for rendering.
@@ -181,7 +132,7 @@ protected:
         frame->setEventHandler(&eventHandler_);
         
         // Set DPI scale
-        frame->setDpiScale((float)openGLContext.getRenderingScale());
+        frame->setDpiScale((float)getDesktopScaleFactor());
         
         // Initialize the frame
         frame->init();
@@ -237,9 +188,137 @@ protected:
     }
 
 private:
-    juce::OpenGLContext openGLContext;
+    enum class MouseDispatch {
+        Down,
+        Drag,
+        Up,
+        Move
+    };
+
+    void dispatchMouse(const juce::MouseEvent& e, MouseDispatch type) {
+        if (!event_root_)
+            return;
+
+        visage::MouseEvent me;
+        me.event_frame = event_root_;
+        me.position = { static_cast<float>(e.position.x), static_cast<float>(e.position.y) };
+        me.relative_position = me.position;
+        me.window_position = { static_cast<float>(e.getScreenX()), static_cast<float>(e.getScreenY()) };
+
+        int mods = visage::kModifierNone;
+        if (e.mods.isShiftDown()) mods |= visage::kModifierShift;
+        if (e.mods.isCtrlDown())  mods |= visage::kModifierRegCtrl;
+        if (e.mods.isAltDown())   mods |= visage::kModifierAlt;
+        if (e.mods.isCommandDown()) mods |= visage::kModifierCmd;
+        me.modifiers = mods;
+
+        int buttons = visage::kMouseButtonNone;
+        if (e.mods.isLeftButtonDown())   buttons |= visage::kMouseButtonLeft;
+        if (e.mods.isMiddleButtonDown()) buttons |= visage::kMouseButtonMiddle;
+        if (e.mods.isRightButtonDown())  buttons |= visage::kMouseButtonRight;
+        me.button_state = buttons;
+
+        if (type == MouseDispatch::Down) {
+            last_button_id_ = e.mods.isLeftButtonDown() ? visage::kMouseButtonLeft :
+                              e.mods.isRightButtonDown() ? visage::kMouseButtonRight :
+                              e.mods.isMiddleButtonDown() ? visage::kMouseButtonMiddle :
+                              visage::kMouseButtonLeft;
+        }
+        me.button_id = last_button_id_;
+        me.is_down = (type != MouseDispatch::Up);
+
+        switch (type) {
+            case MouseDispatch::Down: event_root_->processMouseDown(me); break;
+            case MouseDispatch::Drag: event_root_->processMouseDrag(me); break;
+            case MouseDispatch::Up:   event_root_->processMouseUp(me); break;
+            case MouseDispatch::Move: event_root_->processMouseMove(me); break;
+        }
+    }
+
+    void tryInitialize() {
+        if (rendererInitialized_)
+            return;
+
+        auto* peer = getPeer();
+        if (!peer)
+            return;
+
+        void* nativeWindow = peer->getNativeHandle();
+        if (!nativeWindow)
+            return;
+
+        visage::Renderer::instance().initialize(nativeWindow, nullptr);
+
+        canvas_ = std::make_unique<visage::Canvas>();
+
+        // TEMP: Swap-chain path is unstable in plugin hosting. Use windowless render for preview.
+        constexpr bool kForceWindowless = true;
+        if (kForceWindowless || !visage::Canvas::swapChainSupported()) {
+            windowless_ = true;
+            canvas_->setWindowless(getWidth(), getHeight());
+        } else {
+            windowless_ = false;
+            canvas_->pairToWindow(nativeWindow, getWidth(), getHeight());
+        }
+
+        canvas_->setDpiScale((float)getDesktopScaleFactor());
+
+        eventHandler_.request_redraw = [this](visage::Frame* frame) {
+            if (std::find(staleFrames_.begin(), staleFrames_.end(), frame) == staleFrames_.end())
+                staleFrames_.push_back(frame);
+        };
+
+        eventHandler_.remove_from_hierarchy = [this](visage::Frame* frame) {
+            auto pos = std::find(staleFrames_.begin(), staleFrames_.end(), frame);
+            if (pos != staleFrames_.end())
+                staleFrames_.erase(pos);
+        };
+
+        rendererInitialized_ = true;
+        onInit();
+    }
+
+    void teardownVisage() {
+        rendererInitialized_ = false;
+        staleFrames_.clear();
+        onDestroy();
+        if (canvas_) {
+            canvas_->removeFromWindow();
+            canvas_.reset();
+        }
+        windowless_ = false;
+        backbuffer_ = juce::Image();
+    }
+
+    void updateBackbufferFromScreenshot(const visage::Screenshot& shot) {
+        if (shot.width() <= 0 || shot.height() <= 0)
+            return;
+
+        if (!backbuffer_.isValid() || backbuffer_.getWidth() != shot.width() || backbuffer_.getHeight() != shot.height()) {
+            backbuffer_ = juce::Image(juce::Image::ARGB, shot.width(), shot.height(), true);
+        }
+
+        juce::Image::BitmapData data(backbuffer_, juce::Image::BitmapData::writeOnly);
+        const uint8_t* src = shot.data();
+        for (int y = 0; y < shot.height(); ++y) {
+            auto* dst = reinterpret_cast<juce::PixelARGB*>(data.getLinePointer(y));
+            const uint8_t* row = src + (y * shot.width() * 4);
+            for (int x = 0; x < shot.width(); ++x) {
+                const uint8_t r = row[x * 4 + 0];
+                const uint8_t g = row[x * 4 + 1];
+                const uint8_t b = row[x * 4 + 2];
+                const uint8_t a = row[x * 4 + 3];
+                dst[x].setARGB(a, r, g, b);
+            }
+        }
+    }
+
     std::unique_ptr<visage::Canvas> canvas_;
     visage::FrameEventHandler eventHandler_;
     std::vector<visage::Frame*> staleFrames_;
     bool rendererInitialized_ = false;
+    bool windowless_ = false;
+    juce::Image backbuffer_;
+    visage::Frame* event_root_ = nullptr;
+    visage::MouseButton last_button_id_ = visage::kMouseButtonLeft;
 };

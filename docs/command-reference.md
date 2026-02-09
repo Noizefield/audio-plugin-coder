@@ -78,8 +78,9 @@ plugins/[Name]/.ideas/
 3. Generates design specifications:
    - `v1-ui-spec.md` (layout specification)
    - `v1-style-guide.md` (visual reference)
-   - `v1-test.html` (WebView preview)
-4. Creates framework-specific code (if applicable)
+   - WebView: `v1-test.html` (HTML preview)
+   - Visage: optional C++ preview scaffold (default yes)
+4. Creates framework-specific preview artifacts (no production code yet)
 
 **Output Files:**
 ```
@@ -87,7 +88,11 @@ plugins/[Name]/
 ├── Design/
 │   ├── v1-ui-spec.md
 │   ├── v1-style-guide.md
-│   └── v1-test.html
+│   └── v1-test.html (WebView only)
+└── Source/ (Visage preview only)
+    ├── PluginEditor.h
+    ├── PluginEditor.cpp
+    └── VisageControls.h
 ```
 
 **Next Step:** `/impl [Name]` or iterate design
@@ -319,6 +324,23 @@ Validates critical member declaration order.
 
 ---
 
+#### validate-visage-setup.ps1
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\validate-visage-setup.ps1 -PluginName <Name>
+```
+
+Validates Visage plugin configuration.
+
+**Checks:**
+- Root CMake has Visage option and subdirectory wiring
+- Plugin CMake links `visage::visage`
+- `VisageControls.h` exists
+- `PluginEditor` uses `VisageJuceHost.h`
+- No WebView-only flags present
+
+---
+
 #### validate-state-management.ps1
 
 ```powershell
@@ -535,7 +557,7 @@ gh run download <run-id> --dir dist/github-artifacts
 .\scripts\validate-plugin-status.ps1 -PluginName MyPlugin
 
 # Check for known issues
-Get-Content .kilocode/troubleshooting/known-issues.yaml | Select-String "error pattern"
+Get-Content .agent/troubleshooting/known-issues.yaml | Select-String "error pattern"
 
 # Debug
 /debug MyPlugin
@@ -562,3 +584,4 @@ gh workflow run build-release.yml -f plugin_name=MyPlugin -f platforms=all
 - [State Management](state-management-deep-dive.md) - How state is tracked
 - [GitHub Actions](github-actions.md) - CI/CD workflows
 - [Troubleshooting](troubleshooting-guide.md) - When commands fail
+

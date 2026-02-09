@@ -117,7 +117,7 @@ private:
     juce::WebSliderRelay gainRelay { "GAIN" };           // ❌ Too late!
 ```
 
-**See:** [Troubleshooting: WebView Member Order Crash](.kilocode/troubleshooting/resolutions/webview-member-order-crash.md)
+**See:** [Troubleshooting: WebView Member Order Crash](.agent/troubleshooting/resolutions/webview-member-order-crash.md)
 
 ---
 
@@ -612,7 +612,7 @@ draw();
 
 ## Related Documentation
 
-- [WebView Templates](.kilocode/templates/webview/) - Starter templates
-- [WebView Skill](.kilocode/skills/skill_design_webview/SKILL.md) - Detailed skill
-- [Known Issues](.kilocode/troubleshooting/known-issues.yaml) - WebView issues
-- [Member Order Crash](.kilocode/troubleshooting/resolutions/webview-member-order-crash.md) - Critical fix
+- [WebView Templates](.agent/templates/webview/) - Starter templates
+- [WebView Skill](.agent/skills/skill_design_webview/SKILL.md) - Detailed skill
+- [Known Issues](.agent/troubleshooting/known-issues.yaml) - WebView issues
+- [Member Order Crash](.agent/troubleshooting/resolutions/webview-member-order-crash.md) - Critical fix

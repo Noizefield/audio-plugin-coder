@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Visage integration scaffolding
+  - `APC_ENABLE_VISAGE` CMake option and optional subdirectory wiring
+  - Visage plugin templates for `.kilocode`, `.agent`, and `.claude`
+  - `scripts/validate-visage-setup.ps1` validation script
+  - Design workflow: Visage preview scaffold (no HTML), default yes
+  - Implementation workflow: framework routing and Visage validation
+  - Documentation updates for Visage preview flow and validation
 - CloudWash plugin: Full-featured granular texture processor (Mutable Instruments Clouds adaptation)
   - 4 processing modes (Granular, Pitch Shifter, Looping Delay, Spectral)
   - WebView-based UI with real-time visualization
@@ -40,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic releases on git tags
 
 ### Changed
+- Design phase now branches by framework: WebView generates HTML preview; Visage avoids HTML and uses C++ scaffold
+- Implementation phase now routes templates by framework and runs Visage validation for Visage plugins
 - **Installer template improvements**
   - Documentation now placed inside plugin bundle instead of VST3 root folder
   - Fixed desktop shortcut icons (now references icon.ico correctly)

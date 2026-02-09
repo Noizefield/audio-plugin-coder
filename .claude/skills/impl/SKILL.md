@@ -35,6 +35,10 @@ Write-Host "Framework: $($state.ui_framework)" -ForegroundColor Cyan
 
 ## 🎨 PHASE 4.0: DESIGN-TO-FRAMEWORK CONVERSION (CRITICAL - BEFORE DSP CODE)
 
+**Framework Routing:**
+- If `ui_framework == webview`: use templates from `.claude/templates/webview/`
+- If `ui_framework == visage`: use templates from `.claude/templates/visage/` and **do not** generate HTML
+
 **IMPORTANT:** This phase converts the approved design specifications into framework-specific code. User must approve the conversion before DSP implementation begins.
 
 ### 4.0.1 Read Approved Design
@@ -155,6 +159,28 @@ Choose (1-3): _
 
 **For Visage Framework:**
 Convert approved design to Visage C++ code (Source/VisageControls.h).
+Use templates from `..claude/templates/visage/` and the shared host in `common/VisageJuceHost.h`.
+
+---
+
+## ✅ VISAGE IMPLEMENTATION CHECKLIST (MANDATORY)
+
+**Before proceeding to DSP implementation, validate Visage setup:**
+
+```powershell
+.\scripts\validate-visage-setup.ps1 -PluginName [Name]
+```
+
+### Mandatory Checklist (All Must Pass):
+1. ✅ **CMakeLists.txt links Visage**
+   - Contains `visage::visage` in `target_link_libraries`
+2. ✅ **Visage controls exist**
+   - `Source/VisageControls.h` present
+3. ✅ **Editor uses Visage host**
+   - `PluginEditor.h` includes `VisageJuceHost.h`
+   - Editor inherits `VisagePluginEditor`
+4. ✅ **No WebView-only flags**
+   - `NEEDS_WEBVIEW2 TRUE` and `JUCE_WEB_BROWSER=1` not present
 
 ---
 

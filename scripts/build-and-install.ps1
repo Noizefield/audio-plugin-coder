@@ -20,8 +20,24 @@ $ErrorActionPreference = "Stop"
 
 $RootPath = (Get-Item "$PSScriptRoot\..").FullName
 $BuildDir = "$RootPath\build"
+$StatusJson = Join-Path $RootPath "plugins\$PluginName\status.json"
+$UseVisage = $false
+
+if (Test-Path $StatusJson) {
+    try {
+        $state = Get-Content $StatusJson -Raw | ConvertFrom-Json
+        if ($state.ui_framework -eq "visage") {
+            $UseVisage = $true
+        }
+    } catch {
+        Write-Warning "Could not read status.json; proceeding without framework hints."
+    }
+}
 
 Write-Host "--- APC BUILDER: $PluginName ---" -ForegroundColor Cyan
+if ($UseVisage) {
+    Write-Host "Framework: visage" -ForegroundColor DarkGray
+}
 
 # Validate prerequisites
 $state = Get-PluginState -PluginPath "plugins/$PluginName"
@@ -31,7 +47,8 @@ if ($state.current_phase -ne "code_complete" -and -not $SkipTests) {
 
 # 1. Configure with error monitoring
 Write-Host "Configuring build..." -ForegroundColor Yellow
-$configureCommand = "cmake -S `"$RootPath`" -B `"$BuildDir`" -G `"Visual Studio 17 2022`" -A x64 --fresh"
+$visageFlag = if ($UseVisage) { "-DAPC_ENABLE_VISAGE:BOOL=ON" } else { "" }
+$configureCommand = "cmake -S `"$RootPath`" -B `"$BuildDir`" -G `"Visual Studio 17 2022`" -A x64 --fresh $visageFlag"
 $configResult = Invoke-MonitoredCommand -Command $configureCommand -ShowOutput -ThrowOnError
 
 if ($configResult.Errors.Count -gt 0) {

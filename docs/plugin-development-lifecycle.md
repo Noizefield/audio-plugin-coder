@@ -277,7 +277,9 @@ Create visual mockups and detailed UI specifications.
 2. **Mockup Generation**
    - Create layout specification
    - Define style guide
-   - Generate preview (WebView)
+   - Generate preview (framework-specific)
+     - WebView: HTML preview (`v1-test.html`)
+     - Visage: optional C++ preview scaffold (default yes)
 
 3. **Iteration**
    - Review with user
@@ -298,6 +300,14 @@ plugins/MyPlugin/
     ├── v1-ui-spec.md          # Layout specification
     ├── v1-style-guide.md      # Visual reference
     └── v1-test.html           # WebView preview (optional)
+ 
+Visage preview (optional):
+```
+plugins/MyPlugin/Source/
+    ├── PluginEditor.h
+    ├── PluginEditor.cpp
+    └── VisageControls.h
+```
 ```
 
 **v1-ui-spec.md:**
@@ -344,7 +354,7 @@ plugins/MyPlugin/
 - [ ] Style guide exists with colors/typography
 - [ ] All parameters have UI representations
 - [ ] Window size defined
-- [ ] Framework-specific files created (if WebView)
+- [ ] Framework-specific preview created (WebView HTML or Visage scaffold)
 
 ### Completion State
 ```json

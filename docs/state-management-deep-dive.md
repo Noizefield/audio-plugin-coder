@@ -567,6 +567,6 @@ Set-PluginFramework -PluginPath "plugins\MyPlugin" -Framework "webview" -Rationa
 ## Related Documentation
 
 - [Project Structure](PROJECT_STRUCTURE.md) - Directory layout
-- [State Management Guide](.kilocode/guides/state-management-guide.md) - Original guide
+- [State Management Guide](.agent/guides/state-management-guide.md) - Original guide
 - [Build System](build-system.md) - Build integration
-- [Workflows](.kilocode/workflows/) - Phase orchestration
+- [Workflows](.agent/workflows/) - Phase orchestration

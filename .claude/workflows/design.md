@@ -25,9 +25,13 @@ if ($state.ui_framework -eq "pending") {
 
 **FOR ALL FRAMEWORKS (Visage and WebView):**
 - Load `..claude\skills\design\SKILL.md`
-- Create framework-agnostic design specifications and browser-previewable mockup
+- Create framework-agnostic design specifications and a framework-appropriate preview
 - NO production framework-specific code generation
 - Design phase focuses on creative iteration and approval
+
+**Framework-specific notes:**
+- **WebView:** Generate `Design/v1-test.html` preview.
+- **Visage:** Do NOT generate HTML. Ask to generate a Visage preview scaffold (default Yes).
 
 **Validation:**
 - Verify Design/ folder exists with appropriate files

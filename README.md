@@ -1,7 +1,7 @@
 # Audio Plugin Coder (APC)
 ![Audio Plugin Coder Logo](https://github.com/Noizefield/audio-plugin-coder/blob/main/assets/APC_Logo.gif)
 
-> AI-powered framework for vibe-coding audio plugins from concept to shipped product
+> AI-powered open-source framework for vibe-coding audio plugins from concept to shipped product
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![JUCE](https://img.shields.io/badge/JUCE-8.0-blue.svg)](https://juce.com/)
@@ -48,12 +48,12 @@ Instead of manually juggling DSP architecture, UI frameworks, build systems, sta
 
 ### Prerequisites
 
-- Windows 11 (macOS/Linux via GitHub Actions)
+- Windows 11 or Linux (tested with Mint Linux) (macOS not yet tested)
 - PowerShell 7+
 - Visual Studio 2022 (with C++ development tools)
 - CMake 3.22+
 - Git
-- **An LLM coding agent** (Claude Code, Kilo, etc.)
+- **An LLM coding agent** (Claude Code, Antigravity, Kilo, Codex, Cursor)
 
 ### Installation
 
@@ -74,12 +74,12 @@ cd audio-plugin-coder
 
 For **Kilo**:
 ```powershell
-# Workflows are automatically discovered from .kilocode/workflows/
+# Workflows are automatically discovered from .agent/workflows/
 ```
 
 For **Claude Code**:
 ```powershell
-# The agent will discover workflows from .kilocode/workflows/
+# The agent will discover workflows from .agent/workflows/
 ```
 
 3. **Create your first plugin:**
@@ -210,13 +210,13 @@ audio-plugin-coder/
 
 ## 🎨 UI Framework Options
 
-### Visage (Pure C++) - Planned
-- Native JUCE components
-- High performance
+### Visage (Pure C++) - Experimental
+- Native C++ UI via Visage frames
+- High performance, low overhead
 - Full C++ control
 - Custom rendering with `visage::Frame`
 
-*Note: Visage integration is planned but not yet implemented in the current beta version.*
+*Note: Visage integration is in active testing and may be unstable on some hosts.*
 
 ### WebView (HTML5 Canvas)
 - Modern web technologies
@@ -251,7 +251,7 @@ APC includes an **auto-capture system** that learns from problems:
 4. **After 3 attempts** → Auto-creates issue entry
 5. **When solved** → Documents solution for future use
 
-**Location:** `.kilocode/troubleshooting/`
+**Location:** `.agent/troubleshooting/`
 
 **Result:** The system gets smarter with every issue encountered!
 
@@ -305,7 +305,8 @@ Comprehensive documentation is available in the [`docs/`](docs/) directory:
 - [x] GitHub Actions CI/CD
 - [x] Comprehensive documentation
 - [ ] macOS local build support
-- [ ] Linux local build support
+- [x] Linux local build support
+- [x] visage (GUI) support (https://github.com/VitalAudio/visage)
 - [ ] CLAP format support
 - [ ] Preset management system
 - [ ] Plugin marketplace integration
@@ -340,6 +341,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 - **JUCE Team** - For the industry-standard framework.
 - **The AI Community** - Specifically the meta-prompting pioneers.
+- **Matt Tytel** - For the outstandingly good Visage library (https://github.com/VitalAudio/visage)
 - **[TÂCHES (glittercowboy)](https://github.com/glittercowboy)** - Inspiration for context engineering systems.
 
 
@@ -352,3 +354,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENCE.md) f
 **Built with ❤️ (and a lot of tokens) for the audio development community.**
 
 *Turn your plugin ideas into reality with the power of AI*
+

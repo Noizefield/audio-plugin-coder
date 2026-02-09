@@ -39,11 +39,11 @@ juce_add_binary_data(nf_gnarly_WebUI
 # PLUGIN DEFINITION
 # ============================================
 juce_add_plugin(nf_gnarly
-    COMPANY_NAME "NPS"
+    COMPANY_NAME "Noizefield"
     PLUGIN_MANUFACTURER_CODE NPS0
     PLUGIN_CODE Nfgn
     FORMATS ${PLUGIN_FORMATS}
-    PRODUCT_NAME "NF Gnarly"
+    PRODUCT_NAME "Gnarly"
     NEEDS_WEBVIEW2 ${NEEDS_WEBVIEW2}
     NEEDS_WEB_BROWSER ${NEEDS_WEB_BROWSER}
     VST3_CATEGORIES Fx

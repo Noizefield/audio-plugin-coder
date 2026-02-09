@@ -37,6 +37,10 @@ Write-Host "Framework: $($state.ui_framework)" -ForegroundColor Cyan
 
 **IMPORTANT:** This phase converts the approved design specifications into framework-specific code. User must approve the conversion before DSP implementation begins.
 
+**Framework Routing:**
+- If `ui_framework == webview`: use templates from `..kilocode/templates/webview/`
+- If `ui_framework == visage`: use templates from `..kilocode/templates/visage/` and **do not** generate HTML
+
 ### 4.0.1 Read Approved Design
 - Read `Design/v[N]-ui-spec.md` (latest approved version)
 - Read `Design/v[N]-style-guide.md` (latest approved version)
@@ -155,6 +159,28 @@ Choose (1-3): _
 
 **For Visage Framework:**
 Convert approved design to Visage C++ code (Source/VisageControls.h).
+Use templates from `..kilocode/templates/visage/` and the shared host in `common/VisageJuceHost.h`.
+
+---
+
+## ✅ VISAGE IMPLEMENTATION CHECKLIST (MANDATORY)
+
+**Before proceeding to DSP implementation, validate Visage setup:**
+
+```powershell
+.\scripts\validate-visage-setup.ps1 -PluginName [Name]
+```
+
+### Mandatory Checklist (All Must Pass):
+1. ✅ **CMakeLists.txt links Visage**
+   - Contains `visage::visage` in `target_link_libraries`
+2. ✅ **Visage controls exist**
+   - `Source/VisageControls.h` present
+3. ✅ **Editor uses Visage host**
+   - `PluginEditor.h` includes `VisageJuceHost.h`
+   - Editor inherits `VisagePluginEditor`
+4. ✅ **No WebView-only flags**
+   - `NEEDS_WEBVIEW2 TRUE` and `JUCE_WEB_BROWSER=1` not present
 
 ---
 

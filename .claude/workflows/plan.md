@@ -13,6 +13,7 @@ Load and follow `..claude/skills/plan/SKILL.md` exactly.
 
 **CRITICAL UI Framework Decision:**
 - Read user requirements
+- If user has not explicitly chosen, ASK: "Use WebView2 (HTML/JS) or Visage (native C++)?"
 - Determine: VISAGE (pure C++) or WEBVIEW (hybrid)
 - Update status.json with framework selection
 - Set complexity score (1-5)

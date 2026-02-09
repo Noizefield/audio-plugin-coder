@@ -112,7 +112,8 @@ if (Test-Path $manifestPath) {
 
 ## 📋 PHASE 1: REQUIREMENTS GATHERING
 
-**Do NOT write code yet.** Gather requirements through focused questions:
+**Do NOT write code yet.** Gather requirements through focused questions.  
+Exception: For **Visage** only, a preview scaffold may be generated after Phase 2 if the user approves.
 
 ### Tier 1 - Critical (always ask if missing):
 1. **Style Direction:** Cyberpunk? Analog hardware? Minimal modern? Skeuomorphic?
@@ -165,8 +166,11 @@ function Apply-DesignFromLibrary {
         # Copy design files as v1 starting point
         $designPath = "design_library/$($design.path)"
 
-        # Copy preview.html as v1-test.html
-        Copy-Item "$designPath/preview.html" "plugins/[$PluginName]/Design/v1-test.html"
+        # Copy preview.html as v1-test.html (WebView only)
+        $state = Get-PluginState -PluginPath "plugins/[$PluginName]"
+        if ($state.ui_framework -eq "webview") {
+            Copy-Item "$designPath/preview.html" "plugins/[$PluginName]/Design/v1-test.html"
+        }
 
         # Generate v1-ui-spec.md based on design metadata
         $specContent = @"
@@ -227,7 +231,7 @@ function Apply-DesignFromLibrary {
 
 ## 🎨 PHASE 2: MOCKUP GENERATION
 
-**Create design specification files:**
+**Create design specification files (all frameworks):**
 
 1. **`plugins/[Name]/Design/v1-ui-spec.md`** - Structured design plan:
 ```markdown
@@ -260,7 +264,10 @@ function Apply-DesignFromLibrary {
    - Control visual styles
    - Example UI state descriptions
 
-3. **`plugins/[Name]/Design/v1-test.html`** - **WORKING HTML PREVIEW**:
+3. **Framework-specific preview artifacts:**
+
+### If `ui_framework == webview`
+Generate **`plugins/[Name]/Design/v1-test.html`** - **WORKING HTML PREVIEW**:
    
    **CRITICAL:** For WebView framework, this HTML MUST be production-ready with proper JUCE integration.
 
@@ -328,20 +335,37 @@ function Apply-DesignFromLibrary {
    - HTML structure must match the approved design exactly
    - No external dependencies (all assets embedded or served via resource provider)
 
+### If `ui_framework == visage`
+**Do NOT generate HTML.** Instead, offer a **Visage preview scaffold** (default **Yes**):
+
+Ask:
+```
+Generate a Visage preview scaffold now? (Y/n)
+```
+
+Default: **Yes** (generate unless user explicitly says no).
+
+If yes, generate:
+- `plugins/[Name]/Source/VisageControls.h` using `..kilocode/templates/visage/VisageControls.h.template`
+- `plugins/[Name]/Source/PluginEditor.h` and `PluginEditor.cpp` using `..kilocode/templates/visage/`
+
+These files are **preview-only** and will be refined during `/impl`.
+
 **Present decision menu:**
 ```
 🎨 Design specification v1 created
 Files:
    - plugins/[Name]/Design/v1-ui-spec.md
    - plugins/[Name]/Design/v1-style-guide.md
-   - plugins/[Name]/Design/v1-test.html (preview in browser)
+   - WebView: plugins/[Name]/Design/v1-test.html (preview in browser)
+   - Visage: Source/VisageControls.h + PluginEditor.* (preview via preview-design.ps1)
 
 ⚠️ STOP HERE - Do NOT create Source/ files yet!
 What would you like to do?
 1. Iterate - Refine layout or style (creates v2)
 2  Implement - Generate production code in Source/
 3. Save as template - Add to design library
-4. Preview - Open v1-test.html in browser
+4. Preview - WebView: open v1-test.html in browser; Visage: run preview-design.ps1
 Choose (1-4): _
 ```
 
@@ -349,7 +373,7 @@ Choose (1-4): _
 - Option 1: Collect feedback, create v2 specs and v2-test.html, return to this menu
 - Option 2: Mark design as approved and complete Design phase, suggest starting Implementation phase
 - Option 3: Save to design_library/, return to menu
-- Option 4: Open v1-test.html in browser for preview, return to menu
+- Option 4: Open v1-test.html or run Visage preview, return to menu
 
 **After design approval (Option 2):**
 ```powershell

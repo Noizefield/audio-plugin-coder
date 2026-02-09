@@ -1,0 +1,19 @@
+#pragma once
+
+#include <visage/ui.h>
+#include <visage/graphics.h>
+
+// Minimal Visage root view. Replace with real layout and widgets.
+class VisageMainView : public visage::Frame {
+public:
+    VisageMainView() = default;
+
+    void resized() override {
+        // Layout child frames here as the view resizes.
+    }
+
+    void draw(visage::Canvas& canvas) override {
+        canvas.setColor(0xff20252b);
+        canvas.fill(0, 0, width(), height());
+    }
+};

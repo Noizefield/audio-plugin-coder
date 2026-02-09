@@ -22,6 +22,7 @@ Execute `/dream [PluginName]`
 Execute `/plan [PluginName]`
 
 **CRITICAL:** UI framework selection happens here
+**Ask user:** "Use WebView2 (HTML/JS) or Visage (native C++)?"
 **STOP** - Review architecture and framework choice
 **Continue?** User must approve before proceeding
 

@@ -4,6 +4,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ============================================
+# OPTIONAL FEATURES
+# ============================================
+option(APC_ENABLE_VISAGE "Enable Visage UI framework support" OFF)
+
+# ============================================
 # PLATFORM DETECTION
 # ============================================
 if(WIN32)
@@ -53,14 +58,15 @@ endif()
 add_subdirectory("${JUCE_DIR}")
 
 # Visage is only needed for Visage UI framework plugins
-# Uncomment if using Visage
-# if(NOT EXISTS "${VISAGE_DIR}")
-#     message(FATAL_ERROR "Visage missing at ${VISAGE_DIR}")
-# endif()
-# add_subdirectory("${VISAGE_DIR}")
-# if(TARGET visage AND NOT TARGET visage::visage)
-#     add_library(visage::visage ALIAS visage)
-# endif()
+if(APC_ENABLE_VISAGE)
+    if(NOT EXISTS "${VISAGE_DIR}")
+        message(FATAL_ERROR "Visage missing at ${VISAGE_DIR}")
+    endif()
+    add_subdirectory("${VISAGE_DIR}")
+    if(TARGET visage AND NOT TARGET visage::visage)
+        add_library(visage::visage ALIAS visage)
+    endif()
+endif()
 
 # ============================================
 # PLUGIN DISCOVERY

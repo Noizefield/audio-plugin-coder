@@ -170,6 +170,9 @@ Based on the architecture complexity and plugin requirements:
 - Interactive controls
 - Web-based design workflow
 
+**If user has not explicitly chosen a UI framework, ask this question before deciding:**
+"Do you want WebView2 (HTML/JS UI) or Visage (native C++) for this plugin?"
+
 **Decision: [visage/webview]**
 **Rationale: [Explain the choice based on plugin requirements]**
 

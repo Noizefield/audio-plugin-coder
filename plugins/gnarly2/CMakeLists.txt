@@ -39,7 +39,7 @@ juce_add_binary_data(gnarly2_WebUI
 # PLUGIN DEFINITION
 # ============================================
 juce_add_plugin(gnarly2
-    COMPANY_NAME "NPS"
+    COMPANY_NAME "Noizefield"
     PLUGIN_MANUFACTURER_CODE NPS0
     PLUGIN_CODE Gnr2
     FORMATS ${PLUGIN_FORMATS}

@@ -28,6 +28,18 @@ Load and execute `...agent\skills\skill_implementation\SKILL.md`
 3. **DSP Implementation:** Build audio processing engine
 4. **Integration:** Connect parameters to UI controls
 
+**Framework Routing:**
+- **WebView:** Use templates in `..agent/templates/webview/` and run WebView validation scripts.
+- **Visage:** Use templates in `..agent/templates/visage/`. Do NOT generate HTML.
+
+**Pre-Build Validation (Visage):**
+```powershell
+# If Visage framework, validate Visage setup
+if ($state.ui_framework -eq "visage") {
+    .\scripts\validate-visage-setup.ps1 -PluginName $PluginName
+}
+```
+
 **Pre-Build Validation (WebView Only):**
 ```powershell
 # If WebView framework, validate member declaration order

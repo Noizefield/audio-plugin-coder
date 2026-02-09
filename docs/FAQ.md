@@ -249,7 +249,7 @@ Or let the `/ship` command handle it.
 
 1. Check known issues:
    ```powershell
-   Get-Content .kilocode/troubleshooting/known-issues.yaml | Select-String "error"
+   Get-Content .agent/troubleshooting/known-issues.yaml | Select-String "error"
    ```
 
 2. Run validation:
@@ -314,7 +314,7 @@ APC provides:
 ### Can I use APC without an AI agent?
 
 Yes, but it's designed for AI assistance. You can manually:
-1. Read the skill files in `.kilocode/skills/`
+1. Read the skill files in `.agent/skills/`
 2. Follow the instructions
 3. Run the scripts yourself
 
@@ -367,7 +367,7 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for details.
 
 ### How do I report a bug?
 
-1. Check if it's a [known issue](.kilocode/troubleshooting/known-issues.yaml)
+1. Check if it's a [known issue](.agent/troubleshooting/known-issues.yaml)
 2. Create an issue on GitHub
 3. Include:
    - Error message
@@ -377,7 +377,7 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for details.
 
 ### Can I add my own skills?
 
-Yes! Create a new directory in `.kilocode/skills/`:
+Yes! Create a new directory in `.agent/skills/`:
 ```
 skill_myskill/
 └── SKILL.md
@@ -407,7 +407,7 @@ No, but it's appreciated. You can mention "Built with Audio Plugin Coder" if you
 
 - Check the [documentation index](README.md)
 - Review [troubleshooting guide](troubleshooting-guide.md)
-- Search [known issues](.kilocode/troubleshooting/known-issues.yaml)
+- Search [known issues](.agent/troubleshooting/known-issues.yaml)
 - Create an issue on GitHub
 - Join the community discussions
 
