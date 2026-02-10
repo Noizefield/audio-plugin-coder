@@ -61,30 +61,47 @@ public:
 
                     void* nativeHandle = nullptr;
 
-                    // Step A: Get the t_object (the Max object instance)
+                    // ==============================================================================
+                    // NATIVE WINDOW HANDLE EXTRACTION (TITAN STRATEGY)
+                    // ==============================================================================
+                    // Note: This block uses standard Max C-API calls. Ensure you link against
+                    // the Max SDK C-Includes (which Min-API usually wraps).
+
+                    // 1. Get the t_object (the Max object instance)
                     t_object* obj = maxObject->maxobj();
 
-                    // Step B: Get the view associated with the object (if in a patcher)
-                    // Note: jbox_get_view returns the t_object representing the view
-                    t_object* view = nullptr;
+                    // 2. Cast to t_jbox* (assuming we are a UI object inheriting from jbox)
+                    t_jbox* box = (t_jbox*)obj;
 
-                    // Use object_method to call "getview" safely if jbox_get_view is not linked
-                    // view = (t_object*)object_method(obj, gensym("getview"));
-                    // However, standard C-API is:
-                    // view = jbox_get_view((t_jbox*)obj);
+                    // 3. Get the Patcher View containing this box
+                    // t_object* patcherview = jbox_get_patcherview(box);
+                    // (Note: Requires linking 'jbox_get_patcherview')
 
-                    // Step C: Get the Window from the View
-                    // t_object* window = jview_get_window(view);
+                    // 4. Get the Native Window Handle from the View
+                    // On macOS (Cocoa): We need the NSView*
+                    // On Windows: We need the HWND
 
-                    // Step D: Get Native Handle (NSView* or HWND)
-                    // void* nsview = object_method(view, gensym("get_nsview"));
+                    // Using object_method is safer if symbols are not directly linked:
+                    /*
+                    if (box) {
+                        t_object* patcherview = (t_object*)object_method((t_object*)box, gensym("get_patcherview"));
+                        if (patcherview) {
+                            t_object* jwindow = (t_object*)object_method(patcherview, gensym("get_jwindow"));
+                            if (jwindow) {
+                                nativeHandle = (void*)object_method(jwindow, gensym("get_native_window"));
+                            }
+                        }
+                    }
+                    */
 
-                    // Since we cannot verify these symbols exist without the Max SDK headers linked deeply,
-                    // we provide the fallback to a floating window which is safe and guaranteed to work.
-                    // To enable embedding, one would uncomment the logic above once strict C-API linking is confirmed.
+                    // Since we cannot verify these symbols exist without full SDK setup in this template context,
+                    // we provide the placeholder logic. To enable embedding:
+                    // 1. Ensure you link against MaxAPI.framework / MaxAPI.lib
+                    // 2. Uncomment the block above.
+                    // 3. Pass 'nativeHandle' to addToDesktop below.
 
                     // FALLBACK: Floating Window
-                    // This ensures the user sees the UI even if embedding fails.
+                    // This ensures the user sees the UI even if embedding fails or is not enabled.
                     int flags = juce::ComponentPeer::windowHasTitleBar |
                                 juce::ComponentPeer::windowIsResizable |
                                 juce::ComponentPeer::windowAppearsOnTaskbar;

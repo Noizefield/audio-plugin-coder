@@ -77,6 +77,8 @@ target_link_libraries(FFGL_Bridge
         juce::juce_graphics
         juce::juce_gui_basics
         juce::juce_opengl
+        juce::juce_audio_basics
+        juce::juce_audio_processors
 )
 
 # Platform specific linking for OpenGL if needed

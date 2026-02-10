@@ -54,6 +54,38 @@ CFFGLPlugin* FFGLJuceBridge::CreateInstance(CFFGLPluginInfo* info)
 }
 
 // ============================================
+// MANUAL ENTRY POINT (Optional)
+// ============================================
+/*
+ * By default, this template links against the FFGL SDK sources (FFGLPluginSDK.cpp),
+ * which already implements the 'plugMain' function.
+ *
+ * If you wish to implement 'plugMain' manually (e.g., to avoid linking the SDK source
+ * or to customize the entry point), uncomment the following block and remove
+ * FFGLPluginSDK.cpp from your CMakeLists.txt sources.
+ */
+
+/*
+extern "C" __declspec(dllexport) const void* __stdcall plugMain(DWORD functionCode, DWORD inputValue, DWORD instanceID)
+{
+    switch(functionCode)
+    {
+        case FF_GETINFO:
+            return &PluginInfo;
+        case FF_INITIALISE:
+            // Custom Initialization Logic
+            return (void*)FF_SUCCESS;
+        case FF_DEINITIALISE:
+            // Custom Cleanup Logic
+            return (void*)FF_SUCCESS;
+        case FF_INSTANTIATE:
+            return (void*)PluginInfo.NewPluginInstance(inputValue);
+    }
+    return NULL;
+}
+*/
+
+// ============================================
 // PARAMETER HANDLING
 // ============================================
 
