@@ -23,8 +23,8 @@ static CFFGLPluginInfo PluginInfo(
 
 FFGLJuceBridge::FFGLJuceBridge() : CFFGLPlugin()
 {
-    // 1. Initialize JUCE Scoped Initializer
-    // This is handled by the member 'juceInitialiser' constructor automatically.
+    // 1. Initialize JUCE
+    // handled by SharedResourcePointer 'juceInitialiser'
 
     // 2. Setup Parameters
     setupParameters();
@@ -44,7 +44,7 @@ FFGLJuceBridge::~FFGLJuceBridge()
     apvts = nullptr;
     processor = nullptr;
 
-    // juceInitialiser destructor handles shutdown
+    // juceInitialiser manages ref-counting automatically
 }
 
 // Factory method for FFGL SDK
@@ -75,6 +75,10 @@ void FFGLJuceBridge::setupParameters()
 
     // Initialize APVTS
     apvts = std::make_unique<juce::AudioProcessorValueTreeState>(*processor, nullptr, "Parameters", std::move(layout));
+
+    // Cache Parameter Pointers for efficiency
+    if (auto* p = apvts->getRawParameterValue("brightness"))
+        brightnessParam = p;
 }
 
 FFResult FFGLJuceBridge::SetFloatParameter(unsigned int index, float value)
@@ -110,10 +114,10 @@ float FFGLJuceBridge::GetFloatParameter(unsigned int index)
 
 FFResult FFGLJuceBridge::ProcessOpenGL(ProcessOpenGLStruct* pGL)
 {
-    // 1. Get Parameter Value from APVTS
+    // 1. Get Parameter Value from Cache (Fast)
     float brightness = 0.5f;
-    if (auto* param = apvts->getParameter("brightness"))
-        brightness = param->getValue();
+    if (brightnessParam)
+        brightness = brightnessParam->load();
 
     // 2. Use Raw OpenGL (Core Profile 3.3+)
     // Host provides the context. We just issue commands.
@@ -130,15 +134,16 @@ FFResult FFGLJuceBridge::ProcessOpenGL(ProcessOpenGLStruct* pGL)
     // For standard FFGL, we usually bind the input texture and draw.
     // Here is a dummy implementation:
 
-    if (pGL->numInputTextures < 1) return FF_FAIL;
+    // 3. Clear Screen with Parameter Color (Simple Example)
+    // We rely on the host's active context.
+    // Since we are linking against system OpenGL, we can use basic functions.
+    // For more advanced stuff (shaders), use juce::OpenGLContext::getCurrentContext()->extensions.
 
-    // In a real implementation: Bind shader, bind texture, draw quad.
-    // We will assume the host setup is compatible or use standard GL commands.
-    // Since we can't link GLEW easily here without more setup, we rely on symbols being available
-    // or JUCE's GL bindings.
+    glClearColor(brightness, brightness, brightness, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-    // Using JUCE's OpenGLExtensionFunctions is a good way to get function pointers.
-    // auto* gl = juce::OpenGLContext::getCurrentContext()->extensions;
+    // If implementing a full effect, we would draw a textured quad here.
+    // For now, we return success to indicate we handled the draw.
 
     return FF_SUCCESS;
 }

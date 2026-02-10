@@ -56,6 +56,19 @@ public:
 };
 
 // ============================================
+// SHARED JUCE INITIALIZER
+// ============================================
+// Ensures MessageManager persists across multiple plugin instances.
+class SharedJuceInitializer
+{
+public:
+    SharedJuceInitializer() { initialiser = std::make_unique<juce::ScopedJuceInitialiser_GUI>(); }
+    ~SharedJuceInitializer() { initialiser = nullptr; }
+private:
+    std::unique_ptr<juce::ScopedJuceInitialiser_GUI> initialiser;
+};
+
+// ============================================
 // FFGL BRIDGE CLASS
 // ============================================
 class FFGLJuceBridge : public CFFGLPlugin
@@ -78,13 +91,15 @@ public:
 
 private:
     // JUCE System Logic
-    // ScopedJuceInitialiser_GUI must be a member to ensure JUCE is initialized
-    // for the lifetime of the plugin instance.
-    juce::ScopedJuceInitialiser_GUI juceInitialiser;
+    // Use SharedResourcePointer to manage lifecycle across instances
+    juce::SharedResourcePointer<SharedJuceInitializer> juceInitialiser;
 
     // Parameter Management
     std::unique_ptr<FFGLParameterProcessor> processor;
     std::unique_ptr<juce::AudioProcessorValueTreeState> apvts;
+
+    // Cached Parameters (Atomic for thread safety)
+    std::atomic<float>* brightnessParam = nullptr;
 
     // OpenGL State
     juce::OpenGLContext openGLContext; // Might be useful if we want to use JUCE's GL helpers

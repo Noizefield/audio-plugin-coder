@@ -63,7 +63,6 @@ target_compile_definitions(FFGL_Bridge
     PRIVATE
         JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
         JUCE_STANDALONE_APPLICATION=0
-        JUCE_DLL_BUILD=1
 )
 
 # ============================================
