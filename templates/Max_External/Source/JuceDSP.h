@@ -22,12 +22,17 @@ public:
 
     void releaseResources() override {}
 
+    // Support FLOAT processing (Standard JUCE)
     void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) override
     {
-        // Simple bypass/gain for demonstration
-        //buffer.applyGain(0.5f);
+        // Standard processing
+    }
 
-        // In a real implementation, call your DSP logic here
+    // Support DOUBLE processing (Max Native)
+    void processBlock(juce::AudioBuffer<double>& buffer, juce::MidiBuffer& midiMessages) override
+    {
+        // High-precision processing without conversion overhead
+        // buffer.applyGain(0.5);
     }
 
     // ==============================================================================

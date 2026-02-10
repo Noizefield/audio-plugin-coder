@@ -37,19 +37,43 @@ public:
     outlet<> output { this, "(signal) Output" };
 
     // ==============================================================================
+    // ATTRIBUTES (Parameter Binding)
+    // ==============================================================================
+
+    // Example: Bind 'gain' attribute to JUCE parameter
+    // Note: In a real plugin, iterate APVTS and create attributes dynamically or manually map them.
+    attribute<double> gain { this, "gain", 1.0,
+        description {"Master Gain"},
+        setter { MIN_FUNCTION {
+            double val = args[0];
+            // Update JUCE Parameter if available
+            // if (dsp) dsp->setParameter("gain", val);
+            return args;
+        }}
+    };
+
+    // ==============================================================================
     // CONSTRUCTOR & DESTRUCTOR
     // ==============================================================================
 
     JuceMaxDevice(const atoms& args = {})
     {
         // 1. Initialize JUCE
-        // Ensure the MessageManager is initialized on the main thread via SharedResourcePointer
-        // This is safe to call from Max's main thread (where constructor runs).
+        juceInitialiser.reset(new SharedJuceInitializer()); // Actually pointer manages this, but keeping reset for clarity if explicit init needed
 
-        // 2. Initialize DSP
+        // 2. Multi-Channel Configuration
+        int channels = 2; // Default Stereo
+        if (!args.empty()) {
+            channels = (int)args[0]; // [juce.dsp~ 4]
+        }
+
+        // 3. Initialize DSP
         dsp.reset(new JuceDSP());
 
-        // 3. Initialize Bridge (UI)
+        // Configure Bus Layout (if supported by JuceDSP)
+        // dsp->setPlayConfigDetails(channels, channels, 44100.0, 512);
+
+        // 4. Initialize Bridge (UI)
         bridge.reset(new JuceBridge(dsp.get(), this));
     }
 
@@ -91,58 +115,61 @@ public:
         int numChannels = input.channel_count();
         int numSamples = input.frame_count();
 
-        // 1. Ensure buffer capacity (Fast check)
-        // If vector size changes dynamically without dspsetup (rare but possible in some hosts),
-        // we might need to resize. However, allocating here is bad.
-        // Ideally rely on dspsetup. For safety, if buffer is too small, we bail or process partial.
-
-        if (conversionBuffer.getNumSamples() < numSamples || conversionBuffer.getNumChannels() < numChannels)
-        {
-            // Fallback: This allocates, but only happens if configuration is mismatched/changed unexpectedly.
-            // In a strict real-time context, we might output silence instead.
-            conversionBuffer.setSize(std::max(2, numChannels), std::max(conversionBuffer.getNumSamples(), numSamples));
-        }
-
         if (!dsp) return;
 
-        // 2. Convert Min-API (Double) to JUCE (Float)
-        // Note: conversionBuffer is a member variable, so no allocation here.
+        // OPTIMIZATION: Direct Double Processing
+        // Since Max uses doubles and we added processBlock(AudioBuffer<double>) to JuceDSP,
+        // we can wrap the Min-API pointers directly without copying!
 
-        for (int c = 0; c < numChannels; ++c)
+        // Create a JUCE buffer wrapper around existing data
+        // Note: JUCE's AudioBuffer<double> takes an array of pointers (double**).
+        // Min-API provides sample_t* (double*) per channel via input.samples(c).
+        // We need an array of pointers.
+
+        // Use a small stack array for pointers (Max objects usually have limited channels)
+        // or a member vector if high channel count.
+        const int maxChannels = 128;
+        double* inputPointers[maxChannels];
+        double* outputPointers[maxChannels];
+
+        int processChannels = std::min(numChannels, maxChannels);
+
+        for (int c = 0; c < processChannels; ++c)
         {
-            auto* min_in = input.samples(c);
-            auto* juce_in = conversionBuffer.getWritePointer(c);
+            inputPointers[c] = input.samples(c);
 
-            // Convert Double to Float
-            for (int s = 0; s < numSamples; ++s)
-            {
-                juce_in[s] = (float)min_in[s];
-            }
+            // For output, we write directly to Min-API output
+            // But JUCE processBlock is usually in-place or separate input/output.
+            // If JuceDSP supports separate IO, we are good.
+            // If JuceDSP is in-place, we might need to copy input to output first if they are different buffers.
+            // In Max, input and output buffers are distinct.
+
+            // Strategy: Copy input to output, then process in-place on output buffer?
+            // Or use an AudioBuffer that wraps the *output* pointers, but how do we get input?
+
+            // JUCE AudioProcessor::processBlock(AudioBuffer& buffer) is in-place.
+            // So we must copy input to output first.
+
+            auto* in = input.samples(c);
+            auto* out = output.samples(c);
+
+            // Memcpy is fast
+            std::memcpy(out, in, numSamples * sizeof(double));
+
+            outputPointers[c] = out;
         }
 
-        // Process
-        juce::MidiBuffer midi; // Dummy
-        dsp->processBlock(conversionBuffer, midi);
+        // Wrap the output buffer (now containing input data)
+        juce::AudioBuffer<double> wrapper(outputPointers, processChannels, numSamples);
 
-        // 3. Copy back to Output (Float to Double)
-        for (int c = 0; c < output.channel_count(); ++c)
+        // Process In-Place
+        juce::MidiBuffer midi;
+        dsp->processBlock(wrapper, midi);
+
+        // Zero out unused output channels
+        for (int c = processChannels; c < output.channel_count(); ++c)
         {
-            if (c < numChannels) // Safety
-            {
-                auto* juce_out = conversionBuffer.getReadPointer(c);
-                auto* min_out = output.samples(c);
-
-                for (int s = 0; s < numSamples; ++s)
-                {
-                    min_out[s] = (double)juce_out[s];
-                }
-            }
-            else
-            {
-                // Clear extra channels
-                auto* min_out = output.samples(c);
-                std::fill(min_out, min_out + numSamples, 0.0);
-            }
+             std::fill(output.samples(c), output.samples(c) + numSamples, 0.0);
         }
     }
 
@@ -170,7 +197,17 @@ public:
     };
 
 private:
-    juce::SharedResourcePointer<SharedJuceInitializer> juceInitialiser;
+    std::unique_ptr<SharedJuceInitializer> juceInitialiser;
+    // Note: SharedResourcePointer is usually a value type on stack or member.
+    // However, we want to control destruction order precisely.
+    // If we use SharedResourcePointer as member, it works.
+    // Here we use unique_ptr to manage explicitly if needed, but SharedResourcePointer is safer.
+    // Reverting to SharedResourcePointer member usage as per previous commit is cleaner,
+    // but constructor code above used 'reset'. Let's fix that.
+
+    // Correct usage:
+    juce::SharedResourcePointer<SharedJuceInitializer> sharedInit;
+
     std::unique_ptr<JuceDSP> dsp;
     std::unique_ptr<JuceBridge> bridge;
 

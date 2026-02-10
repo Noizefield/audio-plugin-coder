@@ -20,6 +20,7 @@
 // FFGL INCLUDES
 // ============================================
 #include "FFGLPluginSDK.h"
+#include "ParameterCache.h"
 
 // ============================================
 // JUCE PARAMETER PROCESSOR
@@ -99,7 +100,7 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState> apvts;
 
     // Cached Parameters (Atomic for thread safety)
-    std::atomic<float>* brightnessParam = nullptr;
+    ParameterCache parameterCache;
 
     // OpenGL State
     juce::OpenGLContext openGLContext; // Might be useful if we want to use JUCE's GL helpers

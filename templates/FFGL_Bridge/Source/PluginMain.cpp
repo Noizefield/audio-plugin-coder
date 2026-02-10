@@ -1,6 +1,13 @@
 #include "JuceWrapper.h"
 #include <FFGLPluginSDK.h>
 
+#if JUCE_MAC
+#include <OpenGL/gl3.h>
+#elif JUCE_WINDOWS
+#include <GL/gl.h>
+#include <GL/glext.h> // Ensure you have this or rely on JUCE
+#endif
+
 // ============================================
 // FFGL PLUGIN INFO
 // ============================================
@@ -108,9 +115,10 @@ void FFGLJuceBridge::setupParameters()
     // Initialize APVTS
     apvts = std::make_unique<juce::AudioProcessorValueTreeState>(*processor, nullptr, "Parameters", std::move(layout));
 
-    // Cache Parameter Pointers for efficiency
-    if (auto* p = apvts->getRawParameterValue("brightness"))
-        brightnessParam = p;
+    // Initialize Parameter Cache
+    // Map parameter IDs to indices [0...N]
+    // 0: brightness
+    parameterCache.initialize(*apvts, { "brightness" });
 }
 
 FFResult FFGLJuceBridge::SetFloatParameter(unsigned int index, float value)
@@ -146,10 +154,19 @@ float FFGLJuceBridge::GetFloatParameter(unsigned int index)
 
 FFResult FFGLJuceBridge::ProcessOpenGL(ProcessOpenGLStruct* pGL)
 {
-    // 1. Get Parameter Value from Cache (Fast)
-    float brightness = 0.5f;
-    if (brightnessParam)
-        brightness = brightnessParam->load();
+    // 1. Map Host Time Info
+    // FFGL provides hostTime in seconds. We can use this to drive LFOs or sequencers.
+    // If our dummy processor had a playhead, we would update it here.
+    double currentTime = pGL->HostTime;
+
+    // 2. Get Parameter Value from Cache (Fast, Lock-Free)
+    // Index 0 corresponds to "brightness" as initialized in setupParameters
+    float brightness = parameterCache.get(0);
+
+    // OPTIMIZATION: PBO Logic
+    // If you enable a TextureUploader member, call:
+    // uploader.upload(myJuceImage, openGLContext);
+    // Then bind uploader.getTextureID();
 
     // 2. Use Raw OpenGL (Core Profile 3.3+)
     // Host provides the context. We just issue commands.

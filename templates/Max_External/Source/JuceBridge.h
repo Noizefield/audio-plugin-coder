@@ -6,6 +6,7 @@
 #include <juce_core/juce_core.h>
 
 #include "JuceDSP.h"
+#include "MaxWindowHandle.h"
 
 using namespace c74::min;
 
@@ -64,41 +65,18 @@ public:
                     // ==============================================================================
                     // NATIVE WINDOW HANDLE EXTRACTION (TITAN STRATEGY)
                     // ==============================================================================
-                    // Note: This block uses standard Max C-API calls. Ensure you link against
-                    // the Max SDK C-Includes (which Min-API usually wraps).
+                    // We use the helper class which resolves Max symbols dynamically to avoid linker issues.
 
-                    // 1. Get the t_object (the Max object instance)
-                    t_object* obj = maxObject->maxobj();
-
-                    // 2. Cast to t_jbox* (assuming we are a UI object inheriting from jbox)
-                    t_jbox* box = (t_jbox*)obj;
-
-                    // 3. Get the Patcher View containing this box
-                    // t_object* patcherview = jbox_get_patcherview(box);
-                    // (Note: Requires linking 'jbox_get_patcherview')
-
-                    // 4. Get the Native Window Handle from the View
-                    // On macOS (Cocoa): We need the NSView*
-                    // On Windows: We need the HWND
-
-                    // Using object_method is safer if symbols are not directly linked:
+                    // 1. Try to get native handle for embedding
                     /*
-                    if (box) {
-                        t_object* patcherview = (t_object*)object_method((t_object*)box, gensym("get_patcherview"));
-                        if (patcherview) {
-                            t_object* jwindow = (t_object*)object_method(patcherview, gensym("get_jwindow"));
-                            if (jwindow) {
-                                nativeHandle = (void*)object_method(jwindow, gensym("get_native_window"));
-                            }
-                        }
-                    }
+                       Note: Embedding requires the object to be a UI object (jbox).
+                       Min-API objects inherit from object_base but usually manifest as standard objects unless
+                       specifically inheriting ui_operator.
+                       Assuming this is a UI object or we are patching into the view.
                     */
 
-                    // Since we cannot verify these symbols exist without full SDK setup in this template context,
-                    // we provide the placeholder logic. To enable embedding:
-                    // 1. Ensure you link against MaxAPI.framework / MaxAPI.lib
-                    // 2. Uncomment the block above.
-                    // 3. Pass 'nativeHandle' to addToDesktop below.
+                    // Uncomment to enable embedding attempts:
+                    // nativeHandle = MaxWindowHandle::getNativeHandle(maxObject);
 
                     // FALLBACK: Floating Window
                     // This ensures the user sees the UI even if embedding fails or is not enabled.

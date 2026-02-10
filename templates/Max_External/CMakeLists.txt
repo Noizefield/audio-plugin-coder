@@ -11,6 +11,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # ============================================
+# SANITIZERS (Optional)
+# ============================================
+option(ENABLE_SANITIZERS "Enable ASan and TSan" OFF)
+
+if(ENABLE_SANITIZERS AND (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU"))
+    add_compile_options(-fsanitize=address,thread -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address,thread)
+endif()
+
+# ============================================
 # DEPENDENCIES
 # ============================================
 
