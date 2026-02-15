@@ -36,7 +36,7 @@ $CurrentOS = if ($IsWindows -or ($env:OS -eq "Windows_NT")) { "Windows" }
 
 # Check for existing local build
 $BuildDir = "build"
-$HasLocalBuild = Test-Path "$BuildDir/*_artefacts/Release/*.vst3" -or 
+$HasLocalBuild = Test-Path "$BuildDir/*_artefacts/Release/*.vst3" -or
                  Test-Path "$BuildDir/*_artefacts/Release/*.component" -or
                  Test-Path "$BuildDir/*_artefacts/*.vst3"
 
@@ -96,6 +96,64 @@ Write-Host "  GitHub Actions: $($PlatformsNeedingGitHub -join ', ')" -Foreground
 
 ## STEP 3: LOCAL BUILD PROCESS (If Selected)
 
+### 3.0 Prepare Documentation (AUTOMATIC)
+
+**CRITICAL**: This step runs BEFORE installer creation and ensures documentation exists.
+
+```powershell
+# Check if Documentation folder exists
+$DocPath = "plugins\$PluginName\Documentation"
+
+if (-not (Test-Path $DocPath)) {
+    Write-Host "Creating Documentation folder..." -ForegroundColor Yellow
+    New-Item -ItemType Directory -Path $DocPath -Force | Out-Null
+
+    # Generate basic USER_MANUAL.md from plugin metadata
+    Write-Host "Generating basic documentation..." -ForegroundColor Yellow
+    $ManualContent = @"
+# $PluginName User Manual
+
+**Version $Version**
+
+## Installation
+See the installer for installation instructions.
+
+## Parameters
+[Auto-generated parameter list would go here]
+
+## Credits
+Built with Audio Plugin Coder (APC)
+
+**© $(Get-Date -Format yyyy)** - https://noizefield.com
+"@
+    Set-Content -Path "$DocPath\USER_MANUAL.md" -Value $ManualContent
+
+    Write-Host "✓ Basic documentation created" -ForegroundColor Green
+    Write-Host "  You can edit: $DocPath\USER_MANUAL.md" -ForegroundColor Cyan
+} else {
+    Write-Host "✓ Documentation folder exists" -ForegroundColor Green
+
+    # List what will be included
+    $DocFiles = Get-ChildItem -Path $DocPath -File -Recurse
+    if ($DocFiles.Count -gt 0) {
+        Write-Host "  Files to include in installer:" -ForegroundColor Cyan
+        foreach ($file in $DocFiles) {
+            Write-Host "    - $($file.Name)" -ForegroundColor Gray
+        }
+    } else {
+        Write-Warning "Documentation folder is empty! Add files to: $DocPath"
+    }
+}
+```
+
+**Philosophy**:
+- Documentation folder is ALWAYS created (even if empty)
+- If empty, basic documentation is auto-generated
+- User can add/edit files in Documentation\ folder
+- Installer automatically includes ALL files from Documentation\
+
+---
+
 ### 3.1 Validate Local Build
 
 ```powershell
@@ -103,12 +161,12 @@ if ($PlatformsUsingLocal -contains "Windows") {
     # Verify build artifacts exist
     $Vst3Path = Get-ChildItem -Path "$BuildDir" -Recurse -Filter "*.vst3" | Select-Object -First 1
     $StandalonePath = Get-ChildItem -Path "$BuildDir" -Recurse -Filter "*.exe" | Select-Object -First 1
-    
+
     if (-not $Vst3Path) {
         Write-Error "No local VST3 build found. Run build-and-install.ps1 first."
         exit 1
     }
-    
+
     Write-Host "✓ Local Windows build verified" -ForegroundColor Green
 }
 ```
@@ -118,7 +176,7 @@ if ($PlatformsUsingLocal -contains "Windows") {
 ```powershell
 function New-WindowsInstaller {
     param([string]$PluginName, [string]$Version)
-    
+
     # Check for Inno Setup
     $InnoPath = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
     if (-not (Test-Path $InnoPath)) {
@@ -126,22 +184,22 @@ function New-WindowsInstaller {
         Write-Host "Falling back to ZIP distribution..." -ForegroundColor Yellow
         return New-ZipDistribution -PluginName $PluginName -Version $Version
     }
-    
+
     # Generate installer script from template
     $TemplatePath = "scripts/installer-template.iss"
     $IssPath = "build/$PluginName-installer.iss"
-    
+
     $Template = Get-Content $TemplatePath -Raw
     $IssContent = $Template `
         -replace '{#PluginName}', $PluginName `
         -replace '{#PluginVersion}', $Version `
         -replace '{#BuildDir}', $BuildDir
-    
+
     Set-Content -Path $IssPath -Value $IssContent
-    
+
     # Compile installer
     & $InnoPath $IssPath
-    
+
     $InstallerPath = "dist/$PluginName-$Version-Setup.exe"
     if (Test-Path $InstallerPath) {
         Write-Host "✓ Windows installer created: $InstallerPath" -ForegroundColor Green
@@ -189,18 +247,18 @@ function Invoke-GitHubActionsBuild {
         [string[]]$Platforms,
         [string]$Version
     )
-    
+
     # Create a tag to trigger workflow
     $TagName = "v$Version-$PluginName"
-    
+
     Write-Host "`nTriggering GitHub Actions build..." -ForegroundColor Cyan
     Write-Host "  Tag: $TagName" -ForegroundColor Yellow
     Write-Host "  Platforms: $($Platforms -join ', ')" -ForegroundColor Yellow
-    
+
     # Create and push tag
     git tag -a $TagName -m "Build $PluginName v$Version for $($Platforms -join ', ')"
     git push origin $TagName
-    
+
     Write-Host "`n✓ Build triggered!" -ForegroundColor Green
     Write-Host "  Monitor at: https://github.com/$(git remote get-url origin | Split-Path -Leaf)/actions" -ForegroundColor Cyan
     Write-Host "`nThe workflow will:" -ForegroundColor Yellow
@@ -208,7 +266,7 @@ function Invoke-GitHubActionsBuild {
     Write-Host "  2. Create installers" -ForegroundColor Gray
     Write-Host "  3. Upload artifacts" -ForegroundColor Gray
     Write-Host "  4. Create GitHub Release (if configured)" -ForegroundColor Gray
-    
+
     return $TagName
 }
 ```
@@ -218,21 +276,21 @@ function Invoke-GitHubActionsBuild {
 ```powershell
 function Get-GitHubArtifacts {
     param([string]$TagName, [string]$PluginName)
-    
+
     Write-Host "`nWaiting for build completion..." -ForegroundColor Cyan
     Write-Host "(Check GitHub Actions for progress)" -ForegroundColor Gray
-    
+
     # Wait for user confirmation or poll GitHub API
     $Proceed = Read-Host "`nBuild complete? Download artifacts now? (y/n)"
-    
+
     if ($Proceed -eq 'y') {
         # Use gh CLI to download artifacts
         $ArtifactsDir = "dist/github-artifacts"
         New-Item -ItemType Directory -Path $ArtifactsDir -Force | Out-Null
-        
+
         # Download all artifacts for this tag
         gh run download --dir $ArtifactsDir --pattern "*-$PluginName-*"
-        
+
         Write-Host "✓ Artifacts downloaded to: $ArtifactsDir" -ForegroundColor Green
         return $ArtifactsDir
     }
@@ -248,16 +306,16 @@ function Get-GitHubArtifacts {
 ```powershell
 function New-macOSInstaller {
     param([string]$PluginName, [string]$Version, [string]$ArtifactsDir)
-    
+
     # Note: macOS installer creation requires macOS
     # On Windows, we prepare the structure for later signing/notarization
-    
+
     $MacOSDir = "dist/$PluginName-$Version-macOS"
     New-Item -ItemType Directory -Path $MacOSDir -Force | Out-Null
-    
+
     # Copy artifacts
     Copy-Item "$ArtifactsDir/macos-binaries/*" $MacOSDir -Recurse -Force
-    
+
     # Create DMG structure (can be finalized on macOS)
     @"
 # macOS Installer Creation Script
@@ -287,7 +345,7 @@ create-dmg \\
     "dist/$PluginName-\$VERSION-macOS.dmg" \\
     "$MacOSDir"
 "@ | Set-Content "dist/create-macos-installer-$Version.sh"
-    
+
     Write-Host "✓ macOS installer scripts prepared" -ForegroundColor Green
     Write-Host "  Run 'create-macos-installer-$Version.sh' on a Mac to finalize" -ForegroundColor Yellow
 }
@@ -298,13 +356,13 @@ create-dmg \\
 ```powershell
 function New-LinuxPackages {
     param([string]$PluginName, [string]$Version, [string]$ArtifactsDir)
-    
+
     $LinuxDir = "dist/$PluginName-$Version-Linux"
     New-Item -ItemType Directory -Path $LinuxDir -Force | Out-Null
-    
+
     # Copy artifacts
     Copy-Item "$ArtifactsDir/linux-binaries/*" $LinuxDir -Recurse -Force
-    
+
     # Create AppImage (using appimagetool)
     @"
 #!/bin/bash
@@ -339,7 +397,7 @@ appimagetool AppDir "dist/$PLUGIN_NAME-\$VERSION-x86_64.AppImage"
 # Create DEB package
 # ... (DEB creation commands)
 "@ | Set-Content "dist/create-linux-packages-$Version.sh"
-    
+
     Write-Host "✓ Linux package scripts prepared" -ForegroundColor Green
 }
 ```
@@ -351,7 +409,7 @@ appimagetool AppDir "dist/$PLUGIN_NAME-\$VERSION-x86_64.AppImage"
 ```powershell
 function New-LicenseFile {
     param([string]$PluginName, [string]$OutputPath)
-    
+
     $LicenseText = @"
 ================================================================================
                     $PluginName END USER LICENSE AGREEMENT
@@ -385,7 +443,7 @@ By installing this software, you acknowledge that you have read, understood,
 and agree to be bound by these terms.
 ================================================================================
 "@
-    
+
     Set-Content -Path $OutputPath -Value $LicenseText
     Write-Host "✓ License file created: $OutputPath" -ForegroundColor Green
 }
@@ -404,10 +462,10 @@ function New-DistributionPackage {
         [string]$Version,
         [hashtable]$Artifacts
     )
-    
+
     $DistDir = "dist/$PluginName-v$Version"
     New-Item -ItemType Directory -Path $DistDir -Force | Out-Null
-    
+
     # Copy all installers
     if ($Artifacts.Windows) {
         Copy-Item $Artifacts.Windows $DistDir/
@@ -418,12 +476,12 @@ function New-DistributionPackage {
     if ($Artifacts.Linux) {
         Copy-Item $Artifacts.Linux $DistDir/ -Recurse
     }
-    
+
     # Copy documentation
     Copy-Item "plugins/$PluginName/README.md" $DistDir/ -ErrorAction SilentlyContinue
     Copy-Item "CHANGELOG.md" $DistDir/ -ErrorAction SilentlyContinue
     New-LicenseFile -PluginName $PluginName -OutputPath "$DistDir/LICENSE.txt"
-    
+
     # Create unified README
     @"
 # $PluginName v$Version
@@ -451,10 +509,10 @@ Option 2: Install the .deb package with: `sudo dpkg -i $PluginName-$Version.deb`
 ## License
 See LICENSE.txt for full license terms.
 "@ | Set-Content "$DistDir/INSTALL.md"
-    
+
     # Create final ZIP
     Compress-Archive -Path "$DistDir/*" -DestinationPath "dist/$PluginName-v$Version.zip" -Force
-    
+
     Write-Host "`n✓ Distribution package created:" -ForegroundColor Green
     Write-Host "  Location: $DistDir" -ForegroundColor Yellow
     Write-Host "  Archive: dist/$PluginName-v$Version.zip" -ForegroundColor Yellow

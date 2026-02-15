@@ -95,6 +95,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Clickable Noizefield logo in bottom-right corner
 
 ### Changed
+- **Agent Folder Synchronization**
+  - Synchronized all three coding agent folders (`.kilocode`, `.claude`, `.agent`)
+  - Updated `.agent/skills/skill_packaging/SKILL.md` with full cross-platform support
+  - Added missing known issues to `.kilocode` and `.agent` troubleshooting databases
+  - Copied 12 resolution files, 3 documentation files, and 1 workflow file across folders
+  - All agent folders now have consistent content (48-49 files each)
 - Improved README with correct repository links
 - Updated logo URL to point to Noizefield organization
 - Fixed LICENSE reference (now points to LICENCE.md)

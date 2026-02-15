@@ -223,3 +223,73 @@ issues:
     attempts_before_resolution: 1
     prevention: "ALWAYS use git submodule add, NEVER commit framework directories as regular files"
     critical_fix: "git rm -r --cached _tools/JUCE && rm -rf _tools/JUCE && git submodule add https://github.com/juce-framework/JUCE _tools/JUCE"
+
+  - id: webview-010
+    title: "WebView black screen - resource provider callback not invoked"
+    category: webview
+    severity: critical
+    symptoms:
+      - "Black screen in plugin window"
+      - "WebView creates successfully but no UI"
+      - "getResource() callback never called"
+      - "URL loads (https://juce.backend/) but no resource requests"
+      - "Debug log shows zero resource requests"
+    error_patterns:
+      - "black screen"
+      - "resource provider not called"
+      - "WebBrowserComponent created but no resources"
+    root_cause: "TWO timing violations: (1) addAndMakeVisible() called BEFORE attachments created, causing WebView to initialize with bad state; (2) setSize() called BEFORE WebView created, preventing proper initialization"
+    resolution_status: solved
+    resolution_file: resolutions/webview-resource-provider-not-called.md
+    frequency: 1
+    last_occurred: 2026-02-10
+    attempts_before_resolution: 4
+    prevention: "MANDATORY ORDER: (1) Create attachments (2) Create WebView (3) addAndMakeVisible (4) goToURL (5) setSize LAST"
+    critical_fix: "Move addAndMakeVisible() to AFTER all attachments created, AND move setSize() to END of constructor (after goToURL)"
+    notes: "Affects XENON. Both CloudWash and AngelGrain patterns work if order is correct. Resource provider callback silently fails if WebView initialized in bad state."
+
+  - id: webview-005
+    title: "WebView native function bridge - wrong API (invokeNativeFunction)"
+    category: webview
+    severity: critical
+    symptoms:
+      - "UI buttons visually respond but have no effect"
+      - "No C++ native function handler logs appear"
+      - "JS-to-C++ bridge silently fails with no errors"
+      - "triggerNote / setParam / getFactoryPresets never reach C++"
+    error_patterns:
+      - "invokeNativeFunction"
+      - "native function not called"
+      - "gate never true"
+      - "no audio from trigger"
+    root_cause: "JavaScript used non-existent window.__JUCE__.backend.invokeNativeFunction() API. Correct API is window.Juce.getNativeFunction('name') which uses emitEvent('__juce__invoke')"
+    resolution_status: solved
+    resolution_file: resolutions/webview-005-juce-native-function-api.md
+    frequency: 1
+    last_occurred: 2026-02-12
+    attempts_before_resolution: 2
+    prevention: "ALWAYS use window.Juce.getNativeFunction('name'), NEVER use invokeNativeFunction. Check _tools/JUCE/modules/juce_gui_extra/native/javascript/index.js for correct API."
+    critical_fix: "Replace all invokeNativeFunction calls with getNativeFunction pattern"
+
+  - id: dsp-001
+    title: "Silent effects chain - JUCE DSP initialization bugs (Gain/Filter/SmoothedValue)"
+    category: dsp
+    severity: critical
+    symptoms:
+      - "Plugin generates signal internally but output is silent"
+      - "PRE-FX peak ~1.0 but POST-FX peak = 0.0"
+      - "Effects chain kills signal"
+      - "Visualizer shows nothing despite trigger working"
+    error_patterns:
+      - "post-fx peak 0"
+      - "silent output"
+      - "effects chain silence"
+      - "gain zero after prepare"
+    root_cause: "Three bugs: (1) ProcessorDuplicator has null coefficients after prepare() - outputs silence; (2) juce::dsp::Gain defaults to 0.0 after prepare(); (3) SmoothedValue stuck at 0.0 because getCurrentValue() doesn't advance ramp"
+    resolution_status: solved
+    resolution_file: resolutions/dsp-001-silent-effects-chain.md
+    frequency: 1
+    last_occurred: 2026-02-12
+    attempts_before_resolution: 4
+    prevention: "After prepare(): set filter coefficients, set gain to 1.0, init SmoothedValues with setCurrentAndTargetValue()"
+    critical_fix: "*filter.state = *Coefficients::makeLowPass(); gain.setGainLinear(1.0f); smoothed.setCurrentAndTargetValue(value)"
