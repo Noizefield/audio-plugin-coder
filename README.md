@@ -372,6 +372,28 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 This project is licensed under the MIT License - see the [LICENSE](LICENCE.md) file for details.
 
+### ⚠️ Important: JUCE 8 Licensing Notice
+
+APC uses **JUCE 8** as its audio plugin framework. JUCE 8 is dual-licensed:
+
+| License | Use Case | Requirements |
+|---------|----------|--------------|
+| **AGPLv3** | Open-source projects | Your plugin must be open-sourced under AGPLv3 |
+| **JUCE Commercial** | Closed-source/commercial | Requires purchasing a JUCE license |
+
+**Key Points:**
+- APC itself is MIT-licensed (permissive)
+- Plugins built with APC inherit JUCE's licensing requirements
+- If you sell your plugin or keep it closed-source, you need a [JUCE commercial license](https://juce.com/pricing/)
+- If you open-source your plugin under AGPLv3, you can use JUCE for free
+
+**Official JUCE Resources:**
+- [JUCE 8 End User Licence Agreement](https://juce.com/legal/juce-8-licence/)
+- [JUCE Pricing](https://juce.com/pricing/)
+- [JUCE Privacy Policy](https://juce.com/legal/juce-privacy-policy/)
+
+**You are responsible for ensuring your use of JUCE complies with their licensing terms.**
+
 ---
 
 **Built with ❤️ (and a lot of tokens) for the audio development community.**
