@@ -346,8 +346,8 @@ Generate a Visage preview scaffold now? (Y/n)
 Default: **Yes** (generate unless user explicitly says no).
 
 If yes, generate:
-- `plugins/[Name]/Source/VisageControls.h` using `..kilocode/templates/visage/VisageControls.h.template`
-- `plugins/[Name]/Source/PluginEditor.h` and `PluginEditor.cpp` using `..kilocode/templates/visage/`
+- `plugins/[Name]/Source/VisageControls.h` using `templates/visage/VisageControls.h.template`
+- `plugins/[Name]/Source/PluginEditor.h` and `PluginEditor.cpp` using `templates/visage/`
 
 These files are **preview-only** and will be refined during `/impl`.
 

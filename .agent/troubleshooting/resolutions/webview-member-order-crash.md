@@ -1,9 +1,9 @@
-﻿# WebView Plugin Crashes DAW - Member Declaration Order Issue
+# WebView Plugin Crashes DAW - Member Declaration Order Issue
 
 **Issue ID:** webview-002
 **Category:** WebView
-**Severity:** ðŸ”´ CRITICAL
-**Status:** âœ… SOLVED
+**Severity:** 🔴 CRITICAL
+**Status:** ✅ SOLVED
 **Date Reported:** 2026-01-24
 **Last Updated:** 2026-01-24
 
@@ -21,13 +21,13 @@ The crash typically manifests as a **segmentation fault** or **access violation*
 
 ### Symptoms
 
-- âŒ DAW crashes when plugin window is closed
-- âŒ Segmentation fault during plugin unload
-- âŒ Access violation error (0xC0000005 on Windows)
-- âŒ Pure virtual function call errors
-- âŒ **Crash ONLY happens in release builds** (debug builds may work fine)
-- âŒ Crash during destruction, not during initialization or runtime
-- âŒ Plugin works perfectly until user tries to close it
+- ❌ DAW crashes when plugin window is closed
+- ❌ Segmentation fault during plugin unload
+- ❌ Access violation error (0xC0000005 on Windows)
+- ❌ Pure virtual function call errors
+- ❌ **Crash ONLY happens in release builds** (debug builds may work fine)
+- ❌ Crash during destruction, not during initialization or runtime
+- ❌ Plugin works perfectly until user tries to close it
 
 ### Common Error Messages
 
@@ -46,8 +46,8 @@ pure virtual function call
 
 When a `WebBrowserComponent` is declared BEFORE the `WebSliderRelay` objects in the header file, the destruction order becomes:
 
-1. Relays destroyed FIRST âŒ
-2. WebView destroyed LAST âŒ â†’ tries to access already-destroyed relays â†’ **CRASH**
+1. Relays destroyed FIRST ❌
+2. WebView destroyed LAST ❌ → tries to access already-destroyed relays → **CRASH**
 
 The `WebBrowserComponent` holds references to the relay objects (registered via `.withOptionsFrom(relay)`). When the WebView is destroyed, it attempts to clean up these references. If the relays were already destroyed, this accesses freed memory, causing undefined behavior and typically a segmentation fault.
 
@@ -69,10 +69,10 @@ Release builds optimize away these protections, exposing the underlying memory a
 Open `Source/PluginEditor.h` and find the `private:` section:
 
 ```cpp
-// âŒ WRONG ORDER - CAUSES CRASHES
+// ❌ WRONG ORDER - CAUSES CRASHES
 private:
-    std::unique_ptr<juce::WebBrowserComponent> webView;           // Destroyed LAST âŒ
-    juce::WebSliderRelay gainRelay { "GAIN" };                    // Destroyed FIRST âŒ
+    std::unique_ptr<juce::WebBrowserComponent> webView;           // Destroyed LAST ❌
+    juce::WebSliderRelay gainRelay { "GAIN" };                    // Destroyed FIRST ❌
     std::unique_ptr<juce::WebSliderParameterAttachment> gainAttachment;
 ```
 
@@ -81,10 +81,10 @@ private:
 **Change to this order:**
 
 ```cpp
-// âœ… CORRECT ORDER - NO CRASHES
+// ✅ CORRECT ORDER - NO CRASHES
 private:
     // CRITICAL: Destruction happens in REVERSE order of declaration
-    // Order: Relays â†’ WebView â†’ Attachments
+    // Order: Relays → WebView → Attachments
 
     // 1. PARAMETER RELAYS FIRST (no dependencies)
     juce::WebSliderRelay gainRelay { "GAIN" };
@@ -106,9 +106,9 @@ private:
 
 1. Load plugin in DAW
 2. Open plugin window
-3. **Close plugin window** â†’ should NOT crash
-4. Unload plugin â†’ should NOT crash
-5. Close DAW â†’ should NOT crash
+3. **Close plugin window** → should NOT crash
+4. Unload plugin → should NOT crash
+5. Close DAW → should NOT crash
 
 ---
 
@@ -127,9 +127,9 @@ Check your `PluginEditor.h` file for member declaration order.
 
 ```cpp
 class Example {
-    int memberA;    // Declared 1st â†’ Destroyed LAST
-    int memberB;    // Declared 2nd â†’ Destroyed 2nd
-    int memberC;    // Declared 3rd â†’ Destroyed FIRST
+    int memberA;    // Declared 1st → Destroyed LAST
+    int memberB;    // Declared 2nd → Destroyed 2nd
+    int memberC;    // Declared 3rd → Destroyed FIRST
 };
 ```
 
@@ -143,10 +143,10 @@ For WebView plugins, the pattern is always:
 private:
     AudioProcessor& audioProcessor;  // Reference (not destroyed)
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ═══════════════════════════════════════════════════════════════
     // CRITICAL: Member Declaration Order
     // Destruction happens in REVERSE order
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ═══════════════════════════════════════════════════════════════
 
     // Step 1: Relays (no dependencies, can be destroyed last)
     juce::WebSliderRelay relay1 { "PARAM1" };
@@ -247,10 +247,10 @@ Use this checklist to verify your fix:
 - [ ] Plugin loads without errors
 - [ ] UI displays correctly
 - [ ] Parameters work (knobs, sliders, toggles)
-- [ ] **Window closes without crash** âœ…
-- [ ] Plugin unloads without crash âœ…
-- [ ] Multiple instances work âœ…
-- [ ] DAW shutdown clean âœ…
+- [ ] **Window closes without crash** ✅
+- [ ] Plugin unloads without crash ✅
+- [ ] Multiple instances work ✅
+- [ ] DAW shutdown clean ✅
 
 ---
 
@@ -259,7 +259,7 @@ Use this checklist to verify your fix:
 ### For Future Plugins
 
 1. **Always use correct member order in templates**
-   - Update `..agent/templates/webview/PluginEditor.h.template`
+   - Update `templates/webview/PluginEditor.h.template`
    - Include destruction order comments
 
 2. **Add pre-build validation**
@@ -290,7 +290,7 @@ private:
     std::unique_ptr<juce::Web*Attachment> attachment;
 ```
 
-**If order is different â†’ STOP and fix before building.**
+**If order is different → STOP and fix before building.**
 
 ---
 
@@ -308,10 +308,10 @@ private:
 Relays should be declared as direct members (not pointers):
 
 ```cpp
-// âœ… CORRECT
+// ✅ CORRECT
 juce::WebSliderRelay relay { "PARAM" };
 
-// âŒ AVOID (complicates init, no benefit)
+// ❌ AVOID (complicates init, no benefit)
 std::unique_ptr<juce::WebSliderRelay> relay;
 ```
 
@@ -324,7 +324,7 @@ std::unique_ptr<juce::WebSliderRelay> relay;
 ### Why WebView and Attachments Use unique_ptr
 
 ```cpp
-// âœ… CORRECT
+// ✅ CORRECT
 std::unique_ptr<juce::WebBrowserComponent> webView;
 std::unique_ptr<juce::WebSliderParameterAttachment> attachment;
 ```
@@ -358,10 +358,10 @@ public:
 private:
     MyProcessor& audioProcessor;
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ═══════════════════════════════════════════════════════════════
     // CRITICAL: Member Declaration Order (Destruction = Reverse)
-    // Order: Relays â†’ WebView â†’ Attachments
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // Order: Relays → WebView → Attachments
+    // ═══════════════════════════════════════════════════════════════
 
     // 1. RELAYS (direct members)
     juce::WebSliderRelay gainRelay { "GAIN" };
@@ -432,7 +432,7 @@ MyPluginEditor::~MyPluginEditor()
     // Destruction happens automatically in correct order:
     // 1. frequencyAttachment (destroyed first)
     // 2. gainAttachment
-    // 3. webView (destroyed while relays still exist) âœ…
+    // 3. webView (destroyed while relays still exist) ✅
     // 4. frequencyRelay
     // 5. gainRelay (destroyed last)
 }
@@ -460,14 +460,14 @@ std::optional<juce::WebBrowserComponent::Resource> MyPluginEditor::getResource(c
 
 **Problem:** DAW crashes when unloading WebView plugin
 **Cause:** Incorrect member declaration order in header file
-**Solution:** Declare members as: Relays â†’ WebView â†’ Attachments
+**Solution:** Declare members as: Relays → WebView → Attachments
 **Result:** Plugin loads and unloads cleanly, no crashes
 
 **Critical Takeaway:** In C++, destruction order = reverse of declaration order. Always consider lifetime dependencies when ordering class members.
 
 ---
 
-**Resolution Status:** âœ… SOLVED
+**Resolution Status:** ✅ SOLVED
 **Prevention:** Use template with correct order + pre-build validation
 **Confidence:** HIGH - Root cause well understood and fix verified
 

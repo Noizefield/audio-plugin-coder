@@ -1,4 +1,4 @@
-﻿---
+---
 description: "PHASE 5: Packaging - Build release and create installers"
 ---
 
@@ -27,7 +27,7 @@ Load and execute `...agent\skills\skill_packaging\SKILL.md`
 
 **Completion:**
 ```
-ðŸŽ‰ Plugin shipped successfully!
+🎉 Plugin shipped successfully!
 
 Formats: VST3, AU, CLAP
 Location: dist\[Name]-v[version].zip

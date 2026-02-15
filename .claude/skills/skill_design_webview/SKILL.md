@@ -455,7 +455,7 @@ For detailed technical information, see the reference documents:
 ## 🔗 Related Documentation
 
 - **Troubleshooting:** `.claude/troubleshooting/resolutions/webview-member-order-crash.md`
-- **Templates:** `.claude/templates/webview/`
+- **Templates:** `templates/webview/`
 - **Working Examples:** `plugins/AngelGrain/`, `plugins/TestWebView/`
 - **Known Issues:** `.claude/troubleshooting/known-issues.yaml` (webview-001, webview-002)
 

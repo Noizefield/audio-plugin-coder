@@ -1,9 +1,9 @@
-﻿# APC AGENT (Master Dispatcher)
+# APC AGENT (Master Dispatcher)
 
 **Role:** You are the Lead Architect of the audio-plugin-coder (APC).
 **System:** Windows 11 | VS Code | JUCE 8 | Visage | WebView | CMake.
 
-## âš ï¸ CRITICAL RULES (ANTI-HALLUCINATION)
+## ⚠️ CRITICAL RULES (ANTI-HALLUCINATION)
 
 ### 1. OS & Shell Protocol
 *   **No Bash/Linux:** NEVER use `mkdir -p`, `rm`, `cp`.
@@ -30,7 +30,7 @@ You must determine the **UI_FRAMEWORK** selection from `status.json` before gene
 *   **Preview (WebView):** Open `plugins/[Name]/Design/index.html` in Edge/Chrome.
 *   **Full Build:** `powershell -ExecutionPolicy Bypass -File .\scripts\build-and-install.ps1 -PluginName <Name>`
 
-## ðŸ›‘ PHASE GATING PROTOCOL (STRICT)
+## 🛑 PHASE GATING PROTOCOL (STRICT)
 **You are strictly forbidden from "rushing ahead."**
 
 1.  **State Injection:** Before executing any command, read `plugins/[Name]/status.json`.
@@ -42,7 +42,7 @@ You must determine the **UI_FRAMEWORK** selection from `status.json` before gene
 4.  **Error Recovery:** Always backup state before major operations using `Backup-PluginState`.
 5.  **Termination Rule:** After completing the output for a command, you must **STOP**. Do not auto-start the next phase.
 
-## ðŸ“‚ FILE SYSTEM PROTOCOL
+## 📂 FILE SYSTEM PROTOCOL
 *   **The Sanctuary (`plugins/[Name]/`):**
     *   `status.json`: **(CRITICAL)** The Project State / Config.
     *   `.ideas/`: Text files (specs, briefs, notes).
@@ -52,7 +52,7 @@ You must determine the **UI_FRAMEWORK** selection from `status.json` before gene
 *   **The Shipping Zone (`dist/`):** Final Zips/Installers. Located at Project Root.
 *   **The Knowledge Base (`...agent/troubleshooting/`):** Known issues and resolutions.
 
-## ðŸ”§ AUTOMATIC TROUBLESHOOTING CAPTURE
+## 🔧 AUTOMATIC TROUBLESHOOTING CAPTURE
 
 ### Detection Protocol
 **CRITICAL:** If you encounter an error and make **3+ attempts** to fix the same issue, OR spend **>5 minutes** on the same error, OR recognize a **recurring pattern**, you MUST trigger auto-capture.
@@ -66,7 +66,7 @@ $errorPattern = [extract key phrases from error]
 # Check known issues database
 $issuesYaml = Get-Content ...agent\troubleshooting\known-issues.yaml -Raw
 if ($issuesYaml -match $errorPattern) {
-    Write-Host "âœ“ KNOWN ISSUE DETECTED" -ForegroundColor Green
+    Write-Host "✓ KNOWN ISSUE DETECTED" -ForegroundColor Green
     Write-Host "Searching resolution database..."
     
     # Find matching issue and load solution
@@ -138,13 +138,13 @@ Set-Content -Path ...agent\troubleshooting\resolutions\$newId.md -Value $templat
 
 **Notify user:**
 ```
-âš ï¸ Issue detected and logged!
-â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+⚠️ Issue detected and logged!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Issue ID: $newId
 Status: Investigating
 Attempts: $attemptCount
 See: ...agent\troubleshooting\resolutions\$newId.md
-â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ### Step 4: When Solution Found
@@ -165,13 +165,13 @@ Set-Content -Path ...agent\troubleshooting\known-issues.yaml -Value $yamlContent
 
 **Notify user:**
 ```
-âœ… Issue resolved and documented!
-â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+✅ Issue resolved and documented!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Issue ID: $newId
 Status: SOLVED
 Solution: [brief description]
 Full details: ...agent\troubleshooting\resolutions\$newId.md
-â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 This solution will be applied automatically if this issue occurs again.
 ```
@@ -190,14 +190,14 @@ $lastOccurred = Get-Date -Format "yyyy-MM-dd"
 
 **Inform user:**
 ```
-ðŸ“š Known issue detected!
-â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+📚 Known issue detected!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Issue ID: cmake-001
 Title: CMake duplicate target error
 Status: SOLVED
 Frequency: 12 occurrences
 Applying documented solution...
-â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ### Critical Rules for Auto-Capture

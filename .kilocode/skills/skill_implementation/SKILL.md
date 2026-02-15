@@ -1,11 +1,11 @@
-﻿# SKILL: DSP IMPLEMENTATION
+# SKILL: DSP IMPLEMENTATION
 **Goal:** Implement audio processing where parameters control DSP
 **Focus:** PluginProcessor.h, PluginProcessor.cpp
 **Output Location:** `plugins/[Name]/Source/`
 
 ---
 
-## ðŸ“Š PHASE 4: CODE (DSP Implementation)
+## 📊 PHASE 4: CODE (DSP Implementation)
 
 **Trigger:** `/impl [Name]` (after DESIGN phase complete)
 **Input:** Reads `plugins/[Name]/status.json` and `.ideas/parameter-spec.md`
@@ -33,13 +33,13 @@ Write-Host "Framework: $($state.ui_framework)" -ForegroundColor Cyan
 
 ---
 
-## ðŸŽ¨ PHASE 4.0: DESIGN-TO-FRAMEWORK CONVERSION (CRITICAL - BEFORE DSP CODE)
+## 🎨 PHASE 4.0: DESIGN-TO-FRAMEWORK CONVERSION (CRITICAL - BEFORE DSP CODE)
 
 **IMPORTANT:** This phase converts the approved design specifications into framework-specific code. User must approve the conversion before DSP implementation begins.
 
 **Framework Routing:**
-- If `ui_framework == webview`: use templates from `..kilocode/templates/webview/`
-- If `ui_framework == visage`: use templates from `..kilocode/templates/visage/` and **do not** generate HTML
+- If `ui_framework == webview`: use templates from `templates/webview/`
+- If `ui_framework == visage`: use templates from `templates/visage/` and **do not** generate HTML
 
 ### 4.0.1 Read Approved Design
 - Read `Design/v[N]-ui-spec.md` (latest approved version)
@@ -54,13 +54,13 @@ Convert the approved design specs into production JUCE WebView code.
 **Create the required directory structure:**
 ```
 plugins/[Name]/Source/ui/
-â””â”€â”€â”€public/
-    â”‚   index.html          # Production UI based on approved design
-    â”‚
-    â””â”€â”€â”€js/
-        â”‚   index.js        # JUCE integration and parameter binding
-        â”‚
-        â””â”€â”€â”€juce/
+└───public/
+    │   index.html          # Production UI based on approved design
+    │
+    └───js/
+        │   index.js        # JUCE integration and parameter binding
+        │
+        └───juce/
                 check_native_interop.js  # Development utility
                 index.js                # JUCE frontend library
 ```
@@ -132,14 +132,14 @@ function initializeUI() {
 
 **USER APPROVAL REQUIRED - CRITICAL STOP POINT:**
 ```
-âœ… Design converted to WebView code
+✅ Design converted to WebView code
 
 Files created:
 - plugins/[Name]/Source/ui/public/index.html
 - plugins/[Name]/Source/ui/public/js/index.js
 - plugins/[Name]/Source/ui/public/js/juce/index.js
 
-âš ï¸ **MANDATORY STOP** - You MUST test the WebView setup before proceeding to DSP implementation!
+⚠️ **MANDATORY STOP** - You MUST test the WebView setup before proceeding to DSP implementation!
 
 What would you like to do?
 1. Test WebView - Open plugins/[Name]/Source/ui/public/index.html in browser and verify appearance
@@ -159,11 +159,11 @@ Choose (1-3): _
 
 **For Visage Framework:**
 Convert approved design to Visage C++ code (Source/VisageControls.h).
-Use templates from `..kilocode/templates/visage/` and the shared host in `common/VisageJuceHost.h`.
+Use templates from `templates/visage/` and the shared host in `common/VisageJuceHost.h`.
 
 ---
 
-## ✅ VISAGE IMPLEMENTATION CHECKLIST (MANDATORY)
+## ? VISAGE IMPLEMENTATION CHECKLIST (MANDATORY)
 
 **Before proceeding to DSP implementation, validate Visage setup:**
 
@@ -172,21 +172,21 @@ Use templates from `..kilocode/templates/visage/` and the shared host in `common
 ```
 
 ### Mandatory Checklist (All Must Pass):
-1. ✅ **CMakeLists.txt links Visage**
+1. ? **CMakeLists.txt links Visage**
    - Contains `visage::visage` in `target_link_libraries`
-2. ✅ **Visage controls exist**
+2. ? **Visage controls exist**
    - `Source/VisageControls.h` present
-3. ✅ **Editor uses Visage host**
+3. ? **Editor uses Visage host**
    - `PluginEditor.h` includes `VisageJuceHost.h`
    - Editor inherits `VisagePluginEditor`
-4. ✅ **No WebView-only flags**
+4. ? **No WebView-only flags**
    - `NEEDS_WEBVIEW2 TRUE` and `JUCE_WEB_BROWSER=1` not present
 
 ---
 
-## âœ… WEBVIEW IMPLEMENTATION CHECKLIST (MANDATORY)
+## ✅ WEBVIEW IMPLEMENTATION CHECKLIST (MANDATORY)
 
-**CRITICAL:** When implementing WebView plugins, you MUST verify ALL 8 points below. Use templates from `..kilocode/templates/webview/` and run validation script.
+**CRITICAL:** When implementing WebView plugins, you MUST verify ALL 8 points below. Use templates from `templates/webview/` and run validation script.
 
 ### WebView Setup Validation (Run Before DSP Implementation)
 
@@ -199,49 +199,49 @@ Use templates from `..kilocode/templates/visage/` and the shared host in `common
 
 ### Mandatory Checklist (All Must Pass):
 
-1. âœ… **CMakeLists.txt embeds web files**
+1. ✅ **CMakeLists.txt embeds web files**
    - Contains `juce_add_binary_data([Name]_WebUI ...)`
    - Links binary data target: `target_link_libraries([Name] PRIVATE [Name]_WebUI ...)`
    - Has `NEEDS_WEBVIEW2 TRUE` in `juce_add_plugin()`
    - Has compile definitions: `JUCE_WEB_BROWSER=1` and `JUCE_USE_WIN_WEBVIEW2_WITH_STATIC_LINKING=1`
 
-2. âœ… **WebBrowserComponent uses WebView2 backend**
+2. ✅ **WebBrowserComponent uses WebView2 backend**
    - `.withBackend(WebBrowserComponent::Options::Backend::webview2)` is present
    - NOT using default backend (must be explicit)
 
-3. âœ… **WebBrowserComponent has user data folder**
+3. ✅ **WebBrowserComponent has user data folder**
    - `.withUserDataFolder(File::getSpecialLocation(File::SpecialLocationType::tempDirectory))` is present
    - Required for Windows plugins to work
 
-4. âœ… **Native integration enabled**
+4. ✅ **Native integration enabled**
    - `.withNativeIntegrationEnabled()` is present
-   - Enables JavaScript â†” C++ communication
+   - Enables JavaScript ↔ C++ communication
 
-5. âœ… **Resource provider implemented**
+5. ✅ **Resource provider implemented**
    - `.withResourceProvider([this](const auto& url) { return getResource(url); })` is present
    - `getResource()` function exists and loads from embedded zip
    - `getZipFile()` helper function exists
 
-6. âœ… **Parameter relays created BEFORE WebBrowserComponent**
+6. ✅ **Parameter relays created BEFORE WebBrowserComponent**
    - Relays created before `std::make_unique<WebBrowserComponent>()`
    - Relays passed via `.withOptionsFrom(*relay)` for each parameter
 
-7. âœ… **Parameter attachments created AFTER WebBrowserComponent**
+7. ✅ **Parameter attachments created AFTER WebBrowserComponent**
    - Attachments created after `addAndMakeVisible(*webView)`
    - Attachments connect parameters to relays
 
-8. âœ… **Web content loaded via resource provider**
+8. ✅ **Web content loaded via resource provider**
    - Uses `webView->goToURL(WebBrowserComponent::getResourceProviderRoot())`
    - NOT using `data:text/html;base64,...` or `loadHTML()`
    - NOT using hardcoded HTML strings
 
-### ðŸ”´ CRITICAL: Member Declaration Order (PluginEditor.h)
+### 🔴 CRITICAL: Member Declaration Order (PluginEditor.h)
 
-**âš ï¸ #1 CAUSE OF DAW CRASHES - VERIFY THIS FIRST**
+**⚠️ #1 CAUSE OF DAW CRASHES - VERIFY THIS FIRST**
 
 C++ destroys members in REVERSE order of declaration. If WebView is declared before relays, it will be destroyed AFTER relays, causing a crash when it tries to access freed relay memory.
 
-**âœ… CORRECT ORDER (in PluginEditor.h):**
+**✅ CORRECT ORDER (in PluginEditor.h):**
 ```cpp
 private:
     // 1. RELAYS FIRST (destroyed last)
@@ -254,11 +254,11 @@ private:
     std::unique_ptr<juce::WebSliderParameterAttachment> gainAttachment;
 ```
 
-**âŒ WRONG ORDER (causes DAW crash on unload):**
+**❌ WRONG ORDER (causes DAW crash on unload):**
 ```cpp
 private:
-    std::unique_ptr<juce::WebBrowserComponent> webView;  // âŒ Too early!
-    juce::WebSliderRelay gainRelay { "GAIN" };           // âŒ Too late!
+    std::unique_ptr<juce::WebBrowserComponent> webView;  // ❌ Too early!
+    juce::WebSliderRelay gainRelay { "GAIN" };           // ❌ Too late!
 ```
 
 **Verification:** Run validation script before building:
@@ -272,43 +272,43 @@ See: `..kilocode/troubleshooting/resolutions/webview-member-order-crash.md`
 
 ### Common Mistakes to Avoid:
 
-âŒ **DON'T:** Declare webView before relays in header file
-âœ… **DO:** Always use order: Relays â†’ WebView â†’ Attachments
+❌ **DON'T:** Declare webView before relays in header file
+✅ **DO:** Always use order: Relays → WebView → Attachments
 
-âŒ **DON'T:** Use data URIs (`data:text/html;base64,...`)
-âœ… **DO:** Use `getResourceProviderRoot()` with embedded files
+❌ **DON'T:** Use data URIs (`data:text/html;base64,...`)
+✅ **DO:** Use `getResourceProviderRoot()` with embedded files
 
-âŒ **DON'T:** Create WebBrowserComponent without WebView2 backend
-âœ… **DO:** Explicitly specify `.withBackend(webview2)`
+❌ **DON'T:** Create WebBrowserComponent without WebView2 backend
+✅ **DO:** Explicitly specify `.withBackend(webview2)`
 
-âŒ **DON'T:** Create parameter attachments before WebBrowserComponent
-âœ… **DO:** Create relays â†’ WebBrowserComponent â†’ attachments (in that order)
+❌ **DON'T:** Create parameter attachments before WebBrowserComponent
+✅ **DO:** Create relays → WebBrowserComponent → attachments (in that order)
 
-âŒ **DON'T:** Skip resource provider
-âœ… **DO:** Implement `getResource()` function to serve embedded files
+❌ **DON'T:** Skip resource provider
+✅ **DO:** Implement `getResource()` function to serve embedded files
 
-âŒ **DON'T:** Forget to embed web files in CMakeLists.txt
-âœ… **DO:** Use `juce_add_binary_data()` to embed all web UI files
+❌ **DON'T:** Forget to embed web files in CMakeLists.txt
+✅ **DO:** Use `juce_add_binary_data()` to embed all web UI files
 
 ### Template Usage:
 
-**Copy templates from:** `..kilocode/templates/webview/`
-- `PluginEditor.h.template` â†’ `Source/PluginEditor.h`
-- `PluginEditor.cpp.template` â†’ `Source/PluginEditor.cpp`
-- `CMakeLists.txt.template` â†’ `CMakeLists.txt`
+**Copy templates from:** `templates/webview/`
+- `PluginEditor.h.template` → `Source/PluginEditor.h`
+- `PluginEditor.cpp.template` → `Source/PluginEditor.cpp`
+- `CMakeLists.txt.template` → `CMakeLists.txt`
 
 **Replace placeholders:**
-- `{{PLUGIN_NAME}}` â†’ Your plugin class name
-- `{{PLUGIN_NAME_LOWER}}` â†’ Lowercase plugin name
-- `{{PARAMETER_RELAYS}}` â†’ Your parameter relay declarations
-- `{{CREATE_PARAMETER_RELAYS}}` â†’ Code to create relays
-- `{{WITH_OPTIONS_FROM_RELAYS}}` â†’ `.withOptionsFrom()` calls
-- `{{CREATE_PARAMETER_ATTACHMENTS}}` â†’ Code to create attachments
+- `{{PLUGIN_NAME}}` → Your plugin class name
+- `{{PLUGIN_NAME_LOWER}}` → Lowercase plugin name
+- `{{PARAMETER_RELAYS}}` → Your parameter relay declarations
+- `{{CREATE_PARAMETER_RELAYS}}` → Code to create relays
+- `{{WITH_OPTIONS_FROM_RELAYS}}` → `.withOptionsFrom()` calls
+- `{{CREATE_PARAMETER_ATTACHMENTS}}` → Code to create attachments
 
 ### If Validation Fails:
 
 1. Review error messages from validation script
-2. Check templates in `..kilocode/templates/webview/`
+2. Check templates in `templates/webview/`
 3. Compare your code with JUCE example: `_tools/JUCE/examples/Plugins/WebViewPluginDemo.h`
 4. Ensure web files exist: `Source/ui/public/index.html`, `js/index.js`, `js/juce/index.js`
 5. Verify CMakeLists.txt embeds files correctly
@@ -317,14 +317,14 @@ See: `..kilocode/troubleshooting/resolutions/webview-member-order-crash.md`
 
 ---
 
-## ðŸ”§ PHASE 4.1: DSP IMPLEMENTATION
+## 🔧 PHASE 4.1: DSP IMPLEMENTATION
 
 Read `plugins/[Name]/.ideas/plan.md` to determine implementation approach:
 ```
 Complexity Score: [N]
 
-If score â‰¤2: Single-pass implementation (all at once)
-If score â‰¥3: Phased implementation (multiple passes)
+If score ≤2: Single-pass implementation (all at once)
+If score ≥3: Phased implementation (multiple passes)
 ```
 
 **Single-pass** (Simple plugins):
@@ -339,11 +339,11 @@ If score â‰¥3: Phased implementation (multiple passes)
 
 ---
 
-## ðŸ”§ PHASE 4.1: DSP IMPLEMENTATION
+## 🔧 PHASE 4.1: DSP IMPLEMENTATION
 
 **Prerequisites:** UI structure must be created (Phase 4.0) before DSP implementation begins.
 
-### FOR SINGLE-PASS (Complexity â‰¤2):
+### FOR SINGLE-PASS (Complexity ≤2):
 
 **Step 1: Read contracts**
 - `.ideas/creative-brief.md` - Plugin purpose and behavior
@@ -442,7 +442,7 @@ void verifyParameterConsistency()
 
 ---
 
-### FOR PHASED (Complexity â‰¥3):
+### FOR PHASED (Complexity ≥3):
 
 **plan.md will define phases like:**
 ```markdown
@@ -482,7 +482,7 @@ void verifyParameterConsistency()
 
 **Decision menu after each phase:**
 ```
-âœ“ Phase 4.1.1 complete
+✓ Phase 4.1.1 complete
 
 Progress: 1 of 3 phases
 
@@ -497,7 +497,7 @@ Choose (1-4): _
 
 ---
 
-## ðŸŽ¯ CRITICAL IMPLEMENTATION RULES
+## 🎯 CRITICAL IMPLEMENTATION RULES
 
 ### Real-Time Safety:
 - **NO heap allocations in processBlock()** - Pre-allocate in prepareToPlay()
@@ -505,7 +505,7 @@ Choose (1-4): _
 - **NO file I/O in processBlock()** - All resources loaded beforehand
 - Use `juce::ScopedNoDenormals` at start of processBlock()
 
-### ðŸ”„ UNIFIED PARAMETER HANDLING SYSTEM
+### 🔄 UNIFIED PARAMETER HANDLING SYSTEM
 
 #### Parameter Validation & Range Checking
 ```cpp
@@ -691,7 +691,7 @@ void prepareToPlay(double sampleRate, int samplesPerBlock) override
 
 ---
 
-## âœ… PHASE 4.2: BUILD & VERIFY
+## ✅ PHASE 4.2: BUILD & VERIFY
 
 After implementation complete:
 
@@ -764,7 +764,7 @@ try {
 
 ---
 
-## ðŸ§ª PHASE 4.3: AUTOMATED TESTING
+## 🧪 PHASE 4.3: AUTOMATED TESTING
 
 Run 5 automated tests:
 
@@ -778,11 +778,11 @@ Run 5 automated tests:
 
 ---
 
-## ðŸŽ¨ PHASE 4.4: GUI DECISION GATE
+## 🎨 PHASE 4.4: GUI DECISION GATE
 
 **CRITICAL CHOICE:** Custom UI or headless?
 ```
-âœ“ Audio Engine Working
+✓ Audio Engine Working
 
 DSP components: [N]
 Parameters: [N]
@@ -815,7 +815,7 @@ Choose (1-3): _
 
 ---
 
-## ðŸ“¦ PHASE 4.5: STATE MANAGEMENT
+## 📦 PHASE 4.5: STATE MANAGEMENT
 
 Ensure plugin state saves/loads correctly:
 ```cpp
@@ -842,7 +842,7 @@ void setStateInformation(const void* data, int sizeInBytes) override
 
 ---
 
-## ðŸ”„ VERSIONING & COMMITS
+## 🔄 VERSIONING & COMMITS
 
 **Git commit after each phase:**
 ```powershell
@@ -885,7 +885,7 @@ Complete-Phase -PluginPath "plugins\[Name]" -Phase "code" -Updates @{
 
 ---
 
-## ðŸŽµ COMMON DSP PATTERNS
+## 🎵 COMMON DSP PATTERNS
 
 ### Gain/Volume Control:
 ```cpp
@@ -928,7 +928,7 @@ for (int sample = 0; sample < numSamples; ++sample)
 
 ---
 
-## ðŸ“š INTEGRATION
+## 📚 INTEGRATION
 
 **Invoked by:**
 - Natural language: "Implement DSP for [Name]"
@@ -946,7 +946,7 @@ for (int sample = 0; sample < numSamples; ++sample)
 
 ---
 
-## âš ï¸ CRITICAL REMINDERS
+## ⚠️ CRITICAL REMINDERS
 
 1. **Real-time safety** - No allocations in audio thread
 2. **Parameter zero-drift** - Use exact IDs from parameter-spec.md
@@ -959,7 +959,7 @@ for (int sample = 0; sample < numSamples; ++sample)
 
 ---
 
-## ðŸ› TROUBLESHOOTING
+## 🐛 TROUBLESHOOTING
 
 **Build errors:**
 - Verify JUCE module includes

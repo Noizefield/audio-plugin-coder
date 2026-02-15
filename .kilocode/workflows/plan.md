@@ -1,4 +1,4 @@
-﻿---
+---
 description: "PHASE 2: Architecture - Define structure and UI framework"
 ---
 

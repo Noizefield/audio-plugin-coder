@@ -259,7 +259,7 @@ Use this checklist to verify your fix:
 ### For Future Plugins
 
 1. **Always use correct member order in templates**
-   - Update `.claude/templates/webview/PluginEditor.h.template`
+   - Update `templates/webview/PluginEditor.h.template`
    - Include destruction order comments
 
 2. **Add pre-build validation**

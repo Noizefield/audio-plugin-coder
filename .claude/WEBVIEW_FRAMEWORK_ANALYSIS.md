@@ -12,7 +12,7 @@
 The framework is failing to produce working WebView UIs because of **missing HTML/JavaScript templates**. While the framework has excellent C++ templates and documentation, it lacks the critical JUCE bridge code that enables JavaScript-to-C++ parameter communication.
 
 ### Root Cause
-**Missing Component:** No HTML template with JUCE frontend library code in `.claude/templates/webview/`
+**Missing Component:** No HTML template with JUCE frontend library code in `templates/webview/`
 
 **Impact:** AIs generate HTML files with incorrect JavaScript patterns, resulting in non-functional UIs where controls don't connect to the C++ backend.
 
@@ -217,11 +217,11 @@ document.addEventListener('mouseup', () => {
 
 | Component | Location | Status |
 |-----------|----------|--------|
-| C++ PluginEditor.h | `.claude/templates/webview/` | ✅ Exists |
-| C++ PluginEditor.cpp | `.claude/templates/webview/` | ✅ Exists |
-| CMakeLists.txt | `.claude/templates/webview/` | ✅ Exists |
-| HTML Template | `.claude/templates/webview/` | ❌ **MISSING** |
-| JavaScript Bridge | `.claude/templates/webview/` | ❌ **MISSING** |
+| C++ PluginEditor.h | `templates/webview/` | ✅ Exists |
+| C++ PluginEditor.cpp | `templates/webview/` | ✅ Exists |
+| CMakeLists.txt | `templates/webview/` | ✅ Exists |
+| HTML Template | `templates/webview/` | ❌ **MISSING** |
+| JavaScript Bridge | `templates/webview/` | ❌ **MISSING** |
 
 ### Documentation Inventory
 
@@ -237,7 +237,7 @@ document.addEventListener('mouseup', () => {
 
 ### Priority 1: Create HTML Template with JUCE Bridge ⭐⭐⭐
 
-**File:** `.claude/templates/webview/index.html.template`
+**File:** `templates/webview/index.html.template`
 
 **Contents:**
 1. Complete 3-part JavaScript system (inline)
@@ -327,7 +327,7 @@ document.addEventListener('mouseup', () => {
 **In skill_implementation/SKILL.md:**
 
 Before generating code, the AI should:
-1. Read `.claude/templates/webview/index.html.template`
+1. Read `templates/webview/index.html.template`
 2. Verify template contains complete JUCE bridge code
 3. Use template as base for plugin HTML
 
@@ -377,7 +377,7 @@ Before generating code, the AI should:
 ## Implementation Checklist
 
 - [ ] Extract AngelGrain JUCE bridge code (Parts 1 & 2)
-- [ ] Create `.claude/templates/webview/index.html.template`
+- [ ] Create `templates/webview/index.html.template`
 - [ ] Add parameter config template system
 - [ ] Update `skill_design_webview/SKILL.md` with bridge code requirements
 - [ ] Create `scripts/validate-webview-html.ps1`

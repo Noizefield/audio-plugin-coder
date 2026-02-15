@@ -36,8 +36,8 @@ Write-Host "Framework: $($state.ui_framework)" -ForegroundColor Cyan
 ## 🎨 PHASE 4.0: DESIGN-TO-FRAMEWORK CONVERSION (CRITICAL - BEFORE DSP CODE)
 
 **Framework Routing:**
-- If `ui_framework == webview`: use templates from `.claude/templates/webview/`
-- If `ui_framework == visage`: use templates from `.claude/templates/visage/` and **do not** generate HTML
+- If `ui_framework == webview`: use templates from `templates/webview/`
+- If `ui_framework == visage`: use templates from `templates/visage/` and **do not** generate HTML
 
 **IMPORTANT:** This phase converts the approved design specifications into framework-specific code. User must approve the conversion before DSP implementation begins.
 
@@ -159,7 +159,7 @@ Choose (1-3): _
 
 **For Visage Framework:**
 Convert approved design to Visage C++ code (Source/VisageControls.h).
-Use templates from `..claude/templates/visage/` and the shared host in `common/VisageJuceHost.h`.
+Use templates from `templates/visage/` and the shared host in `common/VisageJuceHost.h`.
 
 ---
 
@@ -186,7 +186,7 @@ Use templates from `..claude/templates/visage/` and the shared host in `common/V
 
 ## ✅ WEBVIEW IMPLEMENTATION CHECKLIST (MANDATORY)
 
-**CRITICAL:** When implementing WebView plugins, you MUST verify ALL 8 points below. Use templates from `.claude/templates/webview/` and run validation script.
+**CRITICAL:** When implementing WebView plugins, you MUST verify ALL 8 points below. Use templates from `templates/webview/` and run validation script.
 
 ### WebView Setup Validation (Run Before DSP Implementation)
 
@@ -292,7 +292,7 @@ See: `.claude/troubleshooting/resolutions/webview-member-order-crash.md`
 
 ### Template Usage:
 
-**Copy templates from:** `.claude/templates/webview/`
+**Copy templates from:** `templates/webview/`
 - `PluginEditor.h.template` → `Source/PluginEditor.h`
 - `PluginEditor.cpp.template` → `Source/PluginEditor.cpp`
 - `CMakeLists.txt.template` → `CMakeLists.txt`
@@ -308,7 +308,7 @@ See: `.claude/troubleshooting/resolutions/webview-member-order-crash.md`
 ### If Validation Fails:
 
 1. Review error messages from validation script
-2. Check templates in `.claude/templates/webview/`
+2. Check templates in `templates/webview/`
 3. Compare your code with JUCE example: `_tools/JUCE/examples/Plugins/WebViewPluginDemo.h`
 4. Ensure web files exist: `Source/ui/public/index.html`, `js/index.js`, `js/juce/index.js`
 5. Verify CMakeLists.txt embeds files correctly

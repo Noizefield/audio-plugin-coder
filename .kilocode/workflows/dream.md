@@ -1,4 +1,4 @@
-﻿---
+---
 description: "PHASE 1: Ideation - Create creative brief and parameter spec"
 ---
 
@@ -27,7 +27,7 @@ Load and execute `...kilocode\skills\skill_ideation\SKILL.md`
 **Completion:**
 Stop and inform user:
 ```
-âœ… Dream phase complete!
+✅ Dream phase complete!
 
 Files created:
 - plugins/[Name]/.ideas/creative-brief.md
@@ -68,7 +68,7 @@ This phase MUST determine and set `ui_framework` in status.json:
 
 **Completion:**
 ```
-âœ… Plan phase complete!
+✅ Plan phase complete!
 
 Framework selected: [Visage/WebView]
 Complexity score: [N]/5

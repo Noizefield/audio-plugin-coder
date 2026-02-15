@@ -1,4 +1,4 @@
-﻿# SKILL: TROUBLESHOOTING & ISSUE RESOLUTION
+# SKILL: TROUBLESHOOTING & ISSUE RESOLUTION
 
 ## STEP 1: CHECK KNOWN ISSUES FIRST
 
@@ -13,7 +13,7 @@ $matches = $knownIssues.issues | Where-Object {
 }
 
 if ($matches) {
-    Write-Host "âœ“ Known issue found: $($matches.title)"
+    Write-Host "✓ Known issue found: $($matches.title)"
     Write-Host "Resolution: $($matches.resolution_file)"
     
     # Load and apply solution

@@ -257,7 +257,7 @@ Run through this checklist:
    - Compare your implementation line-by-line
 
 2. **Use templates:**
-   - Copy from `.claude/templates/webview/`
+   - Copy from `templates/webview/`
    - Replace placeholders with your values
 
 3. **Check build output:**

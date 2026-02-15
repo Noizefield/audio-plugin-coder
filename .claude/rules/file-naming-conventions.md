@@ -1,32 +1,32 @@
-﻿# File Naming Conventions
+# File Naming Conventions
 
 **Purpose:** Standardize file organization across all APC plugin development skills
 **Scope:** All plugin projects under `plugins\[Name]\`
 
-## ðŸ“ Directory Structure
+## 📁 Directory Structure
 ```
 plugins\[Name]\
-â”œâ”€â”€ .ideas\           # Project planning and specifications
-â”‚   â”œâ”€â”€ creative-brief.md
-â”‚   â”œâ”€â”€ parameter-spec.md
-â”‚   â”œâ”€â”€ architecture.md
-â”‚   â””â”€â”€ plan.md
-â”œâ”€â”€ Design\           # Visual assets and mockups
-â”‚   â”œâ”€â”€ v1-ui-spec.md        # â† Note versioning
-â”‚   â”œâ”€â”€ v1-style-guide.md    # â† Note versioning
-â”‚   â”œâ”€â”€ v1-test.html         # â† WebView preview (optional)
-â”‚   â””â”€â”€ index.html           # â† WebView production (WebView only)
-â”œâ”€â”€ Source\           # C++ source code
-â”‚   â”œâ”€â”€ PluginProcessor.h
-â”‚   â”œâ”€â”€ PluginProcessor.cpp
-â”‚   â”œâ”€â”€ PluginEditor.h
-â”‚   â”œâ”€â”€ PluginEditor.cpp
-â”‚   â””â”€â”€ VisageControls.h     # (Visage only)
-â”œâ”€â”€ status.json       # â† Project state tracking (ROOT LEVEL)
-â””â”€â”€ README.md         # Plugin documentation
+├── .ideas\           # Project planning and specifications
+│   ├── creative-brief.md
+│   ├── parameter-spec.md
+│   ├── architecture.md
+│   └── plan.md
+├── Design\           # Visual assets and mockups
+│   ├── v1-ui-spec.md        # ← Note versioning
+│   ├── v1-style-guide.md    # ← Note versioning
+│   ├── v1-test.html         # ← WebView preview (optional)
+│   └── index.html           # ← WebView production (WebView only)
+├── Source\           # C++ source code
+│   ├── PluginProcessor.h
+│   ├── PluginProcessor.cpp
+│   ├── PluginEditor.h
+│   ├── PluginEditor.cpp
+│   └── VisageControls.h     # (Visage only)
+├── status.json       # ← Project state tracking (ROOT LEVEL)
+└── README.md         # Plugin documentation
 ```
 
-## ðŸ“‹ File Naming Rules
+## 📋 File Naming Rules
 
 ### .ideas\ Directory
 - **creative-brief.md** - Plugin concept and vision
@@ -64,7 +64,7 @@ plugins\[Name]\
 - **status.json** - Project state and configuration
 - **README.md** - Plugin documentation and usage
 
-## ðŸ”§ Versioning System
+## 🔧 Versioning System
 
 ### Design Files
 - Use version prefixes for iterative design: `v1-ui-spec.md`, `v2-ui-spec.md`, `v3-ui-spec.md`
@@ -75,11 +75,11 @@ plugins\[Name]\
 **Example progression:**
 ```
 Design\
-â”œâ”€â”€ v1-ui-spec.md      # Initial design
-â”œâ”€â”€ v1-style-guide.md
-â”œâ”€â”€ v2-ui-spec.md      # After first iteration
-â”œâ”€â”€ v2-style-guide.md
-â””â”€â”€ v2-test.html       # Latest version used for implementation
+├── v1-ui-spec.md      # Initial design
+├── v1-style-guide.md
+├── v2-ui-spec.md      # After first iteration
+├── v2-style-guide.md
+└── v2-test.html       # Latest version used for implementation
 ```
 
 ### Implementation Files
@@ -87,7 +87,7 @@ Design\
 - Use Git for version control
 - Commit after each phase completion
 
-## ðŸŽ¯ Framework-Specific Rules
+## 🎯 Framework-Specific Rules
 
 ### Visage Framework
 - **Required:** `Source\VisageControls.h` for custom widgets
@@ -99,7 +99,7 @@ Design\
 - **Optional:** `Design\v1-test.html` for preview
 - **Integration:** `Source\PluginEditor.h` with WebView setup
 
-## ðŸ”„ Phase Integration
+## 🔄 Phase Integration
 
 ### Phase 1: DREAM
 - Creates: `.ideas\creative-brief.md`, `.ideas\parameter-spec.md`
@@ -122,7 +122,7 @@ Design\
 - Creates: `dist\[Name]_v1.0\` with distribution files
 - Updates: `status.json` (phase: "ship_complete", version: "v1.0.0")
 
-## âš ï¸ Critical Rules
+## ⚠️ Critical Rules
 
 1. **Consistency:** All skills must follow these naming conventions
 2. **Framework Awareness:** File creation depends on UI framework selection
@@ -130,7 +130,7 @@ Design\
 4. **State Tracking:** Always update `status.json` after each phase
 5. **Path Separators:** Use backslashes (\) in PowerShell commands and Windows paths
 
-## ðŸ”— Cross-Skill References
+## 🔗 Cross-Skill References
 
 - **skill_ideation.md:** Creates initial .ideas\ files
 - **skill_planning.md:** Creates architecture.md and plan.md
@@ -138,7 +138,7 @@ Design\
 - **skill_implementation.md:** Creates Source\ files
 - **skill_packaging.md:** Creates dist\ directory and distribution files
 
-## ðŸ“ State Management Files
+## 📁 State Management Files
 
 ### Template Files
 - **`..claude\templates\status-template.json`** - Standardized state schema template
@@ -154,7 +154,7 @@ Design\
 - **State Validation:** `Test-PluginState` function for prerequisites
 - **Error Recovery:** `Backup-PluginState` and `Restore-PluginState` functions
 
-## ðŸ› ï¸ Validation
+## 🛠️ Validation
 
 Each skill should validate:
 1. Required files exist before proceeding

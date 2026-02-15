@@ -1,4 +1,4 @@
-﻿---
+---
 description: "Run tests on the plugin"
 ---
 
@@ -28,7 +28,7 @@ Load and execute `...agent\skills\skill_testing\SKILL.md`
 
 **Completion:**
 ```
-âœ… Tests complete!
+✅ Tests complete!
 
 Results: [Pass/Fail count]
 

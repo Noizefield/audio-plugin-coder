@@ -1,4 +1,4 @@
-﻿---
+---
 description: "PHASE 3: Design - Create UI mockups based on selected framework"
 ---
 
@@ -40,7 +40,7 @@ if ($state.ui_framework -eq "pending") {
 
 **Completion:**
 ```
-âœ… Design phase complete!
+✅ Design phase complete!
 
 Framework: [Visage/WebView]
 Design version: v1

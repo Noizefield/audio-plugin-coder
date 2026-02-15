@@ -1,4 +1,4 @@
-﻿---
+---
 description: "PHASE 4: Implementation - Build DSP and UI code"
 ---
 
@@ -29,8 +29,8 @@ Load and execute `...agent\skills\skill_implementation\SKILL.md`
 4. **Integration:** Connect parameters to UI controls
 
 **Framework Routing:**
-- **WebView:** Use templates in `..agent/templates/webview/` and run WebView validation scripts.
-- **Visage:** Use templates in `..agent/templates/visage/`. Do NOT generate HTML.
+- **WebView:** Use templates in `templates/webview/` and run WebView validation scripts.
+- **Visage:** Use templates in `templates/visage/`. Do NOT generate HTML.
 
 **Pre-Build Validation (Visage):**
 ```powershell
@@ -52,7 +52,7 @@ if ($state.ui_framework -eq "webview") {
 
         if (-not $validationResult) {
             Write-Error @"
-❌ CRITICAL: Member declaration order is incorrect!
+? CRITICAL: Member declaration order is incorrect!
 
 WebView must be declared AFTER relays to prevent DAW crashes.
 
@@ -67,11 +67,11 @@ Fix the order before building to avoid crashes on plugin unload.
 "@
             exit 1
         }
-        Write-Host "✅ Member order validated successfully" -ForegroundColor Green
+        Write-Host "? Member order validated successfully" -ForegroundColor Green
     } else {
         Write-Warning "Validation script not found, skipping member order check"
         Write-Host "IMPORTANT: Verify member order manually:" -ForegroundColor Yellow
-        Write-Host "  Relays → WebView → Attachments" -ForegroundColor Yellow
+        Write-Host "  Relays ? WebView ? Attachments" -ForegroundColor Yellow
     }
 }
 ```
@@ -97,7 +97,7 @@ Restore-PluginState -PluginPath "plugins\$PluginName"
 
 **Completion:**
 ```
-âœ… Implementation phase complete!
+✅ Implementation phase complete!
 
 Plugin built successfully!
 Location: build\[Name]\Debug\VST3\[Name].vst3
@@ -115,7 +115,7 @@ $phaseIssues = Get-Content ...agent\troubleshooting\known-issues.yaml |
     Where-Object { $_.category -eq "implementation" }
 
 if ($phaseIssues) {
-    Write-Host "ðŸ“š Known issues for this phase:"
+    Write-Host "📚 Known issues for this phase:"
     $phaseIssues | ForEach-Object {
         Write-Host "  - $($_.title) [$($_.resolution_status)]"
     }
@@ -142,10 +142,10 @@ Because these are **constraints that always apply**
 Break it into individual issue files:
 ```
 ...agent\troubleshooting\resolutions\
-â”œâ”€â”€ cmake-duplicate-target.md          # Section 2B from your doc
-â”œâ”€â”€ webview-path-structure.md          # Section 2A from your doc
-â”œâ”€â”€ monorepo-build-context.md          # Section 1B from your doc
-â””â”€â”€ manual-build-forbidden.md          # Section 1A from your doc
+├── cmake-duplicate-target.md          # Section 2B from your doc
+├── webview-path-structure.md          # Section 2A from your doc
+├── monorepo-build-context.md          # Section 1B from your doc
+└── manual-build-forbidden.md          # Section 1A from your doc
 ```
 
 ---
@@ -153,38 +153,38 @@ Break it into individual issue files:
 ## **Example Auto-Capture Flow:**
 ```
 AI encounters error: "CMake Error: Target 'juce_core' already exists"
-    â”‚
-    â–¼
-AI tries fix #1: Remove duplicate juce_add_modules â†’ Fails
-    â”‚
-    â–¼
-AI tries fix #2: Clean build folder â†’ Fails
-    â”‚
-    â–¼
-AI tries fix #3: Check CMakeLists.txt hierarchy â†’ Success!
-    â”‚
-    â–¼
+    │
+    ▼
+AI tries fix #1: Remove duplicate juce_add_modules → Fails
+    │
+    ▼
+AI tries fix #2: Clean build folder → Fails
+    │
+    ▼
+AI tries fix #3: Check CMakeLists.txt hierarchy → Success!
+    │
+    ▼
 AI triggers auto-capture:
-    â”œâ”€â”€ Updates known-issues.yaml (frequency++)
-    â”œâ”€â”€ Creates/updates resolution doc
-    â””â”€â”€ Notifies user: "Issue logged as cmake-001"
-    â”‚
-    â–¼
+    ├── Updates known-issues.yaml (frequency++)
+    ├── Creates/updates resolution doc
+    └── Notifies user: "Issue logged as cmake-001"
+    │
+    ▼
 Next time same error occurs:
-    â”œâ”€â”€ AI searches known-issues.yaml first
-    â”œâ”€â”€ Finds cmake-001 with solution
-    â””â”€â”€ Applies fix immediately (no trial/error)
+    ├── AI searches known-issues.yaml first
+    ├── Finds cmake-001 with solution
+    └── Applies fix immediately (no trial/error)
 ```
 
 ---
 
 ## **Benefits:**
 
-1. âœ… **Self-improving system** - Gets smarter over time
-2. âœ… **Faster resolution** - Known issues solved in seconds
-3. âœ… **Knowledge preservation** - Solutions aren't lost between sessions
-4. âœ… **Pattern detection** - Frequency tracking shows common pain points
-5. âœ… **User transparency** - User sees what was tried and why
+1. ✅ **Self-improving system** - Gets smarter over time
+2. ✅ **Faster resolution** - Known issues solved in seconds
+3. ✅ **Knowledge preservation** - Solutions aren't lost between sessions
+4. ✅ **Pattern detection** - Frequency tracking shows common pain points
+5. ✅ **User transparency** - User sees what was tried and why
 
 ---
 
@@ -193,10 +193,10 @@ Next time same error occurs:
 **Create these files:**
 ```
 ...agent\troubleshooting\
-â”œâ”€â”€ known-issues.yaml           # â† Machine-readable database
-â”œâ”€â”€ _template.md                # â† Template for new issues
-â””â”€â”€ resolutions\                # â† Detailed solution docs
-    â”œâ”€â”€ cmake-duplicate-target.md
-    â”œâ”€â”€ webview-path-error.md
-    â””â”€â”€ vst3-install-failed.md
+├── known-issues.yaml           # ← Machine-readable database
+├── _template.md                # ← Template for new issues
+└── resolutions\                # ← Detailed solution docs
+    ├── cmake-duplicate-target.md
+    ├── webview-path-error.md
+    └── vst3-install-failed.md
 

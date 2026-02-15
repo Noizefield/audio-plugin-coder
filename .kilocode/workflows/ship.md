@@ -1,4 +1,4 @@
-﻿---
+---
 description: "PHASE 5: Packaging - Create cross-platform installers and distribution packages"
 ---
 
@@ -38,9 +38,9 @@ The Ship phase creates distribution-ready plugin packages for Windows, macOS, an
 
 | Platform | VST3 | AU | Standalone | LV2 | Build Method |
 |----------|------|-----|------------|-----|--------------|
-| Windows  | ✓    | -   | ✓          | -   | Local or GitHub |
-| macOS    | ✓    | ✓   | ✓          | -   | GitHub only |
-| Linux    | ✓    | -   | ✓          | ✓   | GitHub only |
+| Windows  | ?    | -   | ?          | -   | Local or GitHub |
+| macOS    | ?    | ?   | ?          | -   | GitHub only |
+| Linux    | ?    | -   | ?          | ?   | GitHub only |
 
 ---
 
@@ -169,15 +169,15 @@ Enter numbers (comma-separated) or 'all':
 **Output Structure:**
 ```
 dist/{PluginName}-v{version}/
-├── {PluginName}-{version}-Windows-Setup.exe
-├── {PluginName}-{version}-macOS.dmg
-├── {PluginName}-{version}-macOS.pkg
-├── {PluginName}-{version}-Linux.AppImage
-├── {PluginName}-{version}.deb
-├── README.md
-├── CHANGELOG.md
-├── LICENSE.txt
-└── INSTALL.md
++-- {PluginName}-{version}-Windows-Setup.exe
++-- {PluginName}-{version}-macOS.dmg
++-- {PluginName}-{version}-macOS.pkg
++-- {PluginName}-{version}-Linux.AppImage
++-- {PluginName}-{version}.deb
++-- README.md
++-- CHANGELOG.md
++-- LICENSE.txt
++-- INSTALL.md
 ```
 
 **Reference:** See `skill_packaging/SKILL.md` - "STEP 7: FINALIZE DISTRIBUTION"
@@ -216,23 +216,23 @@ dist/{PluginName}-v{version}/
 ## Completion
 
 ```
-╔══════════════════════════════════════════════════════════════╗
-║  🎉 PLUGIN SHIPPED SUCCESSFULLY!                             ║
-╠══════════════════════════════════════════════════════════════╣
-║  Plugin: {PluginName} v{version}                              ║
-║                                                              ║
-║  Platforms Built:                                            ║
-║    • Windows: {Local/GitHub}                                  ║
-║    • macOS: GitHub Actions                                    ║
-║    • Linux: GitHub Actions                                    ║
-║                                                              ║
-║  Distribution: dist/{PluginName}-v{version}.zip               ║
-║                                                              ║
-║  Installers:                                                 ║
-║    • Windows: Setup.exe with license & custom path           ║
-║    • macOS: DMG + PKG with component selection               ║
-║    • Linux: AppImage + DEB packages                          ║
-╚══════════════════════════════════════════════════════════════╝
++--------------------------------------------------------------+
+�  ?? PLUGIN SHIPPED SUCCESSFULLY!                             �
+�--------------------------------------------------------------�
+�  Plugin: {PluginName} v{version}                              �
+�                                                              �
+�  Platforms Built:                                            �
+�    � Windows: {Local/GitHub}                                  �
+�    � macOS: GitHub Actions                                    �
+�    � Linux: GitHub Actions                                    �
+�                                                              �
+�  Distribution: dist/{PluginName}-v{version}.zip               �
+�                                                              �
+�  Installers:                                                 �
+�    � Windows: Setup.exe with license & custom path           �
+�    � macOS: DMG + PKG with component selection               �
+�    � Linux: AppImage + DEB packages                          �
++--------------------------------------------------------------+
 ```
 
 ---
@@ -249,4 +249,4 @@ dist/{PluginName}-v{version}/
 ## Reference
 
 For detailed implementation, code samples, and troubleshooting:
-**→ See `.kilocode/skills/skill_packaging/SKILL.md`**
+**? See `.kilocode/skills/skill_packaging/SKILL.md`**

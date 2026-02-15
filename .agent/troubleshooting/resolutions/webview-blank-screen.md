@@ -1,4 +1,4 @@
-﻿# WebView Blank Screen Troubleshooting Guide
+# WebView Blank Screen Troubleshooting Guide
 
 ## Problem: Plugin GUI Shows Blank White Screen
 
@@ -21,10 +21,10 @@ When a WebView plugin loads but displays only a blank white screen, follow this 
 3. Check Console tab for JavaScript errors
 
 **Common errors:**
-- `Failed to load module script` â†’ Missing JUCE frontend library
-- `Cannot read property 'backend' of undefined` â†’ Native integration not enabled
-- `404 Not Found` â†’ Resource provider not working
-- `CORS error` â†’ Resource provider misconfigured
+- `Failed to load module script` → Missing JUCE frontend library
+- `Cannot read property 'backend' of undefined` → Native integration not enabled
+- `404 Not Found` → Resource provider not working
+- `CORS error` → Resource provider misconfigured
 
 **If errors found:** Fix the specific error (see solutions below)
 **If no errors:** Continue to Step 3
@@ -53,7 +53,7 @@ std::optional<WebBrowserComponent::Resource> PluginEditor::getResource(const Str
 ```
 
 **Test in DevTools Network tab:**
-1. Open DevTools (right-click â†’ Inspect)
+1. Open DevTools (right-click → Inspect)
 2. Go to Network tab
 3. Reload plugin
 4. Check if `index.html` loads (should show 200 status)
@@ -82,9 +82,9 @@ target_link_libraries(YourPlugin
 ```
 
 **Verify files exist:**
-- `Source/ui/public/index.html` âœ“
-- `Source/ui/public/js/index.js` âœ“
-- `Source/ui/public/js/juce/index.js` âœ“
+- `Source/ui/public/index.html` ✓
+- `Source/ui/public/js/index.js` ✓
+- `Source/ui/public/js/juce/index.js` ✓
 
 **If files missing:** Copy JUCE frontend library:
 ```powershell
@@ -102,14 +102,14 @@ Copy-Item "_tools\JUCE\modules\juce_gui_extra\native\javascript\index.js" "plugi
 ```cpp
 webView = std::make_unique<WebBrowserComponent>(
     WebBrowserComponent::Options()
-        .withBackend(WebBrowserComponent::Options::Backend::webview2)  // âœ“ Required
+        .withBackend(WebBrowserComponent::Options::Backend::webview2)  // ✓ Required
         .withWinWebView2Options(
             WebBrowserComponent::Options::WinWebView2{}
                 .withUserDataFolder(File::getSpecialLocation(
-                    File::SpecialLocationType::tempDirectory)))  // âœ“ Required
-        .withNativeIntegrationEnabled()  // âœ“ Required
+                    File::SpecialLocationType::tempDirectory)))  // ✓ Required
+        .withNativeIntegrationEnabled()  // ✓ Required
         .withResourceProvider([this](const auto& url) {
-            return getResource(url);  // âœ“ Required
+            return getResource(url);  // ✓ Required
         })
 );
 ```
@@ -127,8 +127,8 @@ webView->goToURL(WebBrowserComponent::getResourceProviderRoot());
 
 **WRONG (will cause blank screen):**
 ```cpp
-webView->goToURL("data:text/html;base64,...");  // âŒ Doesn't support modules
-webView->loadHTML(htmlString);  // âŒ Can't load external JS
+webView->goToURL("data:text/html;base64,...");  // ❌ Doesn't support modules
+webView->loadHTML(htmlString);  // ❌ Can't load external JS
 ```
 
 **If using wrong method:** Change to `getResourceProviderRoot()`
@@ -152,9 +152,9 @@ webView->loadHTML(htmlString);  // âŒ Can't load external JS
 ```
 
 **Common issues:**
-- Missing `type="module"` â†’ JavaScript won't load
-- Wrong path to `js/index.js` â†’ File not found
-- Missing closing tags â†’ HTML parsing fails
+- Missing `type="module"` → JavaScript won't load
+- Wrong path to `js/index.js` → File not found
+- Missing closing tags → HTML parsing fails
 
 ---
 
@@ -257,7 +257,7 @@ Run through this checklist:
    - Compare your implementation line-by-line
 
 2. **Use templates:**
-   - Copy from `..agent/templates/webview/`
+   - Copy from `templates/webview/`
    - Replace placeholders with your values
 
 3. **Check build output:**
