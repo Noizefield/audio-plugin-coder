@@ -43,6 +43,7 @@ Instead of manually juggling DSP architecture, UI frameworks, build systems, sta
 - 🔧 **Self-Improving** - Auto-capture troubleshooting knowledge; the system gets smarter over time.
 - 🏗️ **Production Ready** - JUCE 8 integration with CMake build system.
 - 📚 **Comprehensive Skills** - Pre-built domain knowledge for DSP, UI design, testing, and packaging.
+- 🎬 **Bridge Templates** - FFGL visual plugins and Max/MSP externals support.
 
 ## 🚀 Quick Start
 
@@ -189,10 +190,15 @@ audio-plugin-coder/
 │   ├── rules/                   # System constraints
 │   │   ├── agent.md
 │   │   └── file-naming-conventions.md
-│   ├── troubleshooting/         # Auto-captured issues
-│   │   ├── known-issues.yaml
-│   │   └── resolutions/
-│   └── templates/
+│   └── troubleshooting/         # Auto-captured issues
+│       ├── known-issues.yaml
+│       └── resolutions/
+├── templates/                   # Plugin templates (consolidated)
+│   ├── visage/                  # Visage (C++) UI templates
+│   ├── webview/                 # WebView (HTML5) UI templates
+│   ├── ffgl/                    # FFGL visual plugin templates
+│   ├── max-external/            # Max/MSP external templates
+│   └── status-template.json     # Plugin state template
 ├── docs/                        # Comprehensive documentation
 ├── plugins/                     # Generated plugins
 │   └── [YourPlugin]/
@@ -321,6 +327,8 @@ Comprehensive documentation is available in the [`docs/`](docs/) directory:
 - [ ] macOS local build support
 - [x] Linux local build support
 - [x] visage (GUI) support (https://github.com/VitalAudio/visage)
+- [x] FFGL bridge templates (VJ plugins for Resolume, VDMX, etc.)
+- [x] Max/MSP external templates
 - [ ] CLAP format support
 - [ ] Preset management system
 - [ ] Plugin marketplace integration
@@ -357,6 +365,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 - **The AI Community** - Specifically the meta-prompting pioneers.
 - **Matt Tytel** - For the outstandingly good Visage library (https://github.com/VitalAudio/visage)
 - **[TÂCHES (glittercowboy)](https://github.com/glittercowboy)** - Inspiration for context engineering systems.
+- **[12Matt3r](https://github.com/12Matt3r)** - FFGL and Max/MSP bridge templates contribution.
 
 
 ## 📄 License
