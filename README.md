@@ -70,6 +70,20 @@ cd audio-plugin-coder
 .\scripts\setup.ps1
 ```
 
+### Bridge Templates (FFGL & Max/MSP)
+
+If you are specifically interested in building **FFGL Visual Plugins** or **Max for Live Externals**, use the included One-Click Setup script for Windows:
+
+```powershell
+.\scripts\setup_bridges.bat
+```
+
+This script will:
+1.  Check for CMake and Git.
+2.  Automatically download JUCE 8 (if missing).
+3.  Configure the Visual Studio solution for your chosen bridge.
+4.  Open the project ready for compilation.
+
 2. **Initialize your LLM agent:**
 
 For **Kilo**:
