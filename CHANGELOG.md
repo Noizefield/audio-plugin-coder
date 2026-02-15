@@ -8,9 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **FFGL Bridge Template** (from PR #2 by 12Matt3r)
+  - FreeFrameGL 2.0 plugin template for VJ software (Resolume, VDMX, TouchDesigner)
+  - JUCE 8 integration with parameter handling via `AudioProcessorValueTreeState`
+  - OpenGL rendering with host-provided context
+  - Thread-safe parameter caching for real-time performance
+  - One-click setup scripts (`scripts/setup_bridges.ps1`, `scripts/setup_bridges.bat`)
+  - GitHub Actions CI/CD workflow for cross-platform builds
+
+- **Max/MSP External Template** (from PR #2 by 12Matt3r)
+  - Max/MSP external template using Cycling '74 Min-API
+  - JUCE 8 DSP and UI integration
+  - Double-precision audio processing support
+  - Native window handle extraction for UI embedding
+  - Floating window fallback for UI display
+
+- **Consolidated Templates Folder**
+  - All templates now in single root `templates/` folder
+  - `templates/visage/` - Visage (C++) UI templates
+  - `templates/webview/` - WebView (HTML5) UI templates
+  - `templates/ffgl/` - FFGL visual plugin templates
+  - `templates/max-external/` - Max/MSP external templates
+  - `templates/status-template.json` - Plugin state tracking template
+
 - Visage integration scaffolding
   - `APC_ENABLE_VISAGE` CMake option and optional subdirectory wiring
-  - Visage plugin templates for `.kilocode`, `.agent`, and `.claude`
   - `scripts/validate-visage-setup.ps1` validation script
   - Design workflow: Visage preview scaffold (no HTML), default yes
   - Implementation workflow: framework routing and Visage validation
@@ -51,6 +73,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic releases on git tags
 
 ### Changed
+- **Template folder consolidation**
+  - Moved all templates from `.agent/templates/`, `.claude/templates/`, `.kilocode/templates/` to root `templates/`
+  - Updated all references in skill files, workflows, and troubleshooting docs to point to root `templates/`
+  - Renamed `FFGL_Bridge` to `ffgl` and `Max_External` to `max-external` for consistent naming
+  - Removed duplicate template folders from agent directories
 - Design phase now branches by framework: WebView generates HTML preview; Visage avoids HTML and uses C++ scaffold
 - Implementation phase now routes templates by framework and runs Visage validation for Visage plugins
 - Build and preview scripts now auto-enable `APC_ENABLE_VISAGE` when `ui_framework == visage`
