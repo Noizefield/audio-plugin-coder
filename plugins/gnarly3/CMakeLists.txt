@@ -2,6 +2,14 @@
 # Cross-platform: Windows (VST3), macOS (VST3/AU), Linux (VST3/LV2)
 
 # ============================================
+# REQUIRE VISAGE
+# ============================================
+if(NOT TARGET visage::visage)
+    message(STATUS "Skipping gnarly3: Visage not enabled (set APC_ENABLE_VISAGE=ON to build)")
+    return()
+endif()
+
+# ============================================
 # PLATFORM-SPECIFIC CONFIGURATION
 # ============================================
 if(WIN32)
