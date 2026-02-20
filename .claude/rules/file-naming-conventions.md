@@ -128,7 +128,8 @@ Design\
 2. **Framework Awareness:** File creation depends on UI framework selection
 3. **Version Control:** Use Git for tracking changes, not file versioning in Source\
 4. **State Tracking:** Always update `status.json` after each phase
-5. **Path Separators:** Use backslashes (\) in PowerShell commands and Windows paths
+5. **Path Separators:** Use backslashes (`\`) on Windows (PowerShell), forward slashes (`/`) on macOS/Linux (Bash)
+6. **Script Equivalents:** Every `.ps1` script in `scripts/` has a `.sh` counterpart for macOS/Linux
 
 ## 🔗 Cross-Skill References
 
@@ -145,14 +146,15 @@ Design\
 - **`..claude\guides\state-management-guide.md`** - State management documentation
 
 ### Script Files
-- **`scripts\state-management.ps1`** - Core state management PowerShell module
+- **`scripts\state-management.ps1`** - Core state management PowerShell module (Windows)
+- **`scripts/state-management.sh`** - Core state management Bash module (macOS/Linux)
 - **`scripts\validate-state-management.ps1`** - State management validation script
 
 ### State Operations
-- **State Initialization:** `New-PluginState` function
-- **State Updates:** `Update-PluginState` function with validation
-- **State Validation:** `Test-PluginState` function for prerequisites
-- **Error Recovery:** `Backup-PluginState` and `Restore-PluginState` functions
+- **State Initialization:** `New-PluginState` (Windows) / `new_plugin_state` (macOS)
+- **State Updates:** `Update-PluginState` (Windows) / `update_plugin_state` (macOS)
+- **State Validation:** `Test-PluginState` (Windows) / `test_plugin_state` (macOS)
+- **Error Recovery:** `Backup-PluginState` / `backup_plugin_state` and `Restore-PluginState` / `restore_plugin_state`
 
 ## 🛠️ Validation
 

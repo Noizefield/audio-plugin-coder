@@ -5,7 +5,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![JUCE](https://img.shields.io/badge/JUCE-8.0-blue.svg)](https://juce.com/)
-[![Platform](https://img.shields.io/badge/Platform-Windows%2011-0078D4.svg)](https://www.microsoft.com/windows)
+[![Platform](https://img.shields.io/badge/Platform-Windows%2011%20%7C%20macOS-0078D4.svg)](https://github.com/Noizefield/audio-plugin-coder)
 [![Sponsor](https://img.shields.io/badge/Sponsor-Project-pink.svg?style=social&logo=heart)](https://github.com/sponsors/Noizefield) 
 
 ## About Audio Plugin Coder 
@@ -49,26 +49,45 @@ Instead of manually juggling DSP architecture, UI frameworks, build systems, sta
 
 ### Prerequisites
 
-- Windows 11 or Linux (tested with Mint Linux) (macOS not yet tested)
+**Windows:**
+- Windows 11
 - PowerShell 7+
 - Visual Studio 2022 (with C++ development tools)
 - CMake 3.22+
 - Git
+
+**macOS:**
+- macOS 10.13+ (universal binary: Intel + Apple Silicon)
+- Xcode (with command line tools)
+- CMake 3.22+
+- Git
+- jq (`brew install jq`) - for state management scripts
+
+**Linux:**
+- Tested with Mint Linux
+- CMake 3.22+, GCC/Clang, Git
+
+**All platforms:**
 - **An LLM coding agent** (Claude Code, Antigravity, Kilo, Codex, Cursor)
 
 ### Installation
 
 1. **Clone the repository (with submodules):**
-```powershell
+```bash
 git clone --recursive https://github.com/Noizefield/audio-plugin-coder.git
 cd audio-plugin-coder
 ```
 
-Or clone normally and run setup:
+Or clone normally and run setup (Windows):
 ```powershell
 git clone https://github.com/Noizefield/audio-plugin-coder.git
 cd audio-plugin-coder
 .\scripts\setup.ps1
+```
+
+Verify your environment (macOS):
+```bash
+bash scripts/system-check.sh
 ```
 
 ### Bridge Templates (FFGL & Max/MSP)
@@ -207,8 +226,11 @@ audio-plugin-coder/
 │       ├── Source/              # C++ code
 │       └── status.json          # State tracking
 ├── scripts/                     # Build automation
-│   ├── state-management.ps1
-│   └── build-and-install.ps1
+│   ├── build-and-install.ps1    # Windows build script
+│   ├── build-and-install.sh     # macOS build script
+│   ├── state-management.ps1     # Windows state management
+│   ├── state-management.sh      # macOS state management
+│   └── installer/               # Platform-specific installers
 └── build/                       # Compilation artifacts
 ```
 
@@ -280,7 +302,7 @@ APC includes an **auto-capture system** that learns from problems:
 APC works with any LLM-based coding agent that supports:
 - Custom workflows/slash commands
 - File system access
-- PowerShell execution
+- Shell execution (PowerShell on Windows, Bash on macOS/Linux)
 
 **Tested with:**
 - ✅ Claude Code (Anthropic)
@@ -290,11 +312,10 @@ APC works with any LLM-based coding agent that supports:
 
 ## 🛠️ Technology Stack
 
-- **JUCE 8** - Audio plugin framework
-- **CMake** - Build system
-- **PowerShell** - Automation scripting
 - **JUCE 8** - Audio plugin framework (includes DSP, GUI, etc.)
-- **WebView2** - Chromium-based web UI
+- **CMake** - Build system (Visual Studio on Windows, Xcode on macOS)
+- **PowerShell / Bash** - Automation scripting (platform-specific)
+- **WebView2 / WKWebView** - Web UI (Windows / macOS)
 - **YAML** - Knowledge base format
 - **Markdown** - Documentation and workflows
 
@@ -324,7 +345,7 @@ Comprehensive documentation is available in the [`docs/`](docs/) directory:
 - [x] Windows support
 - [x] GitHub Actions CI/CD
 - [x] Comprehensive documentation
-- [ ] macOS local build support
+- [x] macOS local build support
 - [x] Linux local build support
 - [x] visage (GUI) support (https://github.com/VitalAudio/visage)
 - [x] FFGL bridge templates (VJ plugins for Resolume, VDMX, etc.)
@@ -340,7 +361,7 @@ I am an independent developer pouring hundreds of hours (and significant API cos
 
 Developing a framework that works across different AI agents means constantly testing against paid tiers of Claude, Gemini, and others. I often run out of "Plan" usage just testing a single workflow improvement.
 
-If APC saves you time, helps you learn JUCE, or helps you ship a plugin, please consider supporting the development. It helps cover API costs and accelerates macOS support!
+If APC saves you time, helps you learn JUCE, or helps you ship a plugin, please consider supporting the development. It helps cover API costs and accelerates new features!
 
     ☕ Buy Me a Coffee / Sponsor on GitHub
 
