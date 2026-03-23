@@ -17,14 +17,14 @@
   "homepage": "https://github.com/Noizefield/audio-plugin-coder",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Noizefield/audio-plugin-coder.git"
+    "url": "git+https://github.com/Noizefield/audio-plugin-coder.git"
   },
   "bugs": {
     "url": "https://github.com/Noizefield/audio-plugin-coder/issues"
   },
   "license": "MIT",
   "bin": {
-    "audio-plugin-coder": "./bin/setup.js"
+    "audio-plugin-coder": "bin/setup.js"
   },
   "scripts": {
     "setup": "node ./bin/setup.js"
