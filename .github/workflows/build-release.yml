@@ -121,10 +121,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.plugin }}
-          path: |
-            build/*_artefacts/Release/*.vst3
-            build/*_artefacts/Release/*.component
-            build/*_artefacts/Release/*.app
+          path: build/*_artefacts/Release/
+          if-no-files-found: error
           retention-days: 30
 
   # ============================================
