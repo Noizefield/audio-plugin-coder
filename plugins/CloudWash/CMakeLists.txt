@@ -5,18 +5,21 @@
 # ============================================
 # PLATFORM-SPECIFIC CONFIGURATION
 # ============================================
+set(NEEDS_WEBVIEW2 FALSE)
+set(NEEDS_WEB_BROWSER FALSE)
+set(AU_MAIN_TYPE "")
+set(LV2_URI "")
+
 if(WIN32)
     set(PLUGIN_FORMATS VST3 Standalone)
     set(NEEDS_WEBVIEW2 TRUE)
     set(WEBVIEW_BACKEND "WebView2")
 elseif(APPLE)
     set(PLUGIN_FORMATS VST3 AU Standalone)
-    set(NEEDS_WEBVIEW2 FALSE)
     set(WEBVIEW_BACKEND "WKWebView")
     set(AU_MAIN_TYPE kAudioUnitType_Effect)
 elseif(UNIX)
     set(PLUGIN_FORMATS VST3 LV2 Standalone)
-    set(NEEDS_WEBVIEW2 FALSE)
     set(NEEDS_WEB_BROWSER TRUE)
     set(WEBVIEW_BACKEND "WebKitGTK")
     set(LV2_URI "https://github.com/noizefield/audio-plugin-coder/CloudWash")
