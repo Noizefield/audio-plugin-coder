@@ -47,48 +47,46 @@ Instead of manually juggling DSP architecture, UI frameworks, build systems, sta
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### One-command setup
+
+The fastest way to get started — paste this into any terminal:
+
+```bash
+npx github:Noizefield/audio-plugin-coder
+```
+
+This will clone the repo, check your tools, and print exactly what to do next for your platform (Windows, macOS, or Linux). Requires [Node.js 18+](https://nodejs.org) and [Git](https://git-scm.com).
+
+> Always pulls the latest version directly from GitHub — no install, no package manager.
+
+---
+
+### Manual setup
+
+If you prefer to clone manually:
 
 **Windows:**
-- Windows 11
-- PowerShell 7+
-- Visual Studio 2022 (with C++ development tools)
-- CMake 3.22+
-- Git
-
-**macOS:**
-- macOS 10.13+ (universal binary: Intel + Apple Silicon)
-- Xcode (with command line tools)
-- CMake 3.22+
-- Git
-- jq (`brew install jq`) - for state management scripts
-
-**Linux:**
-- Tested with Mint Linux
-- CMake 3.22+, GCC/Clang, Git
-
-**All platforms:**
-- **An LLM coding agent** (Claude Code, Antigravity, Kilo, Codex, Cursor)
-
-### Installation
-
-1. **Clone the repository (with submodules):**
-```bash
-git clone --recursive https://github.com/Noizefield/audio-plugin-coder.git
-cd audio-plugin-coder
-```
-
-Or clone normally and run setup (Windows):
 ```powershell
-git clone https://github.com/Noizefield/audio-plugin-coder.git
+git clone --recurse-submodules https://github.com/Noizefield/audio-plugin-coder.git
 cd audio-plugin-coder
-.\scripts\setup.ps1
 ```
 
-Verify your environment (macOS):
+**macOS / Linux:**
 ```bash
-bash scripts/system-check.sh
+git clone --recurse-submodules https://github.com/Noizefield/audio-plugin-coder.git
+cd audio-plugin-coder
+bash scripts/system-check.sh   # verify your environment
 ```
+
+### Prerequisites
+
+**Windows:** Windows 11, PowerShell 7+, Visual Studio 2022 (C++ tools), CMake 3.22+, Git
+
+**macOS:** macOS 10.13+, Xcode + command line tools, CMake 3.22+, Git, jq (`brew install jq`)
+
+**Linux:** CMake 3.22+, GCC/Clang, Git
+
+**All platforms:** An LLM coding agent (Claude Code, Antigravity, Kilo, Cursor)
 
 ### Bridge Templates (FFGL & Max/MSP)
 
@@ -387,6 +385,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 - **Matt Tytel** - For the outstandingly good Visage library (https://github.com/VitalAudio/visage)
 - **[TÂCHES (glittercowboy)](https://github.com/glittercowboy)** - Inspiration for context engineering systems.
 - **[12Matt3r](https://github.com/12Matt3r)** - FFGL and Max/MSP bridge templates contribution.
+- **[vjcharles](https://github.com/vjcharles)** - macOS support and security hardening (PR #6).
 
 
 ## 📄 License
