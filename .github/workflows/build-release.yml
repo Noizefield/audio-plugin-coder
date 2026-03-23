@@ -22,6 +22,21 @@ on:
           - windows
           - macos
           - linux
+      macos_vst3:
+        description: 'macOS: Build VST3?'
+        required: false
+        default: true
+        type: boolean
+      macos_au:
+        description: 'macOS: Build AU?'
+        required: false
+        default: true
+        type: boolean
+      macos_standalone:
+        description: 'macOS: Build Standalone?'
+        required: false
+        default: false
+        type: boolean
 
 env:
   BUILD_TYPE: Release
@@ -73,13 +88,20 @@ jobs:
       - name: Build Standalone
         run: cmake --build build --config Release --target "${{ matrix.plugin }}_Standalone"
 
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          mkdir -p dist
+          find build -name "*.vst3" -exec cp -R {} dist/ \;
+          find build -name "*.exe" -not -path "*/CMakeFiles/*" -exec cp {} dist/ \;
+          echo "Collected:" && ls dist/
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-${{ matrix.plugin }}
-          path: |
-            build/*_artefacts/Release/*.vst3
-            build/*_artefacts/Release/*.exe
+          path: dist/
+          if-no-files-found: error
           retention-days: 30
 
   # ============================================
@@ -109,19 +131,30 @@ jobs:
             -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13
 
       - name: Build VST3
+        if: inputs.macos_vst3
         run: cmake --build build --config Release --target "${{ matrix.plugin }}_VST3"
 
       - name: Build AU
+        if: inputs.macos_au
         run: cmake --build build --config Release --target "${{ matrix.plugin }}_AU"
 
       - name: Build Standalone
+        if: inputs.macos_standalone
         run: cmake --build build --config Release --target "${{ matrix.plugin }}_Standalone"
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p dist
+          find build -name "*.vst3" -exec cp -R {} dist/ \;
+          find build -name "*.component" -exec cp -R {} dist/ \;
+          find build -name "*.app" -not -path "*/CMakeFiles/*" -exec cp -R {} dist/ \;
+          echo "Collected:" && ls dist/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.plugin }}
-          path: build/*_artefacts/Release/
+          path: dist/
           if-no-files-found: error
           retention-days: 30
 
@@ -172,14 +205,20 @@ jobs:
       - name: Build Standalone
         run: xvfb-run cmake --build build --target "${{ matrix.plugin }}_Standalone"
 
+      - name: Collect artifacts
+        run: |
+          mkdir -p dist
+          find build -name "*.vst3" -exec cp -R {} dist/ \;
+          find build -name "*.lv2" -exec cp -R {} dist/ \;
+          find build -name "${{ matrix.plugin }}" -type f -exec cp {} dist/ \;
+          echo "Collected:" && ls dist/
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-${{ matrix.plugin }}
-          path: |
-            build/**/Release/VST3/
-            build/**/Release/LV2/
-            build/**/Release/Standalone/${{ matrix.plugin }}
+          path: dist/
+          if-no-files-found: error
           retention-days: 30
 
   # ============================================
