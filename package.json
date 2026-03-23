@@ -1,0 +1,41 @@
+{
+  "name": "audio-plugin-coder",
+  "version": "0.3.0",
+  "description": "AI-powered VST3/AU plugin development framework for JUCE 8 — build audio plugins with Claude Code using a five-phase workflow.",
+  "keywords": [
+    "audio",
+    "vst",
+    "vst3",
+    "juce",
+    "plugin",
+    "audio-plugin",
+    "dsp",
+    "claude",
+    "ai",
+    "scaffolding"
+  ],
+  "homepage": "https://github.com/Noizefield/audio-plugin-coder",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Noizefield/audio-plugin-coder.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Noizefield/audio-plugin-coder/issues"
+  },
+  "license": "MIT",
+  "bin": {
+    "audio-plugin-coder": "./bin/setup.js"
+  },
+  "scripts": {
+    "setup": "node ./bin/setup.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "bin/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENCE.md"
+  ]
+}
