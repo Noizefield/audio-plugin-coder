@@ -1,18 +1,24 @@
 # JUCE 8 CRITICAL SYSTEM PROTOCOLS
-**REQUIRED READING:** strict constraints for Windows 11 & APC Monorepo.
+**REQUIRED READING:** strict constraints for Windows 11 / macOS & APC Monorepo.
 ## 1. ⚠️ GOLDEN BUILD RULES (HIGHEST PRIORITY)
 ### A. The "One-Script" Rule
-- **NEVER** run cmake, msbuild, or cl.exe manually.
-- **NEVER** try to copy VST3 files manually.
+- **NEVER** run cmake, msbuild, cl.exe, or xcodebuild manually.
+- **NEVER** try to copy VST3/AU files manually.
 - **ALWAYS** use the master script for Building, Installing, and Repairing.
-- **COMMAND:** .\scripts\build-and-install.ps1 -PluginName "TailSync"
+- **Windows:** `.\scripts\build-and-install.ps1 -PluginName "TailSync"`
+- **macOS:** `bash scripts/build-and-install.sh TailSync`
 ### B. Monorepo & Path Logic
-- **Root Context:** All build operations must happen from the Repository Root _nps/).
+- **Root Context:** All build operations must happen from the Repository Root.
 - **Subdirectories:** NEVER run commands inside plugins/[Name]/.
-- **Environment:**
+- **Environment (Windows):**
   - OS: **Windows 11**
-  - Shell: **PowerShell** (Bashrmmkdir -p are FORBIDDEN).
-  - Create Folders: New-Item -ItemType Directory -Force -Path "..."
+  - Shell: **PowerShell**
+  - Create Folders: `New-Item -ItemType Directory -Force -Path "..."`
+- **Environment (macOS):**
+  - OS: **macOS 10.13+**
+  - Shell: **Bash/Zsh**
+  - Create Folders: `mkdir -p "..."`
+  - CMake Generator: **Xcode** (universal binary: x86_64 + arm64)
 ---
 ## 2. 📂 FILE STRUCTURE & WEBVIEW
 ### A. WebView/GUI Architecture

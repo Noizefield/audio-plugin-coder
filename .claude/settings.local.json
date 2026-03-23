@@ -1,7 +1,6 @@
 {
   "permissions": {
     "allow": [
-      "Bash(powershell -Command:*)",
       "Bash(powershell -ExecutionPolicy Bypass -File \".\\\\scripts\\\\validate-webview-member-order.ps1\" -PluginName TestWebView)",
       "Bash(Get-ChildItem -Path \"R:\\\\_VST_Development_2026\\\\audio-plugin-coder\\\\.claude\\\\templates\\\\webview\" -Recurse -File)",
       "Bash(Select-Object -ExpandProperty FullName)",
@@ -15,7 +14,6 @@
       "Bash(powershell.exe -Command \"Copy-Item -Path ''R:\\\\_VST_Development_2026\\\\audio-plugin-coder\\\\build\\\\plugins\\\\nf_gnarly\\\\nf_gnarly_artefacts\\\\Release\\\\VST3\\\\NF Gnarly.vst3'' -Destination ''C:\\\\Program Files\\\\Common Files\\\\VST3\\\\'' -Recurse -Force; Write-Host ''VST3 copied successfully''\")",
       "Bash(powershell.exe -ExecutionPolicy Bypass -Command \"Set-Location ''R:\\\\_VST_Development_2026\\\\audio-plugin-coder''; cmake --build build --config Release --target nf_gnarly_VST3 2>&1 | Select-String -Pattern ''\\(error|Finished|Creating\\)'' | Select-Object -First 20\")",
       "Bash(powershell.exe -ExecutionPolicy Bypass -Command \"Set-Location ''R:\\\\_VST_Development_2026\\\\audio-plugin-coder''; cmake --build build --config Release --target nf_gnarly_VST3 2>&1 | Select-String -Pattern ''\\(error|warning|Finished\\)'' | Select-Object -First 10\")",
-      "Bash(grep:*)",
       "Bash(New-Item -ItemType Directory -Force -Path \"plugins\\\\CloudWash\\\\.ideas\")",
       "Bash(Get-ChildItem -Path \".claude\" -Recurse -File)",
       "Bash(Select-Object FullName)",
@@ -40,10 +38,7 @@
       "Bash(Select-Object -First 100)",
       "Bash(Start-Sleep -Seconds 5)",
       "Bash(findstr:*)",
-      "Bash(powershell:*)",
       "Bash(dir scripts:*)",
-      "Bash(python:*)",
-      "Bash(node -e:*)",
       "Bash(ls:*)",
       "Bash(Get-ChildItem -Path \"R:\\\\_VST_Development_2026\\\\audio-plugin-coder\\\\plugins\\\\CloudWash\" -Recurse -Filter \"*.html\")",
       "WebFetch(domain:github.com)",
@@ -75,6 +70,21 @@
       "Bash(git rm:*)",
       "Bash(Test-Path \"plugins\\\\CloudWash\\\\Org_Code\")",
       "Bash(git config:*)"
+    ],
+    "deny": [
+      "Bash(curl*)",
+      "Bash(wget*)",
+      "Bash(Invoke-WebRequest*)",
+      "Bash(Invoke-Expression*)",
+      "Bash(iex *)",
+      "Bash(*| bash*)",
+      "Bash(*| sh*)",
+      "Bash(*~/.ssh*)",
+      "Bash(*~/.aws*)",
+      "Bash(*base64 -d*)",
+      "Bash(node -e:*)",
+      "Bash(python -c:*)",
+      "Bash(python3 -c:*)"
     ]
   }
 }
