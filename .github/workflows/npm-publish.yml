@@ -1,0 +1,29 @@
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - 'v*'        # Runs on any tag like v0.3.0, v1.0.0, etc.
+  workflow_dispatch: # Also allows manual trigger from GitHub UI
+
+jobs:
+  publish:
+    name: Publish to npm (Trusted Publishing)
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write   # Required for OIDC Trusted Publishing — no token needed
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Publish
+        run: npm publish --provenance --access public
