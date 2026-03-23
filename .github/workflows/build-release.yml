@@ -202,9 +202,16 @@ jobs:
       - name: Create release archives
         run: |
           mkdir -p release
-          for dir in artifacts/*/; do
+          shopt -s nullglob
+          dirs=(artifacts/*/)
+          if [ ${#dirs[@]} -eq 0 ]; then
+            echo "No artifacts found to package."
+            exit 0
+          fi
+          for dir in "${dirs[@]}"; do
             name=$(basename "$dir")
             zip -r "release/${name}.zip" "$dir"
+            echo "Packaged: release/${name}.zip"
           done
           echo "Archives created:"
           ls -la release/
@@ -213,5 +220,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: release-${{ inputs.plugin }}
-          path: release/*.zip
+          path: release/
+          if-no-files-found: warn
           retention-days: 30
