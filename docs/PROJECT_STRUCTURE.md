@@ -8,14 +8,18 @@ APC follows a monorepo architecture with clear separation between framework code
 
 ```
 audio-plugin-coder/
-├── .agent/              # AI agent configuration and skills
+├── .agent/                 # AI agent configuration and skills
+├── .agents/                # Codex repo-local skill discovery
+├── .codex-plugin/          # Codex plugin manifest
 ├── _tools/                 # External dependencies (JUCE, pluginval)
 ├── build/                  # Build artifacts (gitignored)
 ├── dist/                   # Distribution packages (gitignored)
 ├── docs/                   # Documentation
 ├── plugins/                # Your plugin projects
 ├── scripts/                # Build and utility scripts
+├── skills/                 # Packaged Codex skill
 ├── .github/                # GitHub Actions workflows
+├── AGENTS.md               # Agent guidance (AGENTS.md standard)
 ├── CMakeLists.txt          # Root CMake configuration
 └── README.md               # Project overview
 ```
@@ -69,6 +73,21 @@ Contains all configuration, skills, and knowledge base for AI agents.
 - [`agent.md`](.agent/rules/agent.md) - Critical rules for AI agents
 - [`known-issues.yaml`](.agent/troubleshooting/known-issues.yaml) - Database of known issues
 - [`status-template.json`](.agent/templates/status-template.json) - Plugin state schema
+
+---
+
+### Codex Integration Files
+
+Codex discovers APC through dedicated files at the repository root:
+
+```
+AGENTS.md                    # Agent guidance (read by any AGENTS.md-aware agent)
+.agents/skills/              # Repo-local Codex skill (loader)
+.codex-plugin/plugin.json    # Codex plugin manifest
+skills/audio-plugin-coder/   # Packaged Codex skill
+```
+
+See [Codex Compatibility](codex-compatibility.md) for the command mapping and packaging details.
 
 ---
 

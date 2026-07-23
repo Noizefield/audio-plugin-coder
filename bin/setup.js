@@ -181,12 +181,13 @@ function printNextSteps(platform, targetDir) {
   console.log(`     ${dim(`code "${targetDir}"`)}`);
   console.log('');
 
-  console.log(`  ${c.cyan}2.${c.reset} Install the Claude Code extension if you haven't already:`);
-  console.log(`     ${dim('https://marketplace.visualstudio.com/items?itemName=Anthropic.claude-code')}`);
+  console.log(`  ${c.cyan}2.${c.reset} Open the repository in your preferred AI coding agent.`);
+  console.log(`     ${dim('Codex, Claude Code, Kilo, Antigravity, or Cursor')}`);
   console.log('');
 
   console.log(`  ${c.cyan}3.${c.reset} Start your first plugin:`);
-  console.log(`     ${dim('/dream MyPluginName')}  ${dim('← type this inside Claude Code')}`);
+  console.log(`     ${dim('$audio-plugin-coder:audio-plugin-coder dream MyPluginName')}  ${dim('← Codex')}`);
+  console.log(`     ${dim('/dream MyPluginName')}                                        ${dim('← Claude Code / Kilo')}`);
   console.log('');
 
   if (platform === 'windows') {
