@@ -288,6 +288,7 @@ git checkout -- plugins/MyPlugin/
 ### Which AI agents work with APC?
 
 **Tested:**
+- ✅ Codex (OpenAI)
 - ✅ Claude Code (Anthropic)
 - ✅ Antigravity (Google)
 - ✅ Kilo (kilo.ai)

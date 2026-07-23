@@ -1,20 +1,44 @@
 # Command Reference
 
-Complete reference for all APC commands, slash commands, and PowerShell scripts.
+Complete reference for all APC agent commands and platform scripts.
 
 ## Overview
 
 APC provides multiple ways to interact with the system:
 - **Slash Commands** - AI agent commands (`/dream`, `/plan`, etc.)
+- **Codex Skill** - `$audio-plugin-coder:audio-plugin-coder <action> <Name>`
 - **PowerShell Scripts** - Build and utility scripts
 - **GitHub Actions** - CI/CD workflows
 - **Direct Tools** - Manual tool invocation
 
 ---
 
+## Codex Commands
+
+Codex discovers APC's repo-local skill from `.agents/skills/`. Use the skill name followed by the APC action:
+
+```text
+$audio-plugin-coder:audio-plugin-coder dream EchoReverb
+$audio-plugin-coder:audio-plugin-coder plan EchoReverb
+$audio-plugin-coder:audio-plugin-coder design EchoReverb
+$audio-plugin-coder:audio-plugin-coder impl EchoReverb
+$audio-plugin-coder:audio-plugin-coder test EchoReverb
+$audio-plugin-coder:audio-plugin-coder debug EchoReverb
+$audio-plugin-coder:audio-plugin-coder status EchoReverb
+$audio-plugin-coder:audio-plugin-coder resume EchoReverb
+$audio-plugin-coder:audio-plugin-coder ship EchoReverb
+$audio-plugin-coder:audio-plugin-coder new EchoReverb
+```
+
+Natural-language equivalents also work. Do not use `/plan` or `/status` for APC in Codex; those names invoke Codex's built-in plan mode and session status.
+
+See [Codex Compatibility](codex-compatibility.md) for discovery and packaging details.
+
+---
+
 ## Slash Commands
 
-Slash commands are the primary way to interact with APC through AI agents.
+Slash commands are the primary APC syntax in Claude Code and Kilo.
 
 ### `/dream [Name]`
 
@@ -584,4 +608,3 @@ gh workflow run build-release.yml -f plugin_name=MyPlugin -f platforms=all
 - [State Management](state-management-deep-dive.md) - How state is tracked
 - [GitHub Actions](github-actions.md) - CI/CD workflows
 - [Troubleshooting](troubleshooting-guide.md) - When commands fail
-

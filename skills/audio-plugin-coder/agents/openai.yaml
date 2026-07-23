@@ -1,0 +1,7 @@
+interface:
+  display_name: "Audio Plugin Coder"
+  short_description: "Build JUCE plugins with APC's gated workflow"
+  default_prompt: "Use $audio-plugin-coder:audio-plugin-coder to start a new JUCE audio plugin."
+
+policy:
+  allow_implicit_invocation: true
