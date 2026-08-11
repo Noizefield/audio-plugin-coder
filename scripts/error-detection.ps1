@@ -164,6 +164,7 @@ param([System.Collections.Hashtable]$Issue)
             Write-Host "No automated solution available. Please check $($Issue.ResolutionFile)" -ForegroundColor Yellow
         }
     }
+}
 
 function New-IssueFromError ([array]$Errors, [string]$BuildOutput) {
 
