@@ -9,7 +9,8 @@ New to APC? Start here:
 1. **[Project Overview](../README.md)** - What is APC and key features
 2. **[Plugin Development Lifecycle](plugin-development-lifecycle.md)** - The five-phase workflow
 3. **[Command Reference](command-reference.md)** - All available commands
-4. **[FAQ](FAQ.md)** - Common questions answered
+4. **[Codex Compatibility](codex-compatibility.md)** - Codex setup and command mapping
+5. **[FAQ](FAQ.md)** - Common questions answered
 
 ## Documentation Index
 
@@ -20,6 +21,7 @@ New to APC? Start here:
 | [Project Structure](PROJECT_STRUCTURE.md) | Complete directory layout and file organization |
 | [Plugin Development Lifecycle](plugin-development-lifecycle.md) | Detailed guide to all five phases |
 | [Command Reference](command-reference.md) | All slash commands and PowerShell scripts |
+| [Codex Compatibility](codex-compatibility.md) | Codex skill, plugin manifest, and command mapping |
 | [FAQ](FAQ.md) | Frequently asked questions |
 
 ### Core Concepts
@@ -104,6 +106,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build-and-install.ps1 -Plugin
 ```
 
 Full reference: [Command Reference](command-reference.md)
+
+Codex users should invoke these phases through `$audio-plugin-coder:audio-plugin-coder`; see [Codex Compatibility](codex-compatibility.md).
 
 ## UI Frameworks
 
@@ -200,4 +204,3 @@ APC is licensed under the MIT License. See [LICENSE](../LICENCE.md) for details.
 ---
 
 **Need help?** Check the [FAQ](FAQ.md) or review the [troubleshooting guide](troubleshooting-guide.md).
-

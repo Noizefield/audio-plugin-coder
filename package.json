@@ -1,7 +1,7 @@
 {
   "name": "audio-plugin-coder",
   "version": "0.3.0",
-  "description": "AI-powered VST3/AU plugin development framework for JUCE 8 — build audio plugins with Claude Code using a five-phase workflow.",
+  "description": "AI-powered VST3/AU plugin development framework for JUCE 8 — build audio plugins with Codex, Claude Code, or Kilo using a five-phase workflow.",
   "keywords": [
     "audio",
     "vst",
@@ -10,6 +10,7 @@
     "plugin",
     "audio-plugin",
     "dsp",
+    "codex",
     "claude",
     "ai",
     "scaffolding"

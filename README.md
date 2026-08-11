@@ -18,7 +18,7 @@ Over the past 18 months, APC has been continuously designed, tested, and re-iter
 
 **Midway through development, I stumbled upon the excellent work of [TÂCHES (glittercowboy)](https://github.com/glittercowboy).** His approach to context engineering was a revelation. I adopted some of his core ideas, particularly regarding meta prompting and structured agent workflows and integrated them directly into APC's DNA to create a more robust system.
 
-APC is designed to be **Agent Agnostic**. Whether you use Google's Antigravity, Kilo, Claude Code, or Cursor, APC provides the structure they need to succeed.
+APC is designed to be **Agent Agnostic**. Whether you use Codex, Google's Antigravity, Kilo, Claude Code, or Cursor, APC provides the structure they need to succeed.
 
 ## ⚠️ Development Status Disclaimer
 
@@ -36,7 +36,7 @@ Instead of manually juggling DSP architecture, UI frameworks, build systems, sta
 
 ## ✨ Key Features
 
-- 🤖 **LLM-Driven Development** - Designed to work with Antigravity, Kilo, Claude Code, Cursor, or any coding agent.
+- 🤖 **LLM-Driven Development** - Designed to work with Codex, Antigravity, Kilo, Claude Code, Cursor, or any coding agent.
 - 🎯 **Structured Workflows** - Five-phase system: Dream → Plan → Design → Implement → Ship.
 - 🎨 **Dual UI Frameworks** - Choose Visage (pure C++) or WebView (HTML5 Canvas).
 - 📊 **State Management** - Automatic progress tracking, validation, and rollback capabilities.
@@ -86,7 +86,7 @@ bash scripts/system-check.sh   # verify your environment
 
 **Linux:** CMake 3.22+, GCC/Clang, Git
 
-**All platforms:** An LLM coding agent (Claude Code, Antigravity, Kilo, Cursor)
+**All platforms:** An LLM coding agent (Codex, Claude Code, Antigravity, Kilo, Cursor)
 
 ### Bridge Templates (FFGL & Max/MSP)
 
@@ -114,7 +114,13 @@ For **Claude Code**:
 # The agent will discover workflows from .agent/workflows/
 ```
 
-3. **Create your first plugin:**
+For **Codex**:
+```text
+# AGENTS.md and the repo-local skill are discovered automatically
+$audio-plugin-coder:audio-plugin-coder dream MyReverb
+```
+
+3. **Create your first plugin in Claude Code or Kilo:**
 ```
 /dream MyReverb
 ```
@@ -142,18 +148,22 @@ The AI will guide you through the entire process!
    ↓ Build installers, test in DAWs
 ```
 
-### Slash Commands
+### Agent Commands
 
-| Command | Description |
-|---------|-------------|
-| `/dream [Name]` | Start new plugin with ideation phase |
-| `/plan [Name]` | Define architecture and select UI framework |
-| `/design [Name]` | Create GUI mockups and visual design |
-| `/impl [Name]` | Implement DSP and UI code |
-| `/ship [Name]` | Package and distribute plugin |
-| `/status [Name]` | Check current progress and state |
-| `/resume [Name]` | Continue development from last phase |
-| `/new [Name]` | Run complete workflow with confirmations |
+Claude Code and Kilo use APC's slash commands. Codex uses the `audio-plugin-coder` skill because `/plan` and `/status` are built-in Codex commands.
+
+| Claude Code / Kilo | Codex | Description |
+|---------|-------------|-------------|
+| `/dream [Name]` | `$audio-plugin-coder:audio-plugin-coder dream [Name]` | Start new plugin with ideation phase |
+| `/plan [Name]` | `$audio-plugin-coder:audio-plugin-coder plan [Name]` | Define architecture and select UI framework |
+| `/design [Name]` | `$audio-plugin-coder:audio-plugin-coder design [Name]` | Create GUI mockups and visual design |
+| `/impl [Name]` | `$audio-plugin-coder:audio-plugin-coder impl [Name]` | Implement DSP and UI code |
+| `/ship [Name]` | `$audio-plugin-coder:audio-plugin-coder ship [Name]` | Package and distribute plugin |
+| `/status [Name]` | `$audio-plugin-coder:audio-plugin-coder status [Name]` | Check current progress and state |
+| `/resume [Name]` | `$audio-plugin-coder:audio-plugin-coder resume [Name]` | Continue development from last phase |
+| `/new [Name]` | `$audio-plugin-coder:audio-plugin-coder new [Name]` | Run complete workflow with confirmations |
+
+See [Codex Compatibility](docs/codex-compatibility.md) for setup details and the full command mapping.
 
 ### Example Session
 
@@ -189,6 +199,10 @@ APC uses a unique State Management system (status.json) to track development acr
 
 ```
 audio-plugin-coder/
+├── AGENTS.md                     # Agent guidance (AGENTS.md standard)
+├── .agents/skills/               # Codex repo-local skill discovery
+├── .codex-plugin/plugin.json     # Codex plugin manifest
+├── skills/                       # Packaged Codex skill
 ├── .[Agent]/                    # AI agent configuration
 │   ├── workflows/               # Slash command orchestrators
 │   │   ├── dream.md
@@ -298,11 +312,12 @@ APC includes an **auto-capture system** that learns from problems:
 ## 🤝 Compatible AI Agents
 
 APC works with any LLM-based coding agent that supports:
-- Custom workflows/slash commands
+- Custom workflows, skills, or reusable instructions
 - File system access
 - Shell execution (PowerShell on Windows, Bash on macOS/Linux)
 
-**Tested with:**
+**Supported:**
+- ✅ Codex CLI / IDE (repo skill and `AGENTS.md`)
 - ✅ Claude Code (Anthropic)
 - ✅ Kilo (kilo.ai)
 - [ ] Cursor
@@ -419,4 +434,3 @@ APC uses **JUCE 8** as its audio plugin framework. JUCE 8 is dual-licensed:
 **Built with ❤️ (and a lot of tokens) for the audio development community.**
 
 *Turn your plugin ideas into reality with the power of AI*
-

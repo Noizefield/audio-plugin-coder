@@ -1,0 +1,39 @@
+{
+  "name": "audio-plugin-coder",
+  "version": "0.3.0",
+  "description": "Build JUCE audio plugins with APC's phase-gated workflow.",
+  "author": {
+    "name": "Noizefield",
+    "url": "https://github.com/Noizefield"
+  },
+  "homepage": "https://github.com/Noizefield/audio-plugin-coder",
+  "repository": "https://github.com/Noizefield/audio-plugin-coder",
+  "license": "MIT",
+  "keywords": [
+    "audio",
+    "juce",
+    "vst3",
+    "audio-plugin",
+    "dsp"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Audio Plugin Coder",
+    "shortDescription": "Build JUCE plugins with a gated AI workflow",
+    "longDescription": "Guide JUCE audio plugins from concept through architecture, UI, implementation, testing, and packaging.",
+    "developerName": "Noizefield",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write",
+      "Shell"
+    ],
+    "websiteURL": "https://github.com/Noizefield/audio-plugin-coder",
+    "defaultPrompt": [
+      "Dream a new audio plugin with Audio Plugin Coder.",
+      "Resume my current APC plugin from its saved phase.",
+      "Check the status of my APC audio plugin."
+    ],
+    "brandColor": "#0078D4"
+  }
+}

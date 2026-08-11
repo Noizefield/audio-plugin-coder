@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Codex compatibility**
+  - Added repository-wide `AGENTS.md` guidance.
+  - Added a repo-discoverable and packageable `audio-plugin-coder` skill.
+  - Added a `.codex-plugin/plugin.json` plugin manifest.
+  - Documented Codex command mappings for APC slash-command collisions.
+
 ---
 
 ## [0.3.0] - 2026-03-23
