@@ -69,11 +69,44 @@ if(APC_ENABLE_VISAGE)
 endif()
 
 # ============================================
+# PLUGIN / BUILD PATH OVERRIDES (apc.config.json)
+# ============================================
+# Prefer -DAPC_PLUGINS_DIR=... from the command line.
+# Otherwise read apc.config.json / apc.config.example.json when Python is available.
+if(NOT DEFINED APC_PLUGINS_DIR OR APC_PLUGINS_DIR STREQUAL "")
+    set(APC_PLUGINS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/plugins")
+    set(_apc_cfg "${CMAKE_CURRENT_SOURCE_DIR}/apc.config.json")
+    if(NOT EXISTS "${_apc_cfg}")
+        set(_apc_cfg "${CMAKE_CURRENT_SOURCE_DIR}/apc.config.example.json")
+    endif()
+    if(EXISTS "${_apc_cfg}")
+        find_package(Python3 COMPONENTS Interpreter QUIET)
+        if(Python3_Interpreter_FOUND)
+            execute_process(
+                COMMAND "${Python3_EXECUTABLE}" -c
+                    "import json, pathlib, sys; p=pathlib.Path(sys.argv[1]); d=json.loads(p.read_text(encoding='utf-8')); print(d.get('paths',{}).get('plugins_dir','plugins'))"
+                    "${_apc_cfg}"
+                OUTPUT_VARIABLE _apc_plugins_rel
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ERROR_QUIET
+            )
+            if(_apc_plugins_rel)
+                if(IS_ABSOLUTE "${_apc_plugins_rel}")
+                    set(APC_PLUGINS_DIR "${_apc_plugins_rel}")
+                else()
+                    set(APC_PLUGINS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/${_apc_plugins_rel}")
+                endif()
+            endif()
+        endif()
+    endif()
+endif()
+
+# ============================================
 # PLUGIN DISCOVERY
 # ============================================
-message(STATUS "Scanning for plugins in: ${CMAKE_CURRENT_SOURCE_DIR}/plugins")
+message(STATUS "Scanning for plugins in: ${APC_PLUGINS_DIR}")
 
-file(GLOB PLUGIN_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/plugins/*")
+file(GLOB PLUGIN_DIRS "${APC_PLUGINS_DIR}/*")
 
 set(APC_PLUGIN_COUNT 0)
 

@@ -9,13 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.4.0] - 2026-08-14
+
 ### Added
 
-- **Codex compatibility**
-  - Added repository-wide `AGENTS.md` guidance.
-  - Added a repo-discoverable and packageable `audio-plugin-coder` skill.
-  - Added a `.codex-plugin/plugin.json` plugin manifest.
-  - Documented Codex command mappings for APC slash-command collisions.
+- **`/apc-setup`** guided first-run wizard (toolchain, relocatable paths, UI defaults, per-phase model preferences)
+- **`apc.config.example.json`** + path helpers (`scripts/lib/Get-ApcPaths.ps1`, `scripts/lib/apc-paths.sh`)
+- Relocatable **`plugins` / `build` / `release`** directories via config and CMake `APC_PLUGINS_DIR`
+- Primary **`/apc-*` slash commands** (`/apc-dream`, `/apc-plan`, `/apc-design`, `/apc-impl`, …) with deprecated short aliases
+- **`docs/model-routing.md`** for global per-phase AI model preferences
+- Expanded **system-check** (Git, Node, WebView2, JUCE major ≥ 9, Linux EGL/WebKit notes)
+
+### Changed
+
+- **JUCE submodule upgraded to 9.0.1**
+- WebView templates/docs updated for `native/typescript/webview-interop` and `@juce-framework/webview`
+- Build scripts honor `apc.config.json` paths
+- README rewritten for setup-first workflow and `/apc-*` commands
+- Softened “development only” disclaimer; APC is ready for real plugin work while still evolving
+
+### Fixed
+
+- `system-check.ps1` CMake detection (multi-line `--version` no longer false-negative)
 
 ---
 

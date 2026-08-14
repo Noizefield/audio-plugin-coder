@@ -50,14 +50,23 @@ driveAttachment = std::make_unique<WebSliderParameterAttachment>(...);
 ### 4. Web File Structure
 **Required structure:**
 ```
-Source/ui/public/
-├── index.html
+Source/ui/public/   (or plugin-root WebUI/)
+├── index.html      (inline CSS/JS preferred — see webview-011)
 ├── js/
 │   ├── index.js
 │   └── juce/
-│       └── index.js  (Copy from JUCE modules)
+│       └── index.js  (JUCE WebView interop)
 ```
 
+**JUCE 9 interop (preferred):**
+```bash
+npm install @juce-framework/webview
+# or copy the drop-in build:
+# _tools/JUCE/modules/juce_gui_extra/native/typescript/webview-interop/dist/index.js
+#   -> WebUI/js/juce/index.js
+```
+
+The old JUCE 8 path `juce_gui_extra/native/javascript/index.js` no longer exists.
 ### 5. Loading Web Content
 **DO:**
 ```cpp
@@ -124,8 +133,8 @@ static ZipFile* getZipFile() {
 3. **Wrong relay order** - Relays must exist before WebBrowserComponent
 4. **Missing WebView2 backend** - Default backend may not work on Windows
 5. **No user data folder** - Required for WebView2 to initialize
-6. **Missing JUCE frontend library** - Copy `juce_gui_extra/native/javascript/index.js` to `js/juce/index.js`
-
+6. **Missing JUCE frontend library** - Use `@juce-framework/webview` or copy `juce_gui_extra/native/typescript/webview-interop/dist/index.js` to `js/juce/index.js` (JUCE 9). Do not use the removed JUCE 8 `native/javascript` path.
+7. **External CSS (webview-011)** - Inline stylesheets into `index.html`; linked CSS often does not apply in WebView2.
 ## Validation
 
 Run the validation script to check your implementation:

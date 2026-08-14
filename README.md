@@ -4,11 +4,20 @@
 > AI-powered open-source framework for vibe-coding audio plugins from concept to shipped product
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![JUCE](https://img.shields.io/badge/JUCE-8.0-blue.svg)](https://juce.com/)
-[![Platform](https://img.shields.io/badge/Platform-Windows%2011%20%7C%20macOS-0078D4.svg)](https://github.com/Noizefield/audio-plugin-coder)
-[![Sponsor](https://img.shields.io/badge/Sponsor-Project-pink.svg?style=social&logo=heart)](https://github.com/sponsors/Noizefield) 
+[![JUCE](https://img.shields.io/badge/JUCE-9.0-blue.svg)](https://juce.com/)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-0078D4.svg)](https://github.com/Noizefield/audio-plugin-coder)
+[![Sponsor](https://img.shields.io/badge/Sponsor-Project-pink.svg?style=social&logo=heart)](https://github.com/sponsors/Noizefield)
 
-## About Audio Plugin Coder 
+## What's new
+
+- **JUCE 9** — framework pin upgraded to **9.0.1**, including the official `@juce-framework/webview` / TypeScript WebView interop path
+- **`/apc-setup`** — guided first-run wizard for toolchain checks, relocatable `plugins` / `build` / `release` folders, UI defaults, and per-phase AI model preferences
+- **`/apc-*` commands** — unique slash names (`/apc-dream`, `/apc-plan`, …) to avoid collisions; short forms like `/dream` remain as deprecated aliases
+- **Cross-platform** — Windows, macOS, and Linux (Linux needs WebKitGTK + EGL for JUCE 9)
+
+Start here: clone → `/apc-setup` → `/apc-dream <PluginName>`.
+
+## About Audio Plugin Coder
 
 **Audio Plugin Coder (APC)** is the result of a long-standing personal obsession: building creative tools, writing music, and ultimately creating professional audio plugins.
 
@@ -20,11 +29,7 @@ Over the past 18 months, APC has been continuously designed, tested, and re-iter
 
 APC is designed to be **Agent Agnostic**. Whether you use Codex, Google's Antigravity, Kilo, Claude Code, or Cursor, APC provides the structure they need to succeed.
 
-## ⚠️ Development Status Disclaimer
-
-**Audio Plugin Coder (APC) is currently in active development.** APIs may change, features may be incomplete, and bugs should be expected.
-
-Use APC for development and experimentation purposes only until a stable release is announced.
+APC is under active improvement — expect iteration — but the core workflow (setup → dream → plan → design → impl → ship) is ready for real plugin development on Windows, macOS, and Linux.
 
 ## What is Audio Plugin Coder?
 
@@ -37,11 +42,13 @@ Instead of manually juggling DSP architecture, UI frameworks, build systems, sta
 ## ✨ Key Features
 
 - 🤖 **LLM-Driven Development** - Designed to work with Codex, Antigravity, Kilo, Claude Code, Cursor, or any coding agent.
-- 🎯 **Structured Workflows** - Five-phase system: Dream → Plan → Design → Implement → Ship.
-- 🎨 **Dual UI Frameworks** - Choose Visage (pure C++) or WebView (HTML5 Canvas).
+- 🧭 **Guided Setup** - `/apc-setup` configures toolchain, paths, and model routing via `apc.config.json`.
+- 🎯 **Structured Workflows** - Dream → Plan → Design → Implement → Ship (plus test/debug/status/resume).
+- 🏷️ **Unique slash commands** - `/apc-*` primary names; short aliases kept for compatibility.
+- 🎨 **Dual UI Frameworks** - Choose Visage (pure C++) or WebView (HTML/CSS/JS + JUCE WebView).
 - 📊 **State Management** - Automatic progress tracking, validation, and rollback capabilities.
 - 🔧 **Self-Improving** - Auto-capture troubleshooting knowledge; the system gets smarter over time.
-- 🏗️ **Production Ready** - JUCE 8 integration with CMake build system.
+- 🏗️ **JUCE 9 + CMake** - Modern plugin stack with relocatable plugins/build/release directories.
 - 📚 **Comprehensive Skills** - Pre-built domain knowledge for DSP, UI design, testing, and packaging.
 - 🎬 **Bridge Templates** - FFGL visual plugins and Max/MSP externals support.
 
@@ -69,22 +76,28 @@ If you prefer to clone manually:
 ```powershell
 git clone --recurse-submodules https://github.com/Noizefield/audio-plugin-coder.git
 cd audio-plugin-coder
+.\scripts\system-check.ps1 -Human
 ```
 
 **macOS / Linux:**
 ```bash
 git clone --recurse-submodules https://github.com/Noizefield/audio-plugin-coder.git
 cd audio-plugin-coder
-bash scripts/system-check.sh   # verify your environment
+bash scripts/system-check.sh --human
 ```
+
+Then open the repo in your AI agent and run:
+
+1. **`/apc-setup`** — configure paths, models, verify JUCE 9
+2. **`/apc-dream <PluginName>`** — create your first plugin
 
 ### Prerequisites
 
-**Windows:** Windows 11, PowerShell 7+, Visual Studio 2022 (C++ tools), CMake 3.22+, Git
+**Windows:** Windows 10/11, PowerShell 7+, Visual Studio 2022 (C++ tools), CMake 3.22+, Git, Node.js 18+, WebView2 Runtime
 
-**macOS:** macOS 10.13+, Xcode + command line tools, CMake 3.22+, Git, jq (`brew install jq`)
+**macOS:** macOS 10.13+, Xcode + command line tools, CMake 3.22+, Git, Node.js 18+, jq (`brew install jq`)
 
-**Linux:** CMake 3.22+, GCC/Clang, Git
+**Linux:** CMake 3.22+, GCC/Clang (C++20), Git, Node.js 18+, WebKitGTK, **libegl-dev** (JUCE 9), jq recommended
 
 **All platforms:** An LLM coding agent (Codex, Claude Code, Antigravity, Kilo, Cursor)
 
@@ -98,31 +111,25 @@ If you are specifically interested in building **FFGL Visual Plugins** or **Max 
 
 This script will:
 1.  Check for CMake and Git.
-2.  Automatically download JUCE 8 (if missing).
+2.  Automatically download JUCE 9 (if missing).
 3.  Configure the Visual Studio solution for your chosen bridge.
 4.  Open the project ready for compilation.
 
-2. **Initialize your LLM agent:**
+### Initialize your LLM agent
 
-For **Kilo**:
-```powershell
-# Workflows are automatically discovered from .agent/workflows/
-```
-
-For **Claude Code**:
-```powershell
-# The agent will discover workflows from .agent/workflows/
-```
+For **Kilo** / **Claude Code**: workflows are discovered from `.claude/workflows/` (mirrored under `.agent/` / `.kilocode/`).
 
 For **Codex**:
 ```text
 # AGENTS.md and the repo-local skill are discovered automatically
+$audio-plugin-coder:audio-plugin-coder setup
 $audio-plugin-coder:audio-plugin-coder dream MyReverb
 ```
 
-3. **Create your first plugin in Claude Code or Kilo:**
+For **Claude Code / Kilo / Cursor**:
 ```
-/dream MyReverb
+/apc-setup
+/apc-dream MyReverb
 ```
 
 The AI will guide you through the entire process!
@@ -132,49 +139,62 @@ The AI will guide you through the entire process!
 ### The Five-Phase Workflow
 
 ```
+🧭 SETUP (first run)
+   ↓ Toolchain, paths, model preferences
+
 💭 DREAM (Ideation)
    ↓ Create creative brief, define parameters
-   
-📋 PLAN (Architecture)  
+
+📋 PLAN (Architecture)
    ↓ Design DSP graph, select UI framework
-   
+
 🎨 DESIGN (GUI)
    ↓ Create mockups, iterate on visual design
-   
+
 💻 IMPLEMENT (Code)
    ↓ Build DSP engine, integrate UI
-   
+
 🚀 SHIP (Package)
    ↓ Build installers, test in DAWs
 ```
 
 ### Agent Commands
 
-Claude Code and Kilo use APC's slash commands. Codex uses the `audio-plugin-coder` skill because `/plan` and `/status` are built-in Codex commands.
+Prefer the **`/apc-*`** names (unique across frameworks). Short forms (`/dream`, `/plan`, …) still work as deprecated aliases.
 
-| Claude Code / Kilo | Codex | Description |
-|---------|-------------|-------------|
-| `/dream [Name]` | `$audio-plugin-coder:audio-plugin-coder dream [Name]` | Start new plugin with ideation phase |
-| `/plan [Name]` | `$audio-plugin-coder:audio-plugin-coder plan [Name]` | Define architecture and select UI framework |
-| `/design [Name]` | `$audio-plugin-coder:audio-plugin-coder design [Name]` | Create GUI mockups and visual design |
-| `/impl [Name]` | `$audio-plugin-coder:audio-plugin-coder impl [Name]` | Implement DSP and UI code |
-| `/ship [Name]` | `$audio-plugin-coder:audio-plugin-coder ship [Name]` | Package and distribute plugin |
-| `/status [Name]` | `$audio-plugin-coder:audio-plugin-coder status [Name]` | Check current progress and state |
-| `/resume [Name]` | `$audio-plugin-coder:audio-plugin-coder resume [Name]` | Continue development from last phase |
-| `/new [Name]` | `$audio-plugin-coder:audio-plugin-coder new [Name]` | Run complete workflow with confirmations |
+Codex uses the `audio-plugin-coder` skill because `/plan` and `/status` are built-in Codex commands.
 
-See [Codex Compatibility](docs/codex-compatibility.md) for setup details and the full command mapping.
+| Primary (Claude Code / Kilo / Cursor) | Codex | Description |
+|---|---|---|
+| `/apc-setup` | `$audio-plugin-coder:audio-plugin-coder setup` | First-run toolchain, paths, models |
+| `/apc-dream [Name]` | `$audio-plugin-coder:audio-plugin-coder dream [Name]` | Start new plugin (ideation) |
+| `/apc-plan [Name]` | `$audio-plugin-coder:audio-plugin-coder plan [Name]` | Architecture + UI framework |
+| `/apc-design [Name]` | `$audio-plugin-coder:audio-plugin-coder design [Name]` | GUI mockups and visual design |
+| `/apc-impl [Name]` | `$audio-plugin-coder:audio-plugin-coder impl [Name]` | Implement DSP and UI |
+| `/apc-test [Name]` | `$audio-plugin-coder:audio-plugin-coder test [Name]` | Run tests / validation |
+| `/apc-debug [Name]` | `$audio-plugin-coder:audio-plugin-coder debug [Name]` | Diagnose and fix issues |
+| `/apc-ship [Name]` | `$audio-plugin-coder:audio-plugin-coder ship [Name]` | Package and distribute |
+| `/apc-status [Name]` | `$audio-plugin-coder:audio-plugin-coder status [Name]` | Progress and state |
+| `/apc-resume [Name]` | `$audio-plugin-coder:audio-plugin-coder resume [Name]` | Continue from last incomplete phase |
+| `/apc-new [Name]` | `$audio-plugin-coder:audio-plugin-coder new [Name]` | Full workflow with confirmations |
+
+See [Command Reference](docs/command-reference.md), [Codex Compatibility](docs/codex-compatibility.md), and [Model Routing](docs/model-routing.md).
 
 ### Example Session
 
 ```
-You: /dream TapeDelay
+You: /apc-setup
+
+AI: Let's configure APC (paths, models, JUCE check)...
+    ✅ Setup complete. Next: /apc-dream <PluginName>
+
+You: /apc-dream TapeDelay
 
 AI: Great! Let's define your plugin concept.
 
     What is the sonic character?
     (e.g., "Warm analog tape delay with wow/flutter")
-    
+
 You: Vintage tape echo with analog saturation
 
 AI: Perfect! What are the top 3-5 parameters you want?
@@ -182,13 +202,13 @@ AI: Perfect! What are the top 3-5 parameters you want?
 You: Delay time, feedback, wow/flutter amount, saturation, mix
 
 AI: ✅ Dream phase complete!
-    
+
     Files created:
     - plugins/TapeDelay/.ideas/creative-brief.md
     - plugins/TapeDelay/.ideas/parameter-spec.md
     - plugins/TapeDelay/status.json
-    
-    Next step: /plan TapeDelay
+
+    Next step: /apc-plan TapeDelay
 ```
 
 ## 🏗️ Architecture & Self-Correction
@@ -325,7 +345,7 @@ APC works with any LLM-based coding agent that supports:
 
 ## 🛠️ Technology Stack
 
-- **JUCE 8** - Audio plugin framework (includes DSP, GUI, etc.)
+- **JUCE 9** - Audio plugin framework (includes DSP, GUI, etc.)
 - **CMake** - Build system (Visual Studio on Windows, Xcode on macOS)
 - **PowerShell / Bash** - Automation scripting (platform-specific)
 - **WebView2 / WKWebView** - Web UI (Windows / macOS)
@@ -407,9 +427,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 This project is licensed under the MIT License - see the [LICENSE](LICENCE.md) file for details.
 
-### ⚠️ Important: JUCE 8 Licensing Notice
+### ⚠️ Important: JUCE Licensing Notice
 
-APC uses **JUCE 8** as its audio plugin framework. JUCE 8 is dual-licensed:
+APC uses **JUCE 9** as its audio plugin framework. JUCE is dual-licensed:
 
 | License | Use Case | Requirements |
 |---------|----------|--------------|
@@ -423,7 +443,7 @@ APC uses **JUCE 8** as its audio plugin framework. JUCE 8 is dual-licensed:
 - If you open-source your plugin under AGPLv3, you can use JUCE for free
 
 **Official JUCE Resources:**
-- [JUCE 8 End User Licence Agreement](https://juce.com/legal/juce-8-licence/)
+- [JUCE End User Licence Agreement](https://juce.com/legal/juce-8-licence/)
 - [JUCE Pricing](https://juce.com/pricing/)
 - [JUCE Privacy Policy](https://juce.com/legal/juce-privacy-policy/)
 

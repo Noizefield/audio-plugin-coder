@@ -16,10 +16,12 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+. "$PSScriptRoot\lib\Get-ApcPaths.ps1"
 
 # 1. Setup Paths
-$RootPath = (Get-Item "$PSScriptRoot\..").FullName
-$SourceDir = Join-Path $RootPath "plugins\$PluginName"
+$ApcPaths = Get-ApcPaths
+$RootPath = $ApcPaths.RepoRoot
+$SourceDir = Join-Path $ApcPaths.PluginsDir $PluginName
 $BackupRoot = Join-Path $RootPath "_backups"
 $Timestamp = Get-Date -Format "yyyyMMdd_HHmm"
 

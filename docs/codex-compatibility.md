@@ -30,22 +30,23 @@ Create a new APC audio plugin called MyReverb.
 
 ## Command Mapping
 
-APC's slash commands were designed for Claude Code and Kilo. In Codex, use the single skill with an action:
+APC's slash commands use an **`apc-` prefix**. Short forms are deprecated aliases. In Codex, use the skill with an action:
 
 | APC documentation | Codex |
 |---|---|
-| `/dream MyReverb` | `$audio-plugin-coder:audio-plugin-coder dream MyReverb` |
-| `/plan MyReverb` | `$audio-plugin-coder:audio-plugin-coder plan MyReverb` |
-| `/design MyReverb` | `$audio-plugin-coder:audio-plugin-coder design MyReverb` |
-| `/impl MyReverb` | `$audio-plugin-coder:audio-plugin-coder impl MyReverb` |
-| `/test MyReverb` | `$audio-plugin-coder:audio-plugin-coder test MyReverb` |
-| `/debug MyReverb` | `$audio-plugin-coder:audio-plugin-coder debug MyReverb` |
-| `/status MyReverb` | `$audio-plugin-coder:audio-plugin-coder status MyReverb` |
-| `/resume MyReverb` | `$audio-plugin-coder:audio-plugin-coder resume MyReverb` |
-| `/ship MyReverb` | `$audio-plugin-coder:audio-plugin-coder ship MyReverb` |
-| `/new MyReverb` | `$audio-plugin-coder:audio-plugin-coder new MyReverb` |
+| `/apc-setup` | `$audio-plugin-coder:audio-plugin-coder setup` |
+| `/apc-dream MyReverb` | `$audio-plugin-coder:audio-plugin-coder dream MyReverb` |
+| `/apc-plan MyReverb` | `$audio-plugin-coder:audio-plugin-coder plan MyReverb` |
+| `/apc-design MyReverb` | `$audio-plugin-coder:audio-plugin-coder design MyReverb` |
+| `/apc-impl MyReverb` | `$audio-plugin-coder:audio-plugin-coder impl MyReverb` |
+| `/apc-test MyReverb` | `$audio-plugin-coder:audio-plugin-coder test MyReverb` |
+| `/apc-debug MyReverb` | `$audio-plugin-coder:audio-plugin-coder debug MyReverb` |
+| `/apc-status MyReverb` | `$audio-plugin-coder:audio-plugin-coder status MyReverb` |
+| `/apc-resume MyReverb` | `$audio-plugin-coder:audio-plugin-coder resume MyReverb` |
+| `/apc-ship MyReverb` | `$audio-plugin-coder:audio-plugin-coder ship MyReverb` |
+| `/apc-new MyReverb` | `$audio-plugin-coder:audio-plugin-coder new MyReverb` |
 
-Do not type `/plan` or `/status` to start APC phases in Codex. They are built-in Codex commands for plan mode and session status.
+Do not type Codex built-ins `/plan` or `/status` to start APC phases. Use the skill actions or `/apc-plan` / `/apc-status` in docs.
 
 ## Repo Skill vs Plugin
 

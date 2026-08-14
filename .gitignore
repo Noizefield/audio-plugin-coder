@@ -38,8 +38,15 @@ PRESS_RELEASE.md
 *.suo
 nul
 
-# plans
+# plans (local only — never publish)
 plans/
+
+# Machine-local APC setup (commit apc.config.example.json instead)
+apc.config.json
+
+# Release artifacts (keep release/README.md tracked)
+release/**
+!release/README.md
 
 # System
 .DS_Store

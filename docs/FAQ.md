@@ -65,7 +65,7 @@ git submodule update --init --recursive
 ### How do I create my first plugin?
 
 ```
-/dream MyFirstPlugin
+/apc-dream MyFirstPlugin
 ```
 
 The AI will guide you through:
@@ -418,7 +418,7 @@ No, but it's appreciated. You can mention "Built with Audio Plugin Coder" if you
 
 | Task | Command |
 |------|---------|
-| Create new plugin | `/dream MyPlugin` |
+| Create new plugin | `/apc-dream MyPlugin` |
 | Check progress | `/status MyPlugin` |
 | Continue working | `/resume MyPlugin` |
 | Build plugin | `powershell -ExecutionPolicy Bypass -File .\scripts\build-and-install.ps1 -PluginName MyPlugin` |

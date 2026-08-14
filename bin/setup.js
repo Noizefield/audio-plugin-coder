@@ -38,8 +38,8 @@ const dim  = (s) => `${c.dim}${s}${c.reset}`;
 function banner() {
   console.log('');
   console.log(`${c.cyan}${c.bold}╔══════════════════════════════════════════════════════╗${c.reset}`);
-  console.log(`${c.cyan}${c.bold}║         AUDIO PLUGIN CODER  —  APC v0.3.0           ║${c.reset}`);
-  console.log(`${c.cyan}${c.bold}║   AI-powered VST3/AU plugin dev with JUCE 8          ║${c.reset}`);
+  console.log(`${c.cyan}${c.bold}║         AUDIO PLUGIN CODER  —  APC v0.4.0           ║${c.reset}`);
+  console.log(`${c.cyan}${c.bold}║   AI-powered VST3/AU plugin dev with JUCE 9          ║${c.reset}`);
   console.log(`${c.cyan}${c.bold}╚══════════════════════════════════════════════════════╝${c.reset}`);
   console.log('');
 }
@@ -185,9 +185,11 @@ function printNextSteps(platform, targetDir) {
   console.log(`     ${dim('Codex, Claude Code, Kilo, Antigravity, or Cursor')}`);
   console.log('');
 
-  console.log(`  ${c.cyan}3.${c.reset} Start your first plugin:`);
+  console.log(`  ${c.cyan}3.${c.reset} In your AI agent, run first-time setup, then create a plugin:`);
+  console.log(`     ${dim('$audio-plugin-coder:audio-plugin-coder setup')}              ${dim('← Codex')}`);
+  console.log(`     ${dim('/apc-setup')}                                                 ${dim('← Claude Code / Kilo / Cursor')}`);
   console.log(`     ${dim('$audio-plugin-coder:audio-plugin-coder dream MyPluginName')}  ${dim('← Codex')}`);
-  console.log(`     ${dim('/dream MyPluginName')}                                        ${dim('← Claude Code / Kilo')}`);
+  console.log(`     ${dim('/apc-dream MyPluginName')}                                      ${dim('← Claude Code / Kilo / Cursor')}`);
   console.log('');
 
   if (platform === 'windows') {

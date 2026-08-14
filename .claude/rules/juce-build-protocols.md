@@ -1,4 +1,4 @@
-# JUCE 8 CRITICAL SYSTEM PROTOCOLS
+# JUCE CRITICAL SYSTEM PROTOCOLS (JUCE 9)
 **REQUIRED READING:** strict constraints for Windows 11 / macOS & APC Monorepo.
 ## 1. ⚠️ GOLDEN BUILD RULES (HIGHEST PRIORITY)
 ### A. The "One-Script" Rule

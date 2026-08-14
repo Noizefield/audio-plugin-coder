@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "juce": {
+    "required_major": 9,
+    "pin": "9.0.1"
+  },
+  "paths": {
+    "plugins_dir": "plugins",
+    "build_dir": "build",
+    "release_dir": "release"
+  },
+  "defaults": {
+    "ui_framework_preference": "webview",
+    "enable_visage": false
+  },
+  "models": {
+    "profile": "balanced",
+    "phases": {
+      "dream":  { "provider": "auto", "model": "strong-default" },
+      "plan":   { "provider": "auto", "model": "strongest-default" },
+      "design": { "provider": "auto", "model": "strong-default" },
+      "impl":   { "provider": "auto", "model": "strong-default" },
+      "test":   { "provider": "auto", "model": "strong-default" },
+      "debug":  { "provider": "auto", "model": "strongest-default" },
+      "ship":   { "provider": "auto", "model": "economy-default" },
+      "status": { "provider": "auto", "model": "economy-default" },
+      "resume": { "provider": "auto", "model": "economy-default" },
+      "setup":  { "provider": "auto", "model": "economy-default" }
+    },
+    "notes": "Replace *-default tokens with concrete model IDs during /apc-setup (Claude/GPT/Gemini/Qwen/etc.)."
+  },
+  "setup": {
+    "completed": false,
+    "completed_at": null,
+    "platform": null
+  }
+}

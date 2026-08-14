@@ -2,10 +2,30 @@
 
 Complete reference for all APC agent commands and platform scripts.
 
+## Primary slash commands (`/apc-*`)
+
+Use the **`apc-` prefix** to avoid collisions with other frameworks and host builtins:
+
+| Primary | Deprecated alias | Purpose |
+|---|---|---|
+| `/apc-setup` | `/setup` | First-run toolchain, paths, models |
+| `/apc-dream` | `/dream` | Ideation |
+| `/apc-plan` | `/plan` | Architecture + UI framework |
+| `/apc-design` | `/design` | UI design |
+| `/apc-impl` / `/apc-implement` | `/impl` | Implementation |
+| `/apc-test` | `/test` | Testing |
+| `/apc-debug` | `/debug` | Debugging |
+| `/apc-ship` | `/ship` | Packaging |
+| `/apc-status` | `/status` | State inspection |
+| `/apc-resume` | `/resume` | Continue next incomplete phase |
+| `/apc-new` | `/new` | Guided multi-phase with confirmations |
+
+Paths and models: see `apc.config.example.json`, `docs/model-routing.md`.
+
 ## Overview
 
 APC provides multiple ways to interact with the system:
-- **Slash Commands** - AI agent commands (`/dream`, `/plan`, etc.)
+- **Slash Commands** - AI agent commands (`/apc-dream`, `/apc-plan`, etc.)
 - **Codex Skill** - `$audio-plugin-coder:audio-plugin-coder <action> <Name>`
 - **PowerShell Scripts** - Build and utility scripts
 - **GitHub Actions** - CI/CD workflows
@@ -18,6 +38,7 @@ APC provides multiple ways to interact with the system:
 Codex discovers APC's repo-local skill from `.agents/skills/`. Use the skill name followed by the APC action:
 
 ```text
+$audio-plugin-coder:audio-plugin-coder setup
 $audio-plugin-coder:audio-plugin-coder dream EchoReverb
 $audio-plugin-coder:audio-plugin-coder plan EchoReverb
 $audio-plugin-coder:audio-plugin-coder design EchoReverb
@@ -30,7 +51,7 @@ $audio-plugin-coder:audio-plugin-coder ship EchoReverb
 $audio-plugin-coder:audio-plugin-coder new EchoReverb
 ```
 
-Natural-language equivalents also work. Do not use `/plan` or `/status` for APC in Codex; those names invoke Codex's built-in plan mode and session status.
+Natural-language equivalents also work. Do not use `/plan` or `/status` for APC in Codex; those names invoke Codex's built-in plan mode and session status. Prefer skill actions or `/apc-plan` / `/apc-status` in documentation.
 
 See [Codex Compatibility](codex-compatibility.md) for discovery and packaging details.
 
@@ -38,9 +59,9 @@ See [Codex Compatibility](codex-compatibility.md) for discovery and packaging de
 
 ## Slash Commands
 
-Slash commands are the primary APC syntax in Claude Code and Kilo.
+Slash commands are the primary APC syntax in Claude Code and Kilo. Sections below still describe behavior; **prefer the `/apc-*` names** in the table above.
 
-### `/dream [Name]`
+### `/apc-dream [Name]` (alias: `/dream`)
 
 **Purpose:** Initialize a new plugin with ideation phase
 

@@ -13,14 +13,17 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Import required modules
+. "$PSScriptRoot\lib\Get-ApcPaths.ps1"
 . "$PSScriptRoot\state-management.ps1"
 . "$PSScriptRoot\error-detection.ps1"
 . "$PSScriptRoot\terminal-monitoring.ps1"
 . "$PSScriptRoot\pluginval-integration.ps1"
 
-$RootPath = (Get-Item "$PSScriptRoot\..").FullName
-$BuildDir = "$RootPath\build"
-$StatusJson = Join-Path $RootPath "plugins\$PluginName\status.json"
+$ApcPaths = Get-ApcPaths
+$RootPath = $ApcPaths.RepoRoot
+$BuildDir = $ApcPaths.BuildDir
+$PluginDir = Join-Path $ApcPaths.PluginsDir $PluginName
+$StatusJson = Join-Path $PluginDir "status.json"
 $UseVisage = $false
 
 if (Test-Path $StatusJson) {
@@ -35,12 +38,14 @@ if (Test-Path $StatusJson) {
 }
 
 Write-Host "--- APC BUILDER: $PluginName ---" -ForegroundColor Cyan
+Write-Host "Plugins: $($ApcPaths.PluginsDir)" -ForegroundColor DarkGray
+Write-Host "Build:   $BuildDir" -ForegroundColor DarkGray
 if ($UseVisage) {
     Write-Host "Framework: visage" -ForegroundColor DarkGray
 }
 
 # Validate prerequisites
-$state = Get-PluginState -PluginPath "plugins/$PluginName"
+$state = Get-PluginState -PluginPath $PluginDir
 if ($state.current_phase -ne "code_complete" -and -not $SkipTests) {
     Write-Warning "Plugin implementation not marked as complete. Use -SkipTests to override."
 }
@@ -48,7 +53,8 @@ if ($state.current_phase -ne "code_complete" -and -not $SkipTests) {
 # 1. Configure with error monitoring
 Write-Host "Configuring build..." -ForegroundColor Yellow
 $visageFlag = if ($UseVisage) { "-DAPC_ENABLE_VISAGE:BOOL=ON" } else { "" }
-$configureCommand = "cmake -S `"$RootPath`" -B `"$BuildDir`" -G `"Visual Studio 17 2022`" -A x64 --fresh $visageFlag"
+$pluginsFlag = "-DAPC_PLUGINS_DIR=`"$($ApcPaths.PluginsDir)`""
+$configureCommand = "cmake -S `"$RootPath`" -B `"$BuildDir`" -G `"Visual Studio 17 2022`" -A x64 --fresh $visageFlag $pluginsFlag"
 $configResult = Invoke-MonitoredCommand -Command $configureCommand -ShowOutput -ThrowOnError
 
 if ($configResult.Errors.Count -gt 0) {
@@ -153,7 +159,7 @@ if (-not $NoInstall) {
         Write-Host "STANDALONE built at: $($Exe.FullName)" -ForegroundColor Green
 
         # Add icon to standalone executable
-        $IconPath = "$RootPath\plugins\$PluginName\Assets\icon.ico"
+        $IconPath = Join-Path $PluginDir "Assets\icon.ico"
         if (Test-Path $IconPath) {
             Write-Host "Adding icon to standalone executable..." -ForegroundColor Yellow
             try {
@@ -171,7 +177,7 @@ if (-not $NoInstall) {
 }
 
 # 6. Update build status
-Update-PluginState -PluginPath "plugins/$PluginName" -Updates @{
+Update-PluginState -PluginPath $PluginDir -Updates @{
     "validation.build_completed" = $true
     "validation.build_timestamp" = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
     "validation.build_errors" = ($vst3Result.Errors + $standaloneResult.Errors).Count

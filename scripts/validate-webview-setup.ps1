@@ -146,7 +146,7 @@ if (-not (Test-Path $WebUIPath)) {
     }
     
     if (-not (Test-Path $JuceIndexJs)) {
-        $Warnings += "js/juce/index.js not found - JUCE frontend library missing. Copy from JUCE modules/juce_gui_extra/native/javascript/index.js"
+        $Warnings += "js/juce/index.js not found - JUCE frontend library missing. Prefer npm @juce-framework/webview or copy _tools/JUCE/modules/juce_gui_extra/native/typescript/webview-interop/dist/index.js (JUCE 9)."
     }
 }
 
