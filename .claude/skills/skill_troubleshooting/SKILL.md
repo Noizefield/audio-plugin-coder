@@ -2,7 +2,13 @@
 
 ## STEP 1: CHECK KNOWN ISSUES FIRST
 
-**Before trying random solutions:**
+**Before trying random solutions:** search `.claude/troubleshooting/known-issues.yaml`.
+
+WebView symptom shortcuts:
+- Black screen → webview-007 / webview-010
+- Messy / unstyled / overlapping HTML → **webview-011** (`resolutions/webview-011-unstyled-external-css.md`)
+- Knob dots, no arcs → webview-008
+
 ```powershell
 # Search known issues database
 $errorPattern = "duplicate target juce"

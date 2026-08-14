@@ -769,6 +769,11 @@ juce_add_binary_data(YourPlugin_WebUI
 **Cause:** ES6 modules or missing inline JS
 **Solution:** Ensure ALL JavaScript is inline in index.html
 
+### Issue: UI loads but looks messy / unstyled (default buttons, overlap)
+**Cause:** External CSS (`<link rel="stylesheet">`) and/or `getResource()` serving `index.html` for CSS URLs. Distinct from black screen.
+**Solution:** Inline ALL CSS in index.html. Map BinaryData by path and basename. See webview-011.
+**Reference:** `.claude/troubleshooting/resolutions/webview-011-unstyled-external-css.md`
+
 ### Issue: Parameters don't save/restore
 **Cause:** Parameter IDs mismatch between JS and C++
 **Solution:** Verify IDs match exactly (case-sensitive)

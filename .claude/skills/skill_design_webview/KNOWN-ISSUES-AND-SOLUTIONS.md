@@ -1,8 +1,8 @@
 # WebView Known Issues & Solutions
 **Comprehensive guide for future AI developers**
 
-**Last Updated:** 2026-01-26
-**Based On:** CloudWash Plugin Development
+**Last Updated:** 2026-08-13
+**Based On:** CloudWash Plugin Development + Organik Design→WebUI conversion
 
 ---
 
@@ -31,6 +31,39 @@ ALL JavaScript must be inline in index.html (900+ lines typical).
 - `.claude/troubleshooting/resolutions/webview-es6-modules-fail.md`
 - `.claude/skills/skill_design_webview/WEBVIEW-PRODUCTION-GUIDE.md`
 - Working example: `plugins/CloudWash/Source/ui/public/index.html`
+
+---
+
+### 1b. External CSS Does Not Apply (Messy / Unstyled UI)
+**Severity:** HIGH
+**Issue ID:** webview-011
+
+**Problem:**
+```html
+<!-- ❌ WORKS IN EDGE, FAILS IN JUCE WEBVIEW — page looks like raw HTML -->
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/hackerbridge_style.css" />
+```
+
+Copying `Design/index.html` into `WebUI/` without inlining CSS is the usual cause.
+
+**Symptoms:**
+- HTML/buttons/text visible (not a black screen)
+- Default OS/WebView buttons, overlapping absolute layout
+- Broken logo; Design footer hint still showing
+- Design preview in browser looks correct
+
+**Also check:**
+- `getResource()` must not map unknown URLs to `index.html` (relative `css/tokens.css` then serves HTML as CSS)
+- `juce_add_binary_data` original names are **basenames** (`tokens.css`), not `css/tokens.css`
+- Running Standalone can lock a **stale EXE** while VST3 rebuilds
+
+**Solution:**
+Inline ALL CSS in `index.html` (same rule as JS). Explicit BinaryData map by path **and** basename. Add `html.plugin-host` when `window.__JUCE__` exists. Kill Standalone before rebuild.
+
+**Reference:**
+- `.claude/troubleshooting/resolutions/webview-011-unstyled-external-css.md`
+- Working example: `plugins/Organik/WebUI/index.html`, `plugins/CloudWash/Source/ui/public/index.html`
 
 ---
 
@@ -193,6 +226,7 @@ std::optional<WebBrowserComponent::Resource> getResource(const String& url)
 ### Before Building Plugin
 
 - [ ] ALL JavaScript is inline in index.html
+- [ ] ALL CSS is inline in index.html (no `<link rel="stylesheet">`)
 - [ ] No `<script type="module">` tags
 - [ ] No `import` / `export` statements
 - [ ] test-local.html created and tested in browser
@@ -257,6 +291,14 @@ target_compile_definitions(YourPlugin
    - Verify BinaryData.h exists in build folder
    - Check getResource() maps URLs correctly
    - Verify MIME types
+
+### Issue: UI Loads but Looks Messy / Unstyled
+
+1. **This is webview-011, not a layout bug in the Design.**
+2. Search `WebUI/index.html` for `<link rel="stylesheet">` — if present, inline the CSS.
+3. Confirm `getResource()` does not rewrite CSS URLs to `index.html`.
+4. Compare Standalone vs VST3 file times; kill a locked Standalone and rebuild.
+5. Full write-up: `.claude/troubleshooting/resolutions/webview-011-unstyled-external-css.md`
 
 ### Issue: Knobs Don't Render
 
@@ -327,7 +369,7 @@ target_compile_definitions(YourPlugin
 
 - **`.claude/troubleshooting/resolutions/`**
   - Detailed resolution documents
-  - webview-001 through webview-008
+  - webview-001 through webview-011 (see especially webview-008 JS, webview-011 CSS)
 
 ### Working Examples
 - **`plugins/CloudWash/Source/ui/public/index.html`** ⭐
@@ -389,7 +431,9 @@ plugins/YourPlugin/Source/ui/public/test-local.html
 ### Memory
 - ✅ DO: Embed all resources in BinaryData
 - ✅ DO: Use inline JavaScript (single file)
+- ✅ DO: Use inline CSS (single `<style>` block)
 - ❌ DON'T: Load external files at runtime
+- ❌ DON'T: Use `<link rel="stylesheet">` in production WebUI (webview-011)
 
 ---
 
@@ -397,13 +441,15 @@ plugins/YourPlugin/Source/ui/public/test-local.html
 
 ### Must Read
 1. **WEBVIEW-PRODUCTION-GUIDE.md** - Complete development guide
-2. **webview-es6-modules-fail.md** - #1 issue explanation
-3. **CloudWash index.html** - Working reference implementation
+2. **webview-es6-modules-fail.md** - #1 issue (JS)
+3. **webview-011-unstyled-external-css.md** - messy/unstyled UI (CSS)
+4. **CloudWash index.html** - Working reference implementation
 
 ### Optional Reading
 - webview-member-order-crash.md
 - webview-juce8-api-changes.md
 - webview-black-screen-resources.md
+- webview-011-unstyled-external-css.md
 
 ---
 

@@ -218,7 +218,8 @@ cp plugins/CloudWash/Source/ui/public/index.html plugins/YourPlugin/Source/ui/pu
    - Yes → C++ side or BinaryData issue
 
 2. "What exactly doesn't work?"
-   - "No UI at all" → Black screen (webview-007)
+   - "No UI at all" → Black screen (webview-007 / webview-010)
+   - "Messy / overlapping / default HTML buttons" → External CSS (webview-011)
    - "Only dots, no arcs" → ES6 modules (webview-008)
    - "Crashes on close" → Member order (webview-002)
    - "Parameters don't sync" → ID mismatch or attachments

@@ -13,7 +13,13 @@ $SourcePath = "$PluginPath\Source"
 $EditorCpp = "$SourcePath\PluginEditor.cpp"
 $EditorH = "$SourcePath\PluginEditor.h"
 $CMakeLists = "$PluginPath\CMakeLists.txt"
-$WebUIPath = "$SourcePath\ui\public"
+$LegacyWebUIPath = "$SourcePath\ui\public"
+$ProtocolWebUIPath = "$PluginPath\WebUI"
+if (Test-Path $ProtocolWebUIPath) {
+    $WebUIPath = $ProtocolWebUIPath
+} else {
+    $WebUIPath = $LegacyWebUIPath
+}
 $IndexHtml = "$WebUIPath\index.html"
 $IndexJs = "$WebUIPath\js\index.js"
 $JuceIndexJs = "$WebUIPath\js\juce\index.js"
@@ -122,6 +128,17 @@ if (-not (Test-Path $WebUIPath)) {
 } else {
     if (-not (Test-Path $IndexHtml)) {
         $Issues += "index.html not found: $IndexHtml"
+    } else {
+        $htmlContent = Get-Content $IndexHtml -Raw
+        if ($htmlContent -match '<link[^>]+rel=["'']stylesheet["'']') {
+            $Issues += 'index.html uses linked stylesheets. JUCE WebView often ignores linked CSS (webview-011). Inline ALL CSS in a style block. See .claude/troubleshooting/resolutions/webview-011-unstyled-external-css.md'
+        }
+        if ($htmlContent -match '<script[^>]+type=["'']module["'']') {
+            $Issues += 'index.html uses script type=module. ES6 modules fail in JUCE WebView (webview-008). Inline JavaScript instead.'
+        }
+        if ($htmlContent -match '<script[^>]+src=') {
+            $Warnings += 'index.html has script src. Prefer inlined JS (webview-008). External JS often fails in WebView.'
+        }
     }
     
     if (-not (Test-Path $IndexJs)) {
@@ -137,7 +154,7 @@ if (-not (Test-Path $WebUIPath)) {
 if (Test-Path $EditorCpp) {
     $cppContent = Get-Content $EditorCpp -Raw
     if ($cppContent -notmatch "getResource.*String.*url") {
-        $Issues += "getResource() function not found - Resource provider won't work"
+        $Issues += 'getResource function not found - Resource provider will not work'
     }
 }
 

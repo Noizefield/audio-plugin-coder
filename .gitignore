@@ -5,6 +5,8 @@ plugins/AngelGrain
 plugins/gainknob
 plugins/CloudWash/Org_Code
 plugins/XENON
+plugins/Organik
+plugins/HARMONEON
 
 # _tools folder
 _tools/DebugView/

@@ -293,3 +293,29 @@ issues:
     attempts_before_resolution: 4
     prevention: "After prepare(): set filter coefficients, set gain to 1.0, init SmoothedValues with setCurrentAndTargetValue()"
     critical_fix: "*filter.state = *Coefficients::makeLowPass(); gain.setGainLinear(1.0f); smoothed.setCurrentAndTargetValue(value)"
+
+  - id: webview-011
+    title: "WebView UI loads but looks messy / unstyled - external CSS + BinaryData path"
+    category: webview
+    severity: high
+    symptoms:
+      - "UI looks messy / overlapping / default HTML buttons"
+      - "Design preview looks correct in browser, plugin does not"
+      - "Broken logo icon, Windows scrollbar, preview hint footer"
+      - "HTML and JS load, Hackerbridge chrome missing"
+      - "VST3 updated but Standalone still unstyled"
+    error_patterns:
+      - "unstyled WebView"
+      - "messy UI"
+      - "link rel stylesheet"
+      - "css/tokens.css"
+      - "default buttons overlapping"
+    root_cause: "Design HTML used <link rel=stylesheet>. WebView2 often does not apply linked CSS. getResource() collapsed relative CSS URLs to index.html. juce_add_binary_data stores basenames only. Running Standalone can lock a stale EXE."
+    resolution_status: solved
+    resolution_file: resolutions/webview-011-unstyled-external-css.md
+    frequency: 1
+    last_occurred: 2026-08-13
+    attempts_before_resolution: 2
+    prevention: "Inline ALL CSS and JS in WebUI/index.html. Map BinaryData by path AND basename. Kill Standalone before rebuild."
+    critical_fix: "Inline CSS into index.html; explicit getResource map; rebuild Standalone after stopping the old process"
+    notes: "Canonical write-up: .claude/troubleshooting/resolutions/webview-011-unstyled-external-css.md"
