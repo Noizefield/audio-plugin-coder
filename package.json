@@ -1,6 +1,6 @@
 {
   "name": "audio-plugin-coder",
-  "version": "0.4.0",
+  "version": "1.4.0",
   "description": "AI-powered VST3/AU plugin development framework for JUCE 9 — build audio plugins with Codex, Claude Code, Cursor, or Kilo using /apc-setup and the APC phase workflow.",
   "keywords": [
     "audio",

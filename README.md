@@ -93,13 +93,20 @@ Then open the repo in your AI agent and run:
 
 ### Prerequisites
 
-**Windows:** Windows 10/11, PowerShell 7+, Visual Studio 2022 (C++ tools), CMake 3.22+, Git, Node.js 18+, WebView2 Runtime
+**Windows**
+- An LLM coding agent (Claude Code, Antigravity, Kilo, Codex, Cursor)
+- Git · Node.js (≥18) · Python (≥3.8) · Visual Studio 2022 C++ · CMake (≥3.22) · WebView2 Runtime · JUCE (≥9, via submodule) · pluginval (submodule)
 
-**macOS:** macOS 10.13+, Xcode + command line tools, CMake 3.22+, Git, Node.js 18+, jq (`brew install jq`)
+**macOS**
+- An LLM coding agent (Claude Code, Antigravity, Kilo, Codex, Cursor)
+- macOS 10.13+ · Xcode + Command Line Tools · CMake (≥3.22) · Git (submodules) · Node.js (≥18) · Python (≥3.8) · jq · JUCE (≥9, via submodule) · pluginval (submodule)
+- WebView uses system **WKWebView** (no separate WebView2 install)
 
-**Linux:** CMake 3.22+, GCC/Clang (C++20), Git, Node.js 18+, WebKitGTK, **libegl-dev** (JUCE 9), jq recommended
-
-**All platforms:** An LLM coding agent (Codex, Claude Code, Antigravity, Kilo, Cursor)
+**Linux**
+- An LLM coding agent (Claude Code, Antigravity, Kilo, Codex, Cursor)
+- GCC 9+ or Clang 10+ with **C++20** · CMake (≥3.22) · Git (submodules) · make or ninja · Node.js (≥18) · Python (≥3.8) · jq recommended
+- **WebKitGTK** (WebView) · **libegl-dev** / EGL (JUCE 9 OpenGL) · JUCE (≥9, via submodule) · pluginval (submodule)
+- ALSA (and optionally JACK) for Standalone audio
 
 ### Bridge Templates (FFGL & Max/MSP)
 

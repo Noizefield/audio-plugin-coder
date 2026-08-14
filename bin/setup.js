@@ -38,7 +38,7 @@ const dim  = (s) => `${c.dim}${s}${c.reset}`;
 function banner() {
   console.log('');
   console.log(`${c.cyan}${c.bold}╔══════════════════════════════════════════════════════╗${c.reset}`);
-  console.log(`${c.cyan}${c.bold}║         AUDIO PLUGIN CODER  —  APC v0.4.0           ║${c.reset}`);
+  console.log(`${c.cyan}${c.bold}║         AUDIO PLUGIN CODER  —  APC v1.4.0           ║${c.reset}`);
   console.log(`${c.cyan}${c.bold}║   AI-powered VST3/AU plugin dev with JUCE 9          ║${c.reset}`);
   console.log(`${c.cyan}${c.bold}╚══════════════════════════════════════════════════════╝${c.reset}`);
   console.log('');
