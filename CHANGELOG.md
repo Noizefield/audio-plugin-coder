@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Ship output is `release/`** (`paths.release_dir`), not `dist/`. Installer scripts, Inno Setup, GitHub Actions artifact collection, skills, and docs now honor the configured release directory. Existing `dist/` leftovers are gitignored.
+- Known-issue "automated fix" snippets are printed for review instead of being executed.
 
 ---
 

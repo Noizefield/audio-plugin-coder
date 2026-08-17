@@ -1,0 +1,7 @@
+# Build and machine-local artifacts
+build/
+release/
+dist/
+apc.config.json
+node_modules/
+_tools/

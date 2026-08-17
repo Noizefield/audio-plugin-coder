@@ -29,6 +29,7 @@
       "Shell"
     ],
     "websiteURL": "https://github.com/Noizefield/audio-plugin-coder",
+    "logoURL": "https://raw.githubusercontent.com/Noizefield/audio-plugin-coder/main/assets/APC_Logo.gif",
     "defaultPrompt": [
       "Dream a new audio plugin with Audio Plugin Coder.",
       "Resume my current APC plugin from its saved phase.",

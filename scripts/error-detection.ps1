@@ -149,16 +149,11 @@ param([System.Collections.Hashtable]$Issue)
         }
 
         if ($commands) {
-            Write-Host "Executing automated fix..." -ForegroundColor Green
-            try {
-                $commandBlock = $commands -join "`n"
-                Invoke-Expression $commandBlock
-                Write-Host "✅ Automated fix applied successfully" -ForegroundColor Green
+            Write-Host "Suggested fix commands (not executed automatically):" -ForegroundColor Yellow
+            foreach ($command in $commands) {
+                Write-Host "  $command" -ForegroundColor Gray
             }
-            catch {
-                Write-Host "❌ Automated fix failed: $($_.Exception.Message)" -ForegroundColor Red
-                Write-Host "Manual intervention required" -ForegroundColor Yellow
-            }
+            Write-Host "Review the commands above and run them manually if they are correct." -ForegroundColor Yellow
         }
         else {
             Write-Host "No automated solution available. Please check $($Issue.ResolutionFile)" -ForegroundColor Yellow
