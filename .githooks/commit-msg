@@ -1,9 +1,9 @@
 #!/bin/sh
-# Strip AI co-author trailers injected by Cursor/Claude so they never land on GitHub.
+# Strip injected AI co-author trailers so they never land on GitHub.
 msgfile="$1"
 tmpfile="${msgfile}.apc-strip"
 
-grep -viE '^[[:space:]]*Co-authored-by:[[:space:]]*(Cursor[[:space:]]*<cursoragent@cursor\.com>|Claude[^<]*<noreply@anthropic\.com>)[[:space:]]*$' "$msgfile" > "$tmpfile" || true
+grep -viE '^[[:space:]]*Co-authored-by:[[:space:]].*<(cursoragent@cursor\.com|noreply@anthropic\.com)>[[:space:]]*$' "$msgfile" > "$tmpfile" || true
 
 awk '
   { lines[NR] = $0 }

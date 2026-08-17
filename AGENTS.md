@@ -13,7 +13,7 @@ These instructions apply to the entire repository and are written for any coding
 
 ## Attribution
 
-- Do **not** add `Co-authored-by` trailers for Cursor, Claude, Jules, or any other AI agent.
+- Do **not** add `Co-authored-by` trailers for AI agents.
 - Do **not** list AI agents as contributors, authors, or acknowledgments.
 - Do **not** post GitHub comments, reviews, or issues in the name of an AI agent.
 - If a host injects an AI co-author trailer into a commit message, strip it before the commit is pushed.

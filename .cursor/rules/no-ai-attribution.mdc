@@ -1,13 +1,13 @@
 ---
-description: Never attribute commits, comments, or contributions to Cursor, Claude, or other AI agents
+description: Never attribute commits, comments, or contributions to AI agents
 alwaysApply: true
 ---
 
 # No AI attribution
 
-Do not credit Cursor, Claude, Jules, Codex, or any other AI agent as an author, co-author, contributor, or commenter on this repository.
+Do not credit AI agents as an author, co-author, contributor, or commenter on this repository.
 
-- Never add `Co-authored-by: Cursor`, `Co-authored-by: Claude`, or similar trailers to commit messages.
+- Never add AI `Co-authored-by` trailers to commit messages.
 - Never post GitHub comments, PR reviews, or issues as an AI agent.
 - Never add AI agents to README acknowledgments, contributor lists, or "Created by" lines.
 - If the host injects an AI co-author trailer, strip it before push. Use `.githooks/commit-msg` (copy to `.git/hooks/commit-msg`).

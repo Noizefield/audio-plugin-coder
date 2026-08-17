@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- AI co-author / "Created by" attribution for Cursor and Claude from docs and troubleshooting notes. Commit hook strips injected `Co-authored-by` trailers.
+- AI co-author / "Created by" attribution from docs and troubleshooting notes. A commit hook strips injected co-author trailers.
 
 ---
 
