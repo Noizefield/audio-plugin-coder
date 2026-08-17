@@ -207,6 +207,5 @@ Confirm **Standalone and VST3** timestamps and the HTML marker. Clear `%TEMP%\EB
 
 ---
 
-**Created by:** Cursor agent (Organik /impl)
 **Resolved:** 2026-08-13
 **Attempts before resolution:** 2 (constructor-order fix first; CSS/resource/stale-exe second)

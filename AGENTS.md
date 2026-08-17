@@ -11,6 +11,13 @@ These instructions apply to the entire repository and are written for any coding
 - Resolve plugin/build/release directories via `scripts/lib/Get-ApcPaths.ps1` or `scripts/lib/apc-paths.sh` — do not assume `./plugins` if config overrides exist.
 - `/apc-ship` writes installers and zips to `paths.release_dir` (default `release/`). Do not use `dist/` as the ship output.
 
+## Attribution
+
+- Do **not** add `Co-authored-by` trailers for Cursor, Claude, Jules, or any other AI agent.
+- Do **not** list AI agents as contributors, authors, or acknowledgments.
+- Do **not** post GitHub comments, reviews, or issues in the name of an AI agent.
+- If a host injects an AI co-author trailer into a commit message, strip it before the commit is pushed.
+
 ## APC Workflow
 
 - Use the `audio-plugin-coder` skill for APC lifecycle work.

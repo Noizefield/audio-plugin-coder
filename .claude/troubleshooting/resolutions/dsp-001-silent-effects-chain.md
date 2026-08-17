@@ -122,7 +122,6 @@ For ALL future plugins using JUCE DSP:
 
 ---
 
-**Created by:** Claude (automated)
 **Resolved:** 2026-02-12
 **Attempts before resolution:** 4
 **Plugin:** XENON

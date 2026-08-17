@@ -146,7 +146,6 @@ The correct API can be verified at:
 
 ---
 
-**Created by:** Claude (automated)
 **Resolved:** 2026-02-12
 **Attempts before resolution:** 2
 **Plugin:** XENON

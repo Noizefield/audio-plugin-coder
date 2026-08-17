@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Ship output is `release/`** (`paths.release_dir`), not `dist/`. Installer scripts, Inno Setup, GitHub Actions artifact collection, skills, and docs now honor the configured release directory. Existing `dist/` leftovers are gitignored.
 
+### Removed
+
+- AI co-author / "Created by" attribution for Cursor and Claude from docs and troubleshooting notes. Commit hook strips injected `Co-authored-by` trailers.
+
 ---
 
 ## [1.4.0] - 2026-08-14

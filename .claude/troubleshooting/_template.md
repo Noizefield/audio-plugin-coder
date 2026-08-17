@@ -52,6 +52,5 @@ How to confirm the issue is resolved:
 
 ---
 
-**Created by:** Claude (automated)
 **Resolved:** [date]
 **Attempts before resolution:** [N]

@@ -25,8 +25,6 @@ While developing software instruments and effects has always been a dream, build
 
 Over the past 18 months, APC has been continuously designed, tested, and re-iterated as a practical **AI-first framework** for building audio plugins. This involved thousands of hours of experimentation, trial-and-error, and yes... occasionally yelling at LLMs to finally render the UI correctly.
 
-**Midway through development, I stumbled upon the excellent work of [TÂCHES (glittercowboy)](https://github.com/glittercowboy).** His approach to context engineering was a revelation. I adopted some of his core ideas, particularly regarding meta prompting and structured agent workflows and integrated them directly into APC's DNA to create a more robust system.
-
 APC is designed to be **Agent Agnostic**. Whether you use Codex, Google's Antigravity, Kilo, Claude Code, or Cursor, APC provides the structure they need to succeed.
 
 APC is under active improvement — expect iteration — but the core workflow (setup → dream → plan → design → impl → ship) is ready for real plugin development on Windows, macOS, and Linux.
@@ -426,7 +424,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 - **JUCE Team** - For the industry-standard framework.
 - **The AI Community** - Specifically the meta-prompting pioneers.
 - **Matt Tytel** - For the outstandingly good Visage library (https://github.com/VitalAudio/visage)
-- **[TÂCHES (glittercowboy)](https://github.com/glittercowboy)** - Inspiration for context engineering systems.
 - **[12Matt3r](https://github.com/12Matt3r)** - FFGL and Max/MSP bridge templates contribution.
 - **[vjcharles](https://github.com/vjcharles)** - macOS support and security hardening (PR #6).
 

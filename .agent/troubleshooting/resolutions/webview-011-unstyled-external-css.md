@@ -134,5 +134,4 @@ Stop Standalone, run `.\scripts\build-and-install.ps1 -PluginName <Name> -SkipTe
 
 ---
 
-**Created by:** Cursor agent (Organik /impl)
 **Resolved:** 2026-08-13

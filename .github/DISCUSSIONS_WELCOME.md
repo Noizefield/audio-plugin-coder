@@ -231,7 +231,6 @@ Your contributions make APC better for everyone.
 ### Acknowledgments
 - **JUCE Team** - For the industry-standard audio framework
 - **The AI Community** - For advancing AI-assisted development
-- **[TÂCHES (glittercowboy)](https://github.com/glittercowboy)** - Inspiration for context engineering systems
 
 ---
 
