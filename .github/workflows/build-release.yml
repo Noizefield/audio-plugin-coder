@@ -91,16 +91,16 @@ jobs:
       - name: Collect artifacts
         shell: bash
         run: |
-          mkdir -p dist
-          find build -name "*.vst3" -exec cp -R {} dist/ \;
-          find build -name "*.exe" -not -path "*/CMakeFiles/*" -exec cp {} dist/ \;
-          echo "Collected:" && ls dist/
+          mkdir -p release
+          find build -name "*.vst3" -exec cp -R {} release/ \;
+          find build -name "*.exe" -not -path "*/CMakeFiles/*" -exec cp {} release/ \;
+          echo "Collected:" && ls release/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v5
         with:
           name: windows-${{ matrix.plugin }}
-          path: dist/
+          path: release/
           if-no-files-found: error
           retention-days: 30
 
@@ -144,17 +144,17 @@ jobs:
 
       - name: Collect artifacts
         run: |
-          mkdir -p dist
-          find build -name "*.vst3" -exec cp -R {} dist/ \;
-          find build -name "*.component" -exec cp -R {} dist/ \;
-          find build -name "*.app" -not -path "*/CMakeFiles/*" -exec cp -R {} dist/ \;
-          echo "Collected:" && ls dist/
+          mkdir -p release
+          find build -name "*.vst3" -exec cp -R {} release/ \;
+          find build -name "*.component" -exec cp -R {} release/ \;
+          find build -name "*.app" -not -path "*/CMakeFiles/*" -exec cp -R {} release/ \;
+          echo "Collected:" && ls release/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v5
         with:
           name: macos-${{ matrix.plugin }}
-          path: dist/
+          path: release/
           if-no-files-found: error
           retention-days: 30
 
@@ -208,17 +208,17 @@ jobs:
 
       - name: Collect artifacts
         run: |
-          mkdir -p dist
-          find build -name "*.vst3" -exec cp -R {} dist/ \;
-          find build -name "*.lv2" -exec cp -R {} dist/ \;
-          find build -name "${{ matrix.plugin }}" -type f -exec cp {} dist/ \;
-          echo "Collected:" && ls dist/
+          mkdir -p release
+          find build -name "*.vst3" -exec cp -R {} release/ \;
+          find build -name "*.lv2" -exec cp -R {} release/ \;
+          find build -name "${{ matrix.plugin }}" -type f -exec cp {} release/ \;
+          echo "Collected:" && ls release/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v5
         with:
           name: linux-${{ matrix.plugin }}
-          path: dist/
+          path: release/
           if-no-files-found: error
           retention-days: 30
 

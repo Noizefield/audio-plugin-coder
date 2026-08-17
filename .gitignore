@@ -48,6 +48,9 @@ apc.config.json
 release/**
 !release/README.md
 
+# Legacy ship folder (replaced by release/). Ignore leftovers.
+dist/
+
 # System
 .DS_Store
 Thumbs.db
@@ -61,4 +64,3 @@ cloudwash_crash_log.txt
 
 # Backups
 _backups/
-dist/

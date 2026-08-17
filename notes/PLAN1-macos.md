@@ -41,7 +41,7 @@ APC is a JUCE 8-based audio plugin generator that currently only supports Window
    - Create a DMG containing VST3 bundle, AU component, Standalone app
    - Use `hdiutil` for DMG creation
    - Include a simple background/layout for drag-to-install UX
-   - Output to `dist/PluginName-Version-macOS.dmg`
+   - Output to `release/PluginName-Version-macOS.dmg`
 
 7. **`scripts/state-management.sh`** — Bash port of state management
    - Functions: `get_plugin_state`, `update_plugin_state`, `test_plugin_state`, `backup_plugin_state`
@@ -103,5 +103,5 @@ APC is a JUCE 8-based audio plugin generator that currently only supports Window
 2. Run `bash scripts/build-and-install.sh PluginName` — should configure, build, and install VST3+AU
 3. Run `bash scripts/preview-design.sh PluginName` — should build and launch standalone
 4. Run `bash scripts/backup.sh PluginName 1.0` — should create zip in `_backups/`
-5. Run `bash scripts/installer/create-macos-installer.sh PluginName 1.0.0` — should produce DMG in `dist/`
+5. Run `bash scripts/installer/create-macos-installer.sh PluginName 1.0.0` — should produce DMG in `release/`
 6. Verify agent rules are platform-aware and don't block Bash usage on macOS

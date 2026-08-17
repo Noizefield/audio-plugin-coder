@@ -13,7 +13,7 @@ audio-plugin-coder/
 ├── .codex-plugin/          # Codex plugin manifest
 ├── _tools/                 # External dependencies (JUCE, pluginval)
 ├── build/                  # Build artifacts (gitignored)
-├── dist/                   # Distribution packages (gitignored)
+├── release/                # Ship packages and installers (gitignored except README)
 ├── docs/                   # Documentation
 ├── plugins/                # Your plugin projects
 ├── scripts/                # Build and utility scripts
@@ -151,10 +151,11 @@ plugins/
    - Gitignored
    - Can be safely deleted
 
-3. **The Shipping Zone** (`dist/`)
+3. **The Shipping Zone** (`release/`)
    - Final distribution packages
    - Installers and ZIP files
    - Ready for release
+   - Override with `paths.release_dir` in `apc.config.json`
 
 ---
 
@@ -374,6 +375,12 @@ plugins/[Name]/
 ```
 # Build artifacts
 build/
+
+# Ship packages (release/README.md is tracked)
+release/**
+!release/README.md
+
+# Legacy ship folder (replaced by release/). Ignore leftovers.
 dist/
 
 # IDE

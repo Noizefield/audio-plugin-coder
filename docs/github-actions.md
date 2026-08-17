@@ -267,7 +267,7 @@ git push origin v1.0.0-CloudWash
 gh run list --workflow=build-release.yml
 
 # Download artifacts from specific run
-gh run download <run-id> --dir dist/github-artifacts
+gh run download <run-id> --dir release/github-artifacts
 
 # Download with pattern
 gh run download <run-id> --pattern "*CloudWash"

@@ -42,7 +42,7 @@ This guide covers how to create installers for all platforms.
 
 ### Output
 
-- **Location**: `dist\{PluginName}-{Version}-Windows-Setup.exe`
+- **Location**: `release\{PluginName}-{Version}-Windows-Setup.exe`
 - **Size**: ~5-20 MB (depends on plugin)
 
 ### Installer Features

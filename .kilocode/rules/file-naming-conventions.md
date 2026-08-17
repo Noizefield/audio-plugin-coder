@@ -107,7 +107,7 @@ Design\
 - Updates: `status.json` (phase: "code_complete")
 
 ### Phase 5: SHIP
-- Creates: `dist\[Name]_v1.0\` with distribution files
+- Creates: `release\[Name]_v1.0\` with distribution files
 - Updates: `status.json` (phase: "ship_complete", version: "v1.0.0")
 
 ## ⚠️ Critical Rules
@@ -124,7 +124,7 @@ Design\
 - **skill_planning.md:** Creates architecture.md and plan.md
 - **skill_design.md:** Creates Design\ files with versioning
 - **skill_implementation.md:** Creates Source\ files
-- **skill_packaging.md:** Creates dist\ directory and distribution files
+- **skill_packaging.md:** Creates release\ directory and distribution files
 
 ## 📁 State Management Files
 

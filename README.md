@@ -270,7 +270,8 @@ audio-plugin-coder/
 │   ├── state-management.ps1     # Windows state management
 │   ├── state-management.sh      # macOS state management
 │   └── installer/               # Platform-specific installers
-└── build/                       # Compilation artifacts
+├── build/                       # Compilation artifacts
+└── release/                     # Ship packages (installers, zips)
 ```
 
 ### How Skills Work

@@ -3,7 +3,7 @@
 **Goal:** Create professional, cross-platform plugin installers for Windows, macOS, and Linux
 **Trigger:** `/ship [Name]` or "Ship [Name]"
 **Prerequisites:** Phase 4 (CODE) complete, audio engine working, all tests passed
-**Output Location:** `dist/[Name]_v[version]/`
+**Output Location:** `release/[Name]_v[version]/` (honors `paths.release_dir` in `apc.config.json`)
 
 ---
 
@@ -200,7 +200,7 @@ function New-WindowsInstaller {
     # Compile installer
     & $InnoPath $IssPath
 
-    $InstallerPath = "dist/$PluginName-$Version-Setup.exe"
+    $InstallerPath = "release/$PluginName-$Version-Setup.exe"
     if (Test-Path $InstallerPath) {
         Write-Host "✓ Windows installer created: $InstallerPath" -ForegroundColor Green
         return $InstallerPath
@@ -285,7 +285,7 @@ function Get-GitHubArtifacts {
 
     if ($Proceed -eq 'y') {
         # Use gh CLI to download artifacts
-        $ArtifactsDir = "dist/github-artifacts"
+        $ArtifactsDir = "release/github-artifacts"
         New-Item -ItemType Directory -Path $ArtifactsDir -Force | Out-Null
 
         # Download all artifacts for this tag
@@ -310,7 +310,7 @@ function New-macOSInstaller {
     # Note: macOS installer creation requires macOS
     # On Windows, we prepare the structure for later signing/notarization
 
-    $MacOSDir = "dist/$PluginName-$Version-macOS"
+    $MacOSDir = "release/$PluginName-$Version-macOS"
     New-Item -ItemType Directory -Path $MacOSDir -Force | Out-Null
 
     # Copy artifacts
@@ -327,24 +327,24 @@ VERSION=$Version
 # Create component packages
 pkgbuild --component "$MacOSDir/$PluginName.vst3" \\
     --install-location "/Library/Audio/Plug-Ins/VST3" \\
-    "dist/$PluginName-\$VERSION-VST3.pkg"
+    "release/$PluginName-\$VERSION-VST3.pkg"
 
 pkgbuild --component "$MacOSDir/$PluginName.component" \\
     --install-location "/Library/Audio/Plug-Ins/Components" \\
-    "dist/$PluginName-\$VERSION-AU.pkg"
+    "release/$PluginName-\$VERSION-AU.pkg"
 
 # Create distribution
 productbuild --distribution scripts/macos/distribution.xml \\
-    --package-path dist \\
+    --package-path release \\
     --resources resources \\
-    "dist/$PluginName-\$VERSION-macOS.pkg"
+    "release/$PluginName-\$VERSION-macOS.pkg"
 
 # Create DMG
 create-dmg \\
     --volname "$PluginName Installer" \\
-    "dist/$PluginName-\$VERSION-macOS.dmg" \\
+    "release/$PluginName-\$VERSION-macOS.dmg" \\
     "$MacOSDir"
-"@ | Set-Content "dist/create-macos-installer-$Version.sh"
+"@ | Set-Content "release/create-macos-installer-$Version.sh"
 
     Write-Host "✓ macOS installer scripts prepared" -ForegroundColor Green
     Write-Host "  Run 'create-macos-installer-$Version.sh' on a Mac to finalize" -ForegroundColor Yellow
@@ -357,7 +357,7 @@ create-dmg \\
 function New-LinuxPackages {
     param([string]$PluginName, [string]$Version, [string]$ArtifactsDir)
 
-    $LinuxDir = "dist/$PluginName-$Version-Linux"
+    $LinuxDir = "release/$PluginName-$Version-Linux"
     New-Item -ItemType Directory -Path $LinuxDir -Force | Out-Null
 
     # Copy artifacts
@@ -392,11 +392,11 @@ Categories=AudioVideo;Audio;
 EOF
 
 # Build AppImage
-appimagetool AppDir "dist/$PLUGIN_NAME-\$VERSION-x86_64.AppImage"
+appimagetool AppDir "release/$PLUGIN_NAME-\$VERSION-x86_64.AppImage"
 
 # Create DEB package
 # ... (DEB creation commands)
-"@ | Set-Content "dist/create-linux-packages-$Version.sh"
+"@ | Set-Content "release/create-linux-packages-$Version.sh"
 
     Write-Host "✓ Linux package scripts prepared" -ForegroundColor Green
 }
@@ -463,24 +463,24 @@ function New-DistributionPackage {
         [hashtable]$Artifacts
     )
 
-    $DistDir = "dist/$PluginName-v$Version"
-    New-Item -ItemType Directory -Path $DistDir -Force | Out-Null
+    $PackageDir = "release/$PluginName-v$Version"
+    New-Item -ItemType Directory -Path $PackageDir -Force | Out-Null
 
     # Copy all installers
     if ($Artifacts.Windows) {
-        Copy-Item $Artifacts.Windows $DistDir/
+        Copy-Item $Artifacts.Windows $PackageDir/
     }
     if ($Artifacts.macOS) {
-        Copy-Item $Artifacts.macOS $DistDir/ -Recurse
+        Copy-Item $Artifacts.macOS $PackageDir/ -Recurse
     }
     if ($Artifacts.Linux) {
-        Copy-Item $Artifacts.Linux $DistDir/ -Recurse
+        Copy-Item $Artifacts.Linux $PackageDir/ -Recurse
     }
 
     # Copy documentation
-    Copy-Item "plugins/$PluginName/README.md" $DistDir/ -ErrorAction SilentlyContinue
-    Copy-Item "CHANGELOG.md" $DistDir/ -ErrorAction SilentlyContinue
-    New-LicenseFile -PluginName $PluginName -OutputPath "$DistDir/LICENSE.txt"
+    Copy-Item "plugins/$PluginName/README.md" $PackageDir/ -ErrorAction SilentlyContinue
+    Copy-Item "CHANGELOG.md" $PackageDir/ -ErrorAction SilentlyContinue
+    New-LicenseFile -PluginName $PluginName -OutputPath "$PackageDir/LICENSE.txt"
 
     # Create unified README
     @"
@@ -508,14 +508,14 @@ Option 2: Install the .deb package with: `sudo dpkg -i $PluginName-$Version.deb`
 
 ## License
 See LICENSE.txt for full license terms.
-"@ | Set-Content "$DistDir/INSTALL.md"
+"@ | Set-Content "$PackageDir/INSTALL.md"
 
     # Create final ZIP
-    Compress-Archive -Path "$DistDir/*" -DestinationPath "dist/$PluginName-v$Version.zip" -Force
+    Compress-Archive -Path "$PackageDir/*" -DestinationPath "release/$PluginName-v$Version.zip" -Force
 
     Write-Host "`n✓ Distribution package created:" -ForegroundColor Green
-    Write-Host "  Location: $DistDir" -ForegroundColor Yellow
-    Write-Host "  Archive: dist/$PluginName-v$Version.zip" -ForegroundColor Yellow
+    Write-Host "  Location: $PackageDir" -ForegroundColor Yellow
+    Write-Host "  Archive: release/$PluginName-v$Version.zip" -ForegroundColor Yellow
 }
 ```
 

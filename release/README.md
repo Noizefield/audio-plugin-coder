@@ -16,10 +16,11 @@ Suggested layout after shipping a plugin:
 
 ```text
 release/
-└── <PluginName>/
-    ├── <PluginName>-windows-vst3.zip
-    ├── <PluginName>-Installer.exe
-    └── …
+├── LICENSE.txt
+├── <PluginName>-<version>-Windows-Setup.exe
+├── <PluginName>_v<version>/
+├── <PluginName>_v<version>.zip
+└── github-artifacts/          # optional CI downloads
 ```
 
-This folder is separate from CMake `build/` so a clean rebuild does not wipe packaging outputs.
+This folder is separate from CMake `build/` so a clean rebuild does not wipe packaging outputs. Do not use `dist/` — that path is retired.

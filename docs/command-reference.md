@@ -187,7 +187,7 @@ plugins/[Name]/Source/
 
 **Output:**
 ```
-dist/
+release/
 ├── EchoReverb-v1.0/
 │   ├── EchoReverb-1.0-Windows-Setup.exe
 │   ├── EchoReverb-1.0-macOS.zip
@@ -530,7 +530,7 @@ git push origin v1.0.0-MyPlugin
 gh run list --workflow=build-release.yml
 
 # Download artifacts
-gh run download <run-id> --dir dist/github-artifacts
+gh run download <run-id> --dir release/github-artifacts
 ```
 
 ---

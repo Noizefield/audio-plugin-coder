@@ -49,7 +49,7 @@ You must determine the **UI_FRAMEWORK** selection from `status.json` before gene
     *   `Design/`: Visuals (Visage Specs) OR Web Assets (HTML/CSS).
     *   `Source/`: Clean C++ Code (`PluginProcessor`, `PluginEditor`).
 *   **The Dirty Zone (`build/`):** All artifacts/compilation. Located at Project Root.
-*   **The Shipping Zone (`dist/`):** Final Zips/Installers. Located at Project Root.
+*   **The Shipping Zone (`release/`):** Final Zips/Installers. Honors `paths.release_dir` in `apc.config.json`.
 *   **The Knowledge Base (`...kilocode/troubleshooting/`):** Known issues and resolutions.
 
 ## 🔧 AUTOMATIC TROUBLESHOOTING CAPTURE

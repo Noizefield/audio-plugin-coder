@@ -153,7 +153,7 @@ Enter numbers (comma-separated) or 'all':
 
 **Execute:** Generate EULA text file for inclusion in all installers
 
-**Location:** `dist/{PluginName}-v{version}/LICENSE.txt`
+**Location:** `release/{PluginName}-v{version}/LICENSE.txt`
 
 **Reference:** See `skill_packaging/SKILL.md` - "STEP 6: CREATE LICENSE FILE"
 
@@ -172,7 +172,7 @@ Enter numbers (comma-separated) or 'all':
 
 **Output Structure:**
 ```
-dist/{PluginName}-v{version}/
+release/{PluginName}-v{version}/
 Γö£ΓöÇΓöÇ {PluginName}-{version}-Windows-Setup.exe
 Γö£ΓöÇΓöÇ {PluginName}-{version}-macOS.dmg
 Γö£ΓöÇΓöÇ {PluginName}-{version}-macOS.pkg
@@ -192,7 +192,7 @@ dist/{PluginName}-v{version}/
 
 - Verify all formats built (VST3/AU/LV2/Standalone)
 - Verify tests passed
-- Verify installer created in dist/
+- Verify installer created in release/
 - Verify GitHub commit successful
 
 ---
@@ -230,7 +230,7 @@ dist/{PluginName}-v{version}/
 Γòæ    ΓÇó macOS: GitHub Actions                                    Γòæ
 Γòæ    ΓÇó Linux: GitHub Actions                                    Γòæ
 Γòæ                                                              Γòæ
-Γòæ  Distribution: dist/{PluginName}-v{version}.zip               Γòæ
+Γòæ  Distribution: release/{PluginName}-v{version}.zip               Γòæ
 Γòæ                                                              Γòæ
 Γòæ  Installers:                                                 Γòæ
 Γòæ    ΓÇó Windows: Setup.exe with license & custom path           Γòæ

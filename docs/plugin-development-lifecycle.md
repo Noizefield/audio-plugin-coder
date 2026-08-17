@@ -555,7 +555,7 @@ Create professional installers and distribute the plugin.
 ### Outputs
 
 ```
-dist/
+release/
 ├── MyPlugin-v1.0/
 │   ├── MyPlugin-1.0-Windows-Setup.exe
 │   ├── MyPlugin-1.0-macOS.zip

@@ -18,18 +18,22 @@ fi
 
 # --- PATH RESOLUTION ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_PATH="$(cd "$SCRIPT_DIR/../.." && pwd)"
-BUILD_DIR="$ROOT_PATH/build"
-DIST_DIR="$ROOT_PATH/dist"
-PLUGIN_DIR="$ROOT_PATH/plugins/$PLUGIN_NAME"
+# shellcheck source=../lib/apc-paths.sh
+source "$SCRIPT_DIR/../lib/apc-paths.sh"
+apc_load_paths
+ROOT_PATH="$APC_REPO_ROOT"
+BUILD_DIR="$APC_BUILD_DIR"
+RELEASE_DIR="$APC_RELEASE_DIR"
+PLUGIN_DIR="$APC_PLUGINS_DIR/$PLUGIN_NAME"
 
 DMG_NAME="${PLUGIN_NAME}-${VERSION}-macOS.dmg"
-DMG_PATH="$DIST_DIR/$DMG_NAME"
+DMG_PATH="$RELEASE_DIR/$DMG_NAME"
 
 echo "========================================"
 echo "  Creating macOS Installer"
 echo "  Plugin: $PLUGIN_NAME"
 echo "  Version: $VERSION"
+echo "  Release: $RELEASE_DIR"
 echo "========================================"
 echo ""
 
@@ -53,10 +57,10 @@ echo "  VST3: $VST3_BUNDLE"
 
 # --- CREATE LICENSE FILE ---
 
-LICENSE_PATH="$DIST_DIR/LICENSE.txt"
+LICENSE_PATH="$RELEASE_DIR/LICENSE.txt"
 if [[ ! -f "$LICENSE_PATH" ]]; then
     echo "Creating license file..."
-    mkdir -p "$DIST_DIR"
+    mkdir -p "$RELEASE_DIR"
     CURRENT_YEAR="$(date +%Y)"
     cat > "$LICENSE_PATH" << EOLICENSE
 ================================================================================
@@ -212,7 +216,7 @@ chmod +x "$DMG_CONTENTS/install.command"
 # --- CREATE DMG ---
 
 echo "Creating DMG..."
-mkdir -p "$DIST_DIR"
+mkdir -p "$RELEASE_DIR"
 
 # Remove existing DMG if present
 rm -f "$DMG_PATH"

@@ -9,6 +9,7 @@ These instructions apply to the entire repository and are written for any coding
 - New checkouts should start with **`/apc-setup`** (skill action `setup`) before creating plugins.
 - Setup writes machine-local `apc.config.json` (see `apc.config.example.json`). Paths, UI defaults, and per-phase model preferences live there.
 - Resolve plugin/build/release directories via `scripts/lib/Get-ApcPaths.ps1` or `scripts/lib/apc-paths.sh` — do not assume `./plugins` if config overrides exist.
+- `/apc-ship` writes installers and zips to `paths.release_dir` (default `release/`). Do not use `dist/` as the ship output.
 
 ## APC Workflow
 

@@ -34,10 +34,17 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+. "$PSScriptRoot\..\lib\Get-ApcPaths.ps1"
+$ApcPaths = Get-ApcPaths
+$BuildDir = $ApcPaths.BuildDir
+$ReleaseDir = $ApcPaths.ReleaseDir
+$PluginDir = Join-Path $ApcPaths.PluginsDir $PluginName
+
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Creating Windows Installer" -ForegroundColor Cyan
 Write-Host "  Plugin: $PluginName" -ForegroundColor Cyan
 Write-Host "  Version: $Version" -ForegroundColor Cyan
+Write-Host "  Release: $ReleaseDir" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -56,9 +63,8 @@ if (-not (Test-Path $InnoPath)) {
 Write-Host "[OK] Inno Setup found" -ForegroundColor Green
 
 # Check for build artifacts
-$BuildDir = "build"
-$Vst3Path = Get-ChildItem -Path "$BuildDir" -Recurse -Filter "$PluginName.vst3" -ErrorAction SilentlyContinue | Select-Object -First 1
-$StandalonePath = Get-ChildItem -Path "$BuildDir" -Recurse -Filter "$PluginName.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+$Vst3Path = Get-ChildItem -Path $BuildDir -Recurse -Filter "$PluginName.vst3" -ErrorAction SilentlyContinue | Select-Object -First 1
+$StandalonePath = Get-ChildItem -Path $BuildDir -Recurse -Filter "$PluginName.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
 
 if (-not $Vst3Path) {
     Write-Error "VST3 build not found. Please build the plugin first."
@@ -73,11 +79,11 @@ if ($StandalonePath) {
 }
 
 # Check for icon file
-$IconPath = "plugins\$PluginName\Assets\icon.ico"
+$IconPath = Join-Path $PluginDir "Assets\icon.ico"
 if (-not (Test-Path $IconPath)) {
     Write-Warning "Icon file not found at: $IconPath"
     Write-Host "The installer will use the default Inno Setup icon." -ForegroundColor Yellow
-    Write-Host "To add a custom icon, place an icon.ico file in plugins\$PluginName\Assets" -ForegroundColor Yellow
+    Write-Host "To add a custom icon, place an icon.ico file in $PluginDir\Assets" -ForegroundColor Yellow
 } else {
     Write-Host "[OK] Icon file found" -ForegroundColor Green
     Write-Host "  Icon: $IconPath" -ForegroundColor Gray
@@ -87,8 +93,19 @@ if (-not (Test-Path $IconPath)) {
 # CREATE LICENSE FILE
 # ============================================
 
-$LicensePath = "dist\LICENSE.txt"
-if (-not (Test-Path $LicensePath)) {
+$LicensePath = Join-Path $ReleaseDir "LICENSE.txt"
+$PluginEulaCandidates = @(
+    (Join-Path $PluginDir "license_documentation\EULA.txt"),
+    (Join-Path $PluginDir "Documentation\EULA.txt")
+)
+$PluginEula = $PluginEulaCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+New-Item -ItemType Directory -Path $ReleaseDir -Force | Out-Null
+
+if ($PluginEula) {
+    Copy-Item $PluginEula $LicensePath -Force
+    Write-Host "License file copied from: $PluginEula" -ForegroundColor Green
+} elseif (-not (Test-Path $LicensePath)) {
     Write-Host "Creating license file..." -ForegroundColor Yellow
     
     $CurrentYear = Get-Date -Format "yyyy"
@@ -126,7 +143,7 @@ if (-not (Test-Path $LicensePath)) {
         "Copyright (c) $CurrentYear $CompanyName`n" +
         "================================================================================"
     
-    New-Item -ItemType Directory -Path "dist" -Force | Out-Null
+    New-Item -ItemType Directory -Path $ReleaseDir -Force | Out-Null
     Set-Content -Path $LicensePath -Value $LicenseContent
     Write-Host "License file created: $LicensePath" -ForegroundColor Green
 }
@@ -147,6 +164,7 @@ $Template = Get-Content $TemplatePath -Raw
 
 # Get absolute path to icon file
 $IconAbsolutePath = (Resolve-Path $IconPath).Path
+$ReleaseDirIss = $ReleaseDir.Replace('\', '/')
 
 # Replace placeholders
 $IssContent = $Template `
@@ -155,9 +173,10 @@ $IssContent = $Template `
     -replace '{#CompanyName}', $CompanyName `
     -replace '{#PluginURL}', $PluginURL `
     -replace '{#IconPath}', $IconAbsolutePath
+$IssContent = $IssContent.Replace('{#ReleaseDir}', $ReleaseDirIss)
 
 # Create build directory for installer
-$InstallerBuildDir = "build\installer"
+$InstallerBuildDir = Join-Path $BuildDir "installer"
 New-Item -ItemType Directory -Path $InstallerBuildDir -Force | Out-Null
 
 $IssPath = "$InstallerBuildDir\$PluginName-$Version.iss"
@@ -198,7 +217,7 @@ try {
 # VERIFY OUTPUT
 # ============================================
 
-$InstallerPath = "dist\$PluginName-$Version-Windows-Setup.exe"
+$InstallerPath = Join-Path $ReleaseDir "$PluginName-$Version-Windows-Setup.exe"
 if (Test-Path $InstallerPath) {
     $FileInfo = Get-Item $InstallerPath
     Write-Host "========================================" -ForegroundColor Green

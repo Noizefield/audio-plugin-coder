@@ -6,6 +6,7 @@
 ;   {#PluginVersion}  - Version (e.g., 1.0.0)
 ;   {#CompanyName}    - Company name (e.g., APC)
 ;   {#PluginURL}      - Plugin website URL
+;   {#ReleaseDir}     - Absolute ship/output directory (from paths.release_dir)
 
 #define PluginName "{#PluginName}"
 #define PluginVersion "{#PluginVersion}"
@@ -27,11 +28,12 @@ DefaultGroupName={#PluginName}
 DisableProgramGroupPage=yes
 
 ; Output settings
-OutputDir=..\..\dist
+OutputDir="{#ReleaseDir}"
 OutputBaseFilename={#PluginName}-{#PluginVersion}-Windows-Setup
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
+LicenseFile="{#ReleaseDir}/LICENSE.txt"
 
 ; Appearance
 SetupIconFile={#IconPath}
@@ -116,7 +118,7 @@ Source: "..\..\plugins\{#PluginName}\Documentation\*"; \
     Flags: recursesubdirs createallsubdirs skipifsourcedoesntexist ignoreversion
 
 ; Root-level license files (required for compliance)
-Source: "..\..\dist\LICENSE.txt"; \
+Source: "{#ReleaseDir}/LICENSE.txt"; \
     DestDir: "{app}\Documentation"; \
     Components: documentation; \
     Flags: ignoreversion skipifsourcedoesntexist

@@ -124,7 +124,7 @@ If you selected to use local build:
 6. Supports custom installation path
 
 **Output:**
-- `dist/{PluginName}-{version}-Windows-Setup.exe`
+- `release/{PluginName}-{version}-Windows-Setup.exe`
 
 ### Step 4: GitHub Actions Trigger
 
@@ -145,7 +145,7 @@ After GitHub Actions completes:
 
 ```powershell
 # Using GitHub CLI
-gh run download --dir dist/github-artifacts --pattern "*-$PluginName"
+gh run download --dir release/github-artifacts --pattern "*-$PluginName"
 ```
 
 Or manually from GitHub Actions page.
@@ -174,7 +174,7 @@ Or manually from GitHub Actions page.
 Creates unified distribution package:
 
 ```
-dist/{PluginName}-v{version}/
+release/{PluginName}-v{version}/
 ├── {PluginName}-{version}-Windows-Setup.exe   (Windows installer)
 ├── {PluginName}-{version}-macOS.zip           (macOS bundles)
 ├── {PluginName}-{version}-Linux.zip           (Linux binaries)
@@ -186,7 +186,7 @@ dist/{PluginName}-v{version}/
 
 **Final ZIP:**
 ```
-dist/{PluginName}-v{version}.zip
+release/{PluginName}-v{version}.zip
 ```
 
 ## Installer Features
@@ -385,7 +385,7 @@ Always update:
 #    - Monitor build progress
 
 # 5. Download artifacts
-gh run download --dir dist/github-artifacts
+gh run download --dir release/github-artifacts
 
 # 6. Create final distribution
 #    - Windows installer created locally
