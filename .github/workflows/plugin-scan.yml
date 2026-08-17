@@ -20,3 +20,5 @@ jobs:
           plugin_dir: "."
           min_score: 80
           fail_on_severity: high
+          format: markdown
+          config: .plugin-scanner.toml

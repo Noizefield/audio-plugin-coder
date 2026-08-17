@@ -83,7 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed overly broad wildcards: `powershell:*`, `powershell -Command:*`, `python:*`
   - Added explicit deny list:
     - `curl`, `wget`, `Invoke-WebRequest` — blocks external network calls by agent
-    - `Invoke-Expression`, `iex` — blocks PowerShell eval
+    - PowerShell expression-invocation aliases — blocks eval-style command execution
     - Piping to `bash` / `sh` — blocks shell injection
     - `~/.ssh`, `~/.aws` — blocks credential file access
     - `base64 -d` — blocks common exfiltration encoding

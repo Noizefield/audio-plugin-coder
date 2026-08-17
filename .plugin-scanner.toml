@@ -1,0 +1,3 @@
+[scanner]
+# Vendor trees and example plugin UIs are not part of the APC agent package.
+ignore_paths = ["_tools/*", "plugins/*", "design_library/*"]

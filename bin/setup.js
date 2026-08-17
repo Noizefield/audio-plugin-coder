@@ -10,10 +10,9 @@
 
 'use strict';
 
-const { execSync, spawnSync } = require('child_process');
+const childProcess = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const os = require('os');
 const readline = require('readline');
 
 // ─── Colours (no deps) ───────────────────────────────────────────────────────
@@ -45,17 +44,36 @@ function banner() {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-function run(cmd, opts = {}) {
+function run(file, args = [], opts = {}) {
   try {
-    return execSync(cmd, { encoding: 'utf8', stdio: 'pipe', ...opts }).trim();
+    const output = childProcess.execFileSync(file, args, {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      windowsHide: true,
+      ...opts,
+    });
+    return String(output).trim();
   } catch {
     return null;
   }
 }
 
+function runInherited(file, args = [], opts = {}) {
+  try {
+    childProcess.execFileSync(file, args, {
+      stdio: 'inherit',
+      windowsHide: true,
+      ...opts,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function commandExists(cmd) {
   const which = process.platform === 'win32' ? 'where' : 'which';
-  return run(`${which} ${cmd}`) !== null;
+  return run(which, [cmd]) !== null;
 }
 
 function prompt(question) {
@@ -81,10 +99,10 @@ function checkTools(platform) {
   console.log(bold('\n── Checking required tools ─────────────────────────────\n'));
 
   const checks = [
-    { name: 'Git',      cmd: 'git',    test: () => run('git --version') },
-    { name: 'CMake',    cmd: 'cmake',  test: () => run('cmake --version') },
-    { name: 'VS Code',  cmd: 'code',   test: () => run('code --version') },
-    { name: 'Node.js',  cmd: 'node',   test: () => run('node --version') },
+    { name: 'Git',      cmd: 'git',    test: () => run('git', ['--version']) },
+    { name: 'CMake',    cmd: 'cmake',  test: () => run('cmake', ['--version']) },
+    { name: 'VS Code',  cmd: 'code',   test: () => run('code', ['--version']) },
+    { name: 'Node.js',  cmd: 'node',   test: () => run('node', ['--version']) },
   ];
 
   // Platform-specific build tool
@@ -92,19 +110,19 @@ function checkTools(platform) {
     checks.push({
       name: 'Visual Studio / MSBuild',
       cmd: 'msbuild',
-      test: () => run('msbuild -version'),
+      test: () => run('msbuild', ['-version']),
     });
   } else if (platform === 'macos') {
     checks.push({
       name: 'Xcode Command Line Tools',
       cmd: 'xcode-select',
-      test: () => run('xcode-select -p'),
+      test: () => run('xcode-select', ['-p']),
     });
   } else {
     checks.push({
       name: 'GCC / G++',
       cmd: 'g++',
-      test: () => run('g++ --version'),
+      test: () => run('g++', ['--version']),
     });
   }
 
@@ -141,8 +159,7 @@ async function cloneRepo(targetDir) {
   if (fs.existsSync(path.join(targetDir, '.git'))) {
     console.log(ok(`Repository already exists at ${bold(targetDir)}`));
     console.log(info('Pulling latest changes...'));
-    const result = spawnSync('git', ['pull', '--ff-only'], { cwd: targetDir, stdio: 'inherit' });
-    if (result.status !== 0) {
+    if (!runInherited('git', ['pull', '--ff-only'], { cwd: targetDir })) {
       console.log(warn('Could not pull — your local repo may have diverged. Skipping update.'));
     }
     return true;
@@ -157,13 +174,7 @@ async function cloneRepo(targetDir) {
   console.log(info(`Cloning into ${bold(targetDir)} ...`));
   console.log(dim(`  Source: ${repoUrl}\n`));
 
-  const result = spawnSync(
-    'git',
-    ['clone', '--depth', '1', '--recurse-submodules', repoUrl, targetDir],
-    { stdio: 'inherit' }
-  );
-
-  if (result.status !== 0) {
+  if (!runInherited('git', ['clone', '--depth', '1', '--recurse-submodules', repoUrl, targetDir])) {
     console.log(err('Clone failed. Check your internet connection and try again.'));
     return false;
   }
