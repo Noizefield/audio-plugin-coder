@@ -9,13 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- HOL Plugin Scanner GitHub Action, `SECURITY.md`, and Dependabot for the awesome-ai-plugins listing requirements.
+
 ### Changed
 
 - **Ship output is `release/`** (`paths.release_dir`), not `dist/`. Installer scripts, Inno Setup, GitHub Actions artifact collection, skills, and docs now honor the configured release directory. Existing `dist/` leftovers are gitignored.
-
-### Removed
-
-- AI co-author / "Created by" attribution from docs and troubleshooting notes. A commit hook strips injected co-author trailers.
 
 ---
 

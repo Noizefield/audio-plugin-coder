@@ -1,6 +1,6 @@
 {
   "name": "audio-plugin-coder",
-  "version": "0.3.0",
+  "version": "1.4.0",
   "description": "Build JUCE audio plugins with APC's phase-gated workflow.",
   "author": {
     "name": "Noizefield",
