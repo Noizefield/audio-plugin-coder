@@ -102,7 +102,7 @@ Write-Host "  GitHub Actions: $($PlatformsNeedingGitHub -join ', ')" -Foreground
 
 ```powershell
 # Check if Documentation folder exists
-$DocPath = "plugins\$PluginName\Documentation"
+$DocPath = Join-Path $PluginPath "Documentation"
 
 if (-not (Test-Path $DocPath)) {
     Write-Host "Creating Documentation folder..." -ForegroundColor Yellow

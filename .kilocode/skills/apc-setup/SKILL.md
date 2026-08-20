@@ -75,9 +75,11 @@ Confirm `_tools/JUCE` major ≥ 9 via system-check. Ask whether Visage UI suppor
 Ask (defaults recommended for first-time users):
 
 1. Keep `plugins/`, `build/`, `release/` inside the repo? **Yes (recommended)** / customize
-2. If custom **plugins** path: absolute or relative; create directory if missing; optionally create a junction/symlink at `./plugins` on Windows (`New-Item -ItemType Junction`) or symlink on Unix for tool compatibility
-3. Custom **build** path: warn against OneDrive/Dropbox/iCloud
-4. Custom **release** path for installers/zips (default `release/`)
+2. If custom **plugins** path: absolute or relative to the repo root (e.g. `../apc_plugins`); create directory if missing. Scripts and APC workflows resolve via `Get-ApcPluginPath` / `apc_plugin_path` — a junction/symlink at `./plugins` is **optional** (legacy convenience only).
+3. Custom **build** path (e.g. `../apc_builds`): warn against OneDrive/Dropbox/iCloud
+4. Custom **release** path for installers/zips (e.g. `../apc_releases`; default `release/`)
+
+Relative paths are resolved from the APC repo root. Absolute paths are also supported.
 
 ### 5. UI framework default
 

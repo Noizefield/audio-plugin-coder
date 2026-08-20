@@ -72,7 +72,7 @@ plugins/[PluginName]/Documentation/
 
 1. **Create Documentation folder** during development:
    ```powershell
-   New-Item -ItemType Directory -Path "plugins\MyPlugin\Documentation" -Force
+   New-Item -ItemType Directory -Path "$PluginPath\Documentation" -Force
    ```
 
 2. **Add your documentation files**:
@@ -91,7 +91,7 @@ plugins/[PluginName]/Documentation/
 
 ```powershell
 # Edit your docs
-notepad plugins\MyPlugin\Documentation\USER_MANUAL.md
+notepad $PluginPath\Documentation\USER_MANUAL.md
 
 # Rebuild installer (picks up changes automatically)
 .\scripts\installer\create-windows-installer.ps1 -PluginName MyPlugin -Version 1.0.1

@@ -8,7 +8,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$PluginPath = "plugins\$PluginName"
+. "$PSScriptRoot\lib\Get-ApcPaths.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 $SourcePath = "$PluginPath\Source"
 $EditorCpp = "$SourcePath\PluginEditor.cpp"
 $EditorH = "$SourcePath\PluginEditor.h"

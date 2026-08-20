@@ -10,7 +10,7 @@
 
 ## Summary
 
-Plugin loads in DAW but displays only a black screen with no UI elements. The WebView component is created successfully but HTML/JS resources fail to load because the resource provider is trying to load from the file system using an incorrect working directory.
+Plugin loads in DAW but displays only a black screen with no UI elements. The WebView component is created successfully but the HTML/JS resources fail to load because the resource provider is trying to load from the file system using an incorrect working directory.
 
 ---
 
@@ -40,7 +40,7 @@ juce::File::getCurrentWorkingDirectory()
 
 **Problem:** When running in a DAW, `getCurrentWorkingDirectory()` is the DAW's directory (e.g., `C:\Program Files\Reaper`), not the plugin development directory. The files don't exist there, so resources fail to load.
 
-**Why BinaryData wasn't being used:** The `getResource()` function was written to load from the file system for development convenience, but never switched to using the embedded `BinaryData` that CMake generated.
+**Why BinaryData wasn't being used:** The `getResource()` function was written to load from file system for development convenience, but never switched to using the embedded `BinaryData` that CMake generated.
 
 ---
 

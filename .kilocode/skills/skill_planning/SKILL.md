@@ -1,21 +1,21 @@
 # SKILL: ARCHITECTURE & PLANNING
 **Goal:** Define DSP architecture, complexity assessment, and implementation strategy
 **Trigger:** `/plan [Name]`
-**Input:** Reads `plugins/[Name]/.ideas/creative-brief.md` and `parameter-spec.md`
-**Output Location:** `plugins/[Name]/.ideas/`
+**Input:** Reads `$PluginPath/.ideas/creative-brief.md` and `parameter-spec.md`
+**Output Location:** `$PluginPath/.ideas/`
 
 ---
 
 ## 🎯 PHASE 2: PLAN (Architecture & Strategy)
 
 **Prerequisites:**
-- `plugins/[Name]/.ideas/creative-brief.md` exists
-- `plugins/[Name]/.ideas/parameter-spec.md` exists
+- `$PluginPath/.ideas/creative-brief.md` exists
+- `$PluginPath/.ideas/parameter-spec.md` exists
 - Phase 1 (DREAM) complete
 
 **Output Files:**
-- `plugins/[Name]/.ideas/architecture.md` - DSP component design
-- `plugins/[Name]/.ideas/plan.md` - Implementation strategy and complexity assessment
+- `$PluginPath/.ideas/architecture.md` - DSP component design
+- `$PluginPath/.ideas/plan.md` - Implementation strategy and complexity assessment
 
 ---
 
@@ -23,11 +23,11 @@
 
 ### 1.1 Read Input Contracts
 Read these files in parallel:
-- `plugins/[Name]/.ideas/creative-brief.md` - Plugin concept and behavior
-- `plugins/[Name]/.ideas/parameter-spec.md` - Parameter definitions and ranges
+- `$PluginPath/.ideas/creative-brief.md` - Plugin concept and behavior
+- `$PluginPath/.ideas/parameter-spec.md` - Parameter definitions and ranges
 
 ### 1.2 Define DSP Architecture
-Create `plugins/[Name]/.ideas/architecture.md` with this structure:
+Create `$PluginPath/.ideas/architecture.md` with this structure:
 
 ```markdown
 # DSP Architecture Specification
@@ -88,7 +88,7 @@ Rate the plugin complexity (1-5):
 ## 📊 STEP 2: IMPLEMENTATION PLANNING
 
 ### 2.1 Create Implementation Plan
-Create `plugins/[Name]/.ideas/plan.md` with this structure:
+Create `$PluginPath/.ideas/plan.md` with this structure:
 
 ```markdown
 # Implementation Plan
@@ -183,12 +183,13 @@ Use the state management system to update project state:
 ```powershell
 # Import state management module
 . "$PSScriptRoot\..\scripts\state-management.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 ```
 
 **Validate prerequisites:**
 ```powershell
 # Check that ideation phase is complete
-if (-not (Test-PluginState -PluginPath "plugins\[Name]" -RequiredPhase "ideation_complete" -RequiredFiles @(".ideas/creative-brief.md", ".ideas/parameter-spec.md"))) {
+if (-not (Test-PluginState -PluginPath $PluginPath -RequiredPhase "ideation_complete" -RequiredFiles @(".ideas/creative-brief.md", ".ideas/parameter-spec.md"))) {
     Write-Error "Prerequisites not met. Complete ideation phase first."
     exit 1
 }
@@ -197,10 +198,10 @@ if (-not (Test-PluginState -PluginPath "plugins\[Name]" -RequiredPhase "ideation
 **Update state with framework selection:**
 ```powershell
 # Use centralized framework selection
-Set-PluginFramework -PluginPath "plugins\[Name]" -Framework "[visage/webview]" -Rationale "[Explain framework choice]"
+Set-PluginFramework -PluginPath $PluginPath -Framework "[visage/webview]" -Rationale "[Explain framework choice]"
 
 # Update state with planning completion
-Complete-Phase -PluginPath "plugins\[Name]" -Phase "plan" -Updates @{
+Complete-Phase -PluginPath $PluginPath -Phase "plan" -Updates @{
   "complexity_score" = [1-5]
   "framework_selection.implementation_strategy" = "[single-pass/phased]"
   "validation.architecture_defined" = $true
@@ -259,9 +260,9 @@ Complete-Phase -PluginPath "plugins\[Name]" -Phase "plan" -Updates @{
 
 ### 4.1 Validation Checklist
 Verify all required files exist:
-- [ ] `plugins/[Name]/.ideas/architecture.md` created
-- [ ] `plugins/[Name]/.ideas/plan.md` created
-- [ ] `plugins/[Name]/status.json` updated with framework selection
+- [ ] `$PluginPath/.ideas/architecture.md` created
+- [ ] `$PluginPath/.ideas/plan.md` created
+- [ ] `$PluginPath/status.json` updated with framework selection
 - [ ] Complexity score assigned and justified
 
 ### 4.2 Decision Menu
@@ -299,9 +300,9 @@ Choose (1-4): _
 - Manual trigger via `/plan [Name]`
 
 **Creates:**
-- `plugins/[Name]/.ideas/architecture.md` - DSP component design
-- `plugins/[Name]/.ideas/plan.md` - Implementation strategy
-- Updates `plugins/[Name]/status.json` - Framework selection
+- `$PluginPath/.ideas/architecture.md` - DSP component design
+- `$PluginPath/.ideas/plan.md` - Implementation strategy
+- Updates `$PluginPath/status.json` - Framework selection
 
 **Next phase:**
 - Phase 3: DESIGN (if user chooses to continue)

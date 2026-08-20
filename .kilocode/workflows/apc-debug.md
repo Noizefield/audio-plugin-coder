@@ -11,8 +11,9 @@ description: "Autonomous debugging and fault isolation for the plugin"
 **Prerequisites:**
 ```powershell
 . "$PSScriptRoot\..\scripts\state-management.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 
-$state = Get-PluginState -PluginPath "plugins\$PluginName"
+$state = Get-PluginState -PluginPath $PluginPath
 
 if ($state.current_phase -ne "code_complete" -and $state.current_phase -ne "test_failed") {
     Write-Error "Debugging requires completed implementation or failed tests."

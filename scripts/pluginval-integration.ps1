@@ -1,6 +1,9 @@
 # PluginVal Integration Module for APC Build Process
 # Automates plugin validation testing with PluginVal
 
+$script:ApcPluginValScriptRoot = $PSScriptRoot
+. (Join-Path $script:ApcPluginValScriptRoot "lib\Get-ApcPaths.ps1")
+
 function Test-WithPluginVal {
     param(
         [string]$PluginPath,
@@ -97,7 +100,8 @@ function Test-WithPluginVal {
         $testResults.Categories = $testCategories
 
         # Update status.json
-        Update-PluginState -PluginPath "plugins/$PluginName" -Updates @{
+        $pluginStatePath = Get-ApcPluginPath -PluginName $PluginName
+        Update-PluginState -PluginPath $pluginStatePath -Updates @{
             "validation.tests_passed" = $passed
             "validation.pluginval_results" = @{
                 passed = $passed
@@ -144,7 +148,7 @@ function Test-WithPluginVal {
 function Get-PluginValReport {
     param([string]$PluginName)
 
-    $state = Get-PluginState -PluginPath "plugins/$PluginName"
+    $state = Get-PluginState -PluginPath (Get-ApcPluginPath -PluginName $PluginName)
 
     if ($state.validation.pluginval_results) {
         $results = $state.validation.pluginval_results

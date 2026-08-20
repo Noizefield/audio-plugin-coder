@@ -1,4 +1,4 @@
----
+﻿---
 name: juce-webview-windows
 description: Quick-start guide for building JUCE 8 audio plugins with WebView2 UIs on Windows. Covers essential setup, critical member ordering, and step-by-step implementation workflow.
 ---
@@ -9,7 +9,7 @@ description: Quick-start guide for building JUCE 8 audio plugins with WebView2 U
 
 ---
 
-## 🎯 Quick Overview
+## ðŸŽ¯ Quick Overview
 
 Build audio plugin UIs using modern web technologies (HTML/CSS/JavaScript) instead of C++ JUCE components.
 
@@ -27,9 +27,9 @@ Build audio plugin UIs using modern web technologies (HTML/CSS/JavaScript) inste
 
 ---
 
-## 🔴 CRITICAL: Member Declaration Order (PREVENTS DAW CRASHES)
+## ðŸ”´ CRITICAL: Member Declaration Order (PREVENTS DAW CRASHES)
 
-**⚠️ #1 CAUSE OF WEBVIEW PLUGIN CRASHES - MUST FOLLOW**
+**âš ï¸ #1 CAUSE OF WEBVIEW PLUGIN CRASHES - MUST FOLLOW**
 
 ### The Rule
 
@@ -41,10 +41,10 @@ C++ destroys members in **REVERSE order of declaration**. WebView references rel
 private:
     YourAudioProcessor& audioProcessor;
 
-    // ═══════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // CRITICAL: Destruction Order = Reverse of Declaration
-    // Order: Relays → WebView → Attachments
-    // ═══════════════════════════════════════════════════════════════
+    // Order: Relays â†’ WebView â†’ Attachments
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     // 1. RELAYS FIRST (destroyed last)
     juce::WebSliderRelay gainRelay { "GAIN" };
@@ -58,24 +58,24 @@ private:
     std::unique_ptr<juce::WebSliderParameterAttachment> frequencyAttachment;
 ```
 
-**Wrong Order → DAW Crash on Unload**
+**Wrong Order â†’ DAW Crash on Unload**
 
 See: [`..agent/troubleshooting/resolutions/webview-member-order-crash.md`](../../troubleshooting/resolutions/webview-member-order-crash.md)
 
 ---
 
-## 📋 Step-by-Step Implementation
+## ðŸ“‹ Step-by-Step Implementation
 
 ### Step 1: Create Web UI Files
 
 ```
 plugins/YourPlugin/
-└── Source/
-    └── ui/
-        └── public/
-            ├── index.html
-            └── js/
-                └── index.js
+â””â”€â”€ Source/
+    â””â”€â”€ ui/
+        â””â”€â”€ public/
+            â”œâ”€â”€ index.html
+            â””â”€â”€ js/
+                â””â”€â”€ index.js
 ```
 
 ### Step 2: Write index.html
@@ -121,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const gainSlider = document.getElementById("gainSlider");
     const gainValue = document.getElementById("gainValue");
 
-    // User interaction → Update C++
+    // User interaction â†’ Update C++
     gainSlider.addEventListener("mousedown", () => gainState.sliderDragStarted());
     gainSlider.addEventListener("mouseup", () => gainState.sliderDragEnded());
     gainSlider.addEventListener("input", () => {
@@ -129,7 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
         gainValue.textContent = gainSlider.value;
     });
 
-    // C++ automation → Update UI
+    // C++ automation â†’ Update UI
     gainState.valueChangedEvent.addListener(() => {
         const value = gainState.getNormalisedValue();
         gainSlider.value = value;
@@ -204,7 +204,7 @@ public:
 private:
     YourAudioProcessor& audioProcessor;
 
-    // CRITICAL: Relays → WebView → Attachments
+    // CRITICAL: Relays â†’ WebView â†’ Attachments
     juce::WebSliderRelay gainRelay { ParameterIDs::GAIN };
     juce::WebSliderRelay frequencyRelay { ParameterIDs::FREQUENCY };
 
@@ -342,20 +342,20 @@ juce::String YourPluginEditor::getExtension(juce::String filename)
 ### Step 9: Test
 
 1. Load plugin in DAW
-2. Open plugin window → UI should display
-3. Move sliders → parameters should update
-4. Automate in DAW → UI should update
-5. **Close window → should NOT crash**
-6. Unload plugin → should NOT crash
+2. Open plugin window â†’ UI should display
+3. Move sliders â†’ parameters should update
+4. Automate in DAW â†’ UI should update
+5. **Close window â†’ should NOT crash**
+6. Unload plugin â†’ should NOT crash
 
 ---
 
-## ✅ Validation Checklist
+## âœ… Validation Checklist
 
 Before considering your WebView plugin complete:
 
 ### Code Structure
-- [ ] Member order: Relays → WebView → Attachments
+- [ ] Member order: Relays â†’ WebView â†’ Attachments
 - [ ] Destruction order comment added to header
 - [ ] All relays are direct members (not `unique_ptr`)
 - [ ] WebView and attachments are `unique_ptr`
@@ -376,7 +376,7 @@ Before considering your WebView plugin complete:
 - [ ] `JUCE_USE_WIN_WEBVIEW2_WITH_STATIC_LINKING=1` defined
 
 ### Resource Provider
-- [ ] Handles "/" → "index.html" mapping
+- [ ] Handles "/" â†’ "index.html" mapping
 - [ ] Iterates BinaryData when direct lookup fails
 - [ ] Correct MIME types returned
 - [ ] Returns `std::nullopt` for missing resources
@@ -390,23 +390,23 @@ Before considering your WebView plugin complete:
 - [ ] Plugin loads without errors
 - [ ] UI displays correctly
 - [ ] Parameters work (user interaction)
-- [ ] Automation works (DAW → UI updates)
+- [ ] Automation works (DAW â†’ UI updates)
 - [ ] **Window closes without crash**
 - [ ] **Plugin unloads without crash**
 - [ ] Multiple instances work
 
 ---
 
-## ⚠️ Common Mistakes
+## âš ï¸ Common Mistakes
 
-### ❌ Wrong Member Order
+### âŒ Wrong Member Order
 ```cpp
 // WRONG - Crashes on unload!
 std::unique_ptr<juce::WebBrowserComponent> webView;
 juce::WebSliderRelay relay { "PARAM" };
 ```
 
-### ❌ Missing .withOptionsFrom()
+### âŒ Missing .withOptionsFrom()
 ```cpp
 // WRONG - Parameter binding won't work!
 webView = std::make_unique<juce::WebBrowserComponent>(
@@ -415,20 +415,20 @@ webView = std::make_unique<juce::WebBrowserComponent>(
 );
 ```
 
-### ❌ Wrong MIME Type
+### âŒ Wrong MIME Type
 ```cpp
 // WRONG - JS files won't execute!
 return Resource{ data, "text/html" }; // For a .js file!
 ```
 
-### ❌ Creating Attachments Before WebView
+### âŒ Creating Attachments Before WebView
 ```cpp
 // WRONG - Order matters!
 gainAttachment = std::make_unique<...>(...);  // Too early
 webView = std::make_unique<...>(...);         // Too late
 ```
 
-### ❌ Not Embedding All Files
+### âŒ Not Embedding All Files
 ```cmake
 # WRONG - Missing JS files!
 juce_add_binary_data(Plugin_WebUI
@@ -440,7 +440,7 @@ juce_add_binary_data(Plugin_WebUI
 
 ---
 
-## 📚 Additional Resources
+## ðŸ“š Additional Resources
 
 For detailed technical information, see the reference documents:
 
@@ -452,7 +452,7 @@ For detailed technical information, see the reference documents:
 
 ---
 
-## 🔗 Related Documentation
+## ðŸ”— Related Documentation
 
 - **Troubleshooting:** `..agent/troubleshooting/resolutions/webview-member-order-crash.md`
 - **Templates:** `templates/webview/`

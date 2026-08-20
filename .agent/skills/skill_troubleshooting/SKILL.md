@@ -1,8 +1,14 @@
-# SKILL: TROUBLESHOOTING & ISSUE RESOLUTION
+﻿# SKILL: TROUBLESHOOTING & ISSUE RESOLUTION
 
 ## STEP 1: CHECK KNOWN ISSUES FIRST
 
-**Before trying random solutions:**
+**Before trying random solutions:** search `..agent/troubleshooting/known-issues.yaml`.
+
+WebView symptom shortcuts:
+- Black screen â†’ webview-007 / webview-010
+- Messy / unstyled / overlapping HTML â†’ **webview-011** (`resolutions/webview-011-unstyled-external-css.md`)
+- Knob dots, no arcs â†’ webview-008
+
 ```powershell
 # Search known issues database
 $errorPattern = "duplicate target juce"
@@ -13,7 +19,7 @@ $matches = $knownIssues.issues | Where-Object {
 }
 
 if ($matches) {
-    Write-Host "✓ Known issue found: $($matches.title)"
+    Write-Host "âœ“ Known issue found: $($matches.title)"
     Write-Host "Resolution: $($matches.resolution_file)"
     
     # Load and apply solution

@@ -102,7 +102,8 @@ function Test-StateManagementSystem {
 
     # 5. Test Plugin State Creation
     Write-Host "5. Testing plugin state creation..." -ForegroundColor Yellow
-    $testPluginPath = Join-Path $RepoRoot "plugins\$TestPluginName"
+    . (Join-Path $RepoRoot "scripts\lib\Get-ApcPaths.ps1")
+    $testPluginPath = Get-ApcPluginPath -PluginName $TestPluginName -RepoRoot $RepoRoot
     
     # Clean previous run
     if (Test-Path $testPluginPath) { 

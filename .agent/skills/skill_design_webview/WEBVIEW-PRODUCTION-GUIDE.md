@@ -1,17 +1,17 @@
-# JUCE 8 WebView Plugin - Production Guide
+﻿# JUCE 8 WebView Plugin - Production Guide
 **Complete guide based on CloudWash development (2026-01-26)**
 
 **Platform:** Windows 11 | JUCE 8 | WebView2 | CMake
 
 ---
 
-## 🚨 CRITICAL: ES6 Modules DO NOT WORK in WebView
+## ðŸš¨ CRITICAL: ES6 Modules DO NOT WORK in WebView
 
-**⚠️ #1 ISSUE WITH WEBVIEW PLUGINS**
+**âš ï¸ #1 ISSUE WITH WEBVIEW PLUGINS**
 
 ### The Problem
 ```html
-<!-- ❌ THIS WILL FAIL SILENTLY -->
+<!-- âŒ THIS WILL FAIL SILENTLY -->
 <script type="module" src="js/index.js"></script>
 ```
 
@@ -26,7 +26,7 @@
 **ALL JavaScript must be inline in index.html**
 
 ```html
-<!-- ✅ CORRECT -->
+<!-- âœ… CORRECT -->
 <script>
     // All code directly in HTML
     // No imports, no modules
@@ -37,16 +37,16 @@
 
 ---
 
-## 📁 File Structure
+## ðŸ“ File Structure
 
 ```
 plugins/YourPlugin/Source/ui/public/
-├── index.html              ← PRODUCTION (all JS inline, 900+ lines)
-├── test-local.html         ← BROWSER TEST (same as index.html)
-└── js/
-    ├── index.js           ← NOT USED (reference only)
-    └── juce/
-        └── index.js       ← NOT USED (copy into index.html)
+â”œâ”€â”€ index.html              â† PRODUCTION (all JS inline, 900+ lines)
+â”œâ”€â”€ test-local.html         â† BROWSER TEST (same as index.html)
+â””â”€â”€ js/
+    â”œâ”€â”€ index.js           â† NOT USED (reference only)
+    â””â”€â”€ juce/
+        â””â”€â”€ index.js       â† NOT USED (copy into index.html)
 ```
 
 **Key Points:**
@@ -56,7 +56,7 @@ plugins/YourPlugin/Source/ui/public/
 
 ---
 
-## 🏗️ Complete Production HTML Structure
+## ðŸ—ï¸ Complete Production HTML Structure
 
 ### 1. HTML Template
 ```html
@@ -125,7 +125,7 @@ plugins/YourPlugin/Source/ui/public/
 
 ---
 
-## 🎨 Knob Rendering Pattern
+## ðŸŽ¨ Knob Rendering Pattern
 
 ### SVG-Based Circular Knobs
 ```javascript
@@ -308,14 +308,14 @@ function initializeKnobs() {
 ```
 
 **CRITICAL:**
-- ✅ NO CSS transitions on `.knob-arc` (causes jumpiness)
-- ✅ Use `e.preventDefault()` on mousedown (prevents text selection)
-- ✅ `fromJuce` flag prevents feedback loops
-- ✅ Try/catch around all JUCE calls (graceful degradation)
+- âœ… NO CSS transitions on `.knob-arc` (causes jumpiness)
+- âœ… Use `e.preventDefault()` on mousedown (prevents text selection)
+- âœ… `fromJuce` flag prevents feedback loops
+- âœ… Try/catch around all JUCE calls (graceful degradation)
 
 ---
 
-## 📊 Audio Meters (Real-Time)
+## ðŸ“Š Audio Meters (Real-Time)
 
 ### The Problem
 CloudWash meters show random animation because they're not connected to real audio.
@@ -420,7 +420,7 @@ function updateMeter(meter, level) {
 
 ---
 
-## ⚙️ JUCE Library Inline Template
+## âš™ï¸ JUCE Library Inline Template
 
 **File:** Copy from `js/juce/index.js` and modify:
 
@@ -656,7 +656,7 @@ window.Juce = {
 
 ---
 
-## 🧪 Testing Workflow
+## ðŸ§ª Testing Workflow
 
 ### 1. Browser Test (Before Building)
 ```html
@@ -667,7 +667,7 @@ window.Juce = {
 <!-- Add test banner at top -->
 <body>
     <div style="background: #FFC107; padding: 8px; text-align: center;">
-        ⚠️ BROWSER TEST - No JUCE Backend
+        âš ï¸ BROWSER TEST - No JUCE Backend
     </div>
     <!-- Rest of UI -->
 </body>
@@ -675,11 +675,11 @@ window.Juce = {
 ```
 
 Open `test-local.html` in Chrome/Edge:
-- ✅ All knobs render (arcs + dots)
-- ✅ Knobs respond to drag
-- ✅ Mode tabs switch
-- ✅ Buttons toggle
-- ✅ No console errors
+- âœ… All knobs render (arcs + dots)
+- âœ… Knobs respond to drag
+- âœ… Mode tabs switch
+- âœ… Buttons toggle
+- âœ… No console errors
 
 ### 2. Build Plugin
 ```powershell
@@ -687,16 +687,16 @@ Open `test-local.html` in Chrome/Edge:
 ```
 
 ### 3. Test in DAW
-- ✅ Plugin loads
-- ✅ UI displays correctly
-- ✅ Parameters respond to knobs
-- ✅ DAW can automate parameters
-- ✅ Parameters save/restore
-- ✅ No crashes on close
+- âœ… Plugin loads
+- âœ… UI displays correctly
+- âœ… Parameters respond to knobs
+- âœ… DAW can automate parameters
+- âœ… Parameters save/restore
+- âœ… No crashes on close
 
 ---
 
-## ✅ Production Checklist
+## âœ… Production Checklist
 
 ### HTML File
 - [ ] All JavaScript inline (no `<script src="...">`)
@@ -721,10 +721,10 @@ Open `test-local.html` in Chrome/Edge:
 - [ ] SliderState for numeric params
 - [ ] ToggleState for boolean params
 - [ ] Mode/dropdown params use SliderState with normalization
-- [ ] Bi-directional sync (UI ↔ JUCE)
+- [ ] Bi-directional sync (UI â†” JUCE)
 
 ### C++ Side
-- [ ] Member order: Relays → WebView → Attachments
+- [ ] Member order: Relays â†’ WebView â†’ Attachments
 - [ ] All relays registered with `.withOptionsFrom()`
 - [ ] Resource provider returns inline HTML
 - [ ] BinaryData includes index.html only (no JS files)
@@ -746,7 +746,7 @@ juce_add_binary_data(YourPlugin_WebUI
 
 ---
 
-## 🐛 Common Issues & Solutions
+## ðŸ› Common Issues & Solutions
 
 ### Issue: Knobs glitchy/jumpy when dragging
 **Cause:** CSS transitions on SVG paths
@@ -769,13 +769,18 @@ juce_add_binary_data(YourPlugin_WebUI
 **Cause:** ES6 modules or missing inline JS
 **Solution:** Ensure ALL JavaScript is inline in index.html
 
+### Issue: UI loads but looks messy / unstyled (default buttons, overlap)
+**Cause:** External CSS (`<link rel="stylesheet">`) and/or `getResource()` serving `index.html` for CSS URLs. Distinct from black screen.
+**Solution:** Inline ALL CSS in index.html. Map BinaryData by path and basename. See webview-011.
+**Reference:** `..agent/troubleshooting/resolutions/webview-011-unstyled-external-css.md`
+
 ### Issue: Parameters don't save/restore
 **Cause:** Parameter IDs mismatch between JS and C++
 **Solution:** Verify IDs match exactly (case-sensitive)
 
 ---
 
-## 📚 Reference
+## ðŸ“š Reference
 
 ### Working Example
 **CloudWash Plugin:**
@@ -788,13 +793,13 @@ juce_add_binary_data(YourPlugin_WebUI
 ### Key Files
 ```
 plugins/YourPlugin/
-├── Source/
-│   ├── PluginProcessor.h/cpp
-│   ├── PluginEditor.h/cpp
-│   └── ui/public/
-│       ├── index.html          ← PRODUCTION (all inline)
-│       └── test-local.html     ← BROWSER TEST
-└── CMakeLists.txt
+â”œâ”€â”€ Source/
+â”‚   â”œâ”€â”€ PluginProcessor.h/cpp
+â”‚   â”œâ”€â”€ PluginEditor.h/cpp
+â”‚   â””â”€â”€ ui/public/
+â”‚       â”œâ”€â”€ index.html          â† PRODUCTION (all inline)
+â”‚       â””â”€â”€ test-local.html     â† BROWSER TEST
+â””â”€â”€ CMakeLists.txt
 ```
 
 ---
@@ -803,3 +808,4 @@ plugins/YourPlugin/
 **Last Updated:** 2026-01-26
 **Based On:** CloudWash Plugin Development
 **Status:** Production Ready
+

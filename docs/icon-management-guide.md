@@ -172,10 +172,10 @@ explorer build\plugins\YourPlugin\YourPlugin_artefacts\Release\Standalone
 
 ## Example: Complete Setup
 
-### File: `plugins/MyPlugin/Assets/icon.ico`
+### File: `$PluginPath/Assets/icon.ico`
 Multi-resolution Windows icon file
 
-### File: `plugins/MyPlugin/CMakeLists.txt`
+### File: `$PluginPath/CMakeLists.txt`
 ```cmake
 juce_add_plugin(MyPlugin
     COMPANY_NAME "APC"

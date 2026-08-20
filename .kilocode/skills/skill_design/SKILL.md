@@ -6,7 +6,7 @@ description: Create the Visual Interface for audio plugins. Use when user mentio
 
 # SKILL: GUI DESIGN
 **Goal:** Create the Visual Interface for audio plugins.
-**Output Location:** `plugins/[Name]/Design/` and `Source/`
+**Output Location:** `$PluginPath/Design/` and `Source/`
 
 ---
 
@@ -18,18 +18,19 @@ Check if `design_library/manifest.json` exists and count available designs.
 ```powershell
 # Import state management module
 . "$PSScriptRoot\..\scripts\state-management.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 ```
 
 **Validate prerequisites:**
 ```powershell
 # Check that planning phase is complete and framework is selected
-if (-not (Test-PluginState -PluginPath "plugins\[Name]" -RequiredPhase "plan_complete" -RequiredFiles @(".ideas/architecture.md", ".ideas/plan.md"))) {
+if (-not (Test-PluginState -PluginPath $PluginPath -RequiredPhase "plan_complete" -RequiredFiles @(".ideas/architecture.md", ".ideas/plan.md"))) {
     Write-Error "Prerequisites not met. Complete planning phase first with framework selection."
     exit 1
 }
 
 # Get current state to check framework
-$state = Get-PluginState -PluginPath "plugins\[Name]"
+$state = Get-PluginState -PluginPath $PluginPath
 if ($state.ui_framework -eq "pending") {
     Write-Error "UI framework not selected. Complete planning phase first."
     exit 1
@@ -233,7 +234,7 @@ function Apply-DesignFromLibrary {
 
 **Create design specification files (all frameworks):**
 
-1. **`plugins/[Name]/Design/v1-ui-spec.md`** - Structured design plan:
+1. **`$PluginPath/Design/v1-ui-spec.md`** - Structured design plan:
 ```markdown
    # UI Specification v1
    
@@ -257,7 +258,7 @@ function Apply-DesignFromLibrary {
    [Key visual decisions, inspirations, constraints]
 ```
 
-2. **`plugins/[Name]/Design/v1-style-guide.md`** - Visual reference:
+2. **`$PluginPath/Design/v1-style-guide.md`** - Visual reference:
    - Hex codes for all colors
    - Font choices and sizes
    - Spacing/padding rules
@@ -267,7 +268,7 @@ function Apply-DesignFromLibrary {
 3. **Framework-specific preview artifacts:**
 
 ### If `ui_framework == webview`
-Generate **`plugins/[Name]/Design/v1-test.html`** - **WORKING HTML PREVIEW**:
+Generate **`$PluginPath/Design/v1-test.html`** - **WORKING HTML PREVIEW**:
    
    **CRITICAL:** For WebView framework, this HTML MUST be production-ready with proper JUCE integration.
 
@@ -346,8 +347,8 @@ Generate a Visage preview scaffold now? (Y/n)
 Default: **Yes** (generate unless user explicitly says no).
 
 If yes, generate:
-- `plugins/[Name]/Source/VisageControls.h` using `templates/visage/VisageControls.h.template`
-- `plugins/[Name]/Source/PluginEditor.h` and `PluginEditor.cpp` using `templates/visage/`
+- `$PluginPath/Source/VisageControls.h` using `templates/visage/VisageControls.h.template`
+- `$PluginPath/Source/PluginEditor.h` and `PluginEditor.cpp` using `templates/visage/`
 
 These files are **preview-only** and will be refined during `/impl`.
 
@@ -355,9 +356,9 @@ These files are **preview-only** and will be refined during `/impl`.
 ```
 🎨 Design specification v1 created
 Files:
-   - plugins/[Name]/Design/v1-ui-spec.md
-   - plugins/[Name]/Design/v1-style-guide.md
-   - WebView: plugins/[Name]/Design/v1-test.html (preview in browser)
+   - $PluginPath/Design/v1-ui-spec.md
+   - $PluginPath/Design/v1-style-guide.md
+   - WebView: $PluginPath/Design/v1-test.html (preview in browser)
    - Visage: Source/VisageControls.h + PluginEditor.* (preview via preview-design.ps1)
 
 ⚠️ STOP HERE - Do NOT create Source/ files yet!
@@ -378,7 +379,7 @@ Choose (1-4): _
 **After design approval (Option 2):**
 ```powershell
 # Mark design phase complete
-Complete-Phase -PluginPath "plugins\[Name]" -Phase "design" -Updates @{
+Complete-Phase -PluginPath $PluginPath -Phase "design" -Updates @{
   "validation.design_complete" = $true
 }
 
@@ -391,7 +392,7 @@ Write-Host "Run /impl [Name] to start building the plugin."
 ## ✅ PHASE 4: COMPLETION
 
 1. **Commit files to git**
-2. **Update `plugins/[Name]/.ideas/todo.md`** - Check off GUI tasks
+2. **Update `$PluginPath/.ideas/todo.md`** - Check off GUI tasks
 3. **Update `PLUGINS.md`** - Mark design stage complete
 
 **Present instructions:**
@@ -400,7 +401,7 @@ GUI files generated and committed!
 
 Next steps:
 - Preview Visage: powershell -ExecutionPolicy Bypass -File .\scripts\preview-design.ps1 -PluginName [Name]
-- Preview WebView: Open plugins/[Name]/Design/index.html in browser
+- Preview WebView: Open $PluginPath/Design/index.html in browser
 - Build: Follow standard build process
 
 Files created:
@@ -428,13 +429,13 @@ Files created:
 - During plugin redesign
 
 **Creates:**
-- Design specs: `plugins/[Name]/Design/v[N]-*.md`
+- Design specs: `$PluginPath/Design/v[N]-*.md`
 - Source code: `Source/PluginEditor.{h,cpp}`
 - Optional: `Source/VisageControls.h`, `v[N]-ui.html`
 
 **Updates:**
 - `PLUGINS.md` - Design status
-- `plugins/[Name]/.ideas/todo.md` - Task completion
+- `$PluginPath/.ideas/todo.md` - Task completion
 
 ---
 

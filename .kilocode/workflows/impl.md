@@ -1,9 +1,10 @@
----
-description: "Deprecated alias — use /apc-impl"
+﻿---
+description: "Deprecated alias â€” use /apc-impl"
 ---
 
 # Deprecated: `/impl`
 
 Prefer **`/apc-impl`**. Short names collide with other frameworks and host builtins.
 
-Load and execute `.kilocode/workflows/apc-impl.md`.
+Load and execute `..kilocode/workflows/apc-impl.md`.
+

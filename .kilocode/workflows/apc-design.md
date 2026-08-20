@@ -1,4 +1,4 @@
----
+﻿---
 description: "PHASE 3: Design - Create UI mockups based on selected framework"
 ---
 
@@ -11,8 +11,9 @@ description: "PHASE 3: Design - Create UI mockups based on selected framework"
 **Prerequisites:**
 ```powershell
 . "$PSScriptRoot\..\scripts\state-management.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 
-$state = Get-PluginState -PluginPath "plugins\$PluginName"
+$state = Get-PluginState -PluginPath $PluginPath
 
 if ($state.current_phase -ne "plan_complete") {
     Write-Error "Planning phase not complete. Run /apc-plan first."
@@ -28,7 +29,7 @@ if ($state.ui_framework -eq "pending") {
 **Framework Router:**
 
 **FOR ALL FRAMEWORKS (Visage and WebView):**
-- Load `..kilocode\skills\design\SKILL.md`
+- Load `...kilocode\skills\design\SKILL.md`
 - Create framework-agnostic design specifications and a framework-appropriate preview
 - NO production framework-specific code generation
 - Design phase focuses on creative iteration and approval
@@ -44,14 +45,15 @@ if ($state.ui_framework -eq "pending") {
 
 **Completion:**
 ```
-Γ£à Design phase complete!
+Î“Â£Ã  Design phase complete!
 
 Framework: [Visage/WebView]
 Design version: v1
 
 Preview commands:
 - Visage: .\scripts\preview-design.ps1 -PluginName [Name]
-- WebView: Open plugins\[Name]\Design\index.html in browser
+- WebView: Open `$PluginPath/Design/index.html` in browser
 
 Next step: /apc-impl [Name] (after design approval)
 ```
+

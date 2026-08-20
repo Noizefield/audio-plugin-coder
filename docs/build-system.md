@@ -606,7 +606,7 @@ cmake -S . -B build  # Don't run directly
 powershell -ExecutionPolicy Bypass -File .\scripts\build-and-install.ps1 -PluginName MyPlugin
 
 # Bad (from plugin directory)
-cd plugins/MyPlugin  # Don't do this
+cd $PluginPath  # Don't do this
 ```
 
 ### 3. Clean Builds

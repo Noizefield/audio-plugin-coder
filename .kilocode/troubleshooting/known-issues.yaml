@@ -181,49 +181,6 @@ issues:
     prevention: "Always use xvfb-run for LV2 and Standalone builds on headless Linux CI"
     critical_fix: "Install xvfb, wrap build: xvfb-run cmake --build build --target Plugin_LV2"
 
-  - id: macos-001
-    title: "macOS universal binary - libPluginName_SharedCode.a not found"
-    category: build
-    severity: high
-    symptoms:
-      - "clang++: error: no such file or directory: libPluginName_SharedCode.a"
-      - "warning: None of the architectures in ARCHS (x86_64;arm64) are valid"
-      - "Intermediate static library missing during link"
-    error_patterns:
-      - "SharedCode.a not found"
-      - "architectures in ARCHS"
-      - "VALID_ARCHS"
-    root_cause: "Per-target XCODE_ATTRIBUTE_ARCHS in plugin CMakeLists.txt conflicts with workflow's global CMAKE_OSX_ARCHITECTURES. Xcode misinterprets format (parens in warning), causing intermediate libs to not build or build to wrong location."
-    resolution_status: solved
-    resolution_file: resolutions/macos-archs-conflict.md
-    frequency: 1
-    last_occurred: 2026-02-05
-    attempts_before_resolution: 1
-    prevention: "NEVER set XCODE_ATTRIBUTE_ARCHS on individual targets. Use CMAKE_OSX_ARCHITECTURES at configure time only."
-    critical_fix: "Remove set_target_properties(Plugin PROPERTIES XCODE_ATTRIBUTE_ARCHS ...) from plugin CMakeLists.txt"
-
-  - id: ci-001
-    title: "CI - JUCE submodule missing extras/Build/CMake"
-    category: build
-    severity: critical
-    symptoms:
-      - "CMake Error: include could not find requested file: extras/Build/CMake/JUCEModuleSupport.cmake"
-      - "Unknown CMake command juce_add_modules"
-      - "JUCE directory exists but CMake support missing"
-      - "Works locally but fails on GitHub Actions"
-    error_patterns:
-      - "JUCEModuleSupport.cmake"
-      - "juce_add_modules"
-      - "extras/Build"
-    root_cause: "_tools/JUCE was committed as 4600+ regular files instead of git submodule reference. GitHub Actions submodules: recursive had no gitlink to follow, checked out incomplete snapshot missing extras/Build/."
-    resolution_status: solved
-    resolution_file: resolutions/ci-juce-submodule-not-proper.md
-    frequency: 1
-    last_occurred: 2026-02-05
-    attempts_before_resolution: 1
-    prevention: "ALWAYS use git submodule add, NEVER commit framework directories as regular files"
-    critical_fix: "git rm -r --cached _tools/JUCE && rm -rf _tools/JUCE && git submodule add https://github.com/juce-framework/JUCE _tools/JUCE"
-
   - id: webview-010
     title: "WebView black screen - resource provider callback not invoked"
     category: webview
@@ -247,6 +204,27 @@ issues:
     prevention: "MANDATORY ORDER: (1) Create attachments (2) Create WebView (3) addAndMakeVisible (4) goToURL (5) setSize LAST"
     critical_fix: "Move addAndMakeVisible() to AFTER all attachments created, AND move setSize() to END of constructor (after goToURL)"
     notes: "Affects XENON. Both CloudWash and AngelGrain patterns work if order is correct. Resource provider callback silently fails if WebView initialized in bad state."
+
+  - id: macos-001
+    title: "macOS universal binary - libPluginName_SharedCode.a not found"
+    category: build
+    severity: high
+    symptoms:
+      - "clang++: error: no such file or directory: libPluginName_SharedCode.a"
+      - "warning: None of the architectures in ARCHS (x86_64;arm64) are valid"
+      - "Intermediate static library missing during link"
+    error_patterns:
+      - "SharedCode.a not found"
+      - "architectures in ARCHS"
+      - "VALID_ARCHS"
+    root_cause: "Per-target XCODE_ATTRIBUTE_ARCHS in plugin CMakeLists.txt conflicts with workflow's global CMAKE_OSX_ARCHITECTURES. Xcode misinterprets format (parens in warning), causing intermediate libs to not build or build to wrong location."
+    resolution_status: solved
+    resolution_file: resolutions/macos-archs-conflict.md
+    frequency: 1
+    last_occurred: 2026-02-05
+    attempts_before_resolution: 1
+    prevention: "NEVER set XCODE_ATTRIBUTE_ARCHS on individual targets. Use CMAKE_OSX_ARCHITECTURES at configure time only."
+    critical_fix: "Remove set_target_properties(Plugin PROPERTIES XCODE_ATTRIBUTE_ARCHS ...) from plugin CMakeLists.txt"
 
   - id: webview-005
     title: "WebView native function bridge - wrong API (invokeNativeFunction)"
@@ -293,3 +271,52 @@ issues:
     attempts_before_resolution: 4
     prevention: "After prepare(): set filter coefficients, set gain to 1.0, init SmoothedValues with setCurrentAndTargetValue()"
     critical_fix: "*filter.state = *Coefficients::makeLowPass(); gain.setGainLinear(1.0f); smoothed.setCurrentAndTargetValue(value)"
+
+  - id: webview-011
+    title: "WebView UI loads but looks messy / unstyled - external CSS + BinaryData path"
+    category: webview
+    severity: high
+    symptoms:
+      - "UI looks messy / overlapping / default HTML buttons"
+      - "Design preview looks correct in browser, plugin does not"
+      - "Broken logo icon, Windows scrollbar, preview hint footer"
+      - "HTML and JS load, Hackerbridge chrome missing"
+      - "VST3 updated but Standalone still unstyled"
+    error_patterns:
+      - "unstyled WebView"
+      - "messy UI"
+      - "link rel stylesheet"
+      - "css/tokens.css"
+      - "default buttons overlapping"
+      - "preview-stage"
+    root_cause: "Design HTML used <link rel=stylesheet>. WebView2 often does not apply linked CSS. getResource() collapsed relative CSS URLs to index.html (fromFirstOccurrenceOf miss). juce_add_binary_data stores basenames only. Running Standalone can lock a stale EXE while VST3 rebuilds."
+    resolution_status: solved
+    resolution_file: resolutions/webview-011-unstyled-external-css.md
+    frequency: 1
+    last_occurred: 2026-08-13
+    attempts_before_resolution: 2
+    prevention: "Inline ALL CSS and JS in WebUI/index.html (CloudWash). Map BinaryData by path AND basename; never default unknown URLs to index.html. Strip Design preview chrome in plugin. Kill Standalone before rebuild and verify BOTH binaries."
+    critical_fix: "Inline tokens.css + hackerbridge_style.css into index.html; explicit getResource map; plugin-host class; rebuild Standalone after stopping the old process"
+    notes: "Organik /impl 2026-08-13. Distinct from webview-007/010 (black screen) and webview-008 (knob dots / ES6 JS)."
+
+  - id: ci-001
+    title: "CI - JUCE submodule missing extras/Build/CMake"
+    category: build
+    severity: critical
+    symptoms:
+      - "CMake Error: include could not find requested file: extras/Build/CMake/JUCEModuleSupport.cmake"
+      - "Unknown CMake command juce_add_modules"
+      - "JUCE directory exists but CMake support missing"
+      - "Works locally but fails on GitHub Actions"
+    error_patterns:
+      - "JUCEModuleSupport.cmake"
+      - "juce_add_modules"
+      - "extras/Build"
+    root_cause: "_tools/JUCE was committed as 4600+ regular files instead of git submodule reference. GitHub Actions submodules: recursive had no gitlink to follow, checked out incomplete snapshot missing extras/Build/."
+    resolution_status: solved
+    resolution_file: resolutions/ci-juce-submodule-not-proper.md
+    frequency: 1
+    last_occurred: 2026-02-05
+    attempts_before_resolution: 1
+    prevention: "ALWAYS use git submodule add, NEVER commit framework directories as regular files"
+    critical_fix: "git rm -r --cached _tools/JUCE && rm -rf _tools/JUCE && git submodule add https://github.com/juce-framework/JUCE _tools/JUCE"

@@ -9,7 +9,7 @@ description: "PHASE 2: Architecture - Define structure and UI framework"
 
 
 **Prerequisites:**
-1. Validate: `Test-PluginState -PluginPath "plugins\$PluginName" -RequiredPhase "ideation"`
+1. Validate: `Test-PluginState -PluginPath $PluginPath -RequiredPhase "ideation"`
 2. Check required files exist from ideation phase
 
 **Execute Skill:**

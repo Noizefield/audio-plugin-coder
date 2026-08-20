@@ -11,8 +11,9 @@ description: "PHASE 3: Design - Create UI mockups based on selected framework"
 **Prerequisites:**
 ```powershell
 . "$PSScriptRoot\..\scripts\state-management.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 
-$state = Get-PluginState -PluginPath "plugins\$PluginName"
+$state = Get-PluginState -PluginPath $PluginPath
 
 if ($state.current_phase -ne "plan_complete") {
     Write-Error "Planning phase not complete. Run /apc-plan first."
@@ -51,7 +52,7 @@ Design version: v1
 
 Preview commands:
 - Visage: .\scripts\preview-design.ps1 -PluginName [Name]
-- WebView: Open plugins\[Name]\Design\index.html in browser
+- WebView: Open `$PluginPath/Design/index.html` in browser
 
 Next step: /apc-impl [Name] (after design approval)
 ```

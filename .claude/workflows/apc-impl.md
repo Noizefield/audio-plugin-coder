@@ -11,8 +11,9 @@ description: "PHASE 4: Implementation - Build DSP and UI code"
 **Prerequisites:**
 ```powershell
 . "$PSScriptRoot\..\scripts\state-management.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 
-$state = Get-PluginState -PluginPath "plugins\$PluginName"
+$state = Get-PluginState -PluginPath $PluginPath
 
 if ($state.current_phase -ne "design_complete") {
     Write-Error "Design phase not complete. Run /apc-design first."
@@ -20,7 +21,7 @@ if ($state.current_phase -ne "design_complete") {
 }
 
 # Backup before major operation
-Backup-PluginState -PluginPath "plugins\$PluginName"
+Backup-PluginState -PluginPath $PluginPath
 ```
 
 **Execute Skill:**
@@ -96,7 +97,7 @@ Fix the order before building to avoid crashes on plugin unload.
 **Error Recovery:**
 If build fails:
 ```powershell
-Restore-PluginState -PluginPath "plugins\$PluginName"
+Restore-PluginState -PluginPath $PluginPath
 ```
 
 **Completion:**
