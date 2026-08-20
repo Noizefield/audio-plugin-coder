@@ -1,4 +1,4 @@
----
+﻿---
 description: "APC first-run setup â€” toolchain, paths, models, JUCE verification"
 ---
 
@@ -9,7 +9,7 @@ description: "APC first-run setup â€” toolchain, paths, models, JUCE verifi
 **Preferred model:** economy (see `apc.config.json` â†’ `models.phases.setup`)
 
 **Execute Skill:**
-Load and execute `.agent/skills/apc-setup/SKILL.md`
+Load and execute `..agent/skills/apc-setup/SKILL.md`
 
 **Validation:**
 
@@ -27,4 +27,5 @@ Next: /apc-dream <PluginName>
 ```
 
 **Deprecated alias:** `/setup` â†’ use `/apc-setup`
+
 

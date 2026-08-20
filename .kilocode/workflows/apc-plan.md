@@ -1,4 +1,4 @@
----
+﻿---
 description: "PHASE 2: Architecture - Define structure and UI framework"
 ---
 
@@ -9,11 +9,11 @@ description: "PHASE 2: Architecture - Define structure and UI framework"
 
 
 **Prerequisites:**
-1. Validate: `Test-PluginState -PluginPath "plugins\$PluginName" -RequiredPhase "ideation"`
+1. Validate: `Test-PluginState -PluginPath $PluginPath -RequiredPhase "ideation"`
 2. Check required files exist from ideation phase
 
 **Execute Skill:**
-Load and follow `..kilocode/skills/apc-plan/SKILL.md` exactly.
+Load and follow `...kilocode/skills/apc-plan/SKILL.md` exactly.
 
 **CRITICAL UI Framework Decision:**
 - Read user requirements
@@ -29,3 +29,4 @@ Load and follow `..kilocode/skills/apc-plan/SKILL.md` exactly.
 
 **After completion:**
 Stop and inform user: "Plan phase complete. Framework selected: [X]. Use `/apc-design [Name]` to continue."
+

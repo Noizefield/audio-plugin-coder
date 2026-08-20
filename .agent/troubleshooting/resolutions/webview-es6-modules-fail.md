@@ -10,7 +10,7 @@
 
 ## Summary
 
-Plugin loads but UI is incomplete - knobs show only indicator dots without arcs, no animations run, and JavaScript fails silently. This is a **#1 issue for new WebView developers**.
+Plugin loads but UI is incomplete - knobs show only indicator dots without arcs, no animations run, and JavaScript fails silently. This is the **#1 issue for new WebView developers**.
 
 ---
 
@@ -41,9 +41,9 @@ Plugin loads but UI is incomplete - knobs show only indicator dots without arcs,
 [CLOUDWASH Header]
 [Animated grain particles]
 [◠●] [◠●] [◠●] [◠●] [◠●]  ← Circular arcs with dots
-  50%   50%  +0.00  50%    0%
+ 50%   50%  +0.00  50%    0%
 [◠●] [◠●] [◠●] [◠●] [◠●]
-  50%   80%   50%   0%     0%
+ 50%   80%   50%   0%     0%
 ```
 
 ---
@@ -429,7 +429,7 @@ This issue affects **100% of developers** who follow modern JavaScript practices
 
 **The solution is counterintuitive:** Modern best practices (separate modules) don't work. Must use "old-school" inline JavaScript.
 
-**CloudWash plugin** demonstrates the correct approach and serves as a canonical example.
+**CloudWash plugin** demonstrates the correct approach and serves as the canonical example.
 
 ---
 

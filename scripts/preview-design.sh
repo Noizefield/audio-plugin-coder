@@ -15,9 +15,12 @@ fi
 
 # --- PATH RESOLUTION ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_PATH="$(cd "$SCRIPT_DIR/.." && pwd)"
-BUILD_DIR="$ROOT_PATH/build"
-PLUGIN_DIR="$ROOT_PATH/plugins/$PLUGIN_NAME"
+# shellcheck source=lib/apc-paths.sh
+source "$SCRIPT_DIR/lib/apc-paths.sh"
+apc_load_paths
+ROOT_PATH="$APC_REPO_ROOT"
+BUILD_DIR="$APC_BUILD_DIR"
+PLUGIN_DIR="$(apc_plugin_path "$PLUGIN_NAME")"
 STATUS_JSON="$PLUGIN_DIR/status.json"
 
 # --- DETECT FRAMEWORK ---
@@ -45,6 +48,7 @@ cmake -S "$ROOT_PATH" -B "$BUILD_DIR" \
     -G Xcode \
     -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
     -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 \
+    -DAPC_PLUGINS_DIR="$APC_PLUGINS_DIR" \
     --fresh \
     $VISAGE_FLAG
 

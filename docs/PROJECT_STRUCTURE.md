@@ -141,17 +141,17 @@ plugins/
 
 **The Three Zones:**
 
-1. **The Sanctuary** (`plugins/[Name]/`)
+1. **The Sanctuary** (configured `paths.plugins_dir`, default `plugins/[Name]/`)
    - Contains all source code and design files
    - Version controlled
    - Clean, organized structure
 
-2. **The Dirty Zone** (`build/`)
+2. **The Dirty Zone** (configured `paths.build_dir`, default `build/`)
    - All compilation artifacts
    - Gitignored
    - Can be safely deleted
 
-3. **The Shipping Zone** (`release/`)
+3. **The Shipping Zone** (configured `paths.release_dir`, default `release/`)
    - Final distribution packages
    - Installers and ZIP files
    - Ready for release
@@ -341,7 +341,7 @@ build/
 ### WebView Framework
 
 ```
-plugins/[Name]/
+$PluginPath/
 ├── Design/
 │   └── index.html          # Production UI
 └── Source/
@@ -358,7 +358,7 @@ plugins/[Name]/
 ### Visage Framework
 
 ```
-plugins/[Name]/
+$PluginPath/
 ├── Design/
 │   └── [Visage design specs]
 └── Source/

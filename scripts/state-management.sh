@@ -8,6 +8,10 @@ set -euo pipefail
 # --- PATH RESOLUTION ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# shellcheck source=lib/apc-paths.sh
+source "$SCRIPT_DIR/lib/apc-paths.sh"
+apc_load_paths
+# Exposes APC_PLUGINS_DIR / apc_plugin_path for callers
 
 # --- SCHEMA CONSTANTS ---
 STATE_PHASES=("ideation" "plan" "design" "code" "ship" "complete")
@@ -100,7 +104,7 @@ get_plugin_state() {
 get_state_field() {
     # Get a specific field from state using jq query
     # Usage: get_state_field <PluginPath> <jq_query>
-    # Example: get_state_field "plugins/MyPlugin" ".ui_framework"
+    # Example: get_state_field "$(apc_plugin_path MyPlugin)" ".ui_framework"
     _check_jq || return 1
     local plugin_path="$1"
     local query="$2"

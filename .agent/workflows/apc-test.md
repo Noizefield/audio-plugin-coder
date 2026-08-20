@@ -1,4 +1,4 @@
----
+﻿---
 description: "Run tests on the plugin"
 ---
 
@@ -11,8 +11,9 @@ description: "Run tests on the plugin"
 **Prerequisites:**
 ```powershell
 . "$PSScriptRoot\..\scripts\state-management.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 
-$state = Get-PluginState -PluginPath "plugins\$PluginName"
+$state = Get-PluginState -PluginPath $PluginPath
 
 if ($state.current_phase -ne "code_complete" -and $state.current_phase -ne "design_complete") {
     Write-Error "Implementation must be complete first."
@@ -21,7 +22,7 @@ if ($state.current_phase -ne "code_complete" -and $state.current_phase -ne "desi
 ```
 
 **Execute Skill:**
-Load and execute `..agent\skills\skill_testing\SKILL.md`
+Load and execute `...agent\skills\skill_testing\SKILL.md`
 
 **Tests Run:**
 - Build verification
@@ -32,9 +33,10 @@ Load and execute `..agent\skills\skill_testing\SKILL.md`
 
 **Completion:**
 ```
-Γ£à Tests complete!
+Î“Â£Ã  Tests complete!
 
 Results: [Pass/Fail count]
 
 Next step: /apc-ship [Name] if all tests passed
 ```
+

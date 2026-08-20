@@ -1,9 +1,10 @@
----
-description: "Deprecated alias — use /apc-resume"
+﻿---
+description: "Deprecated alias â€” use /apc-resume"
 ---
 
 # Deprecated: `/resume`
 
 Prefer **`/apc-resume`**. Short names collide with other frameworks and host builtins.
 
-Load and execute `.agent/workflows/apc-resume.md`.
+Load and execute `..agent/workflows/apc-resume.md`.
+

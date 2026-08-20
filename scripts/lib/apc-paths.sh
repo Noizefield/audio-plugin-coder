@@ -21,7 +21,15 @@ apc_resolve_path() {
         # Absolute (Unix or Windows-style)
         printf '%s\n' "$value"
     else
-        printf '%s\n' "$root/$value"
+        # Join then normalize ".." (directory need not exist yet)
+        local joined="$root/$value"
+        if command -v python3 >/dev/null 2>&1; then
+            python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$joined"
+        elif command -v realpath >/dev/null 2>&1; then
+            realpath -m "$joined" 2>/dev/null || printf '%s\n' "$joined"
+        else
+            printf '%s\n' "$joined"
+        fi
     fi
 }
 

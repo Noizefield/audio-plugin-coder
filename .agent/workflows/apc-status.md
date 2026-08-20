@@ -9,8 +9,9 @@ description: "Check current plugin state and progress"
 
 ```powershell
 . "$PSScriptRoot\..\scripts\state-management.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 
-$state = Get-PluginState -PluginPath "plugins\$PluginName"
+$state = Get-PluginState -PluginPath $PluginPath
 
 Write-Host "=== Plugin Status ===" -ForegroundColor Cyan
 Write-Host "Name: $($state.plugin_name)"

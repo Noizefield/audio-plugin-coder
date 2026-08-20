@@ -1,29 +1,30 @@
 # SKILL: DSP IMPLEMENTATION
 **Goal:** Implement audio processing where parameters control DSP
 **Focus:** PluginProcessor.h, PluginProcessor.cpp
-**Output Location:** `plugins/[Name]/Source/`
+**Output Location:** `$PluginPath/Source/`
 
 ---
 
 ## 📊 PHASE 4: CODE (DSP Implementation)
 
 **Trigger:** `/impl [Name]` (after DESIGN phase complete)
-**Input:** Reads `plugins/[Name]/status.json` and `.ideas/parameter-spec.md`
+**Input:** Reads `$PluginPath/status.json` and `.ideas/parameter-spec.md`
 **Prerequisites:** Architecture plan complete, UI framework selected
 
 **State Validation:**
 ```powershell
 # Import state management module
 . "$PSScriptRoot\..\scripts\state-management.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 
 # Validate prerequisites
-if (-not (Test-PluginState -PluginPath "plugins\[Name]" -RequiredPhase "design_complete" -RequiredFiles @(".ideas/architecture.md", ".ideas/plan.md"))) {
+if (-not (Test-PluginState -PluginPath $PluginPath -RequiredPhase "design_complete" -RequiredFiles @(".ideas/architecture.md", ".ideas/plan.md"))) {
     Write-Error "Prerequisites not met. Complete design phase first."
     exit 1
 }
 
 # Check framework selection
-$state = Get-PluginState -PluginPath "plugins\[Name]"
+$state = Get-PluginState -PluginPath $PluginPath
 if ($state.ui_framework -eq "pending") {
     Write-Error "UI framework not selected. Cannot proceed with implementation."
     exit 1
@@ -53,7 +54,7 @@ Convert the approved design specs into production JUCE WebView code.
 
 **Create the required directory structure:**
 ```
-plugins/[Name]/Source/ui/
+$PluginPath/Source/ui/
 └───public/
     │   index.html          # Production UI based on approved design
     │
@@ -66,7 +67,7 @@ plugins/[Name]/Source/ui/
 ```
 
 **Implementation Steps:**
-1. **Create directories:** `plugins/[Name]/Source/ui/public/` and subdirectories
+1. **Create directories:** `$PluginPath/Source/ui/public/` and subdirectories
 2. **Copy JUCE frontend library:** Copy `modules/juce_gui_extra/native/javascript/index.js` to `js/juce/index.js`
 3. **Create interop checker:** Generate `js/juce/check_native_interop.js` for development
 4. **Convert design to HTML:** Transform approved design specs into `index.html` with embedded CSS
@@ -135,14 +136,14 @@ function initializeUI() {
 ✅ Design converted to WebView code
 
 Files created:
-- plugins/[Name]/Source/ui/public/index.html
-- plugins/[Name]/Source/ui/public/js/index.js
-- plugins/[Name]/Source/ui/public/js/juce/index.js
+- $PluginPath/Source/ui/public/index.html
+- $PluginPath/Source/ui/public/js/index.js
+- $PluginPath/Source/ui/public/js/juce/index.js
 
 ⚠️ **MANDATORY STOP** - You MUST test the WebView setup before proceeding to DSP implementation!
 
 What would you like to do?
-1. Test WebView - Open plugins/[Name]/Source/ui/public/index.html in browser and verify appearance
+1. Test WebView - Open $PluginPath/Source/ui/public/index.html in browser and verify appearance
 2. Approve - Proceed with DSP implementation (confirms WebView GUI is acceptable)
 3. Revise - Make changes to the conversion
 
@@ -319,7 +320,7 @@ See: `..kilocode/troubleshooting/resolutions/webview-member-order-crash.md`
 
 ## 🔧 PHASE 4.1: DSP IMPLEMENTATION
 
-Read `plugins/[Name]/.ideas/plan.md` to determine implementation approach:
+Read `$PluginPath/.ideas/plan.md` to determine implementation approach:
 ```
 Complexity Score: [N]
 
@@ -699,9 +700,10 @@ After implementation complete:
 ```powershell
 # Import state management module
 . "$PSScriptRoot\..\scripts\state-management.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 
 # Validate prerequisites using standardized function
-if (-not (Validate-PhasePrerequisites -PluginPath "plugins\[Name]" -CurrentPhase "code" -RequiredPhase "design_complete" -RequiredFiles @(".ideas/architecture.md", ".ideas/plan.md"))) {
+if (-not (Validate-PhasePrerequisites -PluginPath $PluginPath -CurrentPhase "code" -RequiredPhase "design_complete" -RequiredFiles @(".ideas/architecture.md", ".ideas/plan.md"))) {
     Write-Host "ERROR: Prerequisites not met. Complete design phase first." -ForegroundColor Red
     exit 1
 }
@@ -728,7 +730,7 @@ if (-not (Test-Path "CMakeLists.txt")) {
 
 # Validate canvas implementation for WebView framework
 if ($state.ui_framework -eq "webview") {
-    if (-not (Test-CanvasImplementation -PluginPath "plugins\[Name]")) {
+    if (-not (Test-CanvasImplementation -PluginPath $PluginPath)) {
         Write-Host "ERROR: Canvas implementation required for WebView framework" -ForegroundColor Red
         Write-Host "WebView plugins must use HTML5 Canvas API with JUCE frontend library" -ForegroundColor Yellow
         Write-Host "Please ensure Design/index.html uses canvas-based rendering" -ForegroundColor Yellow
@@ -847,10 +849,10 @@ void setStateInformation(const void* data, int sizeInBytes) override
 **Git commit after each phase:**
 ```powershell
 # Backup state before commit
-Backup-PluginState -PluginPath "plugins\[Name]"
+Backup-PluginState -PluginPath $PluginPath
 
-git add plugins/[Name]/Source/
-git add plugins/[Name]/.ideas/plan.md
+git add $PluginPath/Source/
+git add $PluginPath/.ideas/plan.md
 git commit -m "feat([Name]): Phase 4.1 DSP - [Phase description]
 
 Implemented: [list components]
@@ -863,7 +865,7 @@ Generated with Kilo Code"
 **For single-pass:**
 ```powershell
 # Backup state before final commit
-Backup-PluginState -PluginPath "plugins\[Name]"
+Backup-PluginState -PluginPath $PluginPath
 
 git commit -m "feat([Name]): Phase 4 CODE complete
 
@@ -877,7 +879,7 @@ Generated with Kilo Code"
 **Update state after implementation:**
 ```powershell
 # Mark implementation complete using standardized function
-Complete-Phase -PluginPath "plugins\[Name]" -Phase "code" -Updates @{
+Complete-Phase -PluginPath $PluginPath -Phase "code" -Updates @{
   "validation.code_complete" = $true
   "validation.tests_passed" = $false  # Will be set after testing
 }
@@ -939,7 +941,7 @@ for (int sample = 0; sample < numSamples; ++sample)
 - `Source/PluginProcessor.h` - DSP member variables
 - `Source/PluginProcessor.cpp` - Audio processing logic
 - `PLUGINS.md` - Phase status
-- `plugins/[Name]/status.json` - Project state
+- `$PluginPath/status.json` - Project state
 
 **Next phase:**
 - Phase 5: SHIP (if headless chosen or custom UI complete)

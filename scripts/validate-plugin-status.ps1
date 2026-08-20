@@ -88,7 +88,8 @@ function Test-PluginStatusAccuracy {
 # Main execution
 Write-Host "=== Plugin Status Validation ===" -ForegroundColor Cyan
 
-$pluginsPath = Join-Path $PSScriptRoot "..\plugins"
+. "$PSScriptRoot\lib\Get-ApcPaths.ps1"
+$pluginsPath = (Get-ApcPaths).PluginsDir
 $allValid = $true
 
 if ($PluginName) {
@@ -101,7 +102,7 @@ if ($PluginName) {
     if (-not $valid) { $allValid = $false }
 } else {
     # Check all plugins
-    $pluginDirs = Get-ChildItem $pluginsPath -Directory
+    $pluginDirs = Get-ChildItem $pluginsPath -Directory -ErrorAction SilentlyContinue
     foreach ($dir in $pluginDirs) {
         $valid = Test-PluginStatusAccuracy -PluginPath $dir.FullName -PluginName $dir.Name
         if (-not $valid) { $allValid = $false }

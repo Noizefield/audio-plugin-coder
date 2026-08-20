@@ -1,9 +1,9 @@
-# WebView Black Screen - Resource Provider Callback Not Invoked
+﻿# WebView Black Screen - Resource Provider Callback Not Invoked
 
 **Issue ID:** webview-010
 **Category:** WebView
 **Severity:** CRITICAL
-**Status:** ✅ SOLVED
+**Status:** âœ… SOLVED
 **Date Identified:** 2026-02-10
 **Date Resolved:** 2026-02-10
 
@@ -14,13 +14,13 @@
 XENON plugin builds successfully and opens in DAW, but shows only a black screen. WebView component creates successfully and URL loads (`https://juce.backend/`), but **no resources are served** because the `getResource()` callback is never invoked.
 
 ### Symptoms
-- ✅ Plugin compiles without errors
-- ✅ Plugin loads in DAW
-- ✅ Window opens with correct size
-- ❌ Black screen - no UI elements visible
-- ✅ WebView2 Runtime installed
-- ✅ BinaryData embedded correctly (7 files)
-- ❌ **`getResource()` callback NEVER called** (no log entries)
+- âœ… Plugin compiles without errors
+- âœ… Plugin loads in DAW
+- âœ… Window opens with correct size
+- âŒ Black screen - no UI elements visible
+- âœ… WebView2 Runtime installed
+- âœ… BinaryData embedded correctly (7 files)
+- âŒ **`getResource()` callback NEVER called** (no log entries)
 
 ### Debug Log Output
 ```
@@ -51,7 +51,7 @@ XENON plugin builds successfully and opens in DAW, but shows only a black screen
 webView = std::make_unique<juce::WebBrowserComponent>(options);
 
 // Line 373: Make visible TOO EARLY
-addAndMakeVisible(*webView);  // ❌ BEFORE attachments!
+addAndMakeVisible(*webView);  // âŒ BEFORE attachments!
 
 // Lines 375-789: Create attachments
 masterVolAttachment = std::make_unique<...>(...);
@@ -64,7 +64,7 @@ webView->goToURL(rootUrl);
 When `addAndMakeVisible()` is called before attachments exist:
 1. WebView starts initializing immediately
 2. WebView tries to access parameter attachments via relays
-3. Attachments don't exist yet → null pointer or bad state
+3. Attachments don't exist yet â†’ null pointer or bad state
 4. **Resource provider gets disabled or crashes silently**
 
 ### Issue 2: setSize() Called Before WebView Created
@@ -75,7 +75,7 @@ When `addAndMakeVisible()` is called before attachments exist:
 XenonAudioProcessorEditor::XenonAudioProcessorEditor(...)
 {
     // Line 36: Set size WAY TOO EARLY
-    setSize(1280, 820);  // ❌ BEFORE WebView exists!
+    setSize(1280, 820);  // âŒ BEFORE WebView exists!
 
     // Lines 38-369: Create options and WebView
     auto options = ...;
@@ -145,7 +145,7 @@ PluginEditor::PluginEditor(Processor& p)
 ```cpp
 // OLD (Line 373):
 webView = std::make_unique<juce::WebBrowserComponent>(options);
-addAndMakeVisible(*webView);  // ❌ TOO EARLY
+addAndMakeVisible(*webView);  // âŒ TOO EARLY
 masterVolAttachment = std::make_unique<...>(...);
 
 // NEW:
@@ -172,7 +172,7 @@ webView->goToURL(rootUrl);
 // OLD (Line 36):
 XenonAudioProcessorEditor::XenonAudioProcessorEditor(...)
 {
-    setSize(1280, 820);  // ❌ TOO EARLY
+    setSize(1280, 820);  // âŒ TOO EARLY
     auto options = ...;
 
 // NEW (Line ~802):
@@ -252,17 +252,17 @@ All attachments created. Adding WebView to UI...
 WebView added to UI successfully
 Loading WebView URL: https://juce.backend/
 
-========== EMBEDDED RESOURCES ==========  ← Should appear now!
+========== EMBEDDED RESOURCES ==========  â† Should appear now!
 Total embedded files: 7
-1. index_html → Source/ui/public/index.html
+1. index_html â†’ Source/ui/public/index.html
 ...
 ========================================
 
-RESOURCE REQUEST: https://juce.backend/ → index.html
-✓ FOUND: Source/ui/public/index.html (12345 bytes, MIME: text/html)
+RESOURCE REQUEST: https://juce.backend/ â†’ index.html
+âœ“ FOUND: Source/ui/public/index.html (12345 bytes, MIME: text/html)
 
-RESOURCE REQUEST: https://juce.backend/assets/index-NprFptum.js → ...
-✓ FOUND: Source/ui/public/assets/index-NprFptum.js (...)
+RESOURCE REQUEST: https://juce.backend/assets/index-NprFptum.js â†’ ...
+âœ“ FOUND: Source/ui/public/assets/index-NprFptum.js (...)
 ...
 ```
 
@@ -288,21 +288,21 @@ RESOURCE REQUEST: https://juce.backend/assets/index-NprFptum.js → ...
 For ALL WebView plugins, verify constructor order:
 
 ```cpp
-// ✅ CORRECT ORDER
+// âœ… CORRECT ORDER
 {
     // 1. Create attachments (optional: can be after WebView)
     // 2. Create WebView
-    // 3. addAndMakeVisible  ← MUST be after attachments
+    // 3. addAndMakeVisible  â† MUST be after attachments
     // 4. goToURL
-    // 5. setSize            ← MUST be last
+    // 5. setSize            â† MUST be last
 }
 
-// ❌ WRONG ORDER (causes black screen)
+// âŒ WRONG ORDER (causes black screen)
 {
-    setSize(...);           // ❌ TOO EARLY
+    setSize(...);           // âŒ TOO EARLY
     create WebView
-    addAndMakeVisible(...)  // ❌ BEFORE attachments
-    create attachments      // ❌ TOO LATE
+    addAndMakeVisible(...)  // âŒ BEFORE attachments
+    create attachments      // âŒ TOO LATE
     goToURL(...)
 }
 ```
@@ -344,14 +344,15 @@ Additionally:
 **15:00:** Examined CloudWash working pattern
 **15:05:** Identified timing violations (addAndMakeVisible + setSize)
 **15:10:** Applied fixes (moved both to correct positions)
-**15:15:** ✅ Ready for rebuild and testing
+**15:15:** âœ… Ready for rebuild and testing
 
 ---
 
 **Document Version:** 1.0
 **Last Updated:** 2026-02-10 15:15
-**Resolution Status:** ✅ FIXES APPLIED - AWAITING VERIFICATION
+**Resolution Status:** âœ… FIXES APPLIED - AWAITING VERIFICATION
 **Attempts to Resolve:** 4 iterations
 **Time to Resolution:** 30 minutes
-**Related Skills:** `.claude/skills/skill_design_webview/SKILL.md`
+**Related Skills:** `..agent/skills/skill_design_webview/SKILL.md`
 **Working Examples:** `plugins/CloudWash/`, `plugins/AngelGrain/`
+

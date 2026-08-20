@@ -82,7 +82,9 @@ The [`state-management.ps1`](scripts/state-management.ps1) script provides these
 Initialize a new plugin state file.
 
 ```powershell
-New-PluginState -PluginName "MyPlugin" -PluginPath "plugins\MyPlugin"
+. ".\scripts\lib\Get-ApcPaths.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName "MyPlugin"
+New-PluginState -PluginName "MyPlugin" -PluginPath $PluginPath
 ```
 
 **Creates:**
@@ -95,7 +97,7 @@ New-PluginState -PluginName "MyPlugin" -PluginPath "plugins\MyPlugin"
 Retrieve the current state object.
 
 ```powershell
-$state = Get-PluginState -PluginPath "plugins\MyPlugin"
+$state = Get-PluginState -PluginPath $PluginPath
 Write-Host "Current phase: $($state.current_phase)"
 Write-Host "UI Framework: $($state.ui_framework)"
 ```
@@ -105,7 +107,7 @@ Write-Host "UI Framework: $($state.ui_framework)"
 Update specific fields in the state.
 
 ```powershell
-Update-PluginState -PluginPath "plugins\MyPlugin" -Updates @{
+Update-PluginState -PluginPath $PluginPath -Updates @{
     "current_phase" = "plan"
     "validation.architecture_defined" = $true
     "ui_framework" = "webview"
@@ -122,7 +124,7 @@ Update-PluginState -PluginPath "plugins\MyPlugin" -Updates @{
 Validate prerequisites before proceeding.
 
 ```powershell
-if (-not (Test-PluginState -PluginPath "plugins\MyPlugin" `
+if (-not (Test-PluginState -PluginPath $PluginPath `
     -RequiredPhase "plan_complete" `
     -RequiredFiles @(".ideas/architecture.md", ".ideas/plan.md"))) {
     Write-Error "Prerequisites not met"
@@ -140,7 +142,7 @@ if (-not (Test-PluginState -PluginPath "plugins\MyPlugin" `
 Mark a phase as complete and update state.
 
 ```powershell
-Complete-Phase -PluginPath "plugins\MyPlugin" -Phase "plan" -Updates @{
+Complete-Phase -PluginPath $PluginPath -Phase "plan" -Updates @{
     "validation.architecture_defined" = $true
     "validation.ui_framework_selected" = $true
     "framework_selection.decision" = "webview"
@@ -159,7 +161,7 @@ Complete-Phase -PluginPath "plugins\MyPlugin" -Phase "plan" -Updates @{
 Create a backup before risky operations.
 
 ```powershell
-Backup-PluginState -PluginPath "plugins\MyPlugin"
+Backup-PluginState -PluginPath $PluginPath
 ```
 
 **Creates:** `status.json.backup.[timestamp]`
@@ -169,7 +171,7 @@ Backup-PluginState -PluginPath "plugins\MyPlugin"
 Rollback to previous state.
 
 ```powershell
-Restore-PluginState -PluginPath "plugins\MyPlugin"
+Restore-PluginState -PluginPath $PluginPath
 ```
 
 **Restores:** Most recent backup file
@@ -182,12 +184,14 @@ Restore-PluginState -PluginPath "plugins\MyPlugin"
 
 **Initialize state:**
 ```powershell
-New-PluginState -PluginName "MyPlugin" -PluginPath "plugins\MyPlugin"
+. ".\scripts\lib\Get-ApcPaths.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName "MyPlugin"
+New-PluginState -PluginName "MyPlugin" -PluginPath $PluginPath
 ```
 
 **Complete phase:**
 ```powershell
-Complete-Phase -PluginPath "plugins\MyPlugin" -Phase "ideation" -Updates @{
+Complete-Phase -PluginPath $PluginPath -Phase "ideation" -Updates @{
     "validation.creative_brief_exists" = $true
     "validation.parameter_spec_exists" = $true
 }
@@ -215,7 +219,7 @@ Complete-Phase -PluginPath "plugins\MyPlugin" -Phase "ideation" -Updates @{
 
 **Validate prerequisites:**
 ```powershell
-if (-not (Test-PluginState -PluginPath "plugins\MyPlugin" `
+if (-not (Test-PluginState -PluginPath $PluginPath `
     -RequiredPhase "ideation_complete" `
     -RequiredFiles @(".ideas/creative-brief.md", ".ideas/parameter-spec.md"))) {
     exit 1
@@ -225,14 +229,14 @@ if (-not (Test-PluginState -PluginPath "plugins\MyPlugin" `
 **Set framework selection:**
 ```powershell
 # Helper function for framework selection
-Set-PluginFramework -PluginPath "plugins\MyPlugin" `
+Set-PluginFramework -PluginPath $PluginPath `
     -Framework "webview" `
     -Rationale "Complex UI with real-time visualization requires WebView capabilities"
 ```
 
 **Complete phase:**
 ```powershell
-Complete-Phase -PluginPath "plugins\MyPlugin" -Phase "plan" -Updates @{
+Complete-Phase -PluginPath $PluginPath -Phase "plan" -Updates @{
     "validation.architecture_defined" = $true
     "validation.ui_framework_selected" = $true
     "complexity_score" = 3
@@ -244,7 +248,7 @@ Complete-Phase -PluginPath "plugins\MyPlugin" -Phase "plan" -Updates @{
 
 **Validate framework selection:**
 ```powershell
-$state = Get-PluginState -PluginPath "plugins\MyPlugin"
+$state = Get-PluginState -PluginPath $PluginPath
 if ($state.ui_framework -eq "pending") {
     Write-Error "UI framework not selected. Complete planning phase first."
     exit 1
@@ -253,7 +257,7 @@ if ($state.ui_framework -eq "pending") {
 
 **Complete phase:**
 ```powershell
-Complete-Phase -PluginPath "plugins\MyPlugin" -Phase "design" -Updates @{
+Complete-Phase -PluginPath $PluginPath -Phase "design" -Updates @{
     "validation.design_complete" = $true
 }
 ```
@@ -262,7 +266,7 @@ Complete-Phase -PluginPath "plugins\MyPlugin" -Phase "design" -Updates @{
 
 **Validate prerequisites:**
 ```powershell
-if (-not (Test-PluginState -PluginPath "plugins\MyPlugin" `
+if (-not (Test-PluginState -PluginPath $PluginPath `
     -RequiredPhase "design_complete" `
     -RequiredFiles @(".ideas/architecture.md", ".ideas/plan.md"))) {
     exit 1
@@ -271,7 +275,7 @@ if (-not (Test-PluginState -PluginPath "plugins\MyPlugin" `
 
 **Complete phase:**
 ```powershell
-Complete-Phase -PluginPath "plugins\MyPlugin" -Phase "code" -Updates @{
+Complete-Phase -PluginPath $PluginPath -Phase "code" -Updates @{
     "validation.code_complete" = $true
     "validation.tests_passed" = $true
 }
@@ -281,7 +285,7 @@ Complete-Phase -PluginPath "plugins\MyPlugin" -Phase "code" -Updates @{
 
 **Validate prerequisites:**
 ```powershell
-if (-not (Test-PluginState -PluginPath "plugins\MyPlugin" `
+if (-not (Test-PluginState -PluginPath $PluginPath `
     -RequiredPhase "code_complete" `
     -RequiredFiles @("Source/PluginProcessor.cpp"))) {
     exit 1
@@ -290,7 +294,7 @@ if (-not (Test-PluginState -PluginPath "plugins\MyPlugin" `
 
 **Complete phase:**
 ```powershell
-Complete-Phase -PluginPath "plugins\MyPlugin" -Phase "ship" -Updates @{
+Complete-Phase -PluginPath $PluginPath -Phase "ship" -Updates @{
     "validation.ship_ready" = $true
     "version" = "v1.0.0"
 }
@@ -305,7 +309,7 @@ Complete-Phase -PluginPath "plugins\MyPlugin" -Phase "ship" -Updates @{
 Centralized framework selection with validation:
 
 ```powershell
-Set-PluginFramework -PluginPath "plugins\MyPlugin" `
+Set-PluginFramework -PluginPath $PluginPath `
     -Framework "webview" `
     -Rationale "Complex UI requirements"
 ```
@@ -341,14 +345,14 @@ State is automatically backed up before:
 
 ```powershell
 # Before risky operation
-Backup-PluginState -PluginPath "plugins\MyPlugin"
+Backup-PluginState -PluginPath $PluginPath
 
 # Try operation
 try {
     # Risky operation here
 } catch {
     # Restore on failure
-    Restore-PluginState -PluginPath "plugins\MyPlugin"
+    Restore-PluginState -PluginPath $PluginPath
 }
 ```
 
@@ -356,7 +360,7 @@ try {
 
 ```powershell
 # Log error to state
-Add-StateError -PluginPath "plugins\MyPlugin" `
+Add-StateError -PluginPath $PluginPath `
     -ErrorMessage "Build failed: CMake configuration error"
 ```
 
@@ -372,7 +376,7 @@ Comprehensive prerequisite validation:
 
 ```powershell
 $validation = Validate-PhasePrerequisites `
-    -PluginPath "plugins\MyPlugin" `
+    -PluginPath $PluginPath `
     -CurrentPhase "code" `
     -RequiredPhase "design_complete" `
     -RequiredFiles @(".ideas/architecture.md")
@@ -389,7 +393,7 @@ if (-not $validation.IsValid) {
 WebView-specific validation:
 
 ```powershell
-if (-not (Test-CanvasImplementation -PluginPath "plugins\MyPlugin")) {
+if (-not (Test-CanvasImplementation -PluginPath $PluginPath)) {
     Write-Error "Canvas implementation required for WebView"
     exit 1
 }
@@ -448,7 +452,7 @@ State enables switching between AI agents:
 
 ```powershell
 # Any agent can check current state
-$state = Get-PluginState -PluginPath "plugins\MyPlugin"
+$state = Get-PluginState -PluginPath $PluginPath
 Write-Host "Resuming from phase: $($state.current_phase)"
 ```
 
@@ -467,7 +471,7 @@ if (-not (Test-PluginState ...)) {
 ### 2. Backup Before Major Changes
 
 ```powershell
-Backup-PluginState -PluginPath "plugins\MyPlugin"
+Backup-PluginState -PluginPath $PluginPath
 # ... make changes
 ```
 
@@ -475,10 +479,10 @@ Backup-PluginState -PluginPath "plugins\MyPlugin"
 
 ```powershell
 # Good
-Complete-Phase -PluginPath "plugins\MyPlugin" -Phase "plan" -Updates @{...}
+Complete-Phase -PluginPath $PluginPath -Phase "plan" -Updates @{...}
 
 # Bad - manual updates
-Update-PluginState -PluginPath "plugins\MyPlugin" -Updates @{
+Update-PluginState -PluginPath $PluginPath -Updates @{
     "current_phase" = "plan_complete"
 }
 ```
@@ -489,14 +493,14 @@ Update-PluginState -PluginPath "plugins\MyPlugin" -Updates @{
 try {
     # Operation
 } catch {
-    Add-StateError -PluginPath "plugins\MyPlugin" -ErrorMessage $_.Exception.Message
+    Add-StateError -PluginPath $PluginPath -ErrorMessage $_.Exception.Message
 }
 ```
 
 ### 5. Check Framework Before UI Work
 
 ```powershell
-$state = Get-PluginState -PluginPath "plugins\MyPlugin"
+$state = Get-PluginState -PluginPath $PluginPath
 if ($state.ui_framework -eq "webview") {
     # WebView-specific code
 } else {
@@ -512,7 +516,7 @@ if ($state.ui_framework -eq "webview") {
 
 **Check:**
 ```powershell
-$state = Get-PluginState -PluginPath "plugins\MyPlugin"
+$state = Get-PluginState -PluginPath $PluginPath
 $state | ConvertTo-Json -Depth 5
 ```
 
@@ -532,14 +536,14 @@ $state.current_phase
 $state.validation
 
 # Missing files
-Test-Path "plugins\MyPlugin\.ideas\creative-brief.md"
+Test-Path "$PluginPath\.ideas\creative-brief.md"
 ```
 
 ### Issue: "Framework not selected"
 
 **Solution:**
 ```powershell
-Set-PluginFramework -PluginPath "plugins\MyPlugin" -Framework "webview" -Rationale "..."
+Set-PluginFramework -PluginPath $PluginPath -Framework "webview" -Rationale "..."
 ```
 
 ---

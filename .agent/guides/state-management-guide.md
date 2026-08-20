@@ -70,9 +70,10 @@ Each phase should start with state validation:
 ```powershell
 # Import state management
 . "$PSScriptRoot\..\scripts\state-management.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 
 # Validate prerequisites
-if (-not (Test-PluginState -PluginPath "plugins\[Name]" -RequiredPhase "previous_phase" -RequiredFiles @("file1.md", "file2.md"))) {
+if (-not (Test-PluginState -PluginPath $PluginPath -RequiredPhase "previous_phase" -RequiredFiles @("file1.md", "file2.md"))) {
     Write-Error "Prerequisites not met"
     exit 1
 }
@@ -84,7 +85,7 @@ Each phase should update state when complete:
 
 ```powershell
 # Update state with phase completion
-Update-PluginState -PluginPath "plugins\[Name]" -Phase "current_phase_complete" -Updates @{
+Update-PluginState -PluginPath $PluginPath -Phase "current_phase_complete" -Updates @{
   "validation.specific_check" = $true
   "framework_selection.decision" = "visage"
 }
@@ -96,11 +97,11 @@ Always backup state before major operations:
 
 ```powershell
 # Backup before risky operations
-Backup-PluginState -PluginPath "plugins\[Name]"
+Backup-PluginState -PluginPath $PluginPath
 
 # If operation fails, restore
 if ($operationFailed) {
-    Restore-PluginState -PluginPath "plugins\[Name]"
+    Restore-PluginState -PluginPath $PluginPath
 }
 ```
 
@@ -183,7 +184,7 @@ All skill files have been updated to use the state management system:
 
 1. **Check current state:**
    ```powershell
-   $state = Get-PluginState -PluginPath "plugins\[Name]"
+   $state = Get-PluginState -PluginPath $PluginPath
    $state | ConvertTo-Json -Depth 5
    ```
 
@@ -194,12 +195,12 @@ All skill files have been updated to use the state management system:
 
 3. **Restore from backup:**
    ```powershell
-   Restore-PluginState -PluginPath "plugins\[Name]"
+   Restore-PluginState -PluginPath $PluginPath
    ```
 
 4. **Manual state fix:**
    ```powershell
-   Update-PluginState -PluginPath "plugins\[Name]" -Phase "correct_phase"
+   Update-PluginState -PluginPath $PluginPath -Phase "correct_phase"
    ```
 
 ## Future Enhancements

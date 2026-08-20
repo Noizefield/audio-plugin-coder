@@ -554,7 +554,7 @@ console.log("Debug message:", variable);
       "name": "Debug Standalone",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/plugins/MyPlugin/MyPlugin_artefacts/Debug/Standalone/MyPlugin.exe",
+      "program": "${workspaceFolder}/build/$PluginPath/MyPlugin_artefacts/Debug/Standalone/MyPlugin.exe",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
@@ -592,14 +592,14 @@ If a phase goes wrong:
 
 ```powershell
 # Check available backups
-Get-ChildItem plugins/MyPlugin/status.json.backup.*
+Get-ChildItem $PluginPath/status.json.backup.*
 
 # Restore previous state
 .\scripts\state-management.ps1
-Restore-PluginState -PluginPath "plugins/MyPlugin"
+Restore-PluginState -PluginPath $PluginPath
 
 # Or manually reset phase
-Update-PluginState -PluginPath "plugins/MyPlugin" -Phase "design_complete"
+Update-PluginState -PluginPath $PluginPath -Phase "design_complete"
 ```
 
 ### Git Recovery
@@ -609,10 +609,10 @@ Update-PluginState -PluginPath "plugins/MyPlugin" -Phase "design_complete"
 git status
 
 # Reset to last commit
-git checkout -- plugins/MyPlugin/
+git checkout -- $PluginPath/
 
 # Or reset specific files
-git checkout -- plugins/MyPlugin/Source/PluginEditor.cpp
+git checkout -- $PluginPath/Source/PluginEditor.cpp
 ```
 
 ### Clean Build
@@ -644,7 +644,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build-and-install.ps1 -Plugin
 
 3. **Check state:**
    ```powershell
-   Get-Content plugins/MyPlugin/status.json | ConvertFrom-Json
+   Get-Content $PluginPath/status.json | ConvertFrom-Json
    ```
 
 ### Information to Provide

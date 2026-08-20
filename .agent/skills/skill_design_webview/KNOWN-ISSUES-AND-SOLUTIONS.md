@@ -1,12 +1,12 @@
-# WebView Known Issues & Solutions
+﻿# WebView Known Issues & Solutions
 **Comprehensive guide for future AI developers**
 
-**Last Updated:** 2026-01-26
-**Based On:** CloudWash Plugin Development
+**Last Updated:** 2026-08-13
+**Based On:** CloudWash Plugin Development + Organik Designâ†’WebUI conversion
 
 ---
 
-## 🚨 Critical Issues (Must Know)
+## ðŸš¨ Critical Issues (Must Know)
 
 ### 1. ES6 Modules Don't Work
 **Severity:** CRITICAL
@@ -14,7 +14,7 @@
 
 **Problem:**
 ```html
-<!-- ❌ THIS FAILS SILENTLY -->
+<!-- âŒ THIS FAILS SILENTLY -->
 <script type="module" src="js/index.js"></script>
 ```
 
@@ -28,9 +28,42 @@
 ALL JavaScript must be inline in index.html (900+ lines typical).
 
 **Reference:**
-- `.agent/troubleshooting/resolutions/webview-es6-modules-fail.md`
-- `.agent/skills/skill_design_webview/WEBVIEW-PRODUCTION-GUIDE.md`
+- `..agent/troubleshooting/resolutions/webview-es6-modules-fail.md`
+- `..agent/skills/skill_design_webview/WEBVIEW-PRODUCTION-GUIDE.md`
 - Working example: `plugins/CloudWash/Source/ui/public/index.html`
+
+---
+
+### 1b. External CSS Does Not Apply (Messy / Unstyled UI)
+**Severity:** HIGH
+**Issue ID:** webview-011
+
+**Problem:**
+```html
+<!-- âŒ WORKS IN EDGE, FAILS IN JUCE WEBVIEW â€” page looks like raw HTML -->
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/hackerbridge_style.css" />
+```
+
+Copying `Design/index.html` into `WebUI/` without inlining CSS is the usual cause.
+
+**Symptoms:**
+- HTML/buttons/text visible (not a black screen)
+- Default OS/WebView buttons, overlapping absolute layout
+- Broken logo; Design footer hint still showing
+- Design preview in browser looks correct
+
+**Also check:**
+- `getResource()` must not map unknown URLs to `index.html` (relative `css/tokens.css` then serves HTML as CSS)
+- `juce_add_binary_data` original names are **basenames** (`tokens.css`), not `css/tokens.css`
+- Running Standalone can lock a **stale EXE** while VST3 rebuilds
+
+**Solution:**
+Inline ALL CSS in `index.html` (same rule as JS). Explicit BinaryData map by path **and** basename. Add `html.plugin-host` when `window.__JUCE__` exists. Kill Standalone before rebuild.
+
+**Reference:**
+- `..agent/troubleshooting/resolutions/webview-011-unstyled-external-css.md`
+- Working example: `plugins/Organik/WebUI/index.html`, `plugins/CloudWash/Source/ui/public/index.html`
 
 ---
 
@@ -55,7 +88,7 @@ private:
 ```
 
 **Reference:**
-- `.agent/troubleshooting/resolutions/webview-member-order-crash.md`
+- `..agent/troubleshooting/resolutions/webview-member-order-crash.md`
 
 ---
 
@@ -81,11 +114,11 @@ webView = std::make_unique<juce::WebBrowserComponent>(
 ```
 
 **Reference:**
-- `.agent/troubleshooting/resolutions/webview-juce8-api-changes.md`
+- `..agent/troubleshooting/resolutions/webview-juce8-api-changes.md`
 
 ---
 
-## ⚠️ Common Issues
+## âš ï¸ Common Issues
 
 ### 4. Knob Rendering Glitches
 **Severity:** MEDIUM
@@ -148,8 +181,8 @@ DSP not implemented for that parameter in PluginProcessor::processBlock().
 Implement DSP for that parameter.
 
 **Example (CloudWash):**
-- Mode 0 (Granular): ✅ Fully implemented
-- Modes 1-3: ⚠️ Placeholders (awaiting Phase 4.1.2)
+- Mode 0 (Granular): âœ… Fully implemented
+- Modes 1-3: âš ï¸ Placeholders (awaiting Phase 4.1.2)
 
 ---
 
@@ -184,15 +217,16 @@ std::optional<WebBrowserComponent::Resource> getResource(const String& url)
 ```
 
 **Reference:**
-- `.agent/troubleshooting/resolutions/webview-black-screen-resources.md`
+- `..agent/troubleshooting/resolutions/webview-black-screen-resources.md`
 
 ---
 
-## 📋 Development Checklist
+## ðŸ“‹ Development Checklist
 
 ### Before Building Plugin
 
 - [ ] ALL JavaScript is inline in index.html
+- [ ] ALL CSS is inline in index.html (no `<link rel="stylesheet">`)
 - [ ] No `<script type="module">` tags
 - [ ] No `import` / `export` statements
 - [ ] test-local.html created and tested in browser
@@ -201,7 +235,7 @@ std::optional<WebBrowserComponent::Resource> getResource(const String& url)
 
 ### C++ Side
 
-- [ ] Member order: Relays → WebView → Attachments
+- [ ] Member order: Relays â†’ WebView â†’ Attachments
 - [ ] JUCE 8 API used (WinWebView2 nested class)
 - [ ] Resource provider returns embedded BinaryData
 - [ ] All relays registered with `.withOptionsFrom()`
@@ -238,7 +272,7 @@ target_compile_definitions(YourPlugin
 
 ---
 
-## 🔍 Debugging Steps
+## ðŸ” Debugging Steps
 
 ### Issue: UI Doesn't Load At All
 
@@ -251,24 +285,32 @@ target_compile_definitions(YourPlugin
 2. **Look for ES6 module errors:**
    - Open browser console (F12)
    - Look for: "Cross-Origin Request blocked"
-   - If found → ES6 modules issue (webview-008)
+   - If found â†’ ES6 modules issue (webview-008)
 
 3. **Check resource provider:**
    - Verify BinaryData.h exists in build folder
    - Check getResource() maps URLs correctly
    - Verify MIME types
 
+### Issue: UI Loads but Looks Messy / Unstyled
+
+1. **This is webview-011, not a layout bug in the Design.**
+2. Search `WebUI/index.html` for `<link rel="stylesheet">` â€” if present, inline the CSS.
+3. Confirm `getResource()` does not rewrite CSS URLs to `index.html`.
+4. Compare Standalone vs VST3 file times; kill a locked Standalone and rebuild.
+5. Full write-up: `..agent/troubleshooting/resolutions/webview-011-unstyled-external-css.md`
+
 ### Issue: Knobs Don't Render
 
 1. **Check browser test:**
-   - If works in browser → BinaryData issue
-   - If fails in browser → JavaScript error
+   - If works in browser â†’ BinaryData issue
+   - If fails in browser â†’ JavaScript error
 
 2. **Check console:**
    ```javascript
    // Should see:
    "Initializing 10 knobs..."
-   "  ✓ Knob: position"
+   "  âœ“ Knob: position"
    // ... all 10 knobs
    ```
 
@@ -305,32 +347,32 @@ target_compile_definitions(YourPlugin
 
 ---
 
-## 📚 Documentation Locations
+## ðŸ“š Documentation Locations
 
 ### Skills
-- **`.agent/skills/skill_design_webview/SKILL.md`**
+- **`..agent/skills/skill_design_webview/SKILL.md`**
   - Quick-start guide (may be outdated)
 
-- **`.agent/skills/skill_design_webview/WEBVIEW-PRODUCTION-GUIDE.md`** ⭐
+- **`..agent/skills/skill_design_webview/WEBVIEW-PRODUCTION-GUIDE.md`** â­
   - COMPLETE production guide
   - Use this for all new plugins
   - Based on CloudWash development
 
-- **`.agent/skills/skill_design_webview/KNOWN-ISSUES-AND-SOLUTIONS.md`** ⭐
+- **`..agent/skills/skill_design_webview/KNOWN-ISSUES-AND-SOLUTIONS.md`** â­
   - This file
   - Quick reference for common issues
 
 ### Troubleshooting
-- **`.agent/troubleshooting/known-issues.yaml`**
+- **`..agent/troubleshooting/known-issues.yaml`**
   - Database of all known issues
   - Searchable by ID, category, symptoms
 
-- **`.agent/troubleshooting/resolutions/`**
+- **`..agent/troubleshooting/resolutions/`**
   - Detailed resolution documents
-  - webview-001 through webview-008
+  - webview-001 through webview-011 (see especially webview-008 JS, webview-011 CSS)
 
 ### Working Examples
-- **`plugins/CloudWash/Source/ui/public/index.html`** ⭐
+- **`plugins/CloudWash/Source/ui/public/index.html`** â­
   - 978 lines, 34KB
   - COMPLETE working implementation
   - Use as template for all new plugins
@@ -341,7 +383,7 @@ target_compile_definitions(YourPlugin
 
 ---
 
-## 🎯 Quick Start for New Plugin
+## ðŸŽ¯ Quick Start for New Plugin
 
 ### 1. Copy CloudWash Template
 ```powershell
@@ -350,7 +392,7 @@ cp plugins/CloudWash/Source/ui/public/index.html plugins/YourPlugin/Source/ui/pu
 ```
 
 ### 2. Modify for Your Plugin
-1. Change title: "CLOUDWASH" → "YOUR PLUGIN"
+1. Change title: "CLOUDWASH" â†’ "YOUR PLUGIN"
 2. Update parameter names in HTML data attributes
 3. Update JavaScript parameter list
 4. Modify knob labels, defaults, ranges
@@ -374,45 +416,49 @@ plugins/YourPlugin/Source/ui/public/test-local.html
 
 ---
 
-## ⚡ Performance Tips
+## âš¡ Performance Tips
 
 ### Knob Rendering
-- ✅ DO: Remove CSS transitions
-- ✅ DO: Use `e.preventDefault()` on mousedown
-- ❌ DON'T: Recalculate SVG paths unnecessarily
+- âœ… DO: Remove CSS transitions
+- âœ… DO: Use `e.preventDefault()` on mousedown
+- âŒ DON'T: Recalculate SVG paths unnecessarily
 
 ### Meter Updates
-- ✅ DO: Use Timer at 30 FPS
-- ✅ DO: Use `std::atomic` for thread safety
-- ❌ DON'T: Call from processBlock() (too frequent)
+- âœ… DO: Use Timer at 30 FPS
+- âœ… DO: Use `std::atomic` for thread safety
+- âŒ DON'T: Call from processBlock() (too frequent)
 
 ### Memory
-- ✅ DO: Embed all resources in BinaryData
-- ✅ DO: Use inline JavaScript (single file)
-- ❌ DON'T: Load external files at runtime
+- âœ… DO: Embed all resources in BinaryData
+- âœ… DO: Use inline JavaScript (single file)
+- âœ… DO: Use inline CSS (single `<style>` block)
+- âŒ DON'T: Load external files at runtime
+- âŒ DON'T: Use `<link rel="stylesheet">` in production WebUI (webview-011)
 
 ---
 
-## 🔗 Related Files
+## ðŸ”— Related Files
 
 ### Must Read
 1. **WEBVIEW-PRODUCTION-GUIDE.md** - Complete development guide
-2. **webview-es6-modules-fail.md** - #1 issue explanation
-3. **CloudWash index.html** - Working reference implementation
+2. **webview-es6-modules-fail.md** - #1 issue (JS)
+3. **webview-011-unstyled-external-css.md** - messy/unstyled UI (CSS)
+4. **CloudWash index.html** - Working reference implementation
 
 ### Optional Reading
 - webview-member-order-crash.md
 - webview-juce8-api-changes.md
 - webview-black-screen-resources.md
+- webview-011-unstyled-external-css.md
 
 ---
 
-## 📝 Notes for AI Developers
+## ðŸ“ Notes for AI Developers
 
 ### When User Reports WebView Issue
 
 1. **First, check this file** for known solutions
-2. **Then, search** `.agent/troubleshooting/known-issues.yaml`
+2. **Then, search** `..agent/troubleshooting/known-issues.yaml`
 3. **If found**, apply documented solution
 4. **If new issue:**
    - After 3 attempts, trigger auto-capture
@@ -442,3 +488,4 @@ Then diagnose using "Debugging Steps" section above.
 **Status:** Living Document
 **Updates:** Add new issues as discovered
 **Version:** 1.0 (2026-01-26)
+

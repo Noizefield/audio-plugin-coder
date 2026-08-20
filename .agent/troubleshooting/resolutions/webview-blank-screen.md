@@ -246,7 +246,9 @@ Run through this checklist:
 | Console: "backend is undefined" | Add `.withNativeIntegrationEnabled()` |
 | Console: "CORS error" | Check resource provider implementation |
 | Screen loads but no controls | Check parameter relays and attachments |
-| Old UI shown | Rebuild plugin (web files compiled into binary) |
+| HTML visible, default buttons, overlapping layout | **webview-011** — inline CSS; do not default CSS URLs to index.html |
+| Old UI shown | Rebuild plugin (web files compiled into binary); kill Standalone if EXE is locked |
+| Design preview OK, plugin messy | **webview-011** — Design used `<link rel="stylesheet">` |
 
 ---
 
@@ -286,4 +288,3 @@ Run through this checklist:
 ```
 
 This catches 90% of common issues before they cause blank screens.
-

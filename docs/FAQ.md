@@ -116,7 +116,7 @@ This continues from the last completed phase.
 You can manually update files in any phase, then update the state:
 ```powershell
 . .\scripts\state-management.ps1
-Update-PluginState -PluginPath "plugins\MyPlugin" -Updates @{
+Update-PluginState -PluginPath $PluginPath -Updates @{
     "current_phase" = "design_complete"
 }
 ```
@@ -170,7 +170,7 @@ No. Always use the build script. Never run cmake/msbuild directly.
 ### Where are the build outputs?
 
 ```
-build/plugins/MyPlugin/MyPlugin_artefacts/Release/
+build/$PluginPath/MyPlugin_artefacts/Release/
 ├── MyPlugin.vst3/          # VST3 plugin
 └── MyPlugin.exe            # Standalone
 ```
@@ -243,7 +243,7 @@ Or let the `/ship` command handle it.
 
 - **Build errors:** Console output from build script
 - **Plugin crashes:** Documents/APC_CRASH_REPORT.txt
-- **State errors:** `plugins/MyPlugin/status.json` → `error_recovery.error_log`
+- **State errors:** `$PluginPath/status.json` → `error_recovery.error_log`
 
 ### How do I debug a crash?
 
@@ -266,12 +266,12 @@ Or let the `/ship` command handle it.
 
 ```powershell
 . .\scripts\state-management.ps1
-Restore-PluginState -PluginPath "plugins\MyPlugin"
+Restore-PluginState -PluginPath $PluginPath
 ```
 
 Or use git:
 ```powershell
-git checkout -- plugins/MyPlugin/
+git checkout -- $PluginPath/
 ```
 
 ### What if the AI makes a mistake?

@@ -19,8 +19,9 @@ description: "PHASE 5: Packaging - Create cross-platform installers and distribu
 
 ```powershell
 . "$PSScriptRoot\..\scripts\state-management.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 
-$state = Get-PluginState -PluginPath "plugins\$PluginName"
+$state = Get-PluginState -PluginPath $PluginPath
 
 if ($state.current_phase -ne "code_complete") {
     Write-Error "Implementation not complete. Run /apc-impl first."

@@ -9,8 +9,9 @@ description: "Resume plugin development from current state"
 
 ```powershell
 . "$PSScriptRoot\..\scripts\state-management.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 
-$state = Get-PluginState -PluginPath "plugins\$PluginName"
+$state = Get-PluginState -PluginPath $PluginPath
 
 Write-Host "Resuming plugin: $($state.plugin_name)" -ForegroundColor Cyan
 Write-Host "Current phase: $($state.current_phase)"

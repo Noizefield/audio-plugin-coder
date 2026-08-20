@@ -6,7 +6,8 @@ param(
     [string]$PluginName
 )
 
-$PluginPath = Join-Path $PSScriptRoot "..\plugins\$PluginName"
+. "$PSScriptRoot\lib\Get-ApcPaths.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 
 Write-Host ""
 Write-Host "WebView Member Order Validator" -ForegroundColor Cyan

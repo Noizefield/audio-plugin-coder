@@ -6,9 +6,11 @@
 param([Parameter(Mandatory=$true)][string]$PluginName)
 
 $ErrorActionPreference = "Stop"
-$RootPath = (Get-Item "$PSScriptRoot\..").FullName
-$BuildDir = "$RootPath\build"
-$StatusJson = Join-Path $RootPath "plugins\$PluginName\status.json"
+. "$PSScriptRoot\lib\Get-ApcPaths.ps1"
+$ApcPaths = Get-ApcPaths
+$RootPath = $ApcPaths.RepoRoot
+$BuildDir = $ApcPaths.BuildDir
+$StatusJson = Join-Path (Get-ApcPluginPath -PluginName $PluginName) "status.json"
 $UseVisage = $false
 
 if (Test-Path $StatusJson) {
@@ -32,7 +34,8 @@ Write-Host "--- APC PREVIEW: $PluginName ---" -ForegroundColor Cyan
 
 # 1. Configure (ensure correct framework flags)
 Write-Host "Configuring..." -ForegroundColor Yellow
-cmake -B "$BuildDir" -G "Visual Studio 17 2022" -A x64 --fresh @VisageFlag
+$pluginsFlag = "-DAPC_PLUGINS_DIR=`"$($ApcPaths.PluginsDir)`""
+cmake -S "$RootPath" -B "$BuildDir" -G "Visual Studio 17 2022" -A x64 --fresh @VisageFlag $pluginsFlag
 
 if ($UseVisage -and (Test-Path "$BuildDir\CMakeCache.txt")) {
     $cache = Get-Content "$BuildDir\CMakeCache.txt" -Raw

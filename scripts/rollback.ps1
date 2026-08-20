@@ -22,8 +22,9 @@ param(
 $ErrorActionPreference = "Stop"
 
 # 1. Setup Paths
-$RootPath = (Get-Item "$PSScriptRoot\..").FullName
-$PluginDir = Join-Path $RootPath "plugins\$PluginName"
+. "$PSScriptRoot\lib\Get-ApcPaths.ps1"
+$RootPath = (Get-ApcRepoRoot)
+$PluginDir = Get-ApcPluginPath -PluginName $PluginName -RepoRoot $RootPath
 $BackupRoot = Join-Path $RootPath "_backups\$PluginName"
 
 # Strip 'v' for cleaner matching

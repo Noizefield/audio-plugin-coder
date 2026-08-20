@@ -68,14 +68,14 @@ Slash commands are the primary APC syntax in Claude Code and Kilo. Sections belo
 **Trigger:** Natural language equivalent: "Create a new delay plugin called EchoReverb"
 
 **Actions:**
-1. Creates plugin directory: `plugins/[Name]/`
+1. Creates plugin directory: `$PluginPath/`
 2. Generates `creative-brief.md` (concept document)
 3. Generates `parameter-spec.md` (parameter definitions)
 4. Initializes `status.json` (project state)
 
 **Output Files:**
 ```
-plugins/[Name]/
+$PluginPath/
 ├── .ideas/
 │   ├── creative-brief.md
 │   └── parameter-spec.md
@@ -102,7 +102,7 @@ plugins/[Name]/
 
 **Output Files:**
 ```
-plugins/[Name]/.ideas/
+$PluginPath/.ideas/
 ├── architecture.md
 └── plan.md
 ```
@@ -129,7 +129,7 @@ plugins/[Name]/.ideas/
 
 **Output Files:**
 ```
-plugins/[Name]/
+$PluginPath/
 ├── Design/
 │   ├── v1-ui-spec.md
 │   ├── v1-style-guide.md
@@ -160,7 +160,7 @@ plugins/[Name]/
 
 **Output Files:**
 ```
-plugins/[Name]/Source/
+$PluginPath/Source/
 ├── PluginProcessor.h
 ├── PluginProcessor.cpp
 ├── PluginEditor.h
@@ -455,13 +455,15 @@ Dot-source to use functions:
 . .\scripts\state-management.ps1
 
 # Then use functions
-New-PluginState -PluginName "MyPlugin" -PluginPath "plugins\MyPlugin"
-Get-PluginState -PluginPath "plugins\MyPlugin"
-Update-PluginState -PluginPath "plugins\MyPlugin" -Updates @{...}
-Test-PluginState -PluginPath "plugins\MyPlugin" -RequiredPhase "plan_complete"
-Complete-Phase -PluginPath "plugins\MyPlugin" -Phase "design" -Updates @{...}
-Backup-PluginState -PluginPath "plugins\MyPlugin"
-Restore-PluginState -PluginPath "plugins\MyPlugin"
+. ".\scripts\lib\Get-ApcPaths.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName "MyPlugin"
+New-PluginState -PluginName "MyPlugin" -PluginPath $PluginPath
+Get-PluginState -PluginPath $PluginPath
+Update-PluginState -PluginPath $PluginPath -Updates @{...}
+Test-PluginState -PluginPath $PluginPath -RequiredPhase "plan_complete"
+Complete-Phase -PluginPath $PluginPath -Phase "design" -Updates @{...}
+Backup-PluginState -PluginPath $PluginPath
+Restore-PluginState -PluginPath $PluginPath
 ```
 
 ---

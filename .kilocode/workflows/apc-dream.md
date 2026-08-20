@@ -1,4 +1,4 @@
----
+﻿---
 description: "PHASE 1: Ideation - Create creative brief and parameter spec"
 ---
 
@@ -14,29 +14,31 @@ description: "PHASE 1: Ideation - Create creative brief and parameter spec"
 **State Check:**
 ```powershell
 # Check if plugin already exists
-if (Test-Path "plugins\$PluginName") {
+. ".\scripts\lib\Get-ApcPaths.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
+if (Test-Path $PluginPath) {
     Write-Warning "Plugin already exists. Use /apc-resume to continue existing plugin."
     exit 1
 }
 ```
 
 **Execute Skill:**
-Load and execute `..kilocode\skills\dream\SKILL.md`
+Load and execute `...kilocode\skills\dream\SKILL.md`
 
 **Validation:**
-- Verify `plugins\[Name]\status.json` exists
+- Verify `$PluginPath/status.json` exists
 - Verify `current_phase` = "ideation"
 - Verify creative brief and parameter spec exist
 
 **Completion:**
 Stop and inform user:
 ```
-Γ£à Dream phase complete!
+Dream phase complete!
 
 Files created:
-- plugins/[Name]/.ideas/creative-brief.md
-- plugins/[Name]/.ideas/parameter-spec.md
-- plugins/[Name]/apc-status.json
+- $PluginPath/.ideas/creative-brief.md
+- $PluginPath/.ideas/parameter-spec.md
+- $PluginPath/status.json
 
 Next step: /apc-plan [Name]
 ```
@@ -50,15 +52,16 @@ description: "PHASE 2: Architecture - Define structure and select UI framework"
 **Prerequisites:**
 ```powershell
 . "$PSScriptRoot\..\scripts\state-management.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 
-if (-not (Test-PluginState -PluginPath "plugins\$PluginName" -RequiredPhase "ideation" -RequiredFiles @(".ideas/creative-brief.md", ".ideas/parameter-spec.md"))) {
+if (-not (Test-PluginState -PluginPath $PluginPath -RequiredPhase "ideation" -RequiredFiles @(".ideas/creative-brief.md", ".ideas/parameter-spec.md"))) {
     Write-Error "Prerequisites not met. Complete /apc-dream first."
     exit 1
 }
 ```
 
 **Execute Skill:**
-Load and execute `..kilocode\skills\plan\SKILL.md`
+Load and execute `...kilocode\skills\plan\SKILL.md`
 
 **Critical Decision Point:**
 This phase MUST determine and set `ui_framework` in status.json:
@@ -72,14 +75,15 @@ This phase MUST determine and set `ui_framework` in status.json:
 
 **Completion:**
 ```
-Γ£à Plan phase complete!
+Î“Â£Ã  Plan phase complete!
 
 Framework selected: [Visage/WebView]
 Complexity score: [N]/5
 
 Files created:
-- plugins/[Name]/.ideas/architecture.md
-- plugins/[Name]/.ideas/apc-plan.md
+- $PluginPath/.ideas/architecture.md
+- $PluginPath/.ideas/apc-plan.md
 
 Next step: /apc-design [Name]
 ```
+

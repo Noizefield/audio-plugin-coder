@@ -9,6 +9,12 @@
 # Establish the root so we can find templates reliably
 $RepoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 
+# Expose Get-ApcPaths / Get-ApcPluginPath so workflows can resolve custom plugins_dir
+$apcPathsLib = Join-Path $PSScriptRoot "lib\Get-ApcPaths.ps1"
+if (Test-Path $apcPathsLib) {
+    . $apcPathsLib
+}
+
 $Script:StateSchema = @{
     required = @(
         'plugin_name', 'version', 'current_phase', 'ui_framework', 

@@ -17,6 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Ship output is `release/`** (`paths.release_dir`), not `dist/`. Installer scripts, Inno Setup, GitHub Actions artifact collection, skills, and docs now honor the configured release directory. Existing `dist/` leftovers are gitignored.
 - Known-issue "automated fix" snippets are printed for review instead of being executed.
+- **Custom `paths.plugins_dir` / `build_dir` / `release_dir` are honored end-to-end.** Utility scripts, APC workflows/skills (`.claude` / `.agent` / `.kilocode`), and guides resolve plugins via `Get-ApcPluginPath` / `apc_plugin_path` instead of hardcoded `plugins/`. Relative sibling layouts (e.g. `../apc_plugins`) work without a `./plugins` junction. `/apc-setup` documents junction as optional.
+
+### Fixed
+
+- Backup, rollback, preview-design, WebView/Visage validators, pluginval status updates, and related helpers no longer assume the default in-repo `plugins/` folder when config overrides paths.
+
+### Removed
+
+- `notes/PLAN1-macos.md` and `notes/PLAN1-results.md` (obsolete macOS port planning; behavior lives in `scripts/*.sh` and agent rules).
 
 ---
 

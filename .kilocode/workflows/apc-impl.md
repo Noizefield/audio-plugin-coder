@@ -1,4 +1,4 @@
----
+﻿---
 description: "PHASE 4: Implementation - Build DSP and UI code"
 ---
 
@@ -11,8 +11,9 @@ description: "PHASE 4: Implementation - Build DSP and UI code"
 **Prerequisites:**
 ```powershell
 . "$PSScriptRoot\..\scripts\state-management.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 
-$state = Get-PluginState -PluginPath "plugins\$PluginName"
+$state = Get-PluginState -PluginPath $PluginPath
 
 if ($state.current_phase -ne "design_complete") {
     Write-Error "Design phase not complete. Run /apc-design first."
@@ -20,11 +21,11 @@ if ($state.current_phase -ne "design_complete") {
 }
 
 # Backup before major operation
-Backup-PluginState -PluginPath "plugins\$PluginName"
+Backup-PluginState -PluginPath $PluginPath
 ```
 
 **Execute Skill:**
-Load and execute `..kilocode\skills\impl\SKILL.md`
+Load and execute `...kilocode\skills\impl\SKILL.md`
 
 **Key Steps:**
 1. **Design Conversion:** Convert approved design specs to framework-specific code (WebView HTML/JS or Visage C++)
@@ -65,7 +66,7 @@ Expected order in PluginEditor.h:
 2. WebView (std::unique_ptr<WebBrowserComponent>)
 3. Attachments (std::unique_ptr<...Attachment>)
 
-See: .kilocode/troubleshooting/resolutions/webview-member-order-crash.md
+See: ..kilocode/troubleshooting/resolutions/webview-member-order-crash.md
 
 Fix the order before building to avoid crashes on plugin unload.
 "@
@@ -96,12 +97,12 @@ Fix the order before building to avoid crashes on plugin unload.
 **Error Recovery:**
 If build fails:
 ```powershell
-Restore-PluginState -PluginPath "plugins\$PluginName"
+Restore-PluginState -PluginPath $PluginPath
 ```
 
 **Completion:**
 ```
-Γ£à Implementation phase complete!
+Î“Â£Ã  Implementation phase complete!
 
 Plugin built successfully!
 Location: build\[Name]\Debug\VST3\[Name].vst3
@@ -114,12 +115,12 @@ Next step: /apc-test [Name] or /apc-ship [Name]
 **Before starting implementation:**
 ```powershell
 # Check for common issues related to this phase
-$phaseIssues = Get-Content ..kilocode\troubleshooting\known-issues.yaml | 
+$phaseIssues = Get-Content ...kilocode\troubleshooting\known-issues.yaml | 
     ConvertFrom-Yaml | 
     Where-Object { $_.category -eq "implementation" }
 
 if ($phaseIssues) {
-    Write-Host "≡ƒôÜ Known issues for this phase:"
+    Write-Host "â‰¡Æ’Ã´Ãœ Known issues for this phase:"
     $phaseIssues | ForEach-Object {
         Write-Host "  - $($_.title) [$($_.resolution_status)]"
     }
@@ -139,17 +140,17 @@ if ($phaseIssues) {
 
 Your "JUCE 8 CRITICAL SYSTEM PROTOCOLS" should go in **two places**:
 
-### **1. As a Rule** (`..kilocode/rules/juce-build-protocols.md`)
+### **1. As a Rule** (`...kilocode/rules/juce-build-protocols.md`)
 Because these are **constraints that always apply**
 
-### **2. As Known Issues** (`..kilocode/troubleshooting/resolutions/`)
+### **2. As Known Issues** (`...kilocode/troubleshooting/resolutions/`)
 Break it into individual issue files:
 ```
-..kilocode\troubleshooting\resolutions\
-Γö£ΓöÇΓöÇ cmake-duplicate-target.md          # Section 2B from your doc
-Γö£ΓöÇΓöÇ webview-path-structure.md          # Section 2A from your doc
-Γö£ΓöÇΓöÇ monorepo-build-context.md          # Section 1B from your doc
-ΓööΓöÇΓöÇ manual-build-forbidden.md          # Section 1A from your doc
+...kilocode\troubleshooting\resolutions\
+Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ cmake-duplicate-target.md          # Section 2B from your doc
+Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ webview-path-structure.md          # Section 2A from your doc
+Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ monorepo-build-context.md          # Section 1B from your doc
+Î“Ã¶Ã¶Î“Ã¶Ã‡Î“Ã¶Ã‡ manual-build-forbidden.md          # Section 1A from your doc
 ```
 
 ---
@@ -157,38 +158,38 @@ Break it into individual issue files:
 ## **Example Auto-Capture Flow:**
 ```
 AI encounters error: "CMake Error: Target 'juce_core' already exists"
-    Γöé
-    Γû╝
-AI tries fix #1: Remove duplicate juce_add_modules ΓåÆ Fails
-    Γöé
-    Γû╝
-AI tries fix #2: Clean build folder ΓåÆ Fails
-    Γöé
-    Γû╝
-AI tries fix #3: Check CMakeLists.txt hierarchy ΓåÆ Success!
-    Γöé
-    Γû╝
+    Î“Ã¶Ã©
+    Î“Ã»â•
+AI tries fix #1: Remove duplicate juce_add_modules Î“Ã¥Ã† Fails
+    Î“Ã¶Ã©
+    Î“Ã»â•
+AI tries fix #2: Clean build folder Î“Ã¥Ã† Fails
+    Î“Ã¶Ã©
+    Î“Ã»â•
+AI tries fix #3: Check CMakeLists.txt hierarchy Î“Ã¥Ã† Success!
+    Î“Ã¶Ã©
+    Î“Ã»â•
 AI triggers auto-capture:
-    Γö£ΓöÇΓöÇ Updates known-issues.yaml (frequency++)
-    Γö£ΓöÇΓöÇ Creates/updates resolution doc
-    ΓööΓöÇΓöÇ Notifies user: "Issue logged as cmake-001"
-    Γöé
-    Γû╝
+    Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ Updates known-issues.yaml (frequency++)
+    Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ Creates/updates resolution doc
+    Î“Ã¶Ã¶Î“Ã¶Ã‡Î“Ã¶Ã‡ Notifies user: "Issue logged as cmake-001"
+    Î“Ã¶Ã©
+    Î“Ã»â•
 Next time same error occurs:
-    Γö£ΓöÇΓöÇ AI searches known-issues.yaml first
-    Γö£ΓöÇΓöÇ Finds cmake-001 with solution
-    ΓööΓöÇΓöÇ Applies fix immediately (no trial/error)
+    Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ AI searches known-issues.yaml first
+    Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ Finds cmake-001 with solution
+    Î“Ã¶Ã¶Î“Ã¶Ã‡Î“Ã¶Ã‡ Applies fix immediately (no trial/error)
 ```
 
 ---
 
 ## **Benefits:**
 
-1. Γ£à **Self-improving system** - Gets smarter over time
-2. Γ£à **Faster resolution** - Known issues solved in seconds
-3. Γ£à **Knowledge preservation** - Solutions aren't lost between sessions
-4. Γ£à **Pattern detection** - Frequency tracking shows common pain points
-5. Γ£à **User transparency** - User sees what was tried and why
+1. Î“Â£Ã  **Self-improving system** - Gets smarter over time
+2. Î“Â£Ã  **Faster resolution** - Known issues solved in seconds
+3. Î“Â£Ã  **Knowledge preservation** - Solutions aren't lost between sessions
+4. Î“Â£Ã  **Pattern detection** - Frequency tracking shows common pain points
+5. Î“Â£Ã  **User transparency** - User sees what was tried and why
 
 ---
 
@@ -196,10 +197,11 @@ Next time same error occurs:
 
 **Create these files:**
 ```
-..kilocode\troubleshooting\
-Γö£ΓöÇΓöÇ known-issues.yaml           # ΓåÉ Machine-readable database
-Γö£ΓöÇΓöÇ _template.md                # ΓåÉ Template for new issues
-ΓööΓöÇΓöÇ resolutions\                # ΓåÉ Detailed solution docs
-    Γö£ΓöÇΓöÇ cmake-duplicate-target.md
-    Γö£ΓöÇΓöÇ webview-path-error.md
-    ΓööΓöÇΓöÇ vst3-install-failed.md
+...kilocode\troubleshooting\
+Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ known-issues.yaml           # Î“Ã¥Ã‰ Machine-readable database
+Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ _template.md                # Î“Ã¥Ã‰ Template for new issues
+Î“Ã¶Ã¶Î“Ã¶Ã‡Î“Ã¶Ã‡ resolutions\                # Î“Ã¥Ã‰ Detailed solution docs
+    Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ cmake-duplicate-target.md
+    Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ webview-path-error.md
+    Î“Ã¶Ã¶Î“Ã¶Ã‡Î“Ã¶Ã‡ vst3-install-failed.md
+

@@ -35,6 +35,7 @@ These instructions apply to the entire repository and are written for any coding
 ## Required Context
 
 - Before changing a plugin under the configured plugins directory, read its `status.json`.
+- Resolve the plugin directory with `Get-ApcPluginPath` / `apc_plugin_path` (from `scripts/lib/Get-ApcPaths.ps1` or `scripts/lib/apc-paths.sh`). Do **not** hardcode `plugins/<Name>` — honor `paths.plugins_dir` in `apc.config.json`.
 - Read the relevant workflow and skill under `.claude/`; fall back to the matching `.agent/` file if needed.
 - Also read `.claude/rules/juce-build-protocols.md` and `.claude/rules/file-naming-conventions.md` before implementation, build, or packaging work.
 - Preserve the selected `ui_framework`: Visage work must not introduce WebView files, and WebView work must not introduce Visage controls.

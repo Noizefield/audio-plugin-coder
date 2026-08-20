@@ -64,7 +64,7 @@ Transform a vague idea into a concrete plugin concept with defined parameters.
 ### Outputs
 
 ```
-plugins/MyPlugin/
+$PluginPath/
 ├── .ideas/
 │   ├── creative-brief.md      # Vision and concept
 │   └── parameter-spec.md      # Parameter definitions
@@ -163,7 +163,7 @@ Design the DSP architecture and select the appropriate UI framework.
 ### Outputs
 
 ```
-plugins/MyPlugin/.ideas/
+$PluginPath/.ideas/
 ├── architecture.md            # DSP design
 └── plan.md                    # Implementation strategy
 ```
@@ -295,7 +295,7 @@ Create visual mockups and detailed UI specifications.
 ### Outputs
 
 ```
-plugins/MyPlugin/
+$PluginPath/
 └── Design/
     ├── v1-ui-spec.md          # Layout specification
     ├── v1-style-guide.md      # Visual reference
@@ -303,7 +303,7 @@ plugins/MyPlugin/
  
 Visage preview (optional):
 ```
-plugins/MyPlugin/Source/
+$PluginPath/Source/
     ├── PluginEditor.h
     ├── PluginEditor.cpp
     └── VisageControls.h
@@ -428,7 +428,7 @@ Write the C++ DSP and UI code.
 ### Outputs
 
 ```
-plugins/MyPlugin/Source/
+$PluginPath/Source/
 ├── PluginProcessor.h
 ├── PluginProcessor.cpp
 ├── PluginEditor.h
@@ -630,10 +630,10 @@ ship → ship_complete → complete
 If you need to go back:
 ```powershell
 # Manual state update
-Update-PluginState -PluginPath "plugins\MyPlugin" -Phase "design_complete"
+Update-PluginState -PluginPath $PluginPath -Phase "design_complete"
 
 # Or restore from backup
-Restore-PluginState -PluginPath "plugins\MyPlugin"
+Restore-PluginState -PluginPath $PluginPath
 ```
 
 ---
@@ -655,7 +655,7 @@ Restore-PluginState -PluginPath "plugins\MyPlugin"
 
 3. **Backup before risky changes**
    ```powershell
-   Backup-PluginState -PluginPath "plugins\MyPlugin"
+   Backup-PluginState -PluginPath $PluginPath
    ```
 
 4. **Test incrementally**

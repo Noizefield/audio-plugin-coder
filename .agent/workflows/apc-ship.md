@@ -1,4 +1,4 @@
----
+﻿---
 description: "PHASE 5: Packaging - Create cross-platform installers and distribution packages"
 ---
 
@@ -11,7 +11,7 @@ description: "PHASE 5: Packaging - Create cross-platform installers and distribu
 **Goal:** Create professional, cross-platform plugin installers with license agreements
 **Trigger:** `/apc-ship [Name]` or "Ship [Name]"
 **Prerequisites:** Phase 4 (CODE) complete, audio engine working, all tests passed
-**Skill Reference:** `.agent/skills/apc-ship/SKILL.md`
+**Skill Reference:** `..agent/skills/apc-ship/SKILL.md`
 
 ---
 
@@ -19,8 +19,9 @@ description: "PHASE 5: Packaging - Create cross-platform installers and distribu
 
 ```powershell
 . "$PSScriptRoot\..\scripts\state-management.ps1"
+$PluginPath = Get-ApcPluginPath -PluginName $PluginName
 
-$state = Get-PluginState -PluginPath "plugins\$PluginName"
+$state = Get-PluginState -PluginPath $PluginPath
 
 if ($state.current_phase -ne "code_complete") {
     Write-Error "Implementation not complete. Run /apc-impl first."
@@ -42,9 +43,9 @@ The Ship phase creates distribution-ready plugin packages for Windows, macOS, an
 
 | Platform | VST3 | AU | Standalone | LV2 | Build Method |
 |----------|------|-----|------------|-----|--------------|
-| Windows  | Γ£ô    | -   | Γ£ô          | -   | Local or GitHub |
-| macOS    | Γ£ô    | Γ£ô   | Γ£ô          | -   | GitHub only |
-| Linux    | Γ£ô    | -   | Γ£ô          | Γ£ô   | GitHub only |
+| Windows  | Î“Â£Ã´    | -   | Î“Â£Ã´          | -   | Local or GitHub |
+| macOS    | Î“Â£Ã´    | Î“Â£Ã´   | Î“Â£Ã´          | -   | GitHub only |
+| Linux    | Î“Â£Ã´    | -   | Î“Â£Ã´          | Î“Â£Ã´   | GitHub only |
 
 ---
 
@@ -173,15 +174,15 @@ Enter numbers (comma-separated) or 'all':
 **Output Structure:**
 ```
 release/{PluginName}-v{version}/
-Γö£ΓöÇΓöÇ {PluginName}-{version}-Windows-Setup.exe
-Γö£ΓöÇΓöÇ {PluginName}-{version}-macOS.dmg
-Γö£ΓöÇΓöÇ {PluginName}-{version}-macOS.pkg
-Γö£ΓöÇΓöÇ {PluginName}-{version}-Linux.AppImage
-Γö£ΓöÇΓöÇ {PluginName}-{version}.deb
-Γö£ΓöÇΓöÇ README.md
-Γö£ΓöÇΓöÇ CHANGELOG.md
-Γö£ΓöÇΓöÇ LICENSE.txt
-ΓööΓöÇΓöÇ INSTALL.md
+Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ {PluginName}-{version}-Windows-Setup.exe
+Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ {PluginName}-{version}-macOS.dmg
+Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ {PluginName}-{version}-macOS.pkg
+Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ {PluginName}-{version}-Linux.AppImage
+Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ {PluginName}-{version}.deb
+Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ README.md
+Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ CHANGELOG.md
+Î“Ã¶Â£Î“Ã¶Ã‡Î“Ã¶Ã‡ LICENSE.txt
+Î“Ã¶Ã¶Î“Ã¶Ã‡Î“Ã¶Ã‡ INSTALL.md
 ```
 
 **Reference:** See `skill_packaging/SKILL.md` - "STEP 7: FINALIZE DISTRIBUTION"
@@ -220,23 +221,23 @@ release/{PluginName}-v{version}/
 ## Completion
 
 ```
-ΓòöΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòù
-Γòæ  ≡ƒÄë PLUGIN SHIPPED SUCCESSFULLY!                             Γòæ
-ΓòáΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòú
-Γòæ  Plugin: {PluginName} v{version}                              Γòæ
-Γòæ                                                              Γòæ
-Γòæ  Platforms Built:                                            Γòæ
-Γòæ    ΓÇó Windows: {Local/GitHub}                                  Γòæ
-Γòæ    ΓÇó macOS: GitHub Actions                                    Γòæ
-Γòæ    ΓÇó Linux: GitHub Actions                                    Γòæ
-Γòæ                                                              Γòæ
-Γòæ  Distribution: release/{PluginName}-v{version}.zip               Γòæ
-Γòæ                                                              Γòæ
-Γòæ  Installers:                                                 Γòæ
-Γòæ    ΓÇó Windows: Setup.exe with license & custom path           Γòæ
-Γòæ    ΓÇó macOS: DMG + PKG with component selection               Γòæ
-Γòæ    ΓÇó Linux: AppImage + DEB packages                          Γòæ
-ΓòÜΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓò¥
+Î“Ã²Ã¶Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã¹
+Î“Ã²Ã¦  â‰¡Æ’Ã„Ã« PLUGIN SHIPPED SUCCESSFULLY!                             Î“Ã²Ã¦
+Î“Ã²Ã¡Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ãº
+Î“Ã²Ã¦  Plugin: {PluginName} v{version}                              Î“Ã²Ã¦
+Î“Ã²Ã¦                                                              Î“Ã²Ã¦
+Î“Ã²Ã¦  Platforms Built:                                            Î“Ã²Ã¦
+Î“Ã²Ã¦    Î“Ã‡Ã³ Windows: {Local/GitHub}                                  Î“Ã²Ã¦
+Î“Ã²Ã¦    Î“Ã‡Ã³ macOS: GitHub Actions                                    Î“Ã²Ã¦
+Î“Ã²Ã¦    Î“Ã‡Ã³ Linux: GitHub Actions                                    Î“Ã²Ã¦
+Î“Ã²Ã¦                                                              Î“Ã²Ã¦
+Î“Ã²Ã¦  Distribution: release/{PluginName}-v{version}.zip               Î“Ã²Ã¦
+Î“Ã²Ã¦                                                              Î“Ã²Ã¦
+Î“Ã²Ã¦  Installers:                                                 Î“Ã²Ã¦
+Î“Ã²Ã¦    Î“Ã‡Ã³ Windows: Setup.exe with license & custom path           Î“Ã²Ã¦
+Î“Ã²Ã¦    Î“Ã‡Ã³ macOS: DMG + PKG with component selection               Î“Ã²Ã¦
+Î“Ã²Ã¦    Î“Ã‡Ã³ Linux: AppImage + DEB packages                          Î“Ã²Ã¦
+Î“Ã²ÃœÎ“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Ã‰Î“Ã²Â¥
 ```
 
 ---
@@ -253,4 +254,5 @@ release/{PluginName}-v{version}/
 ## Reference
 
 For detailed implementation, code samples, and troubleshooting:
-**ΓåÆ See `.agent/skills/apc-ship/SKILL.md`**
+**Î“Ã¥Ã† See `..agent/skills/apc-ship/SKILL.md`**
+

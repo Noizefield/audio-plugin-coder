@@ -17,9 +17,11 @@ fi
 
 # --- PATH RESOLUTION ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_PATH="$(cd "$SCRIPT_DIR/.." && pwd)"
-PLUGIN_DIR="$ROOT_PATH/plugins/$PLUGIN_NAME"
-BACKUP_ROOT="$ROOT_PATH/_backups/$PLUGIN_NAME"
+# shellcheck source=lib/apc-paths.sh
+source "$SCRIPT_DIR/lib/apc-paths.sh"
+apc_load_paths
+PLUGIN_DIR="$(apc_plugin_path "$PLUGIN_NAME")"
+BACKUP_ROOT="$APC_REPO_ROOT/_backups/$PLUGIN_NAME"
 
 # Strip 'v' prefix
 CLEAN_VER="${VERSION#v}"
