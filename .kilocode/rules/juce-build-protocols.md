@@ -25,8 +25,8 @@
 - **Location:** HTML/JS/CSS files MUST reside in plugins/[Name]/Source/ui/public/.
 - **Forbidden:** Do NOT use plugin-root WebUI/ or Resources/web unless the plugin CMakeLists.txt explicitly embeds that path via juce_add_binary_data.
 - **Embedding:** Register web files with juce_add_binary_data([Name]_WebUI ...) and link the target to the plugin.
-- **JS Interop:** Copy the JUCE 9 interop drop-in to Source/ui/public/js/juce/index.js from _tools/JUCE/modules/juce_gui_extra/native/typescript/webview-interop/dist/index.js and load it in index.html BEFORE your own js/index.js.
-- **window.__JUCE__:** The raw snapshot exists at runtime, but native function calls require the js/juce/index.js interop layer — never rely on window.__JUCE__ directly without it.
+- **JS Interop (webview-008):** ALL JavaScript must be INLINE in Source/ui/public/index.html - ES6 modules and external .js files fail SILENTLY in WebView. To get window.Juce helpers, paste the interop drop-in (_tools/JUCE/modules/juce_gui_extra/native/typescript/webview-interop/dist/index.js) INTO index.html with its import/export statements removed.
+- **window.__JUCE__:** The raw snapshot exists at runtime, but native function calls require the js/juce/index.js interop layer  — after inlining, call helpers via const Juce = window.Juce; window.__JUCE__ alone cannot make native calls.
 - **C++ Pathing:** In PluginEditor.cpp, serve files via WebBrowserComponent .withResourceProvider() over the embedded binary data.
 ### B. CMake Configuration
 - **Root:** The Root CMakeLists.txt loads JUCE.
