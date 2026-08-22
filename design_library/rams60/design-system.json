@@ -1,0 +1,51 @@
+{
+  "name": "RAMS 60",
+  "description": "Dieter Rams / Swiss 1960s hi-fi instrument design system. Ivory faceplate, one shellac-black rotating disc as sculptural contrast, Braun signal-green as sole functional accent with Braun orange for degradation/hot states, dense technical annotation (tick scales, index numbers, tabular readouts), architectural grotesque typography. Skeuomorphic turntable centerpiece with physically-correct tonearm, procedural aging render, and gesture-driven scratch interaction.",
+  "palette": {
+    "background": "#EFE8D8",
+    "surface": "#E2DAC6",
+    "shellac": "#191511",
+    "grooveRing": "#241F19",
+    "primary": "#1F7A3D",
+    "secondary": "#D9531E",
+    "accent": "#1F7A3D",
+    "textPrimary": "#28241D",
+    "textSecondary": "rgba(40,36,29,0.55)",
+    "border": "#28241D",
+    "cap": "#F5F1E4"
+  },
+  "typography": {
+    "fontFamilyHeadings": "Neue Haas Grotesk, Helvetica Neue, Univers, Helvetica, Arial, sans-serif",
+    "fontFamilyBody": "Neue Haas Grotesk, Helvetica Neue, Univers, Helvetica, Arial, sans-serif",
+    "fontSizeSmall": "9px",
+    "fontSizeBase": "11px",
+    "fontSizeLarge": "20px",
+    "fontWeightLight": 400,
+    "fontWeightRegular": 500,
+    "fontWeightBold": 700,
+    "tracking": { "masthead": ".22em", "sections": ".18em", "labels": ".16em", "plate": ".22em" }
+  },
+  "components": {
+    "knobStyle": "ivory-cap-rotary (radial highlight, dashed knurl ring, ink pointer, centered tick ring: ink 0-100%, green tick @100%, orange >100%)",
+    "faderStyle": "none (rotary-only)",
+    "selectorStyle": "recessed-slot paddle switch (horizontal detents + vertical A/B side toggle)",
+    "meterStyle": "tape-recorder level ruler (vertical or horizontal needle, green zone band, orange CLIP tick)",
+    "centerpieceStyle": "canvas turntable: shellac disc, degree tick scale, constant-length cream tonearm on fixed pivot, procedural scratches/dust driven by AGE, drag-to-scratch gesture",
+    "indexSystem": "numbered idx-chips 01-10 per control (section-colored)",
+    "footerStatusLadder": "BYPASS · CLEAN SIGNAL / LIGHT DUSTING / TRACING / REFERENCE FINGERPRINT / WORN PRESSING / INNER-GROOVE COLLAPSE"
+  },
+  "motionRules": {
+    "gating": "prefers-reduced-motion",
+    "discSpin": "continuous slow rotation, drag-to-scrub override",
+    "labelSpin": "spindle label rotates with disc, index notch reads motion",
+    "grooveSheen": "viewer-fixed light band across grooves",
+    "vuNeedle": "gentle random walk aligned to printed scale",
+    "statusLed": "soft breathing; steady-on when hot",
+    "armIntro": "optional lift/swing/settle (~1.9s) — removed by user in v7, kept optional"
+  },
+  "bestFor": ["lo-fi", "vintage", "hardware-emulation", "vinyl/tape character", "measurement-instrument aesthetics"],
+  "supports": { "webview": true, "visage": false },
+  "referenceImplementation": "../apc_plugins/VinylNoize/Design/v9-test.html",
+  "created": "2026-08-22",
+  "usageCount": 0
+}

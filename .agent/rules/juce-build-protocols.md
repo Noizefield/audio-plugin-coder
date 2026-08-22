@@ -21,11 +21,13 @@
   - CMake Generator: **Xcode** (universal binary: x86_64 + arm64)
 ---
 ## 2. 📂 FILE STRUCTURE & WEBVIEW
-### A. WebView/GUI Architecture
-- **Location:** HTML/JS/CSS files MUST reside in plugins/[Name]/WebUI/.
-- **Forbidden:** Do NOT use Source/ui/public or Resources/web.
-- **C++ Pathing:** In PluginEditor.cpp, load files dynamically or via hardcoded dev path during testing.
-- **JS Interop:** Do NOT create a juce subfolder. Access native backend via window.__JUCE__.
+### A. WebView/GUI Architecture (JUCE 9)
+- **Location:** HTML/JS/CSS files MUST reside in plugins/[Name]/Source/ui/public/.
+- **Forbidden:** Do NOT use plugin-root WebUI/ or Resources/web unless the plugin CMakeLists.txt explicitly embeds that path via juce_add_binary_data.
+- **Embedding:** Register web files with juce_add_binary_data([Name]_WebUI ...) and link the target to the plugin.
+- **JS Interop:** Copy the JUCE 9 interop drop-in to Source/ui/public/js/juce/index.js from _tools/JUCE/modules/juce_gui_extra/native/typescript/webview-interop/dist/index.js and load it in index.html BEFORE your own js/index.js.
+- **window.__JUCE__:** The raw snapshot exists at runtime, but native function calls require the js/juce/index.js interop layer — never rely on window.__JUCE__ directly without it.
+- **C++ Pathing:** In PluginEditor.cpp, serve files via WebBrowserComponent .withResourceProvider() over the embedded binary data.
 ### B. CMake Configuration
 - **Root:** The Root CMakeLists.txt loads JUCE.
 - **Plugins:** Plugin CMakeLists must **NOT** call juce_add_modules (causes duplicate target errors).
