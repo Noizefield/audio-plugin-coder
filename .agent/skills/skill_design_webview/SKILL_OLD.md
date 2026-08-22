@@ -701,7 +701,7 @@ your-plugin/
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Web Plugin</title>
-  <script type="module" src="js/index.js"></script>
+  <!-- webview-008: ALL JavaScript must be INLINE - external scripts fail silently -->
   <style>
     /* Modern dark theme */
     body {
@@ -746,7 +746,7 @@ your-plugin/
 ### Step 3: Write index.js
 
 ```javascript
-import * as Juce from "./juce/index.js";
+// const Juce = window.Juce;  // inlined library (webview-008: no imports)
 
 // Wait for DOM
 document.addEventListener("DOMContentLoaded", () => {
@@ -1349,12 +1349,12 @@ target_link_libraries(MyPlugin
 **WRONG:**
 ```html
 <!-- index.html -->
-<script type="module" src="js/index.js"></script>
+<!-- webview-008: ALL JavaScript must be INLINE - external scripts fail silently -->
 ```
 
 ```javascript
 // js/index.js
-import * as Juce from "./juce/index.js";  // File doesn't exist!
+const Juce = window.Juce;  // inlined - imports fail (webview-008)!
 ```
 
 **WHY IT FAILS:** JUCE frontend library (`juce/index.js`) must be copied from JUCE modules to your project.
