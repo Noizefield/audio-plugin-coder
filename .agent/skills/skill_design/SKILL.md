@@ -280,7 +280,7 @@ Generate **`$PluginPath/Design/v1-test.html`** - **WORKING HTML PREVIEW**:
      <meta charset="UTF-8">
      <meta name="viewport" content="width=device-width, initial-scale=1.0">
      <title>[Name] Plugin</title>
-     <script type="module" src="js/index.js"></script>
+     <!-- webview-008: ALL JavaScript must be INLINE - external scripts fail silently -->
      <style>
        /* Complete CSS based on style guide */
        :root {
@@ -320,7 +320,7 @@ Generate **`$PluginPath/Design/v1-test.html`** - **WORKING HTML PREVIEW**:
 
    **JavaScript placeholder (for preview only):**
    ```javascript
-   // This is a placeholder for preview - actual implementation goes in Source/ui/public/js/index.js
+   // This is a placeholder for preview - actual implementation goes INLINE in Source/ui/public/index.html
    document.addEventListener("DOMContentLoaded", () => {
        console.log("Preview mode - UI structure loaded");
        // Preview-only code here
@@ -330,7 +330,7 @@ Generate **`$PluginPath/Design/v1-test.html`** - **WORKING HTML PREVIEW**:
    **For WebView plugins:** The HTML in `v1-test.html` should be **identical** to what will be in `Source/ui/public/index.html` (minus the preview JavaScript).
 
    **CRITICAL WebView Requirements:**
-   - HTML must use `<script type="module">` for JavaScript imports
+   - ALL JavaScript must be inline in ONE `<script>` block - ES6 modules fail silently in JUCE WebView (webview-008)
    - All element IDs must match parameter IDs from `parameter-spec.md`
    - CSS must be complete and production-ready (embedded in `<style>` tag)
    - HTML structure must match the approved design exactly

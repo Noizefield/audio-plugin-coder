@@ -90,7 +90,7 @@ $PluginPath/Source/ui/
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>[Name] Plugin</title>
-  <script type="module" src="js/index.js"></script>
+  <!-- webview-008: ALL JavaScript must be INLINE - external scripts fail silently -->
   <style>
     /* Styles based on approved v[N]-style-guide.md */
     body {
@@ -114,7 +114,7 @@ $PluginPath/Source/ui/
 
 **ui/public/js/index.js:**
 ```javascript
-import * as Juce from "./juce/index.js";
+const Juce = window.Juce; // JUCE library INLINED above - never use import/export (webview-008)
 
 // Initialize parameter states from parameter-spec.md
 const parameterStates = {};

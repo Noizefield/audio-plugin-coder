@@ -15,8 +15,7 @@ juce_add_plugin({{PLUGIN_NAME_LOWER}}
 juce_add_binary_data({{PLUGIN_NAME_LOWER}}_WebUI
     SOURCES
         Source/ui/public/index.html
-        Source/ui/public/js/index.js
-        Source/ui/public/js/juce/index.js
+    # webview-008: NO JS files - ALL JavaScript must be inline in index.html
     # Add any additional web assets here:
     # Source/ui/public/css/style.css
     # Source/ui/public/assets/logo.png

@@ -78,6 +78,8 @@ plugins/YourPlugin/
                 └── index.js
 ```
 
+> **CRITICAL (webview-008):** ES6 modules fail in JUCE WebView - there must be NO separate .js files and no external scripts. Everything goes inline into ONE <script> block in index.html.
+
 ### Step 2: Write index.html
 
 ```html
@@ -86,7 +88,7 @@ plugins/YourPlugin/
 <head>
   <meta charset="UTF-8">
   <title>My Plugin</title>
-  <script type="module" src="js/index.js"></script>
+  <!-- webview-008: ALL JavaScript must be INLINE - external scripts fail silently -->
   <style>
     body {
       margin: 0;
@@ -109,10 +111,12 @@ plugins/YourPlugin/
 </html>
 ```
 
-### Step 3: Write index.js
+### Step 3: Inline JavaScript (inside index.html)
+
+> **CRITICAL (webview-008):** ES6 modules do NOT work in JUCE WebView. Never create separate `.js` files. Inline ALL JavaScript - including the JUCE frontend library exposed as `window.Juce` - in ONE `<script>` block.
 
 ```javascript
-import * as Juce from "./juce/index.js";
+const Juce = window.Juce; // JUCE library INLINED above - never use import/export (webview-008)
 
 document.addEventListener("DOMContentLoaded", () => {
     // Get parameter state from C++
@@ -145,9 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
 juce_add_binary_data(YourPlugin_WebUI
     SOURCES
         Source/ui/public/index.html
-        Source/ui/public/js/index.js
-        Source/ui/public/js/juce/index.js
-        Source/ui/public/js/juce/check_native_interop.js
+        # NO JS FILES - all JavaScript must be inline in index.html (webview-008)
 )
 
 # Plugin definition
@@ -428,13 +430,13 @@ gainAttachment = std::make_unique<...>(...);  // Too early
 webView = std::make_unique<...>(...);         // Too late
 ```
 
-### ❌ Not Embedding All Files
+### ❌ Embedding Separate JS Files
 ```cmake
-# WRONG - Missing JS files!
+# WRONG - JS files are never loaded (ES6 modules fail - webview-008)!
 juce_add_binary_data(Plugin_WebUI
     SOURCES
         Source/ui/public/index.html
-        # Missing: js files!
+        Source/ui/public/js/index.js   # NOT loaded - must be inlined instead!
 )
 ```
 

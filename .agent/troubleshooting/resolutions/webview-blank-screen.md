@@ -143,7 +143,7 @@ webView->loadHTML(htmlString);  // ❌ Can't load external JS
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <script type="module" src="js/index.js"></script>
+  <!-- webview-008: ALL JavaScript must be INLINE - external scripts fail silently -->
 </head>
 <body>
   <!-- Your UI here -->
@@ -152,17 +152,17 @@ webView->loadHTML(htmlString);  // ❌ Can't load external JS
 ```
 
 **Common issues:**
-- Missing `type="module"` → JavaScript won't load
-- Wrong path to `js/index.js` → File not found
+- Any `<script src="...">` tag → silent failure (webview-008); inline all JS
+- Any `import` statement → fails silently (webview-008)
 - Missing closing tags → HTML parsing fails
 
 ---
 
 ## Step 7: Check JavaScript Initialization
 
-**Verify js/index.js:**
+**Verify inline JavaScript (in index.html):**
 ```javascript
-import * as Juce from "./juce/index.js";
+const Juce = window.Juce; // JUCE library INLINED above - never use import/export (webview-008)
 
 document.addEventListener("DOMContentLoaded", () => {
     console.log("UI initialized");  // Check if this appears in console
@@ -171,8 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
 ```
 
 **If console shows errors:**
-- Check import path is correct
-- Verify `juce/index.js` exists
+- Look for leftover `import`/`export` statements or `<script src>` tags (webview-008)
 - Check for syntax errors in JavaScript
 
 ---
@@ -229,9 +228,9 @@ Run through this checklist:
 - [ ] WebBrowserComponent uses `.withResourceProvider()`
 - [ ] Uses `getResourceProviderRoot()` not data URI
 - [ ] Parameter relays created BEFORE WebBrowserComponent
-- [ ] Web files exist: `index.html`, `js/index.js`, `js/juce/index.js`
-- [ ] HTML has `<script type="module" src="js/index.js"></script>`
-- [ ] JavaScript imports JUCE library correctly
+- [ ] `index.html` exists with ALL JavaScript inline (no separate .js files)
+- [ ] HTML has NO `<script src="...">` tags and NO import/export statements (webview-008)
+- [ ] Inline `<script>` block defines `window.Juce` before UI code runs
 - [ ] Plugin rebuilt after making changes
 
 ---
@@ -241,7 +240,7 @@ Run through this checklist:
 | Symptom | Solution |
 |---------|----------|
 | Blank screen, no console errors | Check WebView2 runtime installation |
-| Console: "Failed to load module" | Copy JUCE frontend library to `js/juce/index.js` |
+| Console: CORS / module errors | Inline ALL JS into `index.html`, incl. JUCE library (webview-008) |
 | Console: "404 Not Found" | Fix resource provider or verify files embedded |
 | Console: "backend is undefined" | Add `.withNativeIntegrationEnabled()` |
 | Console: "CORS error" | Check resource provider implementation |

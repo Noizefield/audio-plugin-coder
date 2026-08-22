@@ -50,23 +50,21 @@ driveAttachment = std::make_unique<WebSliderParameterAttachment>(...);
 ### 4. Web File Structure
 **Required structure:**
 ```
-Source/ui/public/   (or plugin-root WebUI/)
-├── index.html      (inline CSS/JS preferred — see webview-011)
-├── js/
-│   ├── index.js
-│   └── juce/
-│       └── index.js  (JUCE WebView interop)
+Source/ui/public/
+├── index.html      (ALL CSS/JS inline - REQUIRED, see webview-008)
+└── test-local.html (browser-test copy of index.html)
 ```
+
+**NO separate .js files:** ES6 modules and external scripts fail silently in JUCE WebView (webview-008). Inline everything, including the JUCE interop library (exposed as `window.Juce`).
 
 **JUCE 9 interop (preferred):**
 ```bash
-npm install @juce-framework/webview
-# or copy the drop-in build:
+# Copy the drop-in build, strip its import/export statements,
+# expose it as window.Juce and paste it INSIDE index.html:
 # _tools/JUCE/modules/juce_gui_extra/native/typescript/webview-interop/dist/index.js
-#   -> WebUI/js/juce/index.js
 ```
 
-The old JUCE 8 path `juce_gui_extra/native/javascript/index.js` no longer exists.
+Never reference it as an external file - ES6 modules fail in WebView (webview-008). The old JUCE 8 path `juce_gui_extra/native/javascript/index.js` no longer exists.
 ### 5. Loading Web Content
 **DO:**
 ```cpp

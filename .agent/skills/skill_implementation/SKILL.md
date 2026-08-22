@@ -56,22 +56,16 @@ Convert the approved design specs into production JUCE WebView code.
 ```
 $PluginPath/Source/ui/
 └───public/
-    │   index.html          # Production UI based on approved design
-    │
-    └───js/
-        │   index.js        # JUCE integration and parameter binding
-        │
-        └───juce/
-                check_native_interop.js  # Development utility
-                index.js                # JUCE frontend library
+    │   index.html          # Production UI based on approved design - ALL CSS/JS inline (webview-008)
+    │   test-local.html     # Browser-test copy of index.html
 ```
 
 **Implementation Steps:**
-1. **Create directories:** `$PluginPath/Source/ui/public/` and subdirectories
-2. **Copy JUCE frontend library:** Copy `modules/juce_gui_extra/native/javascript/index.js` to `js/juce/index.js`
-3. **Create interop checker:** Generate `js/juce/check_native_interop.js` for development
-4. **Convert design to HTML:** Transform approved design specs into `index.html` with embedded CSS
-5. **Generate JavaScript:** Create `js/index.js` with parameter state setup and UI controls
+1. **Create directory:** `$PluginPath/Source/ui/public/`
+2. **Inline the JUCE frontend library:** Take `_tools/JUCE/modules/juce_gui_extra/native/typescript/webview-interop/dist/index.js`, remove its `import`/`export` statements, expose it as `window.Juce`, and paste it into a single `<script>` block in `index.html` (ES6 modules fail silently in WebView - webview-008)
+3. **Convert design to HTML:** Transform approved design specs into `index.html` with embedded CSS
+4. **Inline UI JavaScript:** Append parameter state setup and UI controls to the SAME `<script>` block - NO external `.js` files
+5. **Create browser-test copy:** Duplicate `index.html` as `test-local.html`
 
 **Conversion Process:**
 - Extract layout, colors, and styling from `v[N]-style-guide.md`
@@ -90,7 +84,7 @@ $PluginPath/Source/ui/
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>[Name] Plugin</title>
-  <script type="module" src="js/index.js"></script>
+  <!-- webview-008: ALL JavaScript must be INLINE - external scripts fail silently -->
   <style>
     /* Styles based on approved v[N]-style-guide.md */
     body {
@@ -112,9 +106,10 @@ $PluginPath/Source/ui/
 </html>
 ```
 
-**ui/public/js/index.js:**
+**Inline JavaScript (inside ui/public/index.html):**
 ```javascript
-import * as Juce from "./juce/index.js";
+// NO imports allowed (webview-008):
+const Juce = window.Juce;
 
 // Initialize parameter states from parameter-spec.md
 const parameterStates = {};
@@ -136,9 +131,7 @@ function initializeUI() {
 ✅ Design converted to WebView code
 
 Files created:
-- $PluginPath/Source/ui/public/index.html
-- $PluginPath/Source/ui/public/js/index.js
-- $PluginPath/Source/ui/public/js/juce/index.js
+- $PluginPath/Source/ui/public/index.html (ALL JavaScript inline)
 
 ⚠️ **MANDATORY STOP** - You MUST test the WebView setup before proceeding to DSP implementation!
 
@@ -311,7 +304,7 @@ See: `..agent/troubleshooting/resolutions/webview-member-order-crash.md`
 1. Review error messages from validation script
 2. Check templates in `templates/webview/`
 3. Compare your code with JUCE example: `_tools/JUCE/examples/Plugins/WebViewPluginDemo.h`
-4. Ensure web files exist: `Source/ui/public/index.html`, `js/index.js`, `js/juce/index.js`
+4. Ensure `Source/ui/public/index.html` exists with ALL JavaScript inline (no separate .js files)
 5. Verify CMakeLists.txt embeds files correctly
 
 **DO NOT PROCEED TO DSP IMPLEMENTATION UNTIL ALL 8 CHECKS PASS**
