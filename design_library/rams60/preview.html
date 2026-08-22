@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>
+   VinylNoize Plugin
+  </title>
+  <style>
+   :root {
+    --plate: #EFE8D8;
+    --inset: #E2DAC6;
+    --ink: #28241D;
+    --rule: rgba(40,36,29,0.15);
+    --green: #1F7A3D;
+    --orange: #D9531E;
+    --cap: #F5F1E4;
+  }
+
+  * {
+    box-sizing: border-box;
+    user-select: none;
+  }
+
+  body {
+    background: var(--plate);
+    color: var(--ink);
+    font-family: "Neue Haas Grotesk", "Helvetica Neue", Univers, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    width: 800px;
+    height: 600px;
+    overflow: hidden;
+    font-feature-settings: "tnum";
+  }
+
+  #plugin-ui {
+    position: relative;
+    width: 800px;
+    height: 600px;
+  }
+
+  /* ---------- header ---------- */
+    #masthead { position: absolute; left: 24px; top: 20px; width: 500px; height: 62px; }
+
+  #masthead h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: .22em;
+  }
+
+  #masthead h1 em {
+    font-style: normal;
+    color: var(--green);
+  }
+
+  #masthead p {
+    margin: 3px 0 0;
+    font-size: 8.5px;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+  }
+
+  #vu {
+    position: absolute;
+    right: 24px;
+    top: 20px;
+    width: 236px;
+    height: 48px;
+    background: var(--inset);
+    border-radius: 4px;
+    box-shadow: inset 0 2px 4px rgba(40,36,29,.3);
+    overflow: hidden;
+  }
+
+  .header-divider {
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    top: 80px;
+    border-top: 1px solid var(--ink);
+    opacity: .55;
+  }
+
+  /* ---------- disc module ---------- */
+    #disc-module { position: absolute; left: 24px; top: 94px; width: 400px; height: 384px;
+                   background: var(--inset); border-radius: 4px;
+                   box-shadow: inset 0 2px 4px rgba(40,36,29,.3); overflow: hidden; }
+
+  #disc-canvas {
+    position: absolute;
+    left: 20px;
+    top: 2px;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  #disc-canvas:active {
+    cursor: grabbing;
+  }
+
+  /* ---------- A/B side switch ---------- */
+  .side-switch {
+    position: absolute; right: 14px; top: 14px; width: 40px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .side-slot { width: 30px; height: 58px; position: relative;
+               background: var(--plate); border-radius: 3px;
+               box-shadow: inset 0 2px 4px rgba(40,36,29,.35); cursor: pointer; }
+  .side-paddle { position:absolute; left:3px; top:3px; width:24px; height:25px;
+                 background: var(--cap); border-radius:2px;
+                 box-shadow: 0 1px 3px rgba(40,36,29,.5);
+                 transition: top .18s ease-out, background .18s; }
+  .side-paddle.b { background: #E8DFC9; }
+  .side-labels { position:absolute; left:0; right:0; top:0; bottom:0;
+                 display:flex; flex-direction:column; justify-content:space-between;
+                 align-items:center; padding:3px 0; pointer-events:none;
+                 font-size:9px; font-weight:700; }
+  .side-labels span.on { color: var(--green); }
+  .side-cap { font-size: 7.5px; letter-spacing: .2em; text-transform: uppercase; opacity: .7; }
+
+  #groove-readout {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 10px;
+    text-align:center;
+    font-size: 11px;
+    letter-spacing: .08em;
+  }
+
+  #groove-readout b {
+    color: var(--green);
+  }
+
+  #groove-readout.warn,
+  #groove-readout.warn b
+  {
+    color: var(--orange);
+  }
+
+  /* ---------- right column ---------- */
+    #right-col { position: absolute; left: 448px; top: 94px; width: 328px; height: 384px;
+                 display: flex; flex-direction: column; justify-content: space-between;  }
+
+  .sec-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 4px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .sec-title::before {
+    content:"";
+    width: 7px;
+    height: 7px;
+    border-radius: 1px;
+  }
+
+  .s-green .sec-title::before {
+    background: var(--green);
+  }
+
+  .s-orange .sec-title::before {
+    background: var(--orange);
+  }
+
+  .knob-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  /* ---------- knob component ---------- */
+    .control { width: 78px; text-align: center; }
+
+  .knob {
+    width: 50px;
+    height: 50px;
+    margin: 4px auto 5px;
+    position: relative;
+    background: radial-gradient(circle at 50% 42%, #FBF8EE, var(--cap) 70%);
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(40,36,29,.4), inset 0 0 0 1px rgba(40,36,29,.12);
+    cursor: ns-resize;
+    touch-action: none;
+  }
+
+  .knob::before {
+    content:"";
+    position:absolute;
+    inset:3px;
+    border-radius:50%;
+    border:1px dashed rgba(40,36,29,.28);
+  }
+
+  .pointer {
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:2px;
+    height:21px;
+    background: var(--ink);
+    transform-origin:50% 100%;
+    translate:-50% -100%;
+    z-index: 2;
+  }
+
+  .scale-ticks {
+    position:absolute;
+    pointer-events:none;
+    z-index: 1;
+  }
+
+  .idx-chip {
+    display:inline-block;
+    min-width: 17px;
+    padding: 1px 3px;
+    border-radius: 2px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    background: var(--ink);
+    color: var(--plate);
+    position: relative;
+    z-index: 3;
+  }
+
+  .s-green .idx-chip {
+    background: var(--green);
+  }
+
+  .s-orange .idx-chip {
+    background: var(--orange);
+  }
+
+  .label {
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    margin-top: 2px;
+    line-height: 1.15;
+  }
+
+  .value {
+    font-size: 11px;
+    font-weight: 500;
+    margin-top: 1px;
+  }
+
+  .value.hot {
+    color: var(--orange);
+    font-weight: 700;
+  }
+
+  .control.disabled .label,
+  .control.disabled .value
+  {
+    opacity: .4;
+  }
+
+  /* selector switch */
+    #surface_type-control { width: 132px; text-align: center; }
+
+  .switch-slot {
+    width: 116px;
+    height: 26px;
+    margin: 10px auto 6px;
+    position: relative;
+    background: var(--plate);
+    border-radius: 3px;
+    box-shadow: inset 0 2px 4px rgba(40,36,29,.35);
+    cursor: pointer;
+  }
+
+  .switch-paddle {
+    position:absolute;
+    top:3px;
+    left:3px;
+    width:46px;
+    height:20px;
+    background: var(--cap);
+    border-radius:2px;
+    box-shadow: 0 1px 3px rgba(40,36,29,.5);
+    transition: left .12s ease-out, background .12s;
+  }
+
+  .switch-paddle.hot {
+    background: #F3D9CB;
+  }
+
+  .legend {
+    display:flex;
+    justify-content: space-between;
+    width: 116px;
+    margin: 0 auto;
+    font-size: 8px;
+    letter-spacing: .1em;
+  }
+
+  .switch-pos {
+    font-size: 9px;
+    margin-top: 3px;
+    letter-spacing:.08em;
+    min-height: 11px;
+  }
+
+  .switch-pos i.on {
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  .switch-pos i.hot {
+    color: var(--orange);
+    font-weight: 700;
+  }
+
+  /* ---------- footer ---------- */
+    footer { position: absolute; left: 24px; right: 24px; top: 496px; height: 80px;
+             border-top: 1px solid var(--ink); padding-top: 7px;
+             display: flex; align-items: center; gap: 22px; }
+
+  .foot-control {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-shrink: 0;
+    transform: translateX(10px);
+  }
+
+  .foot-knob-col {
+    text-align: center;
+  }
+
+  #age-knob {
+    width: 56px;
+    height: 56px;
+    margin: 0;
+  }
+
+  .foot-text {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  #status-wrap {
+    flex: 1;
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: .06em;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  #status-led {
+    display:inline-block;
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background: var(--green);
+    opacity: .45;
+    margin-right: 7px;
+    vertical-align: 1px;
+  }
+
+  #status-led.hot {
+    background: var(--orange);
+    opacity: 1;
+  }
+
+  #status-text.hot {
+    color: var(--orange);
+    font-weight: 600;
+  }
+
+  #serial-plate {
+    flex-shrink: 0;
+    font-size: 8px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    opacity: .75;
+    border: 1px solid var(--rule);
+    padding: 5px 8px;
+    border-radius: 2px;
+  }
+
+  /* Control labels: index + name live below the control ring. */
+  .control {
+    width: 78px;
+    text-align: center;
+  }
+
+  .control-meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 15px;
+    margin-top: 1px;
+  }
+
+  .control-meta .label {
+    margin-top: 0;
+  }
+
+  .control .value {
+    margin-top: 2px;
+    font: 700 10px monospace;
+  }
+
+  .control .idx-chip {
+    position: static;
+    transform: none;
+    margin: 0;
+    min-width: 17px;
+    padding: 1px 3px;
+    font-size: 8px;
+  }
+
+  .knob-row {
+    margin-top: 0;
+  }
+
+  #surface_type-control .control-meta {
+    margin-top: 5px;
+  }
+
+  .foot-text .idx-chip {
+    position: static;
+    transform: none;
+    margin: 0;
+  }
+
+  .foot-text .value {
+    position: static;
+    margin: 0;
+    font-size: 11px;
+  }
+
+  #groove2-knob {
+    width: 56px;
+    height: 56px;
+  }
+  </style>
+ </head>
+ <body>
+  <div id="plugin-ui">
+   <header id="masthead">
+    <h1>
+     VINYL
+     <em>
+      NOIZE
+     </em>
+    </h1>
+    <p>
+     Groove-Reconstruction Unit &middot; Stereo
+    </p>
+   </header>
+   <div id="vu">
+    <svg height="48" viewbox="0 0 236 48" width="236">
+     <rect fill="transparent" height="48" width="236" x="0" y="0">
+     </rect>
+     <text fill="#28241D" font-size="6.5" font-weight="600" letter-spacing="2" x="132" y="14">
+      OUTPUT LEVEL
+     </text>
+     <line stroke="#28241D" stroke-width="1.5" x1="40" x2="180" y1="34" y2="34">
+     </line>
+     <g stroke="#28241D" stroke-width="1">
+      <line x1="40" x2="40" y1="34" y2="28">
+      </line>
+      <line x1="75" x2="75" y1="34" y2="28">
+      </line>
+      <line x1="110" x2="110" y1="34" y2="28">
+      </line>
+      <line x1="145" x2="145" y1="34" y2="28">
+      </line>
+      <line x1="165" x2="165" y1="34" y2="28">
+      </line>
+     </g>
+     <rect fill="#1F7A3D" height="6" width="45" x="115" y="28">
+     </rect>
+     <line stroke="#28241D" stroke-width="2" x1="165" x2="165" y1="36" y2="18">
+     </line>
+     <line stroke="#D9531E" stroke-width="3" x1="182" x2="182" y1="34" y2="26">
+     </line>
+     <text fill="#28241D" font-size="7" x="36" y="44">
+      -20
+     </text>
+     <text fill="#28241D" font-size="7" x="105" y="44">
+      -10
+     </text>
+     <text fill="#1F7A3D" font-size="7" x="120" y="44">
+      -6
+     </text>
+     <text fill="#1F7A3D" font-size="7" x="142" y="44">
+      0
+     </text>
+     <text fill="#D9531E" font-size="7" x="172" y="22">
+      CLIP
+     </text>
+     <g id="vu-g">
+      <line id="vu-needle" stroke="#28241D" stroke-width="1.5" x1="180.10452438985672" x2="180.10452438985672" y1="18" y2="44">
+      </line>
+     </g>
+    </svg>
+   </div>
+   <div class="header-divider" aria-hidden="true"></div>
+   <div id="disc-module">
+    <canvas height="344" id="disc-canvas" width="360">
+    </canvas>
+    <div class="side-switch" title="Flip record side (audio + visual)">
+     <span class="side-cap">
+      Side
+     </span>
+     <div class="side-slot" id="side-switch">
+      <div class="side-labels">
+       <span class="on" id="lbl-a">
+        A
+       </span>
+       <span id="lbl-b">
+        B
+       </span>
+      </div>
+      <div class="side-paddle" id="side-paddle">
+      </div>
+     </div>
+    </div>
+    <div id="groove-readout">
+     R
+     <b>
+      +079
+     </b>
+     &middot; OUTER FIELD
+    </div>
+   </div>
+   <div id="right-col">
+    <div class="sec s-green">
+     <div class="sec-title">Signal Path</div>
+     <div class="knob-row">
+      <div class="control s-green" id="valve-control">
+       <div class="knob" id="valve-knob">
+        <canvas class="scale-ticks" height="66" width="66"></canvas>
+        <div class="pointer"></div>
+       </div>
+       <div class="control-meta">
+        <span class="idx-chip">07</span>
+        <div class="label">Valve</div>
+       </div>
+       <div class="value" id="valve-value">30 %</div>
+      </div>
+      <div class="control s-green" id="reel-control">
+       <div class="knob" id="reel-knob">
+        <canvas class="scale-ticks" height="66" width="66"></canvas>
+        <div class="pointer"></div>
+       </div>
+       <div class="control-meta">
+        <span class="idx-chip">08</span>
+        <div class="label">Reel</div>
+       </div>
+       <div class="value" id="reel-value">30 %</div>
+      </div>
+      <div class="control s-green" id="transmit-control">
+       <div class="knob" id="transmit-knob">
+        <canvas class="scale-ticks" height="66" width="66"></canvas>
+        <div class="pointer"></div>
+       </div>
+       <div class="control-meta">
+        <span class="idx-chip">09</span>
+        <div class="label">Transmit</div>
+       </div>
+       <div class="value" id="transmit-value">25 %</div>
+      </div>
+     </div>
+    </div>
+
+    <div class="sec s-orange">
+     <div class="sec-title">Surface</div>
+     <div class="knob-row">
+      <div class="control s-orange" id="surface_type-control">
+       <div class="switch-slot" id="surface-switch">
+        <div class="switch-paddle" id="surface-paddle"></div>
+       </div>
+       <div class="legend">
+        <span>OFF</span>
+        <span>I</span>
+        <span>II</span>
+        <span>III</span>
+        <span>IV</span>
+        <span>V</span>
+       </div>
+       <div class="control-meta">
+        <span class="idx-chip">06</span>
+        <div class="label">Type</div>
+       </div>
+       <div class="switch-pos" id="surface_type-value">
+        <i class="on">DUST HISS</i>
+       </div>
+      </div>
+      <div class="control s-orange" id="bed-control">
+       <div class="knob" id="bed-knob">
+        <canvas class="scale-ticks" height="66" width="66"></canvas>
+        <div class="pointer"></div>
+       </div>
+       <div class="control-meta">
+        <span class="idx-chip">05</span>
+        <div class="label">Bed</div>
+       </div>
+       <div class="value" id="bed-value">45 %</div>
+      </div>
+     </div>
+    </div>
+
+    <div class="sec s-orange">
+     <div class="sec-title">Dust</div>
+     <div class="knob-row">
+      <div class="control s-orange" id="stylus-control">
+       <div class="knob" id="stylus-knob">
+        <canvas class="scale-ticks" height="66" width="66"></canvas>
+        <div class="pointer"></div>
+       </div>
+       <div class="control-meta">
+        <span class="idx-chip">02</span>
+        <div class="label">Stylus</div>
+       </div>
+       <div class="value" id="stylus-value">100 %</div>
+      </div>
+      <div class="control s-orange" id="crackle-control">
+       <div class="knob" id="crackle-knob">
+        <canvas class="scale-ticks" height="66" width="66"></canvas>
+        <div class="pointer"></div>
+       </div>
+       <div class="control-meta">
+        <span class="idx-chip">03</span>
+        <div class="label">Crackle</div>
+       </div>
+       <div class="value" id="crackle-value">60 %</div>
+      </div>
+      <div class="control s-orange" id="debris-control">
+       <div class="knob" id="debris-knob">
+        <canvas class="scale-ticks" height="66" width="66"></canvas>
+        <div class="pointer"></div>
+       </div>
+       <div class="control-meta">
+        <span class="idx-chip">04</span>
+        <div class="label">Debris</div>
+       </div>
+       <div class="value" id="debris-value">40 %</div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <footer>
+    <div class="foot-control">
+     <div class="foot-knob-col">
+      <div class="knob" id="age-knob">
+       <canvas class="scale-ticks" height="72" width="72">
+       </canvas>
+       <div class="pointer">
+       </div>
+      </div>
+     </div>
+     <div class="foot-text">
+      <span class="idx-chip">
+       10
+      </span>
+      <div class="label">
+       Age Master
+      </div>
+      <div class="value" id="age-value">
+       35 %
+      </div>
+     </div>
+    </div>
+    <div class="foot-control">
+     <div class="foot-knob-col">
+      <div class="knob" id="groove2-knob">
+       <canvas class="scale-ticks" height="72" width="72">
+       </canvas>
+       <div class="pointer">
+       </div>
+      </div>
+     </div>
+     <div class="foot-text">
+      <span class="idx-chip">
+       01
+      </span>
+      <div class="label">
+       Groove
+      </div>
+      <div class="value" id="groove2-value">
+       25 %
+      </div>
+     </div>
+    </div>
+    <div id="status-wrap">
+     <span id="status-led">
+     </span>
+     <span id="status-text">
+      AGE 035&nbsp;% &middot; TRACING
+     </span>
+    </div>
+    <div id="serial-plate">
+     VN-60 &middot; 33&frac13; RPM &middot; MADE IN MUNICH
+    </div>
+   </footer>
+  </div>
+  <script type="module">
+   // Preview mode - UI structure loaded.
+// Actual JUCE WebView integration lives in Source/ui/public/js/index.js
+const SURFACE_TYPES = ["OFF","DUST HISS","GROOVE RUSH","SHELLAC RAIN","ARCHIVE AIR","SILENT"];
+const INK = "#28241D", GREEN = "#1F7A3D", ORANGE = "#D9531E", CREAM = "#F5F1E4";
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---- knob tick scales, CENTERED on each knob ---- */
+function drawScale(knobId) {
+  const el = document.getElementById(knobId);
+  const cvt = el.querySelector(".scale-ticks");
+  if (!cvt) return;
+  const S = cvt.width;
+  const knobPx = el.getBoundingClientRect().width || parseFloat(getComputedStyle(el).width);
+  // center the ring exactly on the knob cap
+  cvt.style.left = ((knobPx - S) / 2) + "px";
+  cvt.style.top  = ((knobPx - S) / 2) + "px";
+  const c = cvt.getContext("2d");
+  const cx = S/2, cy = S/2, ro = S/2 - 2, ri = S/2 - 6;
+  c.clearRect(0,0,S,S);
+  for (let i = 0; i <= 16; i++) {
+    const t = i/16;
+    const rad = (-135 + t*270 - 90) * Math.PI/180;
+    const col = i === 8 ? GREEN : (t > 0.5 ? ORANGE : "rgba(40,36,29,0.55)");
+    c.strokeStyle = col;
+    c.lineWidth = i === 8 ? 2 : 1;
+    c.beginPath();
+    c.moveTo(cx + Math.cos(rad)*ro, cy + Math.sin(rad)*ro);
+    c.lineTo(cx + Math.cos(rad)*ri, cy + Math.sin(rad)*ri);
+    c.stroke();
+  }
+}
+
+/* ================= tonearm (constant length) ================= */
+const cv = document.getElementById("disc-canvas");
+const ctx = cv.getContext("2d");
+const CX = 165, CY = 178, R = 140;
+const R_OUT = R - 10, R_IN = 48;
+const PIVOT = { x: 298, y: 44 };
+const ARM_L = 160;
+const D = Math.hypot(PIVOT.x - CX, PIVOT.y - CY);
+const angPC = Math.atan2(CY - PIVOT.y, CX - PIVOT.x);
+function phiFor(r) { return Math.acos((D*D + ARM_L*ARM_L - r*r) / (2*D*ARM_L)); }
+const PHI_OUT = phiFor(R_OUT), PHI_IN = phiFor(R_IN);
+
+let grooveVal = 25;
+let ageVal = 35;
+let isDraggingDisc = false;
+let discRotOffset = 0;
+let lastMouseRot = 0;
+
+/* ================= A/B side + scratch + audio engine ================= */
+const LOGO_SRC = "Noizefield_NF_Logo_150x150.webp";
+const logoImg = new Image();
+logoImg.src = LOGO_SRC;
+let logoReady = false;
+logoImg.onload = () => { logoReady = true; };
+
+let side = "A";                 // "A" (Noizefield label) | "B" (33⅓ label)
+let flipStart = -1e9;           // timestamp of flip animation start
+const FLIP_MS = 520;
+
+function flipScaleY() {
+  if (REDUCED) return 1;
+  const e = (performance.now() - flipStart) / FLIP_MS;
+  if (e < 0 || e >= 1) return 1;
+  return Math.cos(e * Math.PI);   // 1 → -1 → 1 ; side swaps at |cos| minimum
+}
+
+/* --- WebAudio: preview-only. Production DSP lives in the JUCE engines. --- */
+let audioCtx = null, bedSrc = null, bedFilter = null, bedGain = null;
+let scratchSrc = null, scratchFilter = null, scratchGain = null;
+
+function ensureAudio() {
+  if (audioCtx) { if (audioCtx.state === "suspended") audioCtx.resume(); return true; }
+  try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+  catch (e) { return false; }
+  // shared noise buffer (2 s pink-ish)
+  const len = audioCtx.sampleRate * 2;
+  const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  let b0=0,b1=0,b2=0;
+  for (let i = 0; i < len; i++) {
+    const w = Math.random()*2-1;
+    b0 = 0.997*b0 + w*0.0555; b1 = 0.963*b1 + w*0.0750; b2 = 0.57*b2 + w*0.1538;
+    d[i] = (b0+b1+b2+w*0.1848)*0.25;
+  }
+  // continuous surface bed — character depends on the side
+  bedSrc = audioCtx.createBufferSource(); bedSrc.buffer = buf; bedSrc.loop = true;
+  bedFilter = audioCtx.createBiquadFilter(); bedFilter.type = "bandpass"; bedFilter.Q.value = 0.6;
+  bedGain = audioCtx.createGain(); bedGain.gain.value = 0.012;
+  bedSrc.connect(bedFilter).connect(bedGain).connect(audioCtx.destination);
+  bedSrc.start();
+  setBedCharacter();
+  // scratch voice — velocity-driven, silent unless scratching
+  scratchSrc = audioCtx.createBufferSource(); scratchSrc.buffer = buf; scratchSrc.loop = true;
+  scratchSrc.playbackRate.value = 1;
+  scratchFilter = audioCtx.createBiquadFilter(); scratchFilter.type = "bandpass"; scratchFilter.Q.value = 1.4;
+  scratchGain = audioCtx.createGain(); scratchGain.gain.value = 0;
+  scratchSrc.connect(scratchFilter).connect(scratchGain).connect(audioCtx.destination);
+  scratchSrc.start();
+  return true;
+}
+
+function setBedCharacter() {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  if (side === "A") { bedFilter.frequency.setTargetAtTime(5200, t, 0.15); bedGain.gain.setTargetAtTime(0.010, t, 0.15); }
+  else              { bedFilter.frequency.setTargetAtTime(2900, t, 0.15); bedGain.gain.setTargetAtTime(0.016, t, 0.15); }
+}
+
+/* needle lift / drop transients on flip */
+function needleLift() {
+  if (!ensureAudio()) return;
+  const t = audioCtx.currentTime;
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = "sine"; o.frequency.setValueAtTime(320, t); o.frequency.exponentialRampToValueAtTime(90, t+0.14);
+  g.gain.setValueAtTime(0.06, t); g.gain.exponentialRampToValueAtTime(0.0001, t+0.16);
+  o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.18);
+}
+function needleDrop() {
+  if (!ensureAudio()) return;
+  const t = audioCtx.currentTime;
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = "sine"; o.frequency.setValueAtTime(70, t);
+  g.gain.setValueAtTime(0.09, t); g.gain.exponentialRampToValueAtTime(0.0001, t+0.22);
+  o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.24);
+  const n = audioCtx.createBufferSource(); n.buffer = bedSrc.buffer;
+  const f = audioCtx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 2500;
+  const ng = audioCtx.createGain();
+  ng.gain.setValueAtTime(0.05, t); ng.gain.exponentialRampToValueAtTime(0.0001, t+0.3);
+  n.connect(f).connect(ng).connect(audioCtx.destination); n.start(t); n.stop(t+0.32);
+}
+
+function flipSide() {
+  side = (side === "A") ? "B" : "A";
+  document.getElementById("lbl-a").classList.toggle("on", side === "A");
+  document.getElementById("lbl-b").classList.toggle("on", side === "B");
+  document.getElementById("side-paddle").classList.toggle("b", side === "B");
+  document.getElementById("side-paddle").style.top = side === "A" ? "3px" : "30px";
+  needleLift();
+  setTimeout(needleDrop, FLIP_MS * 0.55);
+  setBedCharacter();
+}
+document.getElementById("side-switch").addEventListener("click", () => { ensureAudio(); flipSide(); });
+
+/* scratch sound driven by angular velocity of the drag */
+let lastScratchT = 0;
+function scratchSound(angVel) {
+  if (!ensureAudio() || !scratchGain) return;
+  const now = performance.now();
+  const v = Math.min(Math.abs(angVel) * 8, 1);        // normalize rad/frame -> 0..1
+  const t = audioCtx.currentTime;
+  scratchFilter.frequency.setTargetAtTime(700 + v*4200, t, 0.03);
+  scratchGain.gain.setTargetAtTime(v * 0.10, t, 0.03);
+  lastScratchT = now;
+}
+
+/* Procedural aging data */
+const scratches = [];
+const dust = [];
+for(let i=0; i<40; i++) {
+  scratches.push({
+    r: R_IN + Math.random()*(R_OUT-R_IN),
+    a: Math.random()*Math.PI*2,
+    len: 0.1 + Math.random()*0.3,
+    depth: Math.random()
+  });
+}
+for(let i=0; i<100; i++) {
+  dust.push({
+    x: (Math.random()-0.5)*2,
+    y: (Math.random()-0.5)*2,
+    sz: 0.5 + Math.random()*1.5
+  });
+}
+
+function drawDisc(time) {
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  const cx = CX, cy = CY;
+  
+  if (!isDraggingDisc && !REDUCED) {
+    discRotOffset += 0.01; // Normal rotation
+  }
+
+  // degree scale (static frame)
+  for (let d = 0; d < 360; d += 10) {
+    const major = d % 30 === 0, a = d*Math.PI/180;
+    const rr1 = R+2, rr2 = R+(major?9:4);
+    ctx.strokeStyle = major ? GREEN : "rgba(40,36,29,0.55)";
+    ctx.lineWidth = major ? 1.5 : 1;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(a)*rr1, cy+Math.sin(a)*rr1);
+    ctx.lineTo(cx+Math.cos(a)*rr2, cy+Math.sin(a)*rr2);
+    ctx.stroke();
+  }
+
+  // disc body
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2);
+  ctx.fillStyle = "#191511"; ctx.fill();
+  
+  // grooves
+  ctx.strokeStyle = "#241F19";
+  ctx.lineWidth = 1;
+  for (let r = R-8; r > 52; r -= 4) { ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke(); }
+  
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(discRotOffset);
+
+  // Realistic aging (scratches & dust based on ageVal)
+  const ageFactor = ageVal / 200;
+  if (ageFactor > 0.05) {
+    ctx.strokeStyle = "rgba(245,241,228,0.15)";
+    const numScratches = Math.floor(scratches.length * ageFactor);
+    for(let i=0; i<numScratches; i++) {
+      const s = scratches[i];
+      ctx.lineWidth = 0.5 + s.depth*1;
+      ctx.beginPath();
+      ctx.arc(0, 0, s.r, s.a, s.a + s.len);
+      ctx.stroke();
+    }
+    
+    ctx.fillStyle = "rgba(245,241,228,0.2)";
+    const numDust = Math.floor(dust.length * ageFactor);
+    for(let i=0; i<numDust; i++) {
+      const d = dust[i];
+      const r = Math.sqrt(d.x*d.x + d.y*d.y) * R;
+      if (r < R && r > 32) {
+        ctx.beginPath();
+        ctx.arc(d.x*R, d.y*R, d.sz, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+  }
+  ctx.restore();
+
+  // groove sheen — Fixed relative to viewer
+  if (!REDUCED) {
+    const shA = Math.PI * 0.25; // fixed angle for reflection
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R-4, 0, Math.PI*2); ctx.clip();
+    const g = ctx.createLinearGradient(
+      cx+Math.cos(shA)*R, cy+Math.sin(shA)*R,
+      cx-Math.cos(shA)*R, cy-Math.sin(shA)*R);
+    g.addColorStop(0.42, "rgba(245,241,228,0)");
+    g.addColorStop(0.5,  "rgba(245,241,228,0.075)");
+    g.addColorStop(0.58, "rgba(245,241,228,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(cx-R, cy-R, R*2, R*2);
+    ctx.restore();
+  }
+
+  // spindle label — spins with the record; Side A = Noizefield logo, Side B = 33⅓
+  ctx.save();
+  ctx.translate(cx, cy);
+  if (!REDUCED) ctx.rotate(discRotOffset);
+  const f = flipScaleY();
+  if (f !== 1) ctx.scale(1, Math.max(0.02, Math.abs(f)));
+  ctx.beginPath(); ctx.arc(0, 0, 32, 0, Math.PI*2); ctx.fillStyle = CREAM; ctx.fill();
+  ctx.strokeStyle = GREEN; ctx.lineWidth = 2; ctx.stroke();
+  if (side === "A" && logoReady) {
+    // Noizefield label art (clipped into the label circle)
+    ctx.save();
+    ctx.beginPath(); ctx.arc(0, 0, 26, 0, Math.PI*2); ctx.clip();
+    ctx.drawImage(logoImg, -26, -26, 52, 52);
+    ctx.restore();
+  } else {
+    ctx.beginPath(); ctx.arc(0, 0, 27, 0, Math.PI*2); ctx.strokeStyle = ORANGE; ctx.lineWidth = 1; ctx.stroke();
+    ctx.strokeStyle = "rgba(40,36,29,0.5)"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(24, 0); ctx.lineTo(29, 0); ctx.stroke();
+    ctx.fillStyle = INK; ctx.font = "600 9px Helvetica, Arial";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("33\u2153", 0, -8); // Moved slightly higher
+  }
+  ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI*2); ctx.fillStyle = "#191511"; ctx.fill();
+  ctx.restore();
+
+  // cream tonearm — constant length, no startup animation
+  const t = grooveVal / 200;
+  const tc = Math.min(t, 1);
+  const phi = PHI_OUT - tc * (PHI_OUT - PHI_IN);
+  const psi = angPC - phi;
+  const tip = { x: PIVOT.x + Math.cos(psi)*ARM_L, y: PIVOT.y + Math.sin(psi)*ARM_L };
+  const dx = tip.x - PIVOT.x;
+  const dy = tip.y - PIVOT.y;
+  const armAngle = Math.atan2(dy, dx);
+  const len = Math.hypot(dx, dy);
+  const ux = dx / len;
+  const uy = dy / len;
+
+  // Counterweight is rigidly aligned with the arm centerline and follows its angle.
+  const counterX = PIVOT.x - ux * 22;
+  const counterY = PIVOT.y - uy * 22;
+  ctx.save();
+  ctx.translate(counterX, counterY);
+  ctx.rotate(armAngle);
+  ctx.fillStyle = CREAM;
+  ctx.fillRect(-7, -7, 14, 14);
+  ctx.restore();
+
+  ctx.strokeStyle = CREAM;
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(PIVOT.x, PIVOT.y);
+  ctx.lineTo(tip.x, tip.y);
+  ctx.stroke();
+
+  ctx.save();
+  ctx.translate(tip.x, tip.y);
+  ctx.rotate(armAngle);
+  ctx.fillStyle = CREAM;
+  ctx.fillRect(-7, -4, 12, 8);
+  ctx.restore();
+
+  ctx.beginPath(); ctx.arc(PIVOT.x, PIVOT.y, 6, 0, Math.PI*2);
+  ctx.fillStyle = CREAM; ctx.fill();
+  ctx.strokeStyle = INK; ctx.lineWidth = 1; ctx.stroke();
+  const pulse = (!REDUCED && t > 1) ? 0.55 + 0.45*Math.sin(time/300) : 1;
+  ctx.globalAlpha = pulse;
+  ctx.beginPath(); ctx.arc(tip.x, tip.y, 4, 0, Math.PI*2);
+  ctx.fillStyle = t > 1 ? ORANGE : GREEN; ctx.fill();
+  ctx.globalAlpha = 1;
+}
+
+function updateGrooveUI() {
+  const t = grooveVal / 200;
+  const ro = document.getElementById("groove-readout");
+  ro.classList.toggle("warn", t > 1);
+  ro.innerHTML = `R <b>+${String(Math.round((1-Math.min(t,1))*90)).padStart(3,"0")}</b> &middot; ` +
+    (t > 1 ? "RUN-OUT ZONE" : t > 0.66 ? "INNER GROOVE" : t > 0.33 ? "MID FIELD" : "OUTER FIELD");
+  const g2 = document.getElementById("groove2-value");
+  g2.textContent = Math.round(grooveVal) + " %";
+  g2.classList.toggle("hot", grooveVal > 100);
+  setPointer("groove2", grooveVal);
+}
+
+function getMouseRot(e) {
+  const rect = cv.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  return Math.atan2(y - CY, x - CX);
+}
+
+cv.addEventListener("pointerdown", e => {
+  e.preventDefault(); 
+  cv.setPointerCapture(e.pointerId); 
+  const rect = cv.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  const distC = Math.hypot(x - CX, y - CY);
+  
+  if (distC < R && distC > R_IN - 10) {
+    isDraggingDisc = true;
+    lastMouseRot = getMouseRot(e);
+  }
+  
+  const move = ev => {
+    if (isDraggingDisc) {
+      const newRot = getMouseRot(ev);
+      let diff = newRot - lastMouseRot;
+      // Handle wrap around
+      if (diff > Math.PI) diff -= Math.PI*2;
+      if (diff < -Math.PI) diff += Math.PI*2;
+      discRotOffset += diff;
+      lastMouseRot = newRot;
+      scratchSound(diff);            // velocity-driven scratch audio
+    }
+  };
+  const up = () => {
+    isDraggingDisc = false;
+    if (scratchGain && audioCtx) scratchGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+    cv.removeEventListener("pointermove", move);
+    cv.removeEventListener("pointerup", up);
+  };
+  cv.addEventListener("pointermove", move); 
+  cv.addEventListener("pointerup", up);
+});
+
+/* ================= knobs ================= */
+function setPointer(id, v, min = 0, max = 200) {
+  const t = (v - min)/(max - min);
+  const p = document.querySelector(`#${id}-knob .pointer`);
+  if (p) p.style.transform = `rotate(${-135 + t*270}deg)`;
+}
+function makeKnob(id, initial, onChange, min = 0, max = 200, valueId = null) {
+  const el = document.getElementById(id + "-knob");
+  const valEl = document.getElementById((valueId||id) + "-value");
+  let v = initial;
+  function render() {
+    setPointer(id, v, min, max);
+    if (valEl) { valEl.textContent = Math.round(v) + " %";
+                 valEl.classList.toggle("hot", v > max*0.5); }
+    if (onChange) onChange(v);
+  }
+  el.addEventListener("pointerdown", e => {
+    e.preventDefault(); el.setPointerCapture(e.pointerId);
+    let y0 = e.clientY, v0 = v;
+    const move = ev => { v = Math.max(min, Math.min(max, v0 + (y0-ev.clientY))); render(); };
+    const up = () => { el.removeEventListener("pointermove", move); el.removeEventListener("pointerup", up); };
+    el.addEventListener("pointermove", move); el.addEventListener("pointerup", up);
+  });
+  render();
+}
+
+makeKnob("stylus", 100, null, 20, 200);
+makeKnob("crackle", 60);
+makeKnob("debris", 40);
+makeKnob("bed", 45);
+makeKnob("valve", 30);
+makeKnob("reel", 30);
+makeKnob("transmit", 25);
+makeKnob("groove2", grooveVal, v => { grooveVal = v; }, 0, 200, "groove2");
+makeKnob("age", ageVal, v => { ageVal = v; updateAgeStatus(); }, 0, 200, "age");
+
+/* ---- footer status line: dynamic readout wired to the AGE master ---- */
+function ageStateName(v) {
+  if (v <= 0)   return "BYPASS · CLEAN SIGNAL";
+  if (v < 35)   return "LIGHT DUSTING";
+  if (v < 70)   return "TRACING";
+  if (v <= 100) return "REFERENCE FINGERPRINT";
+  if (v <= 150) return "WORN PRESSING";
+  return "INNER-GROOVE COLLAPSE";
+}
+function updateAgeStatus() {
+  const led = document.getElementById("status-led");
+  const txt = document.getElementById("status-text");
+  const hot = ageVal > 100;
+  led.classList.toggle("hot", hot);
+  txt.classList.toggle("hot", hot);
+  txt.innerHTML = `AGE ${String(Math.round(ageVal)).padStart(3, "0")}&nbsp;% &middot; ${ageStateName(ageVal)}`;
+}
+
+/* surface switch */
+let surfIdx = 1;
+const paddle = document.getElementById("surface-paddle");
+const posEl = document.getElementById("surface_type-value");
+function renderSurface() {
+  // travel = slot 116 - paddle 46 - 2*3 margin = 64px over 5 steps
+  paddle.style.left = (3 + surfIdx * 12.8) + "px";
+  paddle.classList.toggle("hot", surfIdx >= 4);
+  posEl.innerHTML = `<i class="${surfIdx === 0 ? "" : surfIdx >= 4 ? "hot" : "on"}">${SURFACE_TYPES[surfIdx]}</i>`;
+  document.getElementById("bed-control").classList.toggle("disabled", surfIdx === 0);
+}
+document.getElementById("surface-switch").addEventListener("click", () => {
+  surfIdx = (surfIdx + 1) % SURFACE_TYPES.length; renderSurface();
+});
+
+["valve-knob","reel-knob","transmit-knob","bed-knob","stylus-knob","crackle-knob",
+ "debris-knob","age-knob","groove2-knob"].forEach(drawScale);
+renderSurface();
+updateAgeStatus();
+
+
+/* ---- animation loop: VU horizontal needle + LED (disc redraws continuously for spin/sheen) ---- */
+const needle = document.getElementById("vu-needle");
+let level = -8;
+if (!REDUCED) {
+  setInterval(() => {
+    level += (Math.random() - 0.5) * 6 - level * 0.25;
+    if (Math.random() < 0.07) level = -1 - Math.random() * 4;
+    level = Math.max(-19, Math.min(1.5, level));
+    // Map level onto the ruler geometry: -20 dB -> x=40, 0 dB -> x=165, +3 -> x=178
+    let x = 40 + ((level + 20) / 23) * 138;
+    x = Math.max(40, Math.min(x, 178));
+    needle.setAttribute("x1", x); needle.setAttribute("x2", x);
+    const led = document.getElementById("status-led");
+    led.style.opacity = led.classList.contains("hot") ? 1 : 0.35 + 0.2 * Math.sin(performance.now()/1200);
+  }, 90);
+}
+(function loop(ts){ drawDisc(ts || 0); requestAnimationFrame(loop); })(0);
+updateGrooveUI();
+console.log("Preview mode - UI structure loaded");
+  </script>
+ </body>
+</html>
