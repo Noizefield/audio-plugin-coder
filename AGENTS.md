@@ -23,13 +23,14 @@ These instructions apply to the entire repository and are written for any coding
 - Use the `audio-plugin-coder` skill for APC lifecycle work.
 - **Primary slash commands** are prefixed: `/apc-setup`, `/apc-dream`, `/apc-plan`, `/apc-design`, `/apc-impl`, `/apc-test`, `/apc-debug`, `/apc-ship`, `/apc-status`, `/apc-resume`, `/apc-new`.
 - Short forms (`/dream`, `/design`, `/impl`, …) remain as **deprecated aliases** that redirect to `/apc-*`.
+- Claude Code and Kilo use the bare `/apc-*` forms. Codex repo sessions use the `audio-plugin-coder` skill action; plugin surfaces may expose namespaced command adapters, but they do not create bare `/apc-*` aliases.
 - If the agent host does not expose slash commands, use the `audio-plugin-coder` skill or an equivalent natural-language request.
 
 ## Codex
 
 - Invoke APC as `$audio-plugin-coder:audio-plugin-coder <action> <PluginName>` or use an equivalent natural-language request.
 - Actions include `setup`, `dream`, `plan`, `design`, `impl`, `test`, `debug`, `status`, `resume`, `ship`, `new` (also accept `apc-dream` style names by stripping the `apc-` prefix).
-- Never use Codex `/plan` or `/status` as APC workflow commands; those names are reserved by Codex built-ins. Prefer `/apc-plan` / `/apc-status` in docs, or the skill actions above.
+- Never use Codex `/plan` or `/status` as APC workflow commands; those names are reserved by Codex built-ins. Use the skill actions above.
 - See `docs/codex-compatibility.md` for setup and the full command mapping.
 
 ## Required Context

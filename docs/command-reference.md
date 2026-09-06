@@ -35,7 +35,8 @@ APC provides multiple ways to interact with the system:
 
 ## Codex Commands
 
-Codex discovers APC's repo-local skill from `.agents/skills/`. Use the skill name followed by the APC action:
+Codex discovers APC's repo-local skill from `.agents/skills/`. The reliable Codex interface is the
+skill action:
 
 ```text
 $audio-plugin-coder:audio-plugin-coder setup
@@ -51,7 +52,10 @@ $audio-plugin-coder:audio-plugin-coder ship EchoReverb
 $audio-plugin-coder:audio-plugin-coder new EchoReverb
 ```
 
-Natural-language equivalents also work. Do not use `/plan` or `/status` for APC in Codex; those names invoke Codex's built-in plan mode and session status. Prefer skill actions or `/apc-plan` / `/apc-status` in documentation.
+Natural-language equivalents also work. Do not use `/plan` or `/status` for APC in Codex; those
+names invoke Codex's built-in plan mode and session status. The bare `/apc-*` names remain the
+Claude/Kilo form. Plugin surfaces that support packaged command adapters may expose the
+namespaced `/audio-plugin-coder:apc-*` form.
 
 See [Codex Compatibility](codex-compatibility.md) for discovery and packaging details.
 
@@ -59,7 +63,8 @@ See [Codex Compatibility](codex-compatibility.md) for discovery and packaging de
 
 ## Slash Commands
 
-Slash commands are the primary APC syntax in Claude Code and Kilo. Sections below still describe behavior; **prefer the `/apc-*` names** in the table above.
+Slash commands are the primary APC syntax in Claude Code and Kilo. Codex uses the skill action;
+sections below still describe the shared APC behavior.
 
 ### `/apc-dream [Name]` (alias: `/dream`)
 

@@ -13,10 +13,10 @@
 
 - **JUCE 9** — framework pin upgraded to **9.0.1**, including the official `@juce-framework/webview` / TypeScript WebView interop path
 - **`/apc-setup`** — guided first-run wizard for toolchain checks, relocatable `plugins` / `build` / `release` folders, UI defaults, and per-phase AI model preferences
-- **`/apc-*` commands** — unique slash names (`/apc-dream`, `/apc-plan`, …) to avoid collisions; short forms like `/dream` remain as deprecated aliases
+- **`/apc-*` commands** — unique slash names (`/apc-dream`, `/apc-plan`, …) for Claude Code/Kilo; Codex invokes APC through its skill syntax
 - **Cross-platform** — Windows, macOS, and Linux (Linux needs WebKitGTK + EGL for JUCE 9)
 
-Start here: clone → `/apc-setup` → `/apc-dream <PluginName>`.
+Start here: clone → `/apc-setup` (Claude Code/Kilo) or `$audio-plugin-coder:audio-plugin-coder setup` (Codex) → start the workflow.
 
 ## About Audio Plugin Coder
 
@@ -89,6 +89,19 @@ Then open the repo in your AI agent and run:
 
 1. **`/apc-setup`** — configure paths, models, verify JUCE 9
 2. **`/apc-dream <PluginName>`** — create your first plugin
+
+### Codex command syntax
+
+Codex does not expose repo-defined, unnamespaced slash commands such as `/apc-dream`. Use the APC
+skill action instead:
+
+```text
+$audio-plugin-coder:audio-plugin-coder setup
+$audio-plugin-coder:audio-plugin-coder dream MyPlugin
+```
+
+The bare `/apc-*` commands are the Claude Code/Kilo form. Do not use Codex built-ins such as
+`/plan` or `/status` for APC phases.
 
 ### Prerequisites
 
