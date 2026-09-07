@@ -12,7 +12,10 @@ param(
     [ValidateSet("quality", "balanced", "budget")][string]$ModelProfile = "balanced",
     [string]$Platform = "windows",
     [switch]$MarkCompleted,
-    [hashtable]$PhaseModels
+    [hashtable]$PhaseModels,
+    [switch]$EnableCodexOrchestration,
+    [switch]$EnableCodexEscalation,
+    [switch]$InstallCodexProfiles
 )
 
 $ErrorActionPreference = "Stop"
@@ -20,10 +23,30 @@ $ErrorActionPreference = "Stop"
 
 $RepoRoot = Get-ApcRepoRoot
 $example = Join-Path $RepoRoot "apc.config.example.json"
-if (Test-Path $example) {
+$existingPath = Join-Path $RepoRoot "apc.config.json"
+
+# Prefer merging into an existing local config so re-running setup does not wipe custom values.
+if (Test-Path $existingPath) {
+    $cfg = Get-Content $existingPath -Raw | ConvertFrom-Json
+}
+elseif (Test-Path $example) {
     $cfg = Get-Content $example -Raw | ConvertFrom-Json
-} else {
+}
+else {
     $cfg = Get-ApcDefaultConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+}
+
+# Ensure models.codex exists (shipped in example; merge for older local configs).
+if (Test-Path $example) {
+    $exampleCfg = Get-Content $example -Raw | ConvertFrom-Json
+    if ($exampleCfg.models -and $exampleCfg.models.codex) {
+        if (-not $cfg.models) {
+            $cfg | Add-Member -NotePropertyName models -NotePropertyValue ([pscustomobject]@{}) -Force
+        }
+        if (-not $cfg.models.codex) {
+            $cfg.models | Add-Member -NotePropertyName codex -NotePropertyValue $exampleCfg.models.codex -Force
+        }
+    }
 }
 
 $cfg.paths.plugins_dir = $PluginsDir
@@ -42,6 +65,19 @@ if ($PhaseModels) {
     }
 }
 
+if ($cfg.models.codex) {
+    $cfg.models.codex.enabled = [bool]$EnableCodexOrchestration
+    if (-not $cfg.models.codex.escalation) {
+        $cfg.models.codex | Add-Member -NotePropertyName escalation -NotePropertyValue ([pscustomobject]@{
+            enabled = $false
+            order = @("luna", "terra", "sol", "astra")
+            on_build_fail = $true
+            verify_command = $null
+        }) -Force
+    }
+    $cfg.models.codex.escalation.enabled = [bool]$EnableCodexEscalation
+}
+
 if ($MarkCompleted) {
     $cfg.setup.completed = $true
     $cfg.setup.completed_at = (Get-Date).ToString("o")
@@ -58,7 +94,17 @@ foreach ($dir in @($paths.PluginsDir, $paths.BuildDir, $paths.ReleaseDir)) {
     }
 }
 
+if ($InstallCodexProfiles -or $EnableCodexOrchestration) {
+    $installer = Join-Path $RepoRoot "scripts\codex\install-profiles.ps1"
+    if (Test-Path $installer) {
+        & $installer
+    }
+}
+
 Write-Host "Wrote $path" -ForegroundColor Green
 Write-Host "Plugins: $($paths.PluginsDir)"
 Write-Host "Build:   $($paths.BuildDir)"
 Write-Host "Release: $($paths.ReleaseDir)"
+if ($cfg.models.codex) {
+    Write-Host "Codex orchestration: enabled=$($cfg.models.codex.enabled) escalation=$($cfg.models.codex.escalation.enabled)"
+}

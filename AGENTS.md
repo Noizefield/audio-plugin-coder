@@ -32,6 +32,7 @@ These instructions apply to the entire repository and are written for any coding
 - Actions include `setup`, `dream`, `plan`, `design`, `impl`, `test`, `debug`, `status`, `resume`, `ship`, `new` (also accept `apc-dream` style names by stripping the `apc-` prefix).
 - Never use Codex `/plan` or `/status` as APC workflow commands; those names are reserved by Codex built-ins. Use the skill actions above.
 - See `docs/codex-compatibility.md` for setup and the full command mapping.
+- **Optional cost-aware CLI routing** (ChatGPT-authenticated `codex exec`, Luna→Terra→Sol→Astra): see `docs/codex-orchestration.md` and `scripts/codex/apc-codex-run.ps1` / `.sh`. Do not force this path on Claude, Cursor, or Kilo sessions.
 
 ## Required Context
 

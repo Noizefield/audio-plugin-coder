@@ -132,6 +132,105 @@ function Get-ApcModelForPhase {
     return $null
 }
 
+function Get-ApcCodexConfig {
+    param([string]$RepoRoot = (Get-ApcRepoRoot))
+    $cfg = Read-ApcConfig -RepoRoot $RepoRoot
+    if ($cfg.models -and $cfg.models.codex) {
+        return $cfg.models.codex
+    }
+    return $null
+}
+
+function Get-ApcCodexTierForPhase {
+<#
+.SYNOPSIS
+    Resolve Codex cost-tier name (luna|terra|sol|astra) for an APC phase.
+#>
+    param(
+        [Parameter(Mandatory = $true)][string]$Phase,
+        [string]$RepoRoot = (Get-ApcRepoRoot)
+    )
+    $builtin = @{
+        setup  = "luna"
+        status = "luna"
+        resume = "luna"
+        ship   = "luna"
+        dream  = "terra"
+        design = "terra"
+        test   = "terra"
+        plan   = "terra"
+        impl   = "terra"
+        debug  = "terra"
+    }
+    $codex = Get-ApcCodexConfig -RepoRoot $RepoRoot
+    $key = $Phase.ToLowerInvariant()
+    if ($codex -and $codex.phase_tiers -and $codex.phase_tiers.$key) {
+        return [string]$codex.phase_tiers.$key
+    }
+    if ($codex -and $codex.default_tier) {
+        return [string]$codex.default_tier
+    }
+    if ($builtin.ContainsKey($key)) {
+        return $builtin[$key]
+    }
+    return "terra"
+}
+
+function Get-ApcCodexTierInfo {
+<#
+.SYNOPSIS
+    Return model/profile/reasoning/max_attempts for a Codex tier name.
+#>
+    param(
+        [Parameter(Mandatory = $true)][string]$Tier,
+        [string]$RepoRoot = (Get-ApcRepoRoot)
+    )
+    $codex = Get-ApcCodexConfig -RepoRoot $RepoRoot
+    $name = $Tier.ToLowerInvariant()
+    $defaults = @{
+        luna  = @{ model = "gpt-5.6-luna";  profile = "luna";  reasoning = "low";    max_attempts = 1 }
+        terra = @{ model = "gpt-5.6-terra"; profile = "terra"; reasoning = "medium"; max_attempts = 2 }
+        sol   = @{ model = "gpt-5.6";       profile = "sol";   reasoning = "high";   max_attempts = 1 }
+        astra = @{ model = "gpt-6-astra";   profile = "astra"; reasoning = "high";   max_attempts = 1 }
+    }
+    $base = $defaults[$name]
+    if (-not $base) {
+        return $null
+    }
+    if ($codex -and $codex.tiers -and $codex.tiers.$name) {
+        $t = $codex.tiers.$name
+        if ($t.model) { $base.model = [string]$t.model }
+        if ($t.profile) { $base.profile = [string]$t.profile }
+        if ($t.reasoning) { $base.reasoning = [string]$t.reasoning }
+        if ($null -ne $t.max_attempts) { $base.max_attempts = [int]$t.max_attempts }
+    }
+    return [pscustomobject]@{
+        Tier         = $name
+        Model        = $base.model
+        Profile      = $base.profile
+        Reasoning    = $base.reasoning
+        MaxAttempts  = [int]$base.max_attempts
+    }
+}
+
+function Get-ApcCodexNextTier {
+    param(
+        [Parameter(Mandatory = $true)][string]$Tier,
+        [string]$RepoRoot = (Get-ApcRepoRoot)
+    )
+    $codex = Get-ApcCodexConfig -RepoRoot $RepoRoot
+    $order = @("luna", "terra", "sol", "astra")
+    if ($codex -and $codex.escalation -and $codex.escalation.order) {
+        $order = @($codex.escalation.order | ForEach-Object { [string]$_ })
+    }
+    $name = $Tier.ToLowerInvariant()
+    $idx = [array]::IndexOf($order, $name)
+    if ($idx -lt 0 -or $idx -ge ($order.Count - 1)) {
+        return $null
+    }
+    return $order[$idx + 1]
+}
+
 function Write-ApcConfig {
     param(
         [Parameter(Mandatory = $true)]$Config,

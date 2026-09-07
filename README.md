@@ -13,10 +13,11 @@
 
 - **JUCE 9** — framework pin upgraded to **9.0.1**, including the official `@juce-framework/webview` / TypeScript WebView interop path
 - **`/apc-setup`** — guided first-run wizard for toolchain checks, relocatable `plugins` / `build` / `release` folders, UI defaults, and per-phase AI model preferences
-- **`/apc-*` commands** — unique slash names (`/apc-dream`, `/apc-plan`, …) for Claude Code/Kilo; Codex invokes APC through its skill syntax
+- **Optional Codex cost routing** — `/apc-setup` can enable Luna→Terra→Sol→Astra CLI orchestration (`docs/codex-orchestration.md`)
+- **`/apc-*` commands** — unique slash names (`/apc-dream`, `/apc-plan`, …) for Claude Code/Kilo/Cursor; Codex invokes APC through its skill syntax
 - **Cross-platform** — Windows, macOS, and Linux (Linux needs WebKitGTK + EGL for JUCE 9)
 
-Start here: clone → `/apc-setup` (Claude Code/Kilo) or `$audio-plugin-coder:audio-plugin-coder setup` (Codex) → start the workflow.
+Start here: clone → `/apc-setup` (Claude Code/Kilo/Cursor) or `$audio-plugin-coder:audio-plugin-coder setup` (Codex) → start the workflow.
 
 ## About Audio Plugin Coder
 
@@ -360,7 +361,7 @@ APC works with any LLM-based coding agent that supports:
 - ✅ Codex CLI / IDE (repo skill and `AGENTS.md`)
 - ✅ Claude Code (Anthropic)
 - ✅ Kilo (kilo.ai)
-- [ ] Cursor
+- ✅ Cursor
 - [ ] Others welcome!
 
 ## 🛠️ Technology Stack

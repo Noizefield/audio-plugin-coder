@@ -1,0 +1,5 @@
+# Copy or merge into ~/.codex/ as a named profile (see docs/codex-orchestration.md).
+# Sol often uses the gpt-5.6 family id; override in apc.config.json models.codex.tiers if needed.
+
+model = "gpt-5.6"
+model_reasoning_effort = "high"
