@@ -1,0 +1,4 @@
+# Copy or merge into ~/.codex/ as a named profile (see docs/codex-orchestration.md).
+
+model = "gpt-5.6-terra"
+model_reasoning_effort = "medium"

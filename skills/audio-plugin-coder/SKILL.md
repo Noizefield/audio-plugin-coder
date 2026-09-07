@@ -42,6 +42,7 @@ Keep this adapter thin; load APC's existing knowledge just in time:
 4. If a routed `.claude/` file is missing, use the equivalent `.agent/` path.
 5. Resolve examples for the current OS: PowerShell on Windows, Bash/Zsh on macOS or Linux.
 6. Announce preferred model from `apc.config.json` → `models.phases.<phase>` when present.
+7. For automated Codex CLI cost routing (optional, not the default interactive path), see `docs/codex-orchestration.md` and `scripts/codex/apc-codex-run.ps1` / `.sh`. Do not nest `codex exec` under every interactive turn.
 
 ## Action Routing
 

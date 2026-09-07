@@ -27,7 +27,38 @@
       "resume": { "provider": "auto", "model": "economy-default" },
       "setup":  { "provider": "auto", "model": "economy-default" }
     },
-    "notes": "Replace *-default tokens with concrete model IDs during /apc-setup (Claude/GPT/Gemini/Qwen/etc.)."
+    "notes": "Replace *-default tokens with concrete model IDs during /apc-setup (Claude/GPT/Gemini/Qwen/etc.).",
+    "codex": {
+      "enabled": false,
+      "require_chatgpt_auth": true,
+      "fast_mode": false,
+      "usage_log_dir": ".tmp/codex-usage",
+      "default_tier": "terra",
+      "phase_tiers": {
+        "setup": "luna",
+        "status": "luna",
+        "resume": "luna",
+        "ship": "luna",
+        "dream": "terra",
+        "design": "terra",
+        "test": "terra",
+        "plan": "terra",
+        "impl": "terra",
+        "debug": "terra"
+      },
+      "tiers": {
+        "luna":  { "model": "gpt-5.6-luna", "profile": "luna",  "reasoning": "low",    "max_attempts": 1 },
+        "terra": { "model": "gpt-5.6-terra", "profile": "terra", "reasoning": "medium", "max_attempts": 2 },
+        "sol":   { "model": "gpt-5.6",       "profile": "sol",   "reasoning": "high",   "max_attempts": 1 },
+        "astra": { "model": "gpt-6-astra",   "profile": "astra", "reasoning": "high",   "max_attempts": 1 }
+      },
+      "escalation": {
+        "enabled": false,
+        "order": ["luna", "terra", "sol", "astra"],
+        "on_build_fail": true,
+        "verify_command": null
+      }
+    }
   },
   "setup": {
     "completed": false,

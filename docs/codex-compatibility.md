@@ -78,9 +78,11 @@ marketplace, then start a new Codex session if the update does not appear immedi
 - `commands/apc-*.md` are thin Codex adapters; the APC skill remains the source of truth for execution.
 - A single `audio-plugin-coder` skill avoids duplicating APC's large domain knowledge base.
 - The adapter translates platform-specific examples and preserves APC's one-phase-at-a-time stopping rule.
+- Optional cost-aware `codex exec` routing (profiles, usage JSONL, escalation) is documented in [Codex Orchestration](codex-orchestration.md) and is separate from the interactive skill path.
 
 ## Official Codex References
 
 - [Custom instructions with AGENTS.md](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
 - [Build skills](https://learn.chatgpt.com/docs/build-skills)
 - [Build plugins](https://learn.chatgpt.com/docs/build-plugins)
+- APC cost routing: [Codex Orchestration](codex-orchestration.md)

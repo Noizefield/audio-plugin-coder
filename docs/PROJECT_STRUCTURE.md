@@ -10,6 +10,7 @@ APC follows a monorepo architecture with clear separation between framework code
 audio-plugin-coder/
 ├── .agent/                 # AI agent configuration and skills
 ├── .agents/                # Codex repo-local skill discovery
+├── .codex/                 # Optional Codex project agents (cost tiers)
 ├── .codex-plugin/          # Codex plugin manifest
 ├── _tools/                 # External dependencies (JUCE, pluginval)
 ├── build/                  # Build artifacts (gitignored)
@@ -168,6 +169,13 @@ scripts/
 ├── add-icon-to-exe.ps1
 ├── backup.ps1
 ├── build-and-install.ps1      # Main build script
+├── codex/                     # Optional Codex cost-aware orchestration
+│   ├── apc-codex-run.ps1
+│   ├── apc-codex-run.sh
+│   ├── smoke-proof.ps1
+│   ├── install-profiles.ps1
+│   ├── profiles/
+│   └── routing-schema.json
 ├── copy-agent-folders.ps1
 ├── error-detection.ps1
 ├── list-folder-structure.ps1
@@ -191,6 +199,7 @@ scripts/
 - [`build-and-install.ps1`](scripts/build-and-install.ps1) - Build and install plugins
 - [`state-management.ps1`](scripts/state-management.ps1) - State tracking functions
 - [`validate-webview-setup.ps1`](scripts/validate-webview-setup.ps1) - WebView validation
+- [`codex/apc-codex-run.ps1`](scripts/codex/apc-codex-run.ps1) - Optional Codex tier routing (see [Codex Orchestration](codex-orchestration.md))
 
 ---
 

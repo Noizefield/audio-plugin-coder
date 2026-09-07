@@ -1,0 +1,5 @@
+# Copy or merge into ~/.codex/ as a named profile (see docs/codex-orchestration.md).
+# Exceptional escalation only.
+
+model = "gpt-6-astra"
+model_reasoning_effort = "high"

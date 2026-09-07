@@ -24,7 +24,7 @@ If `apc.config.json` exists and `setup.completed` is true, ask the user to choos
 
 1. **Re-check only** — run system-check, report results
 2. **Change paths** — update `paths.*` only
-3. **Change models** — update `models.*` only
+3. **Change models** — update `models.*` only (including optional Codex orchestration toggle)
 4. **Full wizard** — redo all steps (confirm before overwriting paths)
 
 Never silently overwrite custom paths.
@@ -99,16 +99,33 @@ Ask the user for **concrete model IDs** they can use in their agent (do not inve
 
 Remind: many hosts cannot auto-switch models; APC will announce the preferred model at phase start.
 
+### 6b. Codex cost-aware CLI routing (optional)
+
+Ask whether the user wants **Codex CLI cost-aware orchestration** (Luna → Terra → Sol → Astra). This is **off by default** and only relevant if they use Codex CLI / ChatGPT-authenticated `codex exec`. Cursor, Claude Code, and Kilo users can skip.
+
+If **Yes**:
+
+1. Confirm Codex CLI is installed (`codex` on PATH). If missing, point to OpenAI Codex install docs and continue with a warning.
+2. Prefer **ChatGPT sign-in** (`codex login`), not an API key, when staying on Plus/plan allowance.
+3. When writing config, pass `--enable-codex` / `-EnableCodexOrchestration` so `models.codex.enabled = true`.
+   - The `models.codex` block is already in `apc.config.example.json` and is merged automatically — **users do not hand-copy JSON**.
+4. Ask optionally: enable build/test escalation (`--enable-codex-escalation` / `-EnableCodexEscalation`)?
+5. Install named profiles into the user Codex home (automatic when orchestration is enabled, or via `scripts/codex/install-profiles.ps1` / `.sh`).
+6. Point to `docs/codex-orchestration.md` for the runner (`scripts/codex/apc-codex-run`).
+
+If **No**: leave `models.codex.enabled = false` (block still present from the example for later opt-in).
+
 ### 7. Verify
 
-1. Write `apc.config.json` (from answers; start from `apc.config.example.json`)
+1. Write `apc.config.json` (from answers; start from / merge with `apc.config.example.json`)
 2. Re-run system-check
 3. Optional smoke: configure CMake only into the configured build dir with `-DAPC_PLUGINS_DIR=...`
 4. Set `setup.completed = true`, `setup.completed_at`, `setup.platform`
 
 Helper scripts (prefer these over hand-writing JSON when possible):
 
-- Windows: `.\scripts\apc-write-config.ps1` (see script help)
+- Windows: `.\scripts\apc-write-config.ps1` (supports `-EnableCodexOrchestration`, `-EnableCodexEscalation`, `-InstallCodexProfiles`)
+- macOS/Linux: `bash scripts/apc-write-config.sh` (supports `--enable-codex`, `--enable-codex-escalation`, `--install-codex-profiles`)
 - Or edit JSON carefully with the path helpers in `scripts/lib/Get-ApcPaths.ps1`
 
 ### 8. Summary
@@ -118,6 +135,7 @@ Print:
 - Resolved plugins / build / release paths
 - JUCE major
 - Model profile
+- Codex orchestration on/off (and whether profiles were installed)
 - Next command: **`/apc-dream <PluginName>`**
 
 Stop. Do not run dream.

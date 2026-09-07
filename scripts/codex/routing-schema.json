@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "properties": {
+    "tier": {
+      "type": "string",
+      "enum": ["luna", "terra", "sol", "astra"]
+    },
+    "reasoning": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "xhigh"]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "reason": {
+      "type": "string"
+    }
+  },
+  "required": ["tier", "reasoning", "confidence", "reason"],
+  "additionalProperties": false
+}

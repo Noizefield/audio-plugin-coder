@@ -124,3 +124,79 @@ apc_model_for_phase() {
         jq -c --arg p "$phase" '.models.phases[$p] // empty' "$cfg" 2>/dev/null || true
     fi
 }
+
+apc_codex_config_file() {
+    local root
+    root="$(apc_repo_root)"
+    if [[ -f "$root/apc.config.json" ]]; then
+        printf '%s\n' "$root/apc.config.json"
+    elif [[ -f "$root/apc.config.example.json" ]]; then
+        printf '%s\n' "$root/apc.config.example.json"
+    fi
+}
+
+apc_codex_tier_for_phase() {
+    local phase="$1"
+    local cfg
+    cfg="$(apc_codex_config_file)"
+    if [[ -n "$cfg" ]] && command -v jq &>/dev/null; then
+        local tier
+        tier="$(jq -r --arg p "$phase" '.models.codex.phase_tiers[$p] // .models.codex.default_tier // empty' "$cfg" 2>/dev/null || true)"
+        if [[ -n "$tier" && "$tier" != "null" ]]; then
+            printf '%s\n' "$tier"
+            return 0
+        fi
+    fi
+    case "$phase" in
+        setup|status|resume|ship) printf 'luna\n' ;;
+        *) printf 'terra\n' ;;
+    esac
+}
+
+apc_codex_tier_field() {
+    # apc_codex_tier_field <tier> <field> <default>
+    local tier="$1"
+    local field="$2"
+    local default="$3"
+    local cfg
+    cfg="$(apc_codex_config_file)"
+    [[ -n "$cfg" ]] || { printf '%s\n' "$default"; return 0; }
+    if command -v jq &>/dev/null; then
+        local val
+        val="$(jq -r --arg t "$tier" --arg f "$field" '.models.codex.tiers[$t][$f] // empty' "$cfg" 2>/dev/null || true)"
+        if [[ -n "$val" && "$val" != "null" ]]; then
+            printf '%s\n' "$val"
+            return 0
+        fi
+    fi
+    printf '%s\n' "$default"
+}
+
+apc_codex_next_tier() {
+    local tier="$1"
+    local cfg
+    cfg="$(apc_codex_config_file)"
+    if ! command -v jq &>/dev/null; then
+        case "$tier" in
+            luna) printf 'terra\n' ;;
+            terra) printf 'sol\n' ;;
+            sol) printf 'astra\n' ;;
+            *) return 0 ;;
+        esac
+        return 0
+    fi
+    local order_json='["luna","terra","sol","astra"]'
+    if [[ -n "$cfg" ]]; then
+        local custom
+        custom="$(jq -c '.models.codex.escalation.order // empty' "$cfg" 2>/dev/null || true)"
+        if [[ -n "$custom" && "$custom" != "null" ]]; then
+            order_json="$custom"
+        fi
+    fi
+    jq -nr --arg t "$tier" --argjson o "$order_json" '
+      ($o | index($t)) as $i
+      | if $i == null then empty
+        elif ($i + 1) < ($o | length) then $o[$i + 1]
+        else empty end
+    '
+}

@@ -12,10 +12,12 @@ Planning and implementation benefit from stronger models. Shipping checklists an
 |---|---|
 | Cursor (Task / subagents) | Can pass a `model` when launching a subagent if the user/session allows |
 | Claude Code | User may switch model manually; APC announces preference at phase start |
-| Codex | User selects model in the host; APC documents preference only |
+| Codex (interactive) | User selects model in the host; APC announces `models.phases.*` preference |
+| Codex (optional CLI) | `scripts/codex/apc-codex-run` can route by phase/heuristics and log usage — see [Codex Orchestration](codex-orchestration.md) |
 | Kilo / others | Announce preference; user switches if supported |
 
 **APC never blocks a phase solely because the active model differs.** It warns and continues.
+
 
 ## Config location
 
@@ -51,3 +53,13 @@ At the start of `/apc-plan`, `/apc-design`, `/apc-impl`, `/apc-ship`, etc.:
 2. Tell the user the preferred model
 3. Ask them to switch if the host cannot do it automatically
 4. Continue the phase
+
+## Codex CLI cost routing (optional)
+
+Opt in during **`/apc-setup` step 6b** (or `apc-write-config -EnableCodexOrchestration`). That merges `models.codex` from the example into local `apc.config.json` — no hand copy.
+
+When using Codex CLI automation (not required for interactive APC):
+
+1. Prefer ChatGPT authentication over an API key when staying on plan allowance
+2. Use `scripts/codex/apc-codex-run.ps1` / `.sh` or announce the mapped `models.codex.phase_tiers` tier
+3. See [Codex Orchestration](codex-orchestration.md) for profiles, agents, smoke proof, and escalation

@@ -10,7 +10,8 @@ New to APC? Start here:
 2. **[Plugin Development Lifecycle](plugin-development-lifecycle.md)** - The five-phase workflow
 3. **[Command Reference](command-reference.md)** - All available commands
 4. **[Codex Compatibility](codex-compatibility.md)** - Codex setup and command mapping
-5. **[FAQ](FAQ.md)** - Common questions answered
+5. **[Codex Orchestration](codex-orchestration.md)** - Optional cost-aware Codex CLI routing
+6. **[FAQ](FAQ.md)** - Common questions answered
 
 ## Documentation Index
 
@@ -22,6 +23,7 @@ New to APC? Start here:
 | [Plugin Development Lifecycle](plugin-development-lifecycle.md) | Detailed guide to all five phases |
 | [Command Reference](command-reference.md) | All slash commands and PowerShell scripts |
 | [Codex Compatibility](codex-compatibility.md) | Codex skill, plugin manifest, and command mapping |
+| [Codex Orchestration](codex-orchestration.md) | Optional Luna/Terra/Sol/Astra `codex exec` routing |
 | [FAQ](FAQ.md) | Frequently asked questions |
 
 ### Core Concepts

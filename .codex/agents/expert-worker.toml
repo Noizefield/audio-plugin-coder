@@ -1,0 +1,13 @@
+name = "expert_worker"
+description = "Escalation worker for exceptional unresolved problems."
+
+model = "gpt-6-astra"
+model_reasoning_effort = "high"
+
+developer_instructions = """
+Work only on tasks explicitly escalated because lower-cost models
+failed to produce a verified solution or because the task clearly
+requires exceptional end-to-end reasoning.
+
+Avoid unnecessary scope expansion.
+"""

@@ -44,6 +44,9 @@ plans/
 # Machine-local APC setup (commit apc.config.example.json instead)
 apc.config.json
 
+# Local Codex orchestration smoke/usage logs
+.tmp/
+
 # Release artifacts (keep release/README.md tracked)
 release/**
 !release/README.md
