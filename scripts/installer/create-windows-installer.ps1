@@ -28,8 +28,8 @@
 param(
     [Parameter(Mandatory=$true)][string]$PluginName,
     [Parameter(Mandatory=$true)][string]$Version,
-    [string]$CompanyName = "APC",
-    [string]$PluginURL = "https://github.com/noizefield/audio-plugin-coder"
+    [string]$CompanyName = "Noizefield",
+    [string]$PluginURL = "https://noizefield.com"
 )
 
 $ErrorActionPreference = "Stop"
@@ -162,18 +162,34 @@ if (-not (Test-Path $TemplatePath)) {
 
 $Template = Get-Content $TemplatePath -Raw
 
-# Get absolute path to icon file
-$IconAbsolutePath = (Resolve-Path $IconPath).Path
-$ReleaseDirIss = $ReleaseDir.Replace('\', '/')
+function ConvertTo-IssPath([string]$Path) {
+    return (Resolve-Path $Path).Path.Replace('\', '/')
+}
 
-# Replace placeholders
-$IssContent = $Template `
-    -replace '{#PluginName}', $PluginName `
-    -replace '{#PluginVersion}', $Version `
-    -replace '{#CompanyName}', $CompanyName `
-    -replace '{#PluginURL}', $PluginURL `
-    -replace '{#IconPath}', $IconAbsolutePath
+$ReleaseDirIss = ConvertTo-IssPath $ReleaseDir
+$BuildDirIss = ConvertTo-IssPath $BuildDir
+$PluginsDirIss = ConvertTo-IssPath $ApcPaths.PluginsDir
+$RepoRootIss = ConvertTo-IssPath $ApcPaths.RepoRoot
+
+$SetupIconLine = ""
+$IconAbsolutePath = ""
+if (Test-Path $IconPath) {
+    $IconAbsolutePath = ConvertTo-IssPath $IconPath
+    $SetupIconLine = "SetupIconFile=$IconAbsolutePath"
+}
+
+# Replace placeholders (order matters: longer tokens before shorter ones)
+$IssContent = $Template
+$IssContent = $IssContent.Replace('{#SetupIconLine}', $SetupIconLine)
+$IssContent = $IssContent.Replace('{#PluginName}', $PluginName)
+$IssContent = $IssContent.Replace('{#PluginVersion}', $Version)
+$IssContent = $IssContent.Replace('{#CompanyName}', $CompanyName)
+$IssContent = $IssContent.Replace('{#PluginURL}', $PluginURL)
+$IssContent = $IssContent.Replace('{#IconPath}', $IconAbsolutePath)
 $IssContent = $IssContent.Replace('{#ReleaseDir}', $ReleaseDirIss)
+$IssContent = $IssContent.Replace('{#BuildDir}', $BuildDirIss)
+$IssContent = $IssContent.Replace('{#PluginsDir}', $PluginsDirIss)
+$IssContent = $IssContent.Replace('{#RepoRoot}', $RepoRootIss)
 
 # Create build directory for installer
 $InstallerBuildDir = Join-Path $BuildDir "installer"
