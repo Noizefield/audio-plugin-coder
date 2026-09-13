@@ -1,10 +1,7 @@
-﻿---
+---
 description: "Deprecated alias â€” use /apc-status"
 ---
 
-# Deprecated: `/status`
+> **APC pointer** - canonical file: `.agents/workflows/status.md`.
 
-Prefer **`/apc-status`**. Short names collide with other frameworks and host builtins.
-
-Load and execute `..agent/workflows/apc-status.md`.
-
+Load and follow `../../.agents/workflows/status.md` exactly as written (it contains the full instructions, validation steps, and completion message).

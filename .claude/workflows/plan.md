@@ -2,8 +2,6 @@
 description: "Deprecated alias — use /apc-plan"
 ---
 
-# Deprecated: `/plan`
+> **APC pointer** - canonical file: `.agents/workflows/plan.md`.
 
-Prefer **`/apc-plan`**. Short names collide with other frameworks and host builtins.
-
-Load and execute `.claude/workflows/apc-plan.md`.
+Load and follow `../../.agents/workflows/plan.md` exactly as written (it contains the full instructions, validation steps, and completion message).

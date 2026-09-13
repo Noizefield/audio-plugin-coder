@@ -2,8 +2,6 @@
 description: "Deprecated alias — use /apc-ship"
 ---
 
-# Deprecated: `/ship`
+> **APC pointer** - canonical file: `.agents/workflows/ship.md`.
 
-Prefer **`/apc-ship`**. Short names collide with other frameworks and host builtins.
-
-Load and execute `.claude/workflows/apc-ship.md`.
+Load and follow `../../.agents/workflows/ship.md` exactly as written (it contains the full instructions, validation steps, and completion message).

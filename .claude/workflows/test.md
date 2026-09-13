@@ -2,8 +2,6 @@
 description: "Deprecated alias — use /apc-test"
 ---
 
-# Deprecated: `/test`
+> **APC pointer** - canonical file: `.agents/workflows/test.md`.
 
-Prefer **`/apc-test`**. Short names collide with other frameworks and host builtins.
-
-Load and execute `.claude/workflows/apc-test.md`.
+Load and follow `../../.agents/workflows/test.md` exactly as written (it contains the full instructions, validation steps, and completion message).

@@ -1,10 +1,7 @@
-﻿---
+---
 description: "Deprecated alias â€” use /apc-setup"
 ---
 
-# Deprecated: `/setup`
+> **APC pointer** - canonical file: `.agents/workflows/setup.md`.
 
-Prefer **`/apc-setup`**.
-
-Load and execute `..kilocode/workflows/apc-setup.md` / `..kilocode/skills/apc-setup/SKILL.md`.
-
+Load and follow `../../.agents/workflows/setup.md` exactly as written (it contains the full instructions, validation steps, and completion message).
