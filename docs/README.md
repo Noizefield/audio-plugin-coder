@@ -32,6 +32,7 @@ New to APC? Start here:
 |----------|-------------|
 | [State Management Deep Dive](state-management-deep-dive.md) | How APC tracks and manages project state |
 | [Build System](build-system.md) | CMake configuration and build scripts |
+| [Model Routing](model-routing.md) | Per-phase AI model preferences (`apc.config.json`) |
 | [WebView Framework](webview-framework.md) | Building plugins with HTML/CSS/JS UIs |
 
 ### Workflows & Processes
@@ -48,17 +49,18 @@ New to APC? Start here:
 | Document | Description |
 |----------|-------------|
 | [Troubleshooting Guide](troubleshooting-guide.md) | Common issues and solutions |
-| [Known Issues](../.agent/troubleshooting/known-issues.yaml) | Database of known problems |
+| [Maintenance Triage](maintenance-triage.md) | Orphan/legacy retirement list |
+| [Known Issues](../.agents/troubleshooting/known-issues.yaml) | Database of known problems |
 
 ### Reference
 
 | Document | Location | Description |
 |----------|----------|-------------|
-| Agent Rules | [.agent/rules/agent.md](../.agent/rules/agent.md) | Critical rules for AI agents |
-| File Naming | [.agent/rules/file-naming-conventions.md](../.agent/rules/file-naming-conventions.md) | Naming conventions |
-| JUCE Protocols | [.agent/rules/juce-build-protocols.md](../.agent/rules/juce-build-protocols.md) | Build system rules |
-| State Guide | [.agent/guides/state-management-guide.md](../.agent/guides/state-management-guide.md) | State management guide |
-| WebView Templates | [.agent/templates/webview/](../.agent/templates/webview/) | Starter templates |
+| Agent Rules | [.agents/rules/agent.md](../.agents/rules/agent.md) | Critical rules for AI agents |
+| File Naming | [.agents/rules/file-naming-conventions.md](../.agents/rules/file-naming-conventions.md) | Naming conventions |
+| JUCE Protocols | [.agents/rules/juce-build-protocols.md](../.agents/rules/juce-build-protocols.md) | Build system rules |
+| State Guide | [.agents/guides/state-management-guide.md](../.agents/guides/state-management-guide.md) | State management guide |
+| WebView Templates | [templates/webview/](../templates/webview/) | Starter templates |
 
 ## The Five-Phase Workflow
 
@@ -70,11 +72,11 @@ APC uses a structured workflow for plugin development:
 
 | Phase | Command | Output |
 |-------|---------|--------|
-| **DREAM** | `/dream MyPlugin` | Concept + Parameters |
-| **PLAN** | `/plan MyPlugin` | Architecture + Framework |
-| **DESIGN** | `/design MyPlugin` | UI Specifications |
-| **IMPLEMENT** | `/impl MyPlugin` | Working Code |
-| **SHIP** | `/ship MyPlugin` | Distribution Package |
+| **DREAM** | `/apc-dream MyPlugin` | Concept + Parameters |
+| **PLAN** | `/apc-plan MyPlugin` | Architecture + Framework |
+| **DESIGN** | `/apc-design MyPlugin` | UI Specifications |
+| **IMPLEMENT** | `/apc-impl MyPlugin` | Working Code |
+| **SHIP** | `/apc-ship MyPlugin` | Distribution Package |
 
 Learn more: [Plugin Development Lifecycle](plugin-development-lifecycle.md)
 
@@ -83,15 +85,17 @@ Learn more: [Plugin Development Lifecycle](plugin-development-lifecycle.md)
 ### Slash Commands (AI Agent)
 
 ```
-/dream MyPlugin      # Start new plugin
-/plan MyPlugin       # Define architecture
-/design MyPlugin     # Create UI design
-/impl MyPlugin       # Implement code
-/ship MyPlugin       # Package and distribute
-/status MyPlugin     # Check progress
-/resume MyPlugin     # Continue development
-/test MyPlugin       # Run validation
-/debug MyPlugin      # Debug issues
+// Primary /apc-* names (short forms like /dream are deprecated aliases)
+/apc-setup            # First-run toolchain, paths, models
+/apc-dream MyPlugin   # Start new plugin
+/apc-plan MyPlugin    # Define architecture
+/apc-design MyPlugin  # Create UI design
+/apc-impl MyPlugin    # Implement code
+/apc-test MyPlugin    # Run validation
+/apc-debug MyPlugin   # Debug issues
+/apc-ship MyPlugin    # Package and distribute
+/apc-status MyPlugin  # Check progress
+/apc-resume MyPlugin  # Continue development
 ```
 
 ### PowerShell Scripts
@@ -143,16 +147,17 @@ Learn more: [WebView Framework Guide](webview-framework.md)
 
 ```
 audio-plugin-coder/
-├── .agent/              # AI agent configuration
-│   ├── skills/             # Domain knowledge
-│   ├── workflows/          # Slash commands
-│   ├── rules/              # System constraints
-│   └── troubleshooting/    # Known issues
-├── _tools/                 # JUCE, pluginval
-├── docs/                   # This documentation
-├── plugins/                # Your plugins
-├── scripts/                # Build automation
-└── build/                  # Build artifacts
+├── .agents/              # Canonical AI knowledge (skills, workflows, rules, guides, troubleshooting)
+│   ├── skills/           # Domain knowledge
+│   ├── workflows/        # Slash command orchestrators (/apc-*)
+│   ├── rules/            # System constraints
+│   └── troubleshooting/  # Known issues
+├── .claude/ .kilocode/ .agent/  # Thin host pointers to .agents/ files
+├── _tools/               # JUCE, pluginval
+├── docs/                 # This documentation
+├── plugins/              # Your plugins
+├── scripts/              # Build automation
+└── build/                # Build artifacts (ignored)
 ```
 
 Learn more: [Project Structure](PROJECT_STRUCTURE.md)
@@ -178,7 +183,7 @@ Learn more: [State Management Deep Dive](state-management-deep-dive.md)
 Having issues? Check these resources:
 
 1. **[Troubleshooting Guide](troubleshooting-guide.md)** - Common problems and solutions
-2. **[Known Issues](../.agent/troubleshooting/known-issues.yaml)** - Database of known problems
+2. **[Known Issues](../.agents/troubleshooting/known-issues.yaml)** - Database of known problems
 3. **Validation Scripts:**
    ```powershell
    .\scripts\validate-plugin-status.ps1 -PluginName MyPlugin
@@ -201,7 +206,7 @@ Want to improve APC? See [CONTRIBUTING.md](../CONTRIBUTING.md) for:
 
 ## License
 
-APC is licensed under the MIT License. See [LICENSE](../LICENCE.md) for details.
+APC is licensed under the MIT License. See [LICENSE](../LICENSE.md) for details.
 
 ---
 

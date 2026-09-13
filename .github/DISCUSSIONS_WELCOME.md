@@ -12,7 +12,7 @@ Welcome to the APC community! This is a space for audio developers, AI enthusias
 - 🎨 **Dual UI Frameworks** - Choose between Visage (pure C++) or WebView (HTML5 Canvas)
 - 📊 **State Management** - Automatic progress tracking and validation
 - 🔧 **Self-Improving** - Auto-captures troubleshooting knowledge
-- 🏗️ **Production Ready** - JUCE 8 integration with CMake build system
+- 🏗️ **Production Ready** - JUCE 9 integration with CMake build system
 
 ---
 
@@ -42,8 +42,8 @@ Ask questions and get help from the community.
 - **AI Agent Tips** - Getting the most from your coding assistant
 
 **Before posting:**
-1. Check the [FAQ](docs/FAQ.md)
-2. Review the [troubleshooting guide](docs/troubleshooting-guide.md)
+1. Check the [FAQ](../docs/FAQ.md)
+2. Review the [troubleshooting guide](../docs/troubleshooting-guide.md)
 3. Search existing discussions
 
 ---
@@ -121,10 +121,10 @@ Get help with errors, bugs, and technical issues.
 ### New to APC?
 
 1. **Read the Documentation**
-   - [Project Overview](README.md) - What is APC and key features
-   - [Plugin Development Lifecycle](docs/plugin-development-lifecycle.md) - The five-phase workflow
-   - [Command Reference](docs/command-reference.md) - All available commands
-   - [FAQ](docs/FAQ.md) - Common questions answered
+   - [Project Overview](../README.md) - What is APC and key features
+   - [Plugin Development Lifecycle](../docs/plugin-development-lifecycle.md) - The five-phase workflow
+   - [Command Reference](../docs/command-reference.md) - All available commands
+   - [FAQ](../docs/FAQ.md) - Common questions answered
 
 2. **Set Up Your Environment**
    ```powershell
@@ -135,7 +135,7 @@ Get help with errors, bugs, and technical issues.
 
 3. **Create Your First Plugin**
    ```
-   /dream MyFirstPlugin
+   /apc-dream MyFirstPlugin
    ```
 
 4. **Join the Conversation**
@@ -158,15 +158,15 @@ Don't worry! APC is designed to help developers at all levels. Here are some res
 ### Documentation
 | Resource | Description |
 |----------|-------------|
-| [README](README.md) | Project overview and quick start |
-| [Plugin Development Lifecycle](docs/plugin-development-lifecycle.md) | Five-phase workflow guide |
-| [Command Reference](docs/command-reference.md) | All slash commands and scripts |
-| [FAQ](docs/FAQ.md) | Frequently asked questions |
-| [Troubleshooting Guide](docs/troubleshooting-guide.md) | Common issues and solutions |
-| [Project Structure](docs/PROJECT_STRUCTURE.md) | Directory layout and organization |
-| [State Management](docs/state-management-deep-dive.md) | How APC tracks project state |
-| [WebView Framework](docs/webview-framework.md) | Building HTML/CSS/JS UIs |
-| [Build System](docs/build-system.md) | CMake configuration details |
+| [README](../README.md) | Project overview and quick start |
+| [Plugin Development Lifecycle](../docs/plugin-development-lifecycle.md) | Five-phase workflow guide |
+| [Command Reference](../docs/command-reference.md) | All slash commands and scripts |
+| [FAQ](../docs/FAQ.md) | Frequently asked questions |
+| [Troubleshooting Guide](../docs/troubleshooting-guide.md) | Common issues and solutions |
+| [Project Structure](../docs/PROJECT_STRUCTURE.md) | Directory layout and organization |
+| [State Management](../docs/state-management-deep-dive.md) | How APC tracks project state |
+| [WebView Framework](../docs/webview-framework.md) | Building HTML/CSS/JS UIs |
+| [Build System](../docs/build-system.md) | CMake configuration details |
 
 ### External Resources
 | Resource | Link |
@@ -236,7 +236,7 @@ Your contributions make APC better for everyone.
 
 ## License & Legal
 
-APC is licensed under the MIT License. See [LICENSE](LICENCE.md) for details.
+APC is licensed under the MIT License. See [LICENSE](../LICENSE.md) for details.
 
 - You can sell plugins made with APC
 - No attribution required (but appreciated!)

@@ -38,11 +38,12 @@ Before running Ship:
 ### Command
 
 ```powershell
-# Using the skill trigger
-/ship CloudWash
+# Via AI agent (preferred)
+/apc-ship CloudWash
 
-# Or run directly
-powershell -ExecutionPolicy Bypass -File .\scripts\ship-local.ps1 -PluginName CloudWash
+# Or run the build + installer scripts directly
+powershell -ExecutionPolicy Bypass -File .\scripts\build-and-install.ps1 -PluginName CloudWash
+powershell -ExecutionPolicy Bypass -File .\scripts\installer\create-windows-installer.ps1 -PluginName CloudWash -Version "1.0.0"
 ```
 
 ## Step-by-Step Process
@@ -151,6 +152,8 @@ gh run download --dir release/github-artifacts --pattern "*-$PluginName"
 Or manually from GitHub Actions page.
 
 ### Step 6: Create Installers
+
+Per-platform installer how-to lives in [Installer Creation](installer-creation.md) — summary:
 
 **Windows (already done in Step 3):**
 - Professional `.exe` installer
@@ -288,19 +291,14 @@ After shipping, the plugin state is updated:
 powershell -ExecutionPolicy Bypass -File .\scripts\build-and-install.ps1 -PluginName CloudWash
 
 # Then ship
-/ship CloudWash
+/apc-ship CloudWash
 ```
 
 ### "Inno Setup not found"
 
 **Cause:** Inno Setup not installed
 
-**Solution:**
-1. Download from https://jrsoftware.org/isdl.php
-2. Install with default settings
-3. Restart terminal
-
-Or use ZIP distribution instead of installer.
+**Solution:** See [Installer Creation](installer-creation.md#windows-installer) — install from https://jrsoftware.org/isdl.php with default settings, restart the terminal, or use ZIP distribution instead.
 
 ### "GitHub Actions workflow not found"
 

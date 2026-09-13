@@ -392,7 +392,7 @@ Follow the existing skill format.
 
 ### What license is APC under?
 
-MIT License - see [LICENSE](../LICENCE.md)
+MIT License - see [LICENSE](../LICENSE.md)
 
 ### Can I sell plugins made with APC?
 
