@@ -10,25 +10,34 @@
 [![HOL Guard Scanner](https://img.shields.io/badge/HOL%20Guard-passing-00a67e)](https://github.com/hashgraph-online/hol-guard)
 [![Sponsor](https://img.shields.io/badge/Sponsor-Project-pink.svg?style=social&logo=heart)](https://github.com/sponsors/Noizefield)
 
-## What's new
+## What's new in v1.5.0
 
-- **JUCE 9** - framework pinned to **9.0.1** with the official `@juce-framework/webview` / TypeScript WebView interop
-- **`bin/apc.js`** - single cross-platform CLI (`apc version|paths|doctor|build|validate|backup|rollback|status|freeze`, `npm test` 23-test suite)
-- **APC Hub** - `/apc-hub` opens a live local dashboard (projects, skills, commands, designs, tools, settings, docs center, update check)
-- **`/apc-patch` + `/apc-evolve`** - post-ship iteration: bugfix and feature generations on shipped plugins
-- **Docs-as-truth** - 12 docs updated to JUCE 9, relocatable paths, and `/apc-*` names
-- **Cross-platform** - Windows, macOS, Linux (Linux needs WebKitGTK + EGL for JUCE 9)
+- **APC Hub** - a live local dashboard served by a zero-dependency Node server. `/apc-hub` opens one command center for projects, skills, commands, design library, scripts, templates, tools, settings (editable form with backup), a searchable documentation reader, a GitHub update check, and a consistency radar.
+- **`bin/apc.js`** - single cross-platform CLI (`apc version|paths|doctor|build|validate|backup|rollback|status|freeze`) with a 23-test suite (`npm test`).
+- **`/apc-patch` + `/apc-evolve`** - iterate on shipped plugins: bugfix and feature generations with version-aware state, plus `apc freeze`.
+- **Docs-as-truth** - 12 docs rewritten for JUCE 9 interop, relocatable paths, and `/apc-*` names.
+- **Framework versioning** - single source of truth in `package.json`; `apc version sync` keeps `hub/version.js` and the CMake pin aligned.
+- **Release target is `release/`** - installers and zips honor `paths.release_dir` end-to-end.
 
 Start: clone -> `/apc-setup` (Claude Code / Kilo / Cursor) or `$audio-plugin-coder:audio-plugin-coder setup` (Codex) -> `/apc-dream MyPlugin`.
 
+## APC Hub
+
+The APC Hub gives you a complete, live overview of the framework and your plugins - no build required, read-only by default:
+
+```bash
+node hub/server.js --port 4872   # or: /apc-hub in your agent
+```
+
+![APC Hub dashboard](assets/apc_hub_screenshot.jpg)
+
 ## Video Tutorial Series
 
-A video playlist explains APC in detail - 7 episodes and more to come:
+A video playlist explains APC in detail - 7 episodes and more to come. The same playlist is embedded as a working player inside the Hub (`/apc-hub`, section 11 VIDEOS); GitHub removes `<iframe>` embeds from READMEs, so the card below opens the video directly on YouTube:
 
-[![APC YouTube tutorial series](https://img.youtube.com/vi/tD6T8MEGWm8/hqdefault.jpg)](https://www.youtube.com/watch?v=tD6T8MEGWm8&list=PLEOCbFL_Mq4o)
+[![APC YouTube tutorial series - click to watch](https://img.youtube.com/vi/tD6T8MEGWm8/hqdefault.jpg)](https://www.youtube.com/watch?v=tD6T8MEGWm8&list=PLEOCbFL_Mq4o)
 
-- [Watch the series on YouTube](https://www.youtube.com/watch?v=tD6T8MEGWm8&list=PLEOCbFL_Mq4o)
-- The same embed lives in the APC Hub dashboard (`/apc-hub`, section 11 VIDEOS).
+Open the full playlist: https://www.youtube.com/watch?v=tD6T8MEGWm8&list=PLEOCbFL_Mq4o
 
 ## About
 
