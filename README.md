@@ -12,14 +12,28 @@
 
 ## What's new in v1.5.0
 
-- **APC Hub** - a live local dashboard served by a zero-dependency Node server. `/apc-hub` opens one command center for projects, skills, commands, design library, scripts, templates, tools, settings (editable form with backup), a searchable documentation reader, a GitHub update check, and a consistency radar.
-- **`bin/apc.js`** - single cross-platform CLI (`apc version|paths|doctor|build|validate|backup|rollback|status|freeze`) with a 23-test suite (`npm test`).
-- **`/apc-patch` + `/apc-evolve`** - iterate on shipped plugins: bugfix and feature generations with version-aware state, plus `apc freeze`.
-- **Docs-as-truth** - 12 docs rewritten for JUCE 9 interop, relocatable paths, and `/apc-*` names.
-- **Framework versioning** - single source of truth in `package.json`; `apc version sync` keeps `hub/version.js` and the CMake pin aligned.
-- **Release target is `release/`** - installers and zips honor `paths.release_dir` end-to-end.
+APC 1.5 is a big step forward - especially if you are a musician or hobbyist who just wants to build your own plugin without fighting tooling. Here is what changed, in plain words.
 
-Start: clone -> `/apc-setup` (Claude Code / Kilo / Cursor) or `$audio-plugin-coder:audio-plugin-coder setup` (Codex) -> `/apc-dream MyPlugin`.
+**The APC Hub - a window into your whole project.**
+Instead of digging through folders and config files, you now get a live dashboard in your browser. Type `/apc-hub` (or run `node hub/server.js`) and you can see every plugin at a glance - which phase it is in, what still needs to be done, your design library, scripts, templates, tools and settings. Documentation is searchable and readable right there. You can even adjust your settings from a simple form instead of hand-editing JSON. It is read-only by default, so nothing breaks by accident.
+
+**Works with more AI coding tools than ever.**
+APC used to be picky about which assistant you used. In 1.5 that changed:
+
+- **Codex is now fully on board.** Codex could not use slash commands like other assistants - APC now ships a proper Codex skill and plugin, with dedicated commands and optional cost-aware model routing (Luna, Terra, Sol, Astra).
+- **Cursor is supported.** APC is ready out of the box in Cursor, including custom rules.
+- **OpenCode is supported too.** All APC commands are wired up for it, exactly like Claude Code and Kilo.
+
+**A single command-line tool.**
+All the important tasks - version, paths, build, validate, backup, rollback, status - are now in one cross-platform tool (`apc`), tested by an automated suite. No more hunting for the right script.
+
+**Improve and extend your plugins after release.**
+Shipped a plugin? `/apc-patch` opens a focused bugfix round, `/apc-evolve` starts a feature upgrade. Your version number and state stay consistent automatically.
+
+**Everything else got tidier too.**
+Docs were rewritten to match reality, the framework version has one single source of truth, and releases now land in a clean `release/` folder that honors your configured paths.
+
+Start: clone -> `/apc-setup` (Claude Code / Kilo / Cursor / OpenCode) or `$audio-plugin-coder:audio-plugin-coder setup` (Codex) -> `/apc-dream MyPlugin`.
 
 ## APC Hub
 
@@ -47,6 +61,21 @@ node hub/server.js --port 4872   # or: /apc-hub in your agent
 **Audio Plugin Coder (APC)** is an AI-first framework that guides LLM agents through the whole plugin lifecycle - ideation, architecture, UI, DSP implementation, testing, and packaging - without the agent re-learning JUCE or your conventions every session. It is agent-agnostic (Codex, Claude Code, Kilo, Cursor, Antigravity) and has been hardened over 18 months of real plugin development.
 
 The core workflow - `setup -> dream -> plan -> design -> impl -> ship` - is ready for production on Windows, macOS, and Linux.
+
+## Which AI Coding Tools Work with APC?
+
+APC is agent-agnostic: pick the assistant you already use. In v1.5.0 all major ones are first-class:
+
+| Assistant | Status | How APC talks to it |
+|---|---|---|
+| **Codex** | ✅ Fully supported in 1.5.0 | Codex does not use slash commands - it gets a dedicated `audio-plugin-coder` skill and plugin with cost-aware model routing |
+| **Cursor** | ✅ Ready out of the box | Custom rules + `/apc-*` commands, project guidance via `AGENTS.md` |
+| **OpenCode** | ✅ Fully wired up | `/apc-*` commands with dedicated host shims |
+| **Claude Code** | ✅ Fully supported | `/apc-*` commands |
+| **Kilo** | ✅ Fully supported | `/apc-*` commands |
+| **Antigravity / Gemini** | ✅ Supported | Natural language + `AGENTS.md` guidance |
+
+Previously Cursor, OpenCode and Codex had only partial support. In 1.5.0 they now work the same way as Claude Code and Kilo - no workarounds needed.
 
 ## Key Features
 
@@ -121,9 +150,9 @@ SHIP   -> Installers, DAW testing, distribution
 
 Prefer the `/apc-*` names (unique across frameworks). Short aliases (`/dream`, ...) still work as deprecated. Codex invokes actions through the `audio-plugin-coder` skill (bare `/plan`/`/status` are Codex built-ins).
 
-| Primary | Codex | Description |
+| Primary | Codex action | Description |
 |---|---|---|
-| `/apc-setup` | `... setup` | First-run toolchain, paths, models |
+| `/apc-setup` | `$audio-plugin-coder:audio-plugin-coder setup` | First-run toolchain, paths, models |
 | `/apc-dream [Name]` | `... dream [Name]` | Start new plugin (ideation) |
 | `/apc-plan [Name]` | `... plan [Name]` | Architecture + UI framework |
 | `/apc-design [Name]` | `... design [Name]` | GUI mockups and visual design |
@@ -134,9 +163,9 @@ Prefer the `/apc-*` names (unique across frameworks). Short aliases (`/dream`, .
 | `/apc-status [Name]` | `... status [Name]` | Progress and state |
 | `/apc-resume [Name]` | `... resume [Name]` | Continue from last incomplete phase |
 | `/apc-new [Name]` | `... new [Name]` | Full workflow with confirmations |
-| `/apc-patch [Name]` | `... patch [Name]` | Bugfix generation on a shipped plugin |
-| `/apc-evolve [Name]` | `... evolve [Name]` | Feature generation on a shipped plugin |
-| `/apc-hub` | `... hub` | Open the live local dashboard |
+| `/apc-patch [Name]` | `$audio-plugin-coder:audio-plugin-coder patch [Name]` | Bugfix generation on a shipped plugin |
+| `/apc-evolve [Name]` | `$audio-plugin-coder:audio-plugin-coder evolve [Name]` | Feature generation on a shipped plugin |
+| `/apc-hub` | `$audio-plugin-coder:audio-plugin-coder hub` | Open the live local dashboard |
 
 See [Command Reference](docs/command-reference.md), [Codex Compatibility](docs/codex-compatibility.md), and [Model Routing](docs/model-routing.md).
 
@@ -208,6 +237,7 @@ Docs live in [`docs/`](docs/): [Getting Started](docs/README.md), [Plugin Develo
 - [x] Windows / macOS / Linux local builds
 - [x] GitHub Actions CI/CD, docs-as-truth, `apc` CLI, APC Hub
 - [x] Visage + WebView UIs, FFGL + Max/MSP bridge templates
+- [x] Codex, Cursor and OpenCode support
 - [ ] CLAP format support
 - [ ] Preset management, plugin marketplace, real-time collaboration
 
