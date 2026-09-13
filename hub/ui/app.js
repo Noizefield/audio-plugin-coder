@@ -188,7 +188,7 @@ function renderOverview(meta, cfg, update) {
   const rows = [
     ['Framework', mono('APC v' + meta.framework + ' (src: package.json)'), okTok()],
     ['Upstream release', update
-      ? (update.state === 'CURRENT' ? mono('v' + update.installed + ' - current')
+      ? (update.state === 'CURRENT' ? mono('v' + update.installed + (update.reason ? ' - ' + update.reason : ' - current'))
         : update.state === 'AVAILABLE' ? '<span class="tok-warn">[!!] UPDATE ' + esc(update.upstream) + ' AVAILABLE</span>' + (update.url ? ' <a href="' + esc(update.url) + '" target="_blank" rel="noopener">OPEN -&gt;</a>' : '')
         : mono('check: ' + (update.reason || '?')))
       : mutTok('[..]'), (update && update.state === 'CURRENT' ? okTok() : update && update.state === 'AVAILABLE' ? warnTok() : mutTok('[..]')) +
@@ -490,11 +490,19 @@ function wireSettings() {
   };
 }
 
+function renderVideos() {
+  return kicker('11', 'VIDEOS', 'YouTube tutorial series - 7 episodes and more to come') +
+    '<div class="vidwrap"><iframe src="https://www.youtube.com/embed/videoseries?list=PLEOCbFL_Mq4o" title="APC YouTube tutorial series" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></div>' +
+    '<p class="mono"><a href="https://www.youtube.com/watch?v=tD6T8MEGWm8&list=PLEOCbFL_Mq4o" target="_blank" rel="noopener">OPEN PLAYLIST ON YOUTUBE -&gt;</a></p>' +
+    '<p class="mut" style="font-size:13px">Explains the framework in detail: setup, workflow, plugins, and more.</p>' +
+    pager('doc-webview-framework', null, '11-consistency');
+}
+
 function renderConsistency(c) {
   const lvl = { ok: '<span class="good">[OK]</span>', warn: '<span class="tok-warn">[!!]</span>', fail: '<span class="tok-warn">[!!]</span>', na: '<span class="mut">[ -- ]</span>' };
   return kicker('++', 'CONSISTENCY', 'live checks (display only)') +
     '<pre class="screen">' + (c.checks || []).map((x) => (lvl[x.level] || lvl.na) + ' ' + esc(x.id) + ' - ' + esc(x.label)).join('\n') + '</pre>' +
-    pager('doc-webview-framework', null, null);
+    pager('11-videos', null, null);
 }
 
 /* ─── docs ─── */
@@ -546,7 +554,7 @@ function buildDocMeta(docs) {
   const meta = {};
   order.forEach((id, i) => {
     const d = docs.docs[i];
-    meta[id] = { real: d.id, file: d.file, title: d.title, chapterCount: d.chapterCount, prev: i === 0 ? '10-documentation' : order[i - 1], next: i === order.length - 1 ? '11-consistency' : order[i + 1] };
+    meta[id] = { real: d.id, file: d.file, title: d.title, chapterCount: d.chapterCount, prev: i === 0 ? '10-documentation' : order[i - 1], next: i === order.length - 1 ? '11-videos' : order[i + 1] };
   });
   // fix tail: last doc pager NEXT → 11-consistency handled by meta.next above
   window.__docsMeta = meta;
@@ -615,6 +623,7 @@ async function boot() {
     '<section id="09-settings">' + renderSettings(cfg || {}) + '</section>' +
     '<section id="10-documentation">' + renderDocsIndex(docs || { docs: [] }) + '</section>' +
     renderDocShell(order) +
+    '<section id="11-videos">' + renderVideos() + '</section>' +
     '<section id="11-consistency">' + renderConsistency(consistency || { checks: [] }) + '</section>';
   // docs search (live filter)
   const q = $('#docsearch');

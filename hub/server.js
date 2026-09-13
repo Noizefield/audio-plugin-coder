@@ -31,7 +31,7 @@ const NO_OPEN = args.includes('--no-open');
 const HUB_DIR = __dirname;
 const REPO_ROOT = path.resolve(flag('--repo', path.join(HUB_DIR, '..')));
 const UI_DIR = path.join(HUB_DIR, 'ui');
-const VERSION = '1.0.3'; // hub server version (APC framework version comes from package.json)
+const VERSION = '1.0.4'; // hub server version (APC framework version comes from package.json)
 
 // ─── Small helpers ──────────────────────────────────────────────────────────
 function readJson(p, fallback) {
@@ -482,7 +482,9 @@ async function getUpdate() {
   if (up.error) {
     out = { installed, upstream: null, state: 'UNCHECKED', reason: up.error };
   } else if (up.none || !up.tag) {
-    out = { installed, upstream: null, state: 'UNCHECKED', reason: 'no-releases' };
+    // No releases published: nothing newer can exist, so the installed
+    // version counts as current (green), with the reason shown.
+    out = { installed, upstream: null, state: 'CURRENT', reason: 'no upstream releases' };
   } else {
     const norm = String(up.tag).replace(/^v/, '');
     const cmp = semverLess(installed, norm);
