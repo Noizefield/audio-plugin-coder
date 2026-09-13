@@ -23,11 +23,11 @@ echo.
 set /p choice="Enter choice (1 or 2): "
 
 if "%choice%"=="1" (
-    set TEMPLATE_DIR=templates/FFGL_Bridge
+    set TEMPLATE_DIR=templates/ffgl
     set BUILD_DIR=build_ffgl
     set PROJ_NAME=FFGL Bridge
 ) else if "%choice%"=="2" (
-    set TEMPLATE_DIR=templates/Max_External
+    set TEMPLATE_DIR=templates/max-external
     set BUILD_DIR=build_max
     set PROJ_NAME=Max External
 ) else (
@@ -41,9 +41,9 @@ echo.
 echo Checking for JUCE Framework...
 if not exist "_tools\JUCE" (
     echo JUCE not found in _tools/JUCE.
-    echo Cloning JUCE 8 (this may take a while)...
+    echo Cloning JUCE 9 (pin 9.0.1 - see apc.config.json; this may take a while)...
     if not exist "_tools" mkdir "_tools"
-    git clone https://github.com/juce-framework/JUCE.git _tools/JUCE
+    git clone --branch 9.0.1 --depth 1 https://github.com/juce-framework/JUCE.git _tools/JUCE
     if errorlevel 1 (
         echo Failed to clone JUCE. Please check your internet connection.
         pause

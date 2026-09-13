@@ -1,6 +1,6 @@
-# FFGL 2.0 Bridge for JUCE 8
+# FFGL 2.0 Bridge for JUCE 9
 
-A template for creating FreeFrameGL 2.0 (FFGL) plugins using JUCE 8 for parameter handling, internal logic, and cross-platform utilities.
+A template for creating FreeFrameGL 2.0 (FFGL) plugins using JUCE 9 for parameter handling, internal logic, and cross-platform utilities.
 
 ## Overview
 
@@ -14,7 +14,7 @@ This bridge allows you to:
 
 *   CMake 3.22+
 *   C++20 Compiler (MSVC / Clang / GCC)
-*   JUCE 8 (Installed or available via `find_package`)
+*   JUCE 9 (Installed or available via `find_package`)
 
 ## Architecture
 

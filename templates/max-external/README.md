@@ -1,6 +1,6 @@
-# Max External (Min-API) Bridge for JUCE 8
+# Max External (Min-API) Bridge for JUCE 9
 
-A template for creating native Max/MSP Externals using the Cycling '74 Min-API (min-api) and JUCE 8 for DSP and UI logic.
+A template for creating native Max/MSP Externals using the Cycling '74 Min-API (min-api) and JUCE 9 for DSP and UI logic.
 
 ## Overview
 
@@ -15,7 +15,7 @@ This template demonstrates how to:
 *   Max/MSP 8+ (installed)
 *   CMake 3.22+
 *   Min-API (automatically fetched by CMake)
-*   JUCE 8 (automatically fetched or found)
+*   JUCE 9 (automatically fetched or found)
 
 ## Project Structure
 

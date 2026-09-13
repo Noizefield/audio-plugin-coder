@@ -27,8 +27,8 @@ if (-not (Test-Path $JUCE_PATH)) {
     $TOOLS_DIR = Join-Path $PSScriptRoot "..\_tools"
     if (-not (Test-Path $TOOLS_DIR)) { New-Item -ItemType Directory -Path $TOOLS_DIR | Out-Null }
 
-    Write-Host "Cloning JUCE 8 (this may take a while)..." -ForegroundColor Cyan
-    git clone https://github.com/juce-framework/JUCE.git $TOOLS_DIR\JUCE
+    Write-Host "Cloning JUCE 9 (pin 9.0.1 — see apc.config.json; this may take a while)..." -ForegroundColor Cyan
+    git clone --branch 9.0.1 --depth 1 https://github.com/juce-framework/JUCE.git $TOOLS_DIR\JUCE
 
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Failed to clone JUCE. Please check your internet connection."
@@ -48,12 +48,12 @@ $choice = Read-Host "Enter choice (1 or 2)"
 
 switch ($choice) {
     "1" {
-        $TEMPLATE_DIR = "templates/FFGL_Bridge"
+        $TEMPLATE_DIR = "templates/ffgl"
         $BUILD_DIR = "build_ffgl"
         $PROJ_NAME = "FFGL Bridge"
     }
     "2" {
-        $TEMPLATE_DIR = "templates/Max_External"
+        $TEMPLATE_DIR = "templates/max-external"
         $BUILD_DIR = "build_max"
         $PROJ_NAME = "Max External"
     }
