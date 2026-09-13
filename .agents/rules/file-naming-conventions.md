@@ -133,11 +133,11 @@ Design\
 
 ## 🔗 Cross-Skill References
 
-- **skill_ideation.md:** Creates initial .ideas\ files
-- **skill_planning.md:** Creates architecture.md and plan.md
-- **skill_design.md:** Creates Design\ files with versioning
-- **skill_implementation.md:** Creates Source\ files
-- **skill_packaging.md:** Creates release\ directory and distribution files
+- **dream.md:** Creates initial .ideas\ files
+- **plan.md:** Creates architecture.md and plan.md
+- **design.md:** Creates Design\ files with versioning
+- **impl.md:** Creates Source\ files
+- **ship.md:** Creates release\ directory and distribution files
 
 ## 📁 State Management Files
 

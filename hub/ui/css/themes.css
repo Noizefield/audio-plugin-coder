@@ -1,4 +1,4 @@
-/* == themes.css — dark is default, light is alternate == */
+/* == themes.css - dark is default, light is alternate == */
 :root, html[data-theme="dark"]{
   --paper:#0B0B0B; --ink:#EDEAE0; --muted:#8A877E;
   --rule:#3D3A33; --amber:#FF9500; --amber-ink:#000;

@@ -1,6 +1,6 @@
 'use strict';
 /**
- * APC Hub — read-only local dashboard server (zero dependencies, Node stdlib only).
+ * APC Hub - read-only local dashboard server (zero dependencies, Node stdlib only).
  *
  * Serves hub/ui/ static files plus a read-only JSON API under /api/v1/*.
  * Binds loopback only. GET only. No writes, no script execution.
@@ -31,12 +31,14 @@ const NO_OPEN = args.includes('--no-open');
 const HUB_DIR = __dirname;
 const REPO_ROOT = path.resolve(flag('--repo', path.join(HUB_DIR, '..')));
 const UI_DIR = path.join(HUB_DIR, 'ui');
-const VERSION = '1.0.0'; // hub server version (APC framework version comes from package.json)
+const VERSION = '1.0.3'; // hub server version (APC framework version comes from package.json)
 
 // ─── Small helpers ──────────────────────────────────────────────────────────
 function readJson(p, fallback) {
   try {
-    return JSON.parse(fs.readFileSync(p, 'utf8'));
+    // Strip UTF-8 BOM: PowerShell-written JSON (e.g. apc.config.json) starts
+    // with EF BB BF, which JSON.parse rejects ("Unexpected token '﻿'").
+    return JSON.parse(fs.readFileSync(p, 'utf8').replace(/^\uFEFF/, ''));
   } catch {
     return fallback;
   }
@@ -92,7 +94,19 @@ function resolveFromRoot(p) {
 function loadConfig() {
   const livePath = path.join(REPO_ROOT, 'apc.config.json');
   const examplePath = path.join(REPO_ROOT, 'apc.config.example.json');
-  const live = readJson(livePath, null);
+  let live = null;
+  let liveError = 'file-missing';
+  try {
+    const raw = fs.readFileSync(livePath, 'utf8').replace(/^\uFEFF/, '');
+    try {
+      live = JSON.parse(raw);
+      liveError = null;
+    } catch (e) {
+      liveError = 'parse-fail: ' + (e && e.message ? e.message : String(e)).slice(0, 120);
+    }
+  } catch {
+    liveError = 'file-missing';
+  }
   const example = readJson(examplePath, null);
   const cfg = live || example || {};
   const rel = (cfg.paths || {});
@@ -107,6 +121,7 @@ function loadConfig() {
   return {
     live, example,
     livePresent: !!live,
+    liveError,
     rel: { plugins: pluginsRel, build: buildRel, release: releaseRel },
     resolved,
     exists: {
@@ -201,14 +216,28 @@ const LEGACY_SKILLS = new Set([
   'skill_ideation', 'skill_planning', 'skill_design',
   'skill_implementation', 'skill_packaging', 'skill_debug',
 ]);
+function isAliasStub(dir) {
+  try {
+    const first = (fs.readFileSync(path.join(dir, 'SKILL.md'), 'utf8').split(/\r?\n/)[0] || '').trim();
+    return first.startsWith('# Alias:');
+  } catch {
+    return false;
+  }
+}
 function getSkills() {
   const base = path.join(REPO_ROOT, '.agents', 'skills');
-  return listDirs(base).map((n) => ({
-    id: n,
-    hasSkillMd: exists(path.join(base, n, 'SKILL.md')),
-    files: listFiles(path.join(base, n)),
-    legacy: LEGACY_SKILLS.has(n),
-  }));
+  return listDirs(base).map((n) => {
+    const dir = path.join(base, n);
+    const has = exists(path.join(dir, 'SKILL.md'));
+    const isLegacy = LEGACY_SKILLS.has(n);
+    return {
+      id: n,
+      hasSkillMd: has,
+      files: listFiles(dir),
+      legacy: isLegacy,
+      aliasStub: isLegacy && has && isAliasStub(dir),
+    };
+  });
 }
 
 function parseFrontmatter(file) {
@@ -245,14 +274,34 @@ function getCommands() {
   return { primaries, aliases };
 }
 
+function findHtmlFiles(base, rel, depth, acc) {
+  if (depth < 0) return acc;
+  let entries = [];
+  try { entries = fs.readdirSync(path.join(base, rel), { withFileTypes: true }); } catch { return acc; }
+  for (const e of entries) {
+    if (e.name.startsWith('.')) continue;
+    const rp = rel ? rel + '/' + e.name : e.name;
+    if (e.isDirectory()) findHtmlFiles(base, rp, depth - 1, acc);
+    else if (/\.html?$/i.test(e.name)) acc.push(rp);
+  }
+  return acc;
+}
 function getDesigns() {
   const manifestPath = path.join(REPO_ROOT, 'design_library', 'manifest.json');
   const manifest = readJson(manifestPath, null);
   if (!manifest) return { present: false, designs: [] };
-  const designs = (manifest.designs || []).map((d) => ({
-    ...d,
-    dirExists: isDir(path.join(REPO_ROOT, 'design_library', d.path || d.id)),
-  }));
+  const designs = (manifest.designs || []).map((d) => {
+    const dir = path.join(REPO_ROOT, 'design_library', d.path || d.id);
+    const htmlFiles = findHtmlFiles(dir, '', 2, []).sort();
+    const claimed = ((d.examples || {}).webview || []).concat((d.examples || {}).visage || []);
+    const missingExamples = claimed.filter((f) => !exists(path.join(dir, f)));
+    return {
+      ...d,
+      dirExists: isDir(dir),
+      htmlFiles,
+      missingExamples,
+    };
+  });
   return { present: true, version: manifest.version || null, lastUpdated: manifest.lastUpdated || null, totalDesigns: manifest.totalDesigns || designs.length, designs };
 }
 
@@ -380,7 +429,7 @@ function getDocRaw(id) {
   const full = safeJoin(base, id + '.md');
   if (!full || !exists(full)) return null;
   try {
-    return { id, file: id + '.md', raw: fs.readFileSync(full, 'utf8') };
+    return { id, file: id + '.md', raw: fs.readFileSync(full, 'utf8').replace(/^\uFEFF/, '') };
   } catch {
     return null;
   }
@@ -455,7 +504,8 @@ function getConsistency() {
   checks.push({ id: 'root-skills', label: 'root skills/ = ' + (rootSkills.length ? rootSkills.join(', ') : 'empty'), level: 'na' });
   const skillsBase = path.join(REPO_ROOT, '.agents', 'skills');
   const legacy = listDirs(skillsBase).filter((d) => LEGACY_SKILLS.has(d));
-  checks.push({ id: 'legacy-skills', label: legacy.length ? 'legacy skill_* dirs: ' + legacy.join(', ') : 'no legacy skill dirs', level: legacy.length ? 'warn' : 'ok' });
+  const liveLegacy = legacy.filter((d) => !isAliasStub(path.join(skillsBase, d)));
+  checks.push({ id: 'legacy-skills', label: liveLegacy.length ? 'legacy skill_* dirs with real content: ' + liveLegacy.join(', ') : (legacy.length ? 'legacy skill_* dirs, all alias stubs kept as redirects: ' + legacy.join(', ') : 'no legacy skill dirs'), level: liveLegacy.length ? 'warn' : 'ok' });
   const wfBase = path.join(REPO_ROOT, '.agents', 'workflows');
   const broken = [];
   for (const f of listFiles(wfBase).filter((f) => f.endsWith('.md') && !f.startsWith('apc-'))) {
@@ -482,6 +532,14 @@ function getConsistency() {
     label: 'package.json ' + installed + (banner === null ? ' vs setup.js banner unknown' : ' = setup.js banner (' + banner + ')'),
     level: match === null ? 'na' : (match ? 'ok' : 'fail'),
   });
+  const manifest = readJson(path.join(REPO_ROOT, 'design_library', 'manifest.json'), null);
+  for (const d of ((manifest && manifest.designs) || [])) {
+    const claimed = ((d.examples || {}).webview || []).concat((d.examples || {}).visage || []);
+    const missing = claimed.filter((f) => !exists(path.join(REPO_ROOT, 'design_library', d.path || d.id, f)));
+    if (missing.length) {
+      checks.push({ id: 'design-' + d.id, label: 'manifest claims missing file(s): ' + missing.join(', '), level: 'warn' });
+    }
+  }
   return { checks };
 }
 
@@ -531,7 +589,7 @@ async function handleApi(parts, query, res) {
     case 'config': {
       const cfg = loadConfig();
       return sendJson(res, 200, {
-        livePresent: cfg.livePresent, live: cfg.live, example: cfg.example,
+        livePresent: cfg.livePresent, liveError: cfg.liveError, live: cfg.live, example: cfg.example,
         rel: cfg.rel, resolved: cfg.resolved, exists: cfg.exists,
       });
     }
@@ -557,10 +615,88 @@ async function handleApi(parts, query, res) {
       }
       return sendJson(res, 200, getDocs());
     }
-    case 'update': return sendJson(res, 200, await getUpdate());
+    case 'update': {
+      if (query.refresh) { updateCache = null; updateCacheAt = 0; }
+      return sendJson(res, 200, await getUpdate());
+    }
     case 'consistency': return sendJson(res, 200, getConsistency());
     default: return sendJson(res, 404, { error: 'unknown-resource' });
   }
+}
+
+function serveDesignPreview(parts, res) {
+  // GET /preview/:design/<file> - read-only preview of design_library assets.
+  // Design id must exist in manifest.json; path stays inside its directory.
+  const manifest = readJson(path.join(REPO_ROOT, 'design_library', 'manifest.json'), null);
+  const ids = new Set(((manifest && manifest.designs) || []).map((d) => d.id || d.path).filter(Boolean));
+  const designId = parts[1];
+  if (!designId || !ids.has(designId)) return send(res, 404, 'unknown design');
+  const base = path.resolve(REPO_ROOT, 'design_library', designId);
+  let full = base;
+  for (const seg of parts.slice(2)) {
+    if (!seg || seg === '.' || !/^[A-Za-z0-9_][A-Za-z0-9_.\-]*$/.test(seg)) return send(res, 403, 'forbidden');
+    full = path.resolve(full, seg);
+    if (full !== base && !full.startsWith(base + path.sep)) return send(res, 403, 'forbidden');
+  }
+  fs.readFile(full, (err, data) => {
+    if (err) return send(res, 404, 'not found');
+    const ext = path.extname(full).toLowerCase();
+    if (!Object.prototype.hasOwnProperty.call(MIME, ext) && !['.webp', '.woff', '.woff2'].includes(ext)) {
+      return send(res, 403, 'forbidden type');
+    }
+    const type = MIME[ext] || (ext === '.webp' ? 'image/webp' : 'font/woff2');
+    send(res, 200, data, type);
+  });
+}
+
+function readBody(req, limit) {
+  return new Promise((resolve, reject) => {
+    let size = 0;
+    const chunks = [];
+    req.on('data', (c) => {
+      size += c.length;
+      if (size > limit) { reject(new Error('too-large')); req.destroy(); return; }
+      chunks.push(c);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    req.on('error', reject);
+  });
+}
+
+async function handleConfigPost(req, res) {
+  // POST /api/v1/config - the single hub write path (Settings editor).
+  // Validates shape, backs up apc.config.json to .bak, then writes 2-space JSON.
+  let body = '';
+  try {
+    body = await readBody(req, 1024 * 1024);
+  } catch {
+    return sendJson(res, 413, { ok: false, error: 'body-too-large' });
+  }
+  let cfg = null;
+  try {
+    cfg = JSON.parse(String(body).replace(/^﻿/, ''));
+  } catch (e) {
+    return sendJson(res, 400, { ok: false, error: 'invalid-json' });
+  }
+  const bad = !cfg || typeof cfg !== 'object'
+    || cfg.version !== 1
+    || !cfg.paths || typeof cfg.paths.plugins_dir !== 'string'
+    || typeof cfg.paths.build_dir !== 'string' || typeof cfg.paths.release_dir !== 'string'
+    || typeof cfg.models !== 'object' || typeof cfg.setup !== 'object';
+  if (bad) return sendJson(res, 400, { ok: false, error: 'invalid-config-shape' });
+  const target = path.join(REPO_ROOT, 'apc.config.json');
+  let backup = false;
+  try {
+    if (exists(target)) {
+      fs.copyFileSync(target, target + '.bak');
+      backup = true;
+    }
+    fs.writeFileSync(target, JSON.stringify(cfg, null, 2) + '\n', 'utf8');
+  } catch (e) {
+    return sendJson(res, 500, { ok: false, error: 'write-failed' });
+  }
+  updateCache = null; updateCacheAt = 0; toolCache = null; toolCacheAt = 0;
+  return sendJson(res, 200, { ok: true, backup });
 }
 
 function serveStatic(urlPath, res) {
@@ -577,12 +713,30 @@ function serveStatic(urlPath, res) {
 }
 
 const server = http.createServer((req, res) => {
-  if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'GET only');
-  const urlPath = (req.url || '/').split('?')[0];
+  const rawUrl = req.url || '/';
+  const qpos = rawUrl.indexOf('?');
+  const urlPath = qpos === -1 ? rawUrl : rawUrl.slice(0, qpos);
+  const query = {};
+  if (qpos !== -1) {
+    for (const [k, v] of new URLSearchParams(rawUrl.slice(qpos + 1))) query[k] = v;
+  }
+  const isConfigPost = req.method === 'POST' && urlPath === '/api/v1/config';
+  if ((req.method !== 'GET' && req.method !== 'HEAD') && !isConfigPost) {
+    return send(res, 405, 'GET only (POST allowed: /api/v1/config)');
+  }
   if (urlPath === '/api' || urlPath.startsWith('/api/')) {
     const parts = urlPath.split('/').filter(Boolean);
     if (parts[1] !== 'v1') return sendJson(res, 404, { error: 'unknown-api-version' });
-    handleApi(parts, null, res).catch(() => sendJson(res, 500, { error: 'internal' }));
+    if (isConfigPost) {
+      handleConfigPost(req, res).catch(() => sendJson(res, 500, { error: 'internal' }));
+      return;
+    }
+    handleApi(parts, query, res).catch(() => sendJson(res, 500, { error: 'internal' }));
+    return;
+  }
+  if (urlPath === '/preview' || urlPath.startsWith('/preview/')) {
+    if (req.method !== 'GET') return send(res, 405, 'GET only');
+    serveDesignPreview(urlPath.split('/').filter(Boolean), res);
     return;
   }
   if (req.method === 'HEAD') return send(res, 200, '', 'text/plain; charset=utf-8');

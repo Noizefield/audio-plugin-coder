@@ -17,7 +17,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$Server = Join-Path $RepoRoot 'hub' 'server.js'
+$Server = Join-Path (Join-Path $RepoRoot 'hub') 'server.js'
 $Node = (Get-Command node -ErrorAction SilentlyContinue | Select-Object -First 1).Source
 
 if (-not (Test-Path $Server)) { throw "Hub server not found: $Server" }

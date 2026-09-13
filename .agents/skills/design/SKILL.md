@@ -1,5 +1,5 @@
 ---
-name: skill_design
+name: design
 description: Create the Visual Interface for audio plugins. Use when user mentions UI design, mockup, WebView interface, or requests 'design UI for [plugin]'.
 ---
 

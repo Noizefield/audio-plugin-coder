@@ -1,22 +1,22 @@
-# APC Hub — Mockup v003 (review record)
+# APC Hub - Mockup v003 (review record)
 
 Spec: `hub_design_spec_v003.md` · Status: DRAFT · Snapshot baked: 2026-09-13
-Twin runnable file: `hub_design_mockup_v003.html` (same folder — open via
+Twin runnable file: `hub_design_mockup_v003.html` (same folder - open via
 `file://`, zero deps, system fonts, no images).
-Changes vs v002: app shell — fixed left sidebar (mark, badges, nav, theme,
+Changes vs v002: app shell - fixed left sidebar (mark, badges, nav, theme,
 stamp) + right side shows ONLY the active section. Section switching is
 CSS-only (`:target` + `:has`); hash = state, bookmarks work natively.
 Data snapshot and tokens unchanged.
 
 ## How to review
 
-1. Open `hub_design_mockup_v003.html` — only 01 OVERVIEW visible, dark.
+1. Open `hub_design_mockup_v003.html` - only 01 OVERVIEW visible, dark.
 2. Click sidebar items: exactly one section shows; active item inverted + `>`.
-3. Use PREV/NEXT pagers; reload with a hash (e.g. `#05-designs`) — same view.
-4. Narrow the window below 900px — sidebar stacks on top, nothing hidden.
+3. Use PREV/NEXT pagers; reload with a hash (e.g. `#05-designs`) - same view.
+4. Narrow the window below 900px - sidebar stacks on top, nothing hidden.
 5. Reply with what to change → `_v004` (+ CHANGELOG entry).
 
-## Full HTML (authoritative — twin of `.html` file)
+## Full HTML (authoritative - twin of `.html` file)
 
 ```html
 <!DOCTYPE html>
@@ -24,7 +24,7 @@ Data snapshot and tokens unchanged.
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APC HUB v003 // mockup — snapshot 2026-09-13</title>
+<title>APC HUB v003 // mockup - snapshot 2026-09-13</title>
 <style>
 /* == themes.css: dark is default, light is alternate == */
 :root, html[data-theme="dark"]{
@@ -176,20 +176,20 @@ pre.screen{border:1px solid var(--rule); padding:10px 12px; font-size:13px;
      ███      ███  ███           ███▄▄▄▄▄▄███
     ███      ███  ███            ▀████████▀
 <span class="amber">   --------------------------&gt; AudioPluginCoder</span></pre></div></header>
-<p class="kicker"><span class="n">01</span>// OVERVIEW — src: apc.config.json</p>
+<p class="kicker"><span class="n">01</span>// OVERVIEW - src: apc.config.json</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Metric</th><th>Value</th><th>Status</th></tr>
 <tr><td>Plugins tracked</td><td>4 (1 SHIP / 2 DESIGN / 1 PLAN)</td><td class="tok-ok">[OK]</td></tr>
 <tr><td>UI default</td><td>webview · visage disabled</td><td class="tok-ok">[OK]</td></tr>
-<tr><td>JUCE pin</td><td>9.0.1 — <span class="mono">_tools/JUCE</span> present</td><td class="tok-ok">[OK]</td></tr>
+<tr><td>JUCE pin</td><td>9.0.1 - <span class="mono">_tools/JUCE</span> present</td><td class="tok-ok">[OK]</td></tr>
 <tr><td>pluginval</td><td><span class="mono">_tools/pluginval/pluginval.exe</span> present</td><td class="tok-ok">[OK]</td></tr>
-<tr><td>Configured dirs</td><td class="mono">../apc_plugins · ../apc_builds · ../apc_releases — all exist</td><td class="tok-ok">[OK]</td></tr>
+<tr><td>Configured dirs</td><td class="mono">../apc_plugins · ../apc_builds · ../apc_releases - all exist</td><td class="tok-ok">[OK]</td></tr>
 </table></div>
 <p class="mono pager"><span class="mut">START</span> <span class="mut">|</span> <a href="#02-projects">NEXT &gt;</a></p>
 </section>
 
 <section id="02-projects">
-<p class="kicker"><span class="n">02</span>// PROJECTS — src: &lt;plugins_dir&gt;/*/status.json</p>
+<p class="kicker"><span class="n">02</span>// PROJECTS - src: &lt;plugins_dir&gt;/*/status.json</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Plugin</th><th>Ver</th><th>Phase</th><th>UI</th><th>Cx</th><th>Validation</th><th>Next</th></tr>
 <tr><td><b>CloudWash</b></td><td>v1.0.0</td><td><span class="chip cur">[ SHIP_COMPLETE ]</span></td><td>WEBVIEW</td><td>5/5</td><td class="check"><span class="good">[x] 11/11</span></td><td class="mut">complete</td></tr>
@@ -197,16 +197,16 @@ pre.screen{border:1px solid var(--rule); padding:10px 12px; font-size:13px;
 <tr><td><b>nf_gnarly</b></td><td>v0.0.0</td><td><span class="chip cur">[ DESIGN_COMPLETE ]</span></td><td>WEBVIEW</td><td>2/5</td><td class="check"><span class="good">[x] 5</span> · <span class="mut">[ ] 2</span></td><td class="mono">/apc-impl nf_gnarly</td></tr>
 <tr><td><b>gnarly3</b></td><td>v0.1.0</td><td><span class="chip cur">[ PLAN_COMPLETE ]</span></td><td>VISAGE</td><td>2/5</td><td class="check"><span class="good">[x] 4</span> · <span class="mut">[ ] 3</span></td><td class="mono">/apc-design gnarly3</td></tr>
 </table></div>
-<h3>CloudWash — detail (7 phase_history entries, last 2026-01-31)</h3>
+<h3>CloudWash - detail (7 phase_history entries, last 2026-01-31)</h3>
 <p class="pipe mono">DREAM -&gt; PLAN -&gt; DESIGN -&gt; IMPL -&gt; <span class="chip cur">[ SHIP ]</span></p>
 <pre class="screen"><span class="good">[x]</span> creative brief  <span class="good">[x]</span> parameter spec  <span class="good">[x]</span> architecture  <span class="good">[x]</span> ui framework
 <span class="good">[x]</span> design  <span class="good">[x]</span> code (4.1.1/4.1.2/4.1.3)  <span class="good">[x]</span> tests  <span class="good">[x]</span> ship ready</pre>
-<p class="mut mono" style="font-size:13px">NOTE: repo-local plugins/ shown. Configured live dir ../apc_plugins exists — phase-2 lists both, labelled.</p>
+<p class="mut mono" style="font-size:13px">NOTE: repo-local plugins/ shown. Configured live dir ../apc_plugins exists - phase-2 lists both, labelled.</p>
 <p class="mono pager"><a href="#01-overview">&lt; PREV</a> <span class="mut">|</span> <a href="#03-skills">NEXT &gt;</a></p>
 </section>
 
 <section id="03-skills">
-<p class="kicker"><span class="n">03</span>// SKILLS — src: .agents/skills/ (18 dirs, single source of truth)</p>
+<p class="kicker"><span class="n">03</span>// SKILLS - src: .agents/skills/ (18 dirs, single source of truth)</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Skill dir</th><th>Kind</th><th>Flag</th></tr>
 <tr><td class="mono">apc-setup</td><td>phase</td><td class="tok-ok">[OK]</td></tr>
@@ -219,30 +219,30 @@ pre.screen{border:1px solid var(--rule); padding:10px 12px; font-size:13px;
 </section>
 
 <section id="04-commands">
-<p class="kicker"><span class="n">04</span>// COMMANDS — src: .agents/workflows/ (12 primary + 11 aliases)</p>
+<p class="kicker"><span class="n">04</span>// COMMANDS - src: .agents/workflows/ (12 primary + 11 aliases)</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Primary</th><th>Alias</th><th>Codex form</th></tr>
 <tr><td class="mono">/apc-setup · /apc-dream · /apc-plan</td><td class="mono">/setup · /dream · /plan</td><td class="mono" rowspan="4">$audio-plugin-coder:audio-plugin-coder &lt;action&gt; [Name]<br><span class="mut">action = setup|dream|plan|design|impl|test|debug|status|resume|ship|new</span></td></tr>
 <tr><td class="mono">/apc-design · /apc-impl(+implement) · /apc-test</td><td class="mono">/design · /impl · /test</td></tr>
 <tr><td class="mono">/apc-debug · /apc-ship · /apc-status</td><td class="mono">/debug · /ship · /status</td></tr>
-<tr><td class="mono">/apc-resume · /apc-new · <b>/apc-hub (this, proposed)</b></td><td class="mono">/resume · /new · —</td></tr>
+<tr><td class="mono">/apc-resume · /apc-new · <b>/apc-hub (this, proposed)</b></td><td class="mono">/resume · /new · -</td></tr>
 </table></div>
 <p class="mono pager"><a href="#03-skills">&lt; PREV</a> <span class="mut">|</span> <a href="#05-designs">NEXT &gt;</a></p>
 </section>
 
 <section id="05-designs">
-<p class="kicker"><span class="n">05</span>// DESIGNS — src: design_library/manifest.json (v1.1.0, 3 designs)</p>
+<p class="kicker"><span class="n">05</span>// DESIGNS - src: design_library/manifest.json (v1.1.0, 3 designs)</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Design</th><th>Category</th><th>Colors</th><th>UI</th><th>Best for</th></tr>
-<tr><td><b>rams60</b> — Rams 60</td><td>vintage-hardware</td><td><span class="sw" style="background:#1F7A3D"></span><span class="mono">#1F7A3D</span> · <span class="sw" style="background:#D9531E"></span><span class="mono">#D9531E</span> · <span class="sw" style="background:#EFE8D8"></span><span class="mono">#EFE8D8</span></td><td>WEBVIEW</td><td>lo-fi, hardware emulation</td></tr>
-<tr><td><b>amber-signal</b> — Amber Signal</td><td>modern</td><td><span class="sw" style="background:#FF9500"></span><span class="mono">#FF9500</span> · <span class="sw" style="background:#FFB946"></span><span class="mono">#FFB946</span> · <span class="sw" style="background:#1C1C1E"></span><span class="mono">#1C1C1E</span></td><td>WEBVIEW</td><td>dynamics, effects, metering</td></tr>
-<tr><td><b>neogrid-minimal</b> — NeoGrid Minimal</td><td>minimal</td><td><span class="sw" style="background:#00F5FF"></span><span class="mono">#00F5FF</span> · <span class="sw" style="background:#7B68EE"></span><span class="mono">#7B68EE</span> · <span class="sw" style="background:#0A0A0F"></span><span class="mono">#0A0A0F</span></td><td>WEBVIEW</td><td>synths, modulators</td></tr>
+<tr><td><b>rams60</b> - Rams 60</td><td>vintage-hardware</td><td><span class="sw" style="background:#1F7A3D"></span><span class="mono">#1F7A3D</span> · <span class="sw" style="background:#D9531E"></span><span class="mono">#D9531E</span> · <span class="sw" style="background:#EFE8D8"></span><span class="mono">#EFE8D8</span></td><td>WEBVIEW</td><td>lo-fi, hardware emulation</td></tr>
+<tr><td><b>amber-signal</b> - Amber Signal</td><td>modern</td><td><span class="sw" style="background:#FF9500"></span><span class="mono">#FF9500</span> · <span class="sw" style="background:#FFB946"></span><span class="mono">#FFB946</span> · <span class="sw" style="background:#1C1C1E"></span><span class="mono">#1C1C1E</span></td><td>WEBVIEW</td><td>dynamics, effects, metering</td></tr>
+<tr><td><b>neogrid-minimal</b> - NeoGrid Minimal</td><td>minimal</td><td><span class="sw" style="background:#00F5FF"></span><span class="mono">#00F5FF</span> · <span class="sw" style="background:#7B68EE"></span><span class="mono">#7B68EE</span> · <span class="sw" style="background:#0A0A0F"></span><span class="mono">#0A0A0F</span></td><td>WEBVIEW</td><td>synths, modulators</td></tr>
 </table></div>
 <p class="mono pager"><a href="#04-commands">&lt; PREV</a> <span class="mut">|</span> <a href="#06-scripts">NEXT &gt;</a></p>
 </section>
 
 <section id="06-scripts">
-<p class="kicker"><span class="n">06</span>// SCRIPTS — src: scripts/ (33 entries)</p>
+<p class="kicker"><span class="n">06</span>// SCRIPTS - src: scripts/ (33 entries)</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Group</th><th>Members</th></tr>
 <tr><td>build / state</td><td class="mono">build-and-install · state-management · backup · rollback · lib/Get-ApcPaths (ps1+sh)</td></tr>
@@ -254,7 +254,7 @@ pre.screen{border:1px solid var(--rule); padding:10px 12px; font-size:13px;
 </section>
 
 <section id="07-templates">
-<p class="kicker"><span class="n">07</span>// TEMPLATES — src: templates/ (27 files)</p>
+<p class="kicker"><span class="n">07</span>// TEMPLATES - src: templates/ (27 files)</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Template</th><th>Files</th><th>Notes</th></tr>
 <tr><td class="mono">webview/</td><td>4</td><td>CMakeLists, PluginEditor.{cpp,h}, README</td></tr>
@@ -267,7 +267,7 @@ pre.screen{border:1px solid var(--rule); padding:10px 12px; font-size:13px;
 </section>
 
 <section id="08-tools">
-<p class="kicker"><span class="n">08</span>// TOOLS — src: _tools/ + sampled 2026-09-13</p>
+<p class="kicker"><span class="n">08</span>// TOOLS - src: _tools/ + sampled 2026-09-13</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Tool</th><th>State</th><th>Status</th></tr>
 <tr><td class="mono">JUCE 9.0.1 (_tools/JUCE)</td><td>present, matches pin</td><td class="tok-ok">[OK]</td></tr>
@@ -279,7 +279,7 @@ pre.screen{border:1px solid var(--rule); padding:10px 12px; font-size:13px;
 </section>
 
 <section id="09-settings">
-<p class="kicker"><span class="n">09</span>// SETTINGS — src: apc.config.json (live) vs .example.json</p>
+<p class="kicker"><span class="n">09</span>// SETTINGS - src: apc.config.json (live) vs .example.json</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Key</th><th>Live</th><th>Example</th></tr>
 <tr><td class="mono">paths.plugins_dir</td><td class="mono">../apc_plugins <span class="good">[OK]</span></td><td class="mono">plugins</td></tr>
@@ -294,7 +294,7 @@ pre.screen{border:1px solid var(--rule); padding:10px 12px; font-size:13px;
 </section>
 
 <section id="10-docs">
-<p class="kicker"><span class="n">10</span>// DOCS — src: docs/ (16 files, 696 headings)</p>
+<p class="kicker"><span class="n">10</span>// DOCS - src: docs/ (16 files, 696 headings)</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Doc</th><th>#</th><th>Doc</th><th>#</th></tr>
 <tr><td class="mono">README.md (index)</td><td>25</td><td class="mono">PROJECT_STRUCTURE.md</td><td>34</td></tr>
@@ -311,9 +311,9 @@ pre.screen{border:1px solid var(--rule); padding:10px 12px; font-size:13px;
 </section>
 
 <section id="11-consistency">
-<p class="kicker"><span class="n">++</span>// CONSISTENCY — tidy-up radar (display only)</p>
-<div class="banner mono"><span class="tok-warn">[!!]</span> 6 legacy <span class="mono">skill_*</span> dirs beside new-style phase skills — confirm redundant (§6.1 spec)</div>
-<div class="banner mono"><span class="tok-warn">[!!]</span> gnarly3 uses VISAGE while <span class="mono">enable_visage=false</span> — intent or leftover?</div>
+<p class="kicker"><span class="n">++</span>// CONSISTENCY - tidy-up radar (display only)</p>
+<div class="banner mono"><span class="tok-warn">[!!]</span> 6 legacy <span class="mono">skill_*</span> dirs beside new-style phase skills - confirm redundant (§6.1 spec)</div>
+<div class="banner mono"><span class="tok-warn">[!!]</span> gnarly3 uses VISAGE while <span class="mono">enable_visage=false</span> - intent or leftover?</div>
 <pre class="screen"><span class="mut">[ -- ]</span> root commands/ empty            -&gt; pointer: use .agents/workflows
 <span class="mut">[ -- ]</span> root skills/ = Codex package only -&gt; labelled, not a source
 <span class="good">[OK]</span> alias pointers resolve              -&gt; spot-checked (status.md chain)
@@ -356,7 +356,7 @@ snapshot baked 2026-09-13 · sidebar shell · one section at a time · dark defa
 
 ## Review checklist (reply with numbers)
 
-1. Sidebar 264px — wider/narrower/fixed forever?
-2. Compact mark + full logo on 01 — keep the split?
+1. Sidebar 264px - wider/narrower/fixed forever?
+2. Compact mark + full logo on 01 - keep the split?
 3. CSS-only switching accepted?
 4. Pager useful, or sidebar alone enough?

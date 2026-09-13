@@ -1,4 +1,4 @@
-# APC Hub — Design Language Spec v005
+# APC Hub - Design Language Spec v005
 
 Status: DRAFT for review · Date: 2026-09-13 · App: `hub/` · Command: `/apc-hub`
 Supersedes: `hub_design_spec_v004.md` (kept, do not edit).
@@ -38,7 +38,7 @@ Unchanged, except the frame now stacks vertically first:
 
 - `.frame` (centered, outer 2px rules) contains `header.topbar` followed by
   `.shell` (the 264px/1fr grid). The header is OUTSIDE all sections, so it
-  renders identically on every hash view — the constant visual anchor.
+  renders identically on every hash view - the constant visual anchor.
 - Header content: full `assets/APC_ASCII.txt` `<pre>` (left) + title line
   `APC HUB // read-only command center` + the three status badges
   (setup / profile / snapshot) stacked right of / under the logo.
@@ -50,7 +50,7 @@ Unchanged, except the frame now stacks vertically first:
 ### 4.2 Logo placement (v005 revision)
 
 Header owns the ONLY full-size logo. 01 OVERVIEW starts directly with its
-kicker — the header above it provides the anchor the v004 layout lacked.
+kicker - the header above it provides the anchor the v004 layout lacked.
 
 ## 5. ASCII component library
 
@@ -66,7 +66,7 @@ kicker — the header above it provides the anchor the v004 layout lacked.
 ```
 
 Version-only box (framework version + hub revision). The `APC/HUB_` name
-line and the sidebar title are gone — both live in the header now, no
+line and the sidebar title are gone - both live in the header now, no
 duplication. Sidebar order: MARK → REL → NAV → THEME → sidefoot.
 
 ## 6–10. Inventory, interaction, files, version/update
@@ -76,6 +76,6 @@ theme script; §10 update-check as specified).
 
 ## 11. Open questions for the reviewer
 
-1. Header static (v005) or scroll-sticky — which?
-2. Badges in header (v005) vs back in sidebar — position right?
+1. Header static (v005) or scroll-sticky - which?
+2. Badges in header (v005) vs back in sidebar - position right?
 3. Sidebar now lean: anything missing, or is this the right density?

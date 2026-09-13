@@ -22,7 +22,7 @@ if ($state.current_phase -ne "code_complete" -and $state.current_phase -ne "test
 ```
 
 **Execute Skill:**
-Load and execute `...kilocode\skills\skill_debug\SKILL.md`
+Load and execute `.agents/skills/debug/SKILL.md`
 
 The debugging skill MUST follow the instructions defined in crash.md.
 
@@ -110,7 +110,7 @@ Next step:
 ## Future Enhancements
 
 If you want, next we can:
-- Write `skill_debug/SKILL.md`
+- Write `debug/SKILL.md` (done — canonical skill; the old `skill_debug/` name survives only as a 2-line alias)
 - Add a `/apc-debug` command contract
 - Chain Debug ΓåÆ Fix ΓåÆ Retest automatically
 - Add CI/headless-debug variants

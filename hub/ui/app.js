@@ -1,5 +1,5 @@
 'use strict';
-/* APC Hub live UI — vanilla JS, zero dependencies.
+/* APC Hub live UI - vanilla JS, zero dependencies.
  * Reads hub/server.js /api/v1/* and renders the approved v009 language.
  * Sections switch via :target (hash IS the state); docs load lazily. */
 
@@ -24,7 +24,7 @@ const mutTok = (t) => '<span class="mut">' + esc(t) + '</span>';
 const mono = (t) => '<span class="mono">' + esc(t) + '</span>';
 function kicker(n, label, src) {
   return '<p class="kicker"><span class="n">' + esc(n) + '</span>// ' + esc(label) +
-    (src ? ' — src: ' + esc(src) : '') + '</p>';
+    (src ? ' - src: ' + esc(src) : '') + '</p>';
 }
 function pager(prev, prevLabel, next, nextLabel) {
   const l = prev ? '<a href="#' + prev + '">&lt; PREV</a>' : '<span class="mut">START</span>';
@@ -188,17 +188,18 @@ function renderOverview(meta, cfg, update) {
   const rows = [
     ['Framework', mono('APC v' + meta.framework + ' (src: package.json)'), okTok()],
     ['Upstream release', update
-      ? (update.state === 'CURRENT' ? mono('v' + update.installed + ' — current')
-        : update.state === 'AVAILABLE' ? '<span class="tok-warn">[!!] UPDATE ' + esc(update.upstream) + ' AVAILABLE</span>'
-        : mono('live check failed: ' + (update.reason || '?')))
-      : mutTok('[..]'), update && update.state === 'CURRENT' ? okTok() : update && update.state === 'AVAILABLE' ? warnTok() : mutTok('[..]')],
+      ? (update.state === 'CURRENT' ? mono('v' + update.installed + ' - current')
+        : update.state === 'AVAILABLE' ? '<span class="tok-warn">[!!] UPDATE ' + esc(update.upstream) + ' AVAILABLE</span>' + (update.url ? ' <a href="' + esc(update.url) + '" target="_blank" rel="noopener">OPEN -&gt;</a>' : '')
+        : mono('check: ' + (update.reason || '?')))
+      : mutTok('[..]'), (update && update.state === 'CURRENT' ? okTok() : update && update.state === 'AVAILABLE' ? warnTok() : mutTok('[..]')) +
+      ' <button class="mono minibtn" id="btn-recheck" title="Ask GitHub for the latest release now">[RE-CHECK]</button>'],
   ];
   if (window.__pluginCounts) rows.push(['Plugins tracked', esc(window.__pluginCounts), okTok()]);
   const t = window.__tools;
   if (t) {
-    rows.push(['JUCE pin', esc(t.juce.pin || '?') + ' — ' + mono('_tools/JUCE') + (t.juce.present ? ' present' : ' MISSING'), t.juce.present ? okTok() : warnTok()]);
+    rows.push(['JUCE pin', esc(t.juce.pin || '?') + ' - ' + mono('_tools/JUCE') + (t.juce.present ? ' present' : ' MISSING'), t.juce.present ? okTok() : warnTok()]);
     rows.push(['pluginval', mono('_tools/pluginval/pluginval.exe') + (t.pluginval.present ? ' present' : ' MISSING'), t.pluginval.present ? okTok() : warnTok()]);
-    rows.push(['Configured dirs', mono([cfg.rel.plugins, cfg.rel.build, cfg.rel.release].join(' · ')) + (cfg.exists.plugins && cfg.exists.build && cfg.exists.release ? ' — all exist' : ' — CHECK'), (cfg.exists.plugins && cfg.exists.build && cfg.exists.release) ? okTok() : warnTok('[!!]')]);
+    rows.push(['Configured dirs', mono([cfg.rel.plugins, cfg.rel.build, cfg.rel.release].join(' · ')) + (cfg.exists.plugins && cfg.exists.build && cfg.exists.release ? ' - all exist' : ' - CHECK'), (cfg.exists.plugins && cfg.exists.build && cfg.exists.release) ? okTok() : warnTok('[!!]')]);
   } else {
     rows.push(['System', mutTok('tools endpoint unreachable'), mutTok('[..]')]);
   }
@@ -207,6 +208,33 @@ function renderOverview(meta, cfg, update) {
     pager(null, null, '02-projects');
 }
 
+async function refreshUpdate() {
+  const btn = document.getElementById('btn-recheck');
+  if (btn) btn.textContent = '[CHECKING..]';
+  const u = await api('update?refresh=1');
+  if (u) {
+    window.__update = u;
+    setRel(window.__meta, u);
+    const sec = document.getElementById('01-overview');
+    if (sec) {
+      sec.innerHTML = renderOverview(window.__meta, window.__cfg, u);
+      wireRecheck();
+    }
+  } else if (btn) btn.textContent = '[RE-CHECK]';
+}
+function wireRecheck() {
+  const btn = document.getElementById('btn-recheck');
+  if (btn) btn.onclick = refreshUpdate;
+}
+
+function stageOf(phase) {
+  const ph = String(phase || '').toLowerCase();
+  if (/ship/.test(ph)) return 4;
+  if (/test|code|impl/.test(ph)) return 3;
+  if (/design/.test(ph)) return 2;
+  if (/plan/.test(ph)) return 1;
+  return 0;
+}
 function renderProjects(data) {
   const ps = data.plugins || [];
   const counts = {};
@@ -221,17 +249,22 @@ function renderProjects(data) {
     valCell(p.validation),
     nextCommand(p),
   ]);
-  let detail = '';
-  const done = ps.find((p) => p.phase === 'ship_complete') || ps[0];
-  if (done) {
-    detail = '<h3>' + esc(done.name) + ' — detail</h3>' +
-      '<p class="pipe mono">DREAM -&gt; PLAN -&gt; DESIGN -&gt; IMPL -&gt; ' +
-      (done.phase === 'ship_complete' ? '<span class="chip cur">[ SHIP ]</span>' : esc(done.phase || '?')) + '</p>' +
-      '<pre class="screen">' + Object.entries(done.validation ? done.validation.flags : {}).map(([k, v]) => (v ? '<span class="good">[x]</span>' : '<span class="mut">[ ]</span>') + ' ' + esc(k)).join('  ') + '</pre>';
-  }
+  const stages = ['DREAM', 'PLAN', 'DESIGN', 'IMPL', 'SHIP'];
+  const detail = ps.map((p) => {
+    const st = stageOf(p.phase);
+    const pipe = stages.map((s, i) => i === st
+      ? '<span class="chip cur">[ ' + s + ' ]</span>' : s).join(' -&gt; ');
+    const flags = Object.entries(p.validation ? p.validation.flags : {})
+      .map(([k, v]) => (v ? '<span class="good">[x]</span>' : '<span class="mut">[ ]</span>') + ' ' + esc(k)).join('  ');
+    const hist = p.phaseHistory
+      ? ' <span class="mut">(' + p.phaseHistory + ' phase entries' + (p.lastPhaseAt ? ', last ' + esc(String(p.lastPhaseAt).slice(0, 10)) : '') + ')</span>' : '';
+    return '<h3>' + esc(p.name) + ' ' + mono(p.version || '') + ' ' + mono('[' + (p.framework || '?').toUpperCase() + ']') + hist + '</h3>' +
+      '<p class="pipe mono">' + pipe + '</p>' +
+      '<pre class="screen">' + (flags || mutTok('no validation flags')) + '</pre>';
+  }).join('');
   const note = data.resolvedDir && !data.dirExists
     ? '<div class="banner mono">' + warnTok() + ' configured dir missing: ' + esc(data.resolvedDir) + '</div>' : '';
-  return kicker('02', 'PROJECTS', '&lt;plugins_dir&gt;/*/status.json') + note +
+  return kicker('02', 'PROJECTS', '<plugins_dir>/*/status.json') + note +
     (ps.length ? table(['Plugin', 'Ver', 'Phase', 'UI', 'Cx', 'Validation', 'Next'], rows) + detail
       : '<div class="banner mono">' + warnTok() + ' no plugins found in ' + esc(data.configuredDir) + '</div>') +
     pager('01-overview', null, '03-skills');
@@ -240,32 +273,63 @@ function renderProjects(data) {
 function renderSkills(skills) {
   const rows = (skills || []).map((s) => [
     mono(s.id),
-    s.id === 'audio-plugin-coder' ? 'Codex package (SKILL.md)' : (/^skill_/.test(s.id) ? 'legacy' : (/apc-setup/.test(s.id) ? 'phase' : 'phase/domain')),
-    s.hasSkillMd ? (s.legacy ? warnTok('[LEGACY?]') + ' confirm in tidy-up' : okTok()) : warnTok('[!!]') + ' SKILL.md missing',
+    s.id === 'audio-plugin-coder' ? 'Codex package (SKILL.md)'
+      : s.aliasStub ? 'alias - keep as redirect'
+      : s.legacy ? 'legacy - needs decision'
+      : /^skill_/.test(s.id) ? 'domain' : 'phase',
+    s.hasSkillMd ? (s.aliasStub ? okTok('[ALIAS]') : s.legacy ? warnTok('[LEGACY?]') + ' confirm in tidy-up' : okTok()) : warnTok('[!!]') + ' SKILL.md missing',
   ]);
   return kicker('03', 'SKILLS', '.agents/skills/ (' + (skills || []).length + ' dirs, single source of truth)') +
     table(['Skill dir', 'Kind', 'Flag'], rows) + pager('02-projects', null, '04-commands');
 }
 
+const CMD_ORDER = ['setup', 'dream', 'plan', 'design', 'impl', 'implement', 'test', 'debug', 'ship', 'status', 'resume', 'new', 'hub'];
 function renderCommands(cmds) {
-  const prim = (cmds.primaries || []).map((c) => mono(c.command)).join(' · ');
-  const alia = (cmds.aliases || []).map((c) => mono(c.command) + (c.resolves ? '' : ' ' + warnTok())).join(' · ');
-  return kicker('04', 'COMMANDS', '.agents/workflows/ (' + (cmds.primaries || []).length + ' primary + ' + (cmds.aliases || []).length + ' aliases)') +
-    table(['Primary', 'Alias', 'Codex form'], [[
-      prim || mutTok('[..]'),
-      alia || mutTok('[..]'),
-      mono('$audio-plugin-coder:audio-plugin-coder &lt;action&gt; [Name]'),
-    ]]) + pager('03-skills', null, '05-designs');
+  const primaries = (cmds.primaries || []).slice();
+  primaries.push({ command: '/apc-hub', description: 'Open the APC Hub live dashboard (read-only command center)' });
+  const aliasByTarget = {};
+  (cmds.aliases || []).forEach((a) => {
+    if (a.pointsTo) {
+      (aliasByTarget[a.pointsTo] = aliasByTarget[a.pointsTo] || []).push(a);
+    }
+  });
+  primaries.sort((a, b) => {
+    const ia = CMD_ORDER.indexOf(a.command.replace('/apc-', ''));
+    const ib = CMD_ORDER.indexOf(b.command.replace('/apc-', ''));
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
+  const rows = primaries.map((c) => {
+    const action = c.command.replace('/apc-', '');
+    const al = (aliasByTarget[c.command] || []).map((a) => mono(a.command) + (a.resolves ? '' : ' ' + warnTok('[!!]'))).join('<br>') || mutTok('-');
+    return [
+      mono(c.command),
+      al,
+      mono('$audio-plugin-coder:audio-plugin-coder ' + action),
+      esc(c.description || 'see workflow file'),
+    ];
+  });
+  return kicker('04', 'COMMANDS', '.agents/workflows/ (' + primaries.length + ' primary + ' + (cmds.aliases || []).length + ' deprecated aliases)') +
+    table(['Command', 'Alias', 'Codex action', 'What it does'], rows) +
+    '<p class="mono mut" style="font-size:13px">Codex form: $audio-plugin-coder:audio-plugin-coder &lt;action&gt; [Name] - aliases are deprecated, prefer /apc-*.</p>' +
+    pager('03-skills', null, '05-designs');
 }
 
 function renderDesigns(d) {
-  const rows = (d.designs || []).map((g) => [
-    '<b>' + esc(g.id) + '</b> — ' + esc(g.name || ''),
-    esc(g.category || ''),
-    Object.entries(g.colors || {}).map(([k, v]) => '<span class="sw" style="background:' + esc(v) + '"></span>' + mono(v)).join(' · '),
-    esc(Object.entries(g.supports || {}).filter(([, v]) => v).map(([k]) => k).join(', ').toUpperCase() || '?'),
-    esc((g.bestFor || []).join(', ')),
-  ]);
+  const rows = (d.designs || []).map((g) => {
+    const files = (g.htmlFiles || []).map((f) =>
+      '<a href="/preview/' + encodeURIComponent(g.id) + '/' + String(f).split('/').map(encodeURIComponent).join('/') + '" target="_blank" rel="noopener">' + esc(f) + '</a>'
+    ).join('<br>') || mutTok('no HTML files');
+    const miss = (g.missingExamples || []).length
+      ? '<br>' + warnTok('[!!]') + ' <span class="mut">manifest lists missing: ' + esc(g.missingExamples.join(', ')) + '</span>' : '';
+    const name = '<b>' + esc(g.id) + '</b> - ' + esc(g.name || '') + '<br>' + files + miss;
+    return [
+      name,
+      esc(g.category || ''),
+      Object.entries(g.colors || {}).map(([k, v]) => '<span class="sw" style="background:' + esc(v) + '"></span>' + mono(v)).join(' · '),
+      esc(Object.entries(g.supports || {}).filter(([, v]) => v).map(([k]) => k).join(', ').toUpperCase() || '?'),
+      esc((g.bestFor || []).join(', ')),
+    ];
+  });
   return kicker('05', 'DESIGNS', 'design_library/manifest.json' + (d.present ? ' (v' + d.version + ', ' + d.totalDesigns + ' designs)' : ' MISSING')) +
     (d.present ? table(['Design', 'Category', 'Colors', 'UI', 'Best for'], rows)
       : '<div class="banner mono">' + warnTok() + ' manifest not found</div>') +
@@ -311,28 +375,137 @@ function renderSettings(cfg) {
     [mono('models.codex'), mono((((cfg.live || {}).models || {}).codex || {}).enabled ? 'enabled' : 'disabled'), mono('disabled')],
     [mono('setup'), mono('completed ' + ((((cfg.live || {}).setup || {}).completed_at) || '?').slice(0, 10) + ' · ' + ((((cfg.live || {}).setup || {}).platform) || '?')), mono('false')],
   ];
+  const live = cfg.live || {};
+  const cx = live.models && live.models.codex ? live.models.codex : {};
+  const PHASES = ['dream', 'plan', 'design', 'impl', 'test', 'debug', 'ship', 'status', 'resume', 'setup'];
+  const TIERS = ['luna', 'terra', 'sol', 'astra'];
+  const fin = (id, v) => '<input class="mono" id="' + id + '" value="' + esc(v == null ? '' : v) + '">';
+  const fchk = (id, b) => '<input type="checkbox" id="' + id + '"' + (b ? ' checked' : '') + '>';
+  const fsel = (id, v, opts) => '<select class="mono" id="' + id + '">' + opts.map((o) =>
+    '<option value="' + o + '"' + (o === v ? ' selected' : '') + '>' + o + '</option>').join('') + '</select>';
+  const ph = (live.models && live.models.phases) || {};
+  const phaseRows = PHASES.map((p) => {
+    const o = ph[p] || {};
+    return '<tr><td>' + mono(p) + '</td><td>' + fin('f-ph-' + p + '-provider', o.provider || 'auto') + '</td><td>' + fin('f-ph-' + p + '-model', o.model || '') + '</td></tr>';
+  }).join('');
+  const tierRows = TIERS.map((t) => {
+    const o = (cx.tiers || {})[t] || {};
+    return '<tr><td>' + mono(t) + '</td><td>' + fin('f-tier-' + t + '-model', o.model || '') + '</td><td>' +
+      fin('f-tier-' + t + '-profile', o.profile || t) + '</td><td>' + fin('f-tier-' + t + '-reasoning', o.reasoning || '') + '</td><td>' +
+      fin('f-tier-' + t + '-max', o.max_attempts == null ? '' : o.max_attempts) + '</td></tr>';
+  }).join('');
+  const esc2 = cx.escalation || {};
   return kicker('09', 'SETTINGS', 'apc.config.json (live) vs .example.json') +
-    (cfg.livePresent ? '' : '<div class="banner mono">' + warnTok() + ' no live apc.config.json — showing example/defaults</div>') +
+    (cfg.livePresent ? '' : '<div class="banner mono">' + warnTok() + ' no live apc.config.json (' + esc(cfg.liveError || 'unknown') + ') - form starts from defaults</div>') +
     table(['Key', 'Live', 'Example'], rows.map((r) => [r[0], r[1], r[2]])) +
+    '<h3>EDIT ALL SETTINGS - writes apc.config.json (backup .bak first)</h3>' +
+    '<fieldset><legend>PATHS</legend>' +
+    '<div class="frow"><span class="mono">plugins_dir</span>' + fin('f-plugins_dir', (live.paths || {}).plugins_dir) + '</div>' +
+    '<div class="frow"><span class="mono">build_dir</span>' + fin('f-build_dir', (live.paths || {}).build_dir) + '</div>' +
+    '<div class="frow"><span class="mono">release_dir</span>' + fin('f-release_dir', (live.paths || {}).release_dir) + '</div></fieldset>' +
+    '<fieldset><legend>DEFAULTS</legend>' +
+    '<div class="frow"><span class="mono">ui_framework_preference</span>' + fsel('f-ui', ((live.defaults || {}).ui_framework_preference) || 'webview', ['webview', 'visage']) + '</div>' +
+    '<div class="frow"><span class="mono">enable_visage</span><span>' + fchk('f-visage', !!((live.defaults || {}).enable_visage)) + '</span></div></fieldset>' +
+    '<fieldset><legend>MODELS</legend>' +
+    '<div class="frow"><span class="mono">profile</span>' + fin('f-profile', (live.models || {}).profile || 'balanced') + '</div>' +
+    '<div class="scrollx"><table><tr><th>Phase</th><th>Provider</th><th>Model</th></tr>' + phaseRows + '</table></div></fieldset>' +
+    '<fieldset><legend>CODEX</legend>' +
+    '<div class="frow"><span class="mono">enabled</span><span>' + fchk('f-cx-enabled', !!cx.enabled) + '</span></div>' +
+    '<div class="frow"><span class="mono">default_tier</span>' + fin('f-cx-tier', cx.default_tier || 'terra') + '</div>' +
+    '<div class="scrollx"><table><tr><th>Tier</th><th>Model</th><th>Profile</th><th>Reasoning</th><th>Max attempts</th></tr>' + tierRows + '</table></div>' +
+    '<div class="frow"><span class="mono">escalation.enabled</span><span>' + fchk('f-esc-enabled', !!esc2.enabled) + '</span></div>' +
+    '<div class="frow"><span class="mono">escalation.order</span>' + fin('f-esc-order', (esc2.order || []).join(', ')) + '</div>' +
+    '<div class="frow"><span class="mono">escalation.on_build_fail</span><span>' + fchk('f-esc-onfail', esc2.on_build_fail !== false) + '</span></div></fieldset>' +
+    '<fieldset><legend>SETUP</legend>' +
+    '<div class="frow"><span class="mono">completed</span><span>' + fchk('f-setup-completed', !!((live.setup || {}).completed)) + '</span></div>' +
+    '<div class="frow"><span class="mono">completed_at / platform</span><span class="mono mut">' + esc(((live.setup || {}).completed_at) || '-') + ' / ' + esc(((live.setup || {}).platform) || '-') + ' (kept)</span></div></fieldset>' +
+    '<p class="mono"><button class="mono minibtn" id="cfg-save">[SAVE]</button> <button class="mono minibtn" id="cfg-reset">[RESET]</button> <span id="cfg-msg"></span></p>' +
     pager('08-tools', null, '10-documentation');
+}
+
+function wireSettings() {
+  const save = document.getElementById('cfg-save');
+  if (!save) return;
+  const val = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const chk = (id) => { const el = document.getElementById(id); return el ? el.checked : false; };
+  document.getElementById('cfg-reset').onclick = () => {
+    document.getElementById('09-settings').innerHTML = renderSettings(window.__cfg);
+    wireSettings();
+  };
+  save.onclick = async () => {
+    const msg = document.getElementById('cfg-msg');
+    const live = (window.__cfg && window.__cfg.live) || {};
+    const out = JSON.parse(JSON.stringify(live));
+    out.version = 1;
+    out.juce = out.juce || { required_major: 9, pin: '9.0.1' };
+    out.paths = { plugins_dir: val('f-plugins_dir') || 'plugins', build_dir: val('f-build_dir') || 'build', release_dir: val('f-release_dir') || 'release' };
+    out.defaults = { ui_framework_preference: val('f-ui') || 'webview', enable_visage: chk('f-visage') };
+    out.models = out.models || {};
+    out.models.profile = val('f-profile') || 'balanced';
+    out.models.phases = out.models.phases || {};
+    ['dream', 'plan', 'design', 'impl', 'test', 'debug', 'ship', 'status', 'resume', 'setup'].forEach((p) => {
+      out.models.phases[p] = { provider: val('f-ph-' + p + '-provider') || 'auto', model: val('f-ph-' + p + '-model') || '' };
+    });
+    out.models.codex = out.models.codex || {};
+    out.models.codex.enabled = chk('f-cx-enabled');
+    out.models.codex.default_tier = val('f-cx-tier') || 'terra';
+    out.models.codex.tiers = out.models.codex.tiers || {};
+    ['luna', 'terra', 'sol', 'astra'].forEach((t) => {
+      const prev = out.models.codex.tiers[t] || {};
+      const mx = parseInt(val('f-tier-' + t + '-max'), 10);
+      out.models.codex.tiers[t] = {
+        model: val('f-tier-' + t + '-model') || prev.model || '',
+        profile: val('f-tier-' + t + '-profile') || t,
+        reasoning: val('f-tier-' + t + '-reasoning') || prev.reasoning || 'medium',
+        max_attempts: isNaN(mx) ? (prev.max_attempts == null ? 1 : prev.max_attempts) : mx,
+      };
+    });
+    out.models.codex.escalation = out.models.codex.escalation || {};
+    out.models.codex.escalation.enabled = chk('f-esc-enabled');
+    out.models.codex.escalation.order = val('f-esc-order').split(',').map((s) => s.trim()).filter(Boolean);
+    out.models.codex.escalation.on_build_fail = chk('f-esc-onfail');
+    out.setup = out.setup || {};
+    const wasCompleted = !!out.setup.completed;
+    out.setup.completed = chk('f-setup-completed');
+    if (out.setup.completed && !wasCompleted && !out.setup.completed_at) {
+      out.setup.completed_at = new Date().toISOString();
+    }
+    msg.innerHTML = ' <span class="mut">[SAVING..]</span>';
+    try {
+      const r = await fetch('/api/v1/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(out),
+      });
+      const j = await r.json();
+      if (j && j.ok) {
+        msg.innerHTML = ' ' + okTok('[OK]') + ' saved' + (j.backup ? ' (backup .bak)' : '') + ' - reloading..';
+        setTimeout(() => location.reload(), 900);
+      } else {
+        msg.innerHTML = ' ' + warnTok('[!!]') + ' rejected: ' + esc((j && j.error) || r.status);
+      }
+    } catch {
+      msg.innerHTML = ' ' + warnTok('[!!]') + ' request failed';
+    }
+  };
 }
 
 function renderConsistency(c) {
   const lvl = { ok: '<span class="good">[OK]</span>', warn: '<span class="tok-warn">[!!]</span>', fail: '<span class="tok-warn">[!!]</span>', na: '<span class="mut">[ -- ]</span>' };
   return kicker('++', 'CONSISTENCY', 'live checks (display only)') +
-    '<pre class="screen">' + (c.checks || []).map((x) => (lvl[x.level] || lvl.na) + ' ' + esc(x.id) + ' — ' + esc(x.label)).join('\n') + '</pre>' +
+    '<pre class="screen">' + (c.checks || []).map((x) => (lvl[x.level] || lvl.na) + ' ' + esc(x.id) + ' - ' + esc(x.label)).join('\n') + '</pre>' +
     pager('doc-webview-framework', null, null);
 }
 
 /* ─── docs ─── */
 function renderDocsIndex(docs) {
   const items = (docs.docs || []).map((d) =>
-    '<details class="doc"' + (d.id === 'README' ? ' open' : '') + '><summary><b>' + esc(d.title) + '</b> <span class="p">— docs/' + esc(d.file) + ' · ' + d.chapterCount + ' §</span></summary>' +
+    '<details class="doc"' + (d.id === 'README' ? ' open' : '') + '><summary><b>' + esc(d.title) + '</b> <span class="p">- docs/' + esc(d.file) + ' · ' + d.chapterCount + ' §</span></summary>' +
     '<ol class="mono">' + d.chapters.map((c) => '<li>§ ' + esc(c) + '</li>').join('') + '</ol>' +
-    '<p class="mono full"><a href="#doc-' + d.id.toLowerCase() + '">OPEN AS SECTION →</a></p></details>'
+    '<p class="mono full"><a href="#' + docSlug(d) + '">OPEN AS SECTION -&gt;</a></p></details>'
   ).join('');
   return kicker('10', 'DOCUMENTATION', 'docs/*.md · live (' + (docs.total || 0) + ' files, ' + (docs.totalChapters || 0) + ' chapters)') +
-    '<p><input class="docsearch mono" id="docsearch" placeholder="FILTER DOCUMENTS + CHAPTERS — live"></p>' +
+    '<p><input class="docsearch mono" id="docsearch" placeholder="FILTER DOCUMENTS + CHAPTERS - live"></p>' +
     '<div id="doclist">' + items + '</div>' +
     pager('09-settings', null, 'doc-readme');
 }
@@ -345,10 +518,10 @@ function renderDocSection(id, force) {
   const raw = (docCache[id] || {}).raw;
   const bm = getBookmarks().has(id) ? '[*BOOKMARK]' : '[BOOKMARK]';
   sec.innerHTML =
-    '<p class="kicker"><span class="n">DOC</span>// docs/' + esc(meta.file) + ' — live</p>' +
+    '<p class="kicker"><span class="n">DOC</span>// docs/' + esc(meta.file) + ' - live</p>' +
     '<h3>' + esc(meta.title) + ' <button class="mono" id="bm-' + id + '" style="font-size:12px;background:transparent;color:var(--ink);border:1px solid var(--rule);padding:0 8px;cursor:pointer">' + bm + '</button></h3>' +
     '<p class="mono mut" style="font-size:13px">' + meta.chapterCount + ' § · <a href="#10-documentation">BACK TO INDEX</a></p>' +
-    '<div class="reader">' + (raw == null ? '<p class="mono mut">fetch failed — server unreachable? [..]</p>' : md(raw)) + '</div>' +
+    '<div class="reader">' + (raw == null ? '<p class="mono mut">fetch failed - server unreachable? [..]</p>' : md(raw)) + '</div>' +
     pager(meta.prev, null, meta.next);
   sec.dataset.loaded = '1';
   const btn = document.getElementById('bm-' + id);
@@ -364,8 +537,12 @@ async function ensureDoc(id) {
   renderDocSection(id);
 }
 
+function docSlug(d) {
+  return 'doc-' + String(d.id || d).toLowerCase().replace(/_/g, '-');
+}
+
 function buildDocMeta(docs) {
-  const order = (docs.docs || []).map((d) => 'doc-' + d.id.toLowerCase());
+  const order = (docs.docs || []).map(docSlug);
   const meta = {};
   order.forEach((id, i) => {
     const d = docs.docs[i];
@@ -388,9 +565,8 @@ function setBadges(meta, cfg) {
   $('#badges').innerHTML =
     (meta.setupCompleted ? '<span class="badge ok">[OK] SETUP</span>' : '<span class="badge">SETUP INCOMPLETE</span>') +
     '<span class="badge">' + esc((meta.setupPlatform || '?').toUpperCase()) + ' · ' + esc((meta.modelProfile || '?').toUpperCase()) + '</span>' +
-    '<span class="badge">APC v' + esc(meta.framework) + '</span>';
-  $('#mark').innerHTML = '+--------------------+<br>| APC v' + esc(meta.framework).padEnd(13) + ' |<br>| <span class="mut">HUB · LIVE</span>       |<br>+--------------------+';
-  $('#foot').innerHTML = '=== APC HUB · LIVE ===<br>APC v' + esc(meta.framework) + ' · hub server v' + esc(meta.hub) + ' · ' + esc(meta.time.slice(0, 10)) + ' · dark default · zero deps, system fonts, no images';
+    '<a class="badge amber" href="https://github.com/Noizefield/audio-plugin-coder" target="_blank" rel="noopener">APC v' + esc(meta.framework) + '</a>';
+  $('#foot').innerHTML = '=== APC HUB - LIVE ===<br>APC v' + esc(meta.framework) + ' - hub server v' + esc(meta.hub) + ' - ' + esc(meta.time.slice(0, 10)) + ' - dark default - zero deps, system fonts, no images';
 }
 function setRel(meta, update) {
   const up = !update ? '<br>UPSTREAM <span class="mut">[..]</span>'
@@ -407,6 +583,9 @@ async function boot() {
   const [meta, cfg, plugins, skills, commands, designs, scripts, templates, tools, docs, update, consistency] =
     await Promise.all([api('meta'), api('config'), api('plugins'), api('skills'), api('commands'), api('designs'), api('scripts'), api('templates'), api('tools'), api('docs'), api('update'), api('consistency')]);
   window.__tools = tools;
+  window.__meta = meta || {};
+  window.__cfg = cfg || {};
+  window.__update = update;
   if (meta) setBadges(meta, cfg || {});
   if (meta) setRel(meta, update);
   const { order } = buildDocMeta(docs || { docs: [] });
@@ -445,14 +624,25 @@ async function boot() {
       d.style.display = !needle || d.textContent.toLowerCase().includes(needle) ? '' : 'none';
     });
   });
-  // lazy doc bodies
+  // lazy doc bodies + submenu active paint (covers every doc id, incl. future ones)
   const load = () => {
     const h = (location.hash || '').replace('#', '');
     if (h.startsWith('doc-')) ensureDoc(h);
+    paintDocActive(h);
   };
   window.addEventListener('hashchange', load);
+  wireRecheck();
+  wireSettings();
+  paintDocActive((location.hash || '').replace('#', ''));
   load();
   if (!location.hash) location.hash = '#01-overview';
+}
+
+function paintDocActive(hash) {
+  $$('#docnav a[data-doc]').forEach((a) => {
+    const on = a.dataset.doc === hash;
+    a.classList.toggle('on', on);
+  });
 }
 window.__docShort = { 'doc-readme': 'README', 'doc-build-system': 'BUILD', 'doc-codex-compatibility': 'CODEX COMPAT', 'doc-codex-orchestration': 'CODEX ORCH', 'doc-command-reference': 'COMMANDS', 'doc-faq': 'FAQ', 'doc-github-actions': 'ACTIONS', 'doc-icon-management-guide': 'ICONS', 'doc-installer-creation': 'INSTALLER', 'doc-model-routing': 'MODELS', 'doc-plugin-development-lifecycle': 'LIFECYCLE', 'doc-project-structure': 'STRUCTURE', 'doc-ship-workflow': 'SHIP', 'doc-state-management-deep-dive': 'STATE', 'doc-troubleshooting-guide': 'TROUBLESHOOT', 'doc-webview-framework': 'WEBVIEW' };
 document.addEventListener('DOMContentLoaded', boot);

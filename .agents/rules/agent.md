@@ -235,19 +235,19 @@ Applying documented solution...
 
 ### 1. PHASE 1: DREAM (Ideation)
 *   **Trigger:** `/dream [Name]`
-*   **Skill File:** `.agents/skills/skill_ideation/SKILL.md`
+*   **Skill File:** `.agents/skills/dream/SKILL.md`
 *   **Action:** Create brief, parameter spec, and initialize `status.json`.
 *   **State:** `ideation_complete`
 
 ### 2. PHASE 2: PLAN (Architecture)
 *   **Trigger:** `/plan [Name]`
-*   **Skill File:** `.agents/skills/skill_planning/SKILL.md`
+*   **Skill File:** `.agents/skills/plan/SKILL.md`
 *   **Action:** Define DSP graph, class structure, and **update `status.json` with UI selection** (Visage vs WebView).
 *   **State:** `plan_complete`
 
 ### 3. PHASE 3: DESIGN (GUI)
 *   **Trigger:** `/design [Name]`
-*   **Skill File:** `.agents/skills/skill_design/SKILL.md`
+*   **Skill File:** `.agents/skills/design/SKILL.md`
 *   **Action:**
     *   If **Visage**: Create C++ Mockups and `VisageControls.h`.
     *   If **WebView**: Create HTML/CSS mockups and integration glue.
@@ -255,13 +255,13 @@ Applying documented solution...
 
 ### 4. PHASE 4: CODE (DSP)
 *   **Trigger:** `/impl [Name]`
-*   **Skill File:** `.agents/skills/skill_implementation/SKILL.md`
+*   **Skill File:** `.agents/skills/impl/SKILL.md`
 *   **Action:** Implement `PluginProcessor.cpp` and bind parameters to UI.
 *   **State:** `code_complete`
 
 ### 5. PHASE 5: SHIP (Release)
 *   **Trigger:** `/ship [Name]`
-*   **Skill File:** `.agents/skills/skill_packaging/SKILL.md`
+*   **Skill File:** `.agents/skills/ship/SKILL.md`
 *   **Action:** Final build, testing, and zipping.
 *   **State:** `ship_complete`
 

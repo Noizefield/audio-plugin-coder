@@ -4,32 +4,18 @@ description: "Open the APC Hub live dashboard (read-only command center)"
 
 # APC Hub
 
-**Preferred model:** Read `apc.config.json` -> `models.phases.status` (announce to user; switch host model if possible).
+**Preferred model:** Read `apc.config.json` -> `models.phases.status` and announce it.
 
-**Setup gate:** If `setup.completed` is false, warn once and suggest `/apc-setup` (do not hard-block).
+**Setup gate:** If `setup.completed` is false, suggest `/apc-setup` once. Setup owns all toolchain checks - do not re-verify anything here.
 
-**What this does:** starts the zero-dependency local hub server (`hub/server.js`, Node stdlib only, loopback `127.0.0.1`, GET-only API) and opens the live dashboard — projects, skills, commands, designs, scripts, templates, tools, settings, documentation, consistency. Read-only: the server never writes, builds, or executes.
-
-**Windows (PowerShell):**
+**Start** (pick one for the platform):
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\apc-hub.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\apc-hub.ps1 [-Port 4872] [-NoOpen]
 ```
-
-Optional flags: `-Port 4872` (default), `-NoOpen` (don't open the browser).
-
-**macOS / Linux (Bash):**
 
 ```bash
-bash scripts/apc-hub.sh
+bash scripts/apc-hub.sh [--port 4872] [--no-open]
 ```
 
-Optional flags: `--port 4872` (default), `--no-open`.
-
-**Direct (any platform, Node ≥ 18 required):**
-
-```bash
-node hub/server.js --port 4872
-```
-
-**Completion message:** report `→ Dashboard at http://localhost:<port>/` and stop. Do not start a next phase; the hub is the destination.
+**Done:** report `-> Dashboard at http://localhost:<port>/` and stop. No validation probes, no follow-ups.

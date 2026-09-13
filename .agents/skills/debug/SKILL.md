@@ -1,5 +1,5 @@
 ---
-name: skill_debug
+name: debug
 description: Autonomous Debugging Instructions for Visual Studio Code: for [plugin].
 ---
 

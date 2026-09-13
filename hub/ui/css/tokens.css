@@ -1,4 +1,4 @@
-/* == tokens.css — fallback vars (dark); themes.css overrides per data-theme == */
+/* == tokens.css - fallback vars (dark); themes.css overrides per data-theme == */
 :root{
   --paper:#0B0B0B; --ink:#EDEAE0; --muted:#8A877E;
   --rule:#3D3A33; --amber:#FF9500; --amber-ink:#000;

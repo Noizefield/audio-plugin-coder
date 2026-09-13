@@ -155,11 +155,11 @@ if ($operationFailed) {
 
 All skill files have been updated to use the state management system:
 
-- **skill_ideation.md** - Uses `New-PluginState` and `Update-PluginState`
-- **skill_planning.md** - Validates prerequisites and updates framework selection
-- **skill_design.md** - Checks framework selection before proceeding
-- **skill_implementation.md** - Validates design completion and framework
-- **skill_packaging.md** - Final validation and state completion
+- **dream.md** - Uses `New-PluginState` and `Update-PluginState`
+- **plan.md** - Validates prerequisites and updates framework selection
+- **design.md** - Checks framework selection before proceeding
+- **impl.md** - Validates design completion and framework
+- **ship.md** - Final validation and state completion
 
 ## Troubleshooting
 

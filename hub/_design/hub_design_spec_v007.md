@@ -1,4 +1,4 @@
-# APC Hub — Design Language Spec v007
+# APC Hub - Design Language Spec v007
 
 Status: DRAFT for review · Date: 2026-09-13 · App: `hub/` · Command: `/apc-hub`
 Supersedes: `hub_design_spec_v006.md` (kept, do not edit).
@@ -45,7 +45,7 @@ Unchanged (sticky header kept as approved).
 - Children indented (`padding-left:18px`), short labels
   (README, BUILD, CODEX COMPAT, …), same invert+`>` active system.
 - Parent summary inverts whenever the index OR any `doc-*` section is
-  targeted (prefix-match `:has` rule — the single exception to one-rule-
+  targeted (prefix-match `:has` rule - the single exception to one-rule-
   per-view; documented here).
 - Summary itself is NOT a link (avoids toggle-vs-navigate conflict); the
   INDEX child is the section entry point.
@@ -68,7 +68,7 @@ Unchanged (sticky header kept as approved).
 ## 7–10. Interaction, files, version/update
 
 Unchanged. File convention addendum: large mockups may be assembled by
-script (html authored once, `.md` fence generated) — verified by
+script (html authored once, `.md` fence generated) - verified by
 FENCE-MATCH, no hand duplication.
 
-## Appendix A — unchanged.
+## Appendix A - unchanged.
