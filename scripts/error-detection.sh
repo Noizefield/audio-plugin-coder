@@ -101,6 +101,7 @@ find_known_issue() {
     # Try multiple paths for known issues
     local known_issues_path=""
     local candidates=(
+        "$_ERROR_REPO_ROOT/.agents/troubleshooting/known-issues.yaml"
         "$_ERROR_REPO_ROOT/.claude/troubleshooting/known-issues.yaml"
         "$_ERROR_REPO_ROOT/.kilocode/troubleshooting/known-issues.yaml"
     )
@@ -206,6 +207,7 @@ new_issue_from_error() {
     # Find known issues dir
     local issues_dir=""
     local candidates=(
+        "$_ERROR_REPO_ROOT/.agents/troubleshooting"
         "$_ERROR_REPO_ROOT/.claude/troubleshooting"
         "$_ERROR_REPO_ROOT/.kilocode/troubleshooting"
     )

@@ -173,7 +173,11 @@ On error or crash, collect:
 The LLM must:
 
 1. Capture **raw error output verbatim**
-2. Separately derive:
+2. Parse it with `scripts/error-detection.ps1` (`Parse-BuildErrors`, Windows) or
+   `scripts/error-detection.sh` (`parse_build_errors`, macOS/Linux) to categorize
+   (cmake / webview / build) and match `Find-KnownIssue` / `find_known_issue`
+   against `.agents/troubleshooting/known-issues.yaml` before hypothesizing
+3. Separately derive:
    - A cleaned summary
    - A probable root cause
    - A confidence score

@@ -403,13 +403,17 @@ Validates state management system integrity.
 
 ### Utility Scripts
 
-#### setup.ps1
+#### First-run setup (retired `setup.ps1`)
+
+`scripts/setup.ps1` was retired; set up via the one-command installer or the agent phase:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+npx github:Noizefield/audio-plugin-coder
+# or, inside an AI agent session in this repo:
+/apc-setup
 ```
 
-Initializes APC environment:
+This initializes the APC environment:
 - Checks prerequisites
 - Initializes git submodules
 - Validates JUCE installation
@@ -569,7 +573,7 @@ gh run download <run-id> --dir release/github-artifacts
 |--------|---------|
 | `build-and-install.ps1` | Build plugin |
 | `validate-*.ps1` | Validation |
-| `setup.ps1` | Initialize |
+| `bin/setup.js` (`npx`) / `/apc-setup` | Initialize (replaces retired `setup.ps1`) |
 | `system-check.ps1` | Check requirements |
 | `state-management.ps1` | Manage state |
 | `backup.ps1` / `rollback.ps1` | Recovery |

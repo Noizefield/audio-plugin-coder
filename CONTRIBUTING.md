@@ -24,9 +24,9 @@ We welcome contributions from the community! Whether you're fixing bugs, adding 
    cd audio-plugin-coder
    ```
 
-2. Run the setup script:
+2. Run the one-command setup (or open the repo in your AI agent and run `/apc-setup`):
    ```powershell
-   .\scripts\setup.ps1
+   npx github:Noizefield/audio-plugin-coder
    ```
 
 3. Follow the [README](README.md) for usage instructions.
