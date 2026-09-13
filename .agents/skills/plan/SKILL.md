@@ -285,7 +285,7 @@ Choose (1-4): _
 ```
 
 ### 4.3 Routing Logic
-- **Option 1:** Proceed to Phase 3 (DESIGN) - invoke `skill_design.md`
+- **Option 1:** Proceed to Phase 3 (DESIGN) - invoke `/apc-design` (`design` skill)
 - **Option 2:** Read and display architecture.md, plan.md, parameter-spec.md
 - **Option 3:** Allow user to modify plan.md and re-run validation
 - **Option 4:** Save state and exit skill

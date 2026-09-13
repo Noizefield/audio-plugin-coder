@@ -1,4 +1,4 @@
-# APC Hub — Design Language Spec v004
+# APC Hub - Design Language Spec v004
 
 Status: DRAFT for review · Date: 2026-09-13 · App: `hub/` · Command: `/apc-hub`
 Supersedes: `hub_design_spec_v003.md` (kept, do not edit).
@@ -8,7 +8,7 @@ Supersedes: `hub_design_spec_v003.md` (kept, do not edit).
 1. TABLE PADDING RULE (§5.14): all cells get left air; first column never
    touches the outer rule (fixes v003 screenshot).
 2. CENTERED SHELL (§4.3): app framed at max 1340px, auto margins, 2px outer
-   rules. Sidebar stays left of content — centering wraps the whole shell.
+   rules. Sidebar stays left of content - centering wraps the whole shell.
 3. FRAMEWORK VERSION + UPDATE CHECK (§10): version shown top-left in the
    sidebar mark (source: `package.json`); update-detection mechanism
    specified, mocked honestly in v004, implemented in the live app phase.
@@ -64,7 +64,7 @@ th,td{padding:8px 12px 8px 14px;}
 - Line 2 = framework version, source `package.json` (`"version"` field).
   `bin/setup.js` banner carries the same string; hub CONSISTENCY flags a
   mismatch as `[!!]` (new check, see §10).
-- Line 3 = hub mockup revision (design iteration, NOT framework version —
+- Line 3 = hub mockup revision (design iteration, NOT framework version -
   the two must never be confused; label says DRAFT until approved).
 
 ## 6–9. Inventory, interaction, files
@@ -89,7 +89,7 @@ listed; no new files.
 - Trigger: once at hub server start + manual re-check control; result
   cached 24h in server memory (no disk writes in phase 1).
 - Failure (offline / rate-limit / no releases yet): `[..] UNCHECKED` +
-  reason, never red — absence of information is not failure.
+  reason, never red - absence of information is not failure.
 - Future scripts: `scripts/apc-update-check.ps1` / `.sh` (shared fetch +
   compare, used by server AND usable standalone). Future endpoint:
   `GET /api/v1/update → {installed, upstream, state}`.
@@ -97,11 +97,11 @@ listed; no new files.
   `[OK] CURRENT v1.4.0` (green) · `[!!] UPDATE vX.Y.Z AVAILABLE` (amber) ·
   `[..] UNCHECKED reason` (muted).
 - v004 mockup renders installed `v1.4.0` honestly and upstream as `[..]`
-  with note `live check in app — spec §10` (static file cannot check).
+  with note `live check in app - spec §10` (static file cannot check).
 
 ## 11. Open questions for the reviewer
 
 1. Padding 14px enough, or want more air (16–18px)?
-2. Centered frame with outer rules — keep, or borderless centering?
+2. Centered frame with outer rules - keep, or borderless centering?
 3. Update cadence: start-up + manual enough, or also periodic (hourly)?
 4. Auto-download/install later, or check-notify forever?

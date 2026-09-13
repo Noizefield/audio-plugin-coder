@@ -60,7 +60,7 @@ The Ship phase creates distribution-ready plugin packages for Windows, macOS, an
 - Check `build/` directory for existing artifacts
 - Determine which platforms can use local build vs need GitHub Actions
 
-**Reference:** See `skill_packaging/SKILL.md` - "STEP 1: DETECT CURRENT PLATFORM & BUILD STATUS"
+**Reference:** See `ship/SKILL.md` - "STEP 1: DETECT CURRENT PLATFORM & BUILD STATUS"
 
 ---
 
@@ -88,7 +88,7 @@ Enter numbers (comma-separated) or 'all':
 
 **Rationale:** User may already have a local build and want to save GitHub Actions minutes/credits by only building missing platforms.
 
-**Reference:** See `skill_packaging/SKILL.md` - "STEP 2: ASK USER FOR PLATFORM SELECTION"
+**Reference:** See `ship/SKILL.md` - "STEP 2: ASK USER FOR PLATFORM SELECTION"
 
 ---
 
@@ -110,7 +110,7 @@ Enter numbers (comma-separated) or 'all':
 - Include license agreement page
 - Support custom installation path
 
-**Reference:** See `skill_packaging/SKILL.md` - "STEP 3: LOCAL BUILD PROCESS"
+**Reference:** See `ship/SKILL.md` - "STEP 3: LOCAL BUILD PROCESS"
 
 ---
 
@@ -128,7 +128,7 @@ Enter numbers (comma-separated) or 'all':
 
 **Tag Format:** `v{version}-{PluginName}`
 
-**Reference:** See `skill_packaging/SKILL.md` - "STEP 4: GITHUB ACTIONS BUILD PROCESS"
+**Reference:** See `ship/SKILL.md` - "STEP 4: GITHUB ACTIONS BUILD PROCESS"
 
 ---
 
@@ -146,7 +146,7 @@ Enter numbers (comma-separated) or 'all':
 
 **Note:** macOS and Linux installers require their respective platforms for final signing/packaging. Windows can prepare the structure.
 
-**Reference:** See `skill_packaging/SKILL.md` - "STEP 5: CREATE INSTALLERS FOR GITHUB BUILDS"
+**Reference:** See `ship/SKILL.md` - "STEP 5: CREATE INSTALLERS FOR GITHUB BUILDS"
 
 ---
 
@@ -156,7 +156,7 @@ Enter numbers (comma-separated) or 'all':
 
 **Location:** `release/{PluginName}-v{version}/LICENSE.txt`
 
-**Reference:** See `skill_packaging/SKILL.md` - "STEP 6: CREATE LICENSE FILE"
+**Reference:** See `ship/SKILL.md` - "STEP 6: CREATE LICENSE FILE"
 
 ---
 
@@ -190,7 +190,7 @@ release/{PluginName}-v{version}/
 ΓööΓöÇΓöÇ INSTALL.md
 ```
 
-**Reference:** See `skill_packaging/SKILL.md` - "STEP 7: FINALIZE DISTRIBUTION"
+**Reference:** See `ship/SKILL.md` - "STEP 7: FINALIZE DISTRIBUTION"
 
 ---
 

@@ -1,6 +1,6 @@
 # APC Hub
 
-APC Hub is the live local dashboard for the framework — a read-only command
+APC Hub is the live local dashboard for the framework - a read-only command
 center that reflects projects, skills, commands, designs, scripts, templates,
 tools, settings, documentation, and consistency in one place.
 
@@ -37,6 +37,9 @@ Then open `http://localhost:4872/` (opens automatically unless `--no-open`).
   and never writes, builds, or executes anything.
 - **Live.** Every view is rendered from `/api/v1/*` on load: edit a
   `status.json`, doc, or config value and it shows up on reload. No rebuild.
+- **One write path.** Everything is read-only except the Settings form,
+  which POSTs the full structured config to `/api/v1/config`
+  (shape-validated, backs up `apc.config.json` to `.bak` first).
 - **Design language.** APC RASTER as approved in `hub/_design/`
   (`hub_design_spec_v009.md`): rectangles only, ASCII-first tokens,
   dark default + light alternate, amber = active/warning, phosphor green =
@@ -58,8 +61,10 @@ Then open `http://localhost:4872/` (opens automatically unless `--no-open`).
 | `/api/v1/tools` | JUCE/pluginval/visage presence + live toolchain |
 | `/api/v1/docs` | chapter index over `docs/*.md` |
 | `/api/v1/docs/:id` | raw markdown (rendered client-side) |
-| `/api/v1/update` | installed vs latest GitHub release (cached 24h) |
+| `/api/v1/update` | installed vs latest GitHub release (cached 24h, `?refresh=1` forces) |
 | `/api/v1/consistency` | tidy-up radar checks |
+| `POST /api/v1/config` | save full config (validated, `.bak` backup) |
+| `/preview/:design/:file` | design preview assets in a new tab |
 
 ## Layout
 

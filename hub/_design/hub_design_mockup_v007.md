@@ -1,19 +1,19 @@
-# APC Hub — Mockup v007 (review record)
+# APC Hub - Mockup v007 (review record)
 
 Spec: `hub_design_spec_v007.md` · Status: DRAFT · Snapshot baked: 2026-09-13
-Twin runnable file: `hub_design_mockup_v007.html` (same folder — open via
+Twin runnable file: `hub_design_mockup_v007.html` (same folder - open via
 `file://`, zero deps, system fonts, no images).
 Changes vs v006: DOCUMENTATION is now a collapsible sidebar submenu (closed
 by default, native `<details>`, zero JS) with INDEX + 16 doc entries; each
 doc opens its own right-side section (title, meta, full real baked `##`
 chapter list, back-to-index). Pager chain runs 09 → index → 16 docs →
 consistency (27 views total). Parent item highlights for every child view. Full doc TEXT stays
-live-app scope (`/api/v1/docs`) — a static file cannot fetch `.md` at
+live-app scope (`/api/v1/docs`) - a static file cannot fetch `.md` at
 runtime, so structure + real headings are baked instead.
 
 Review questions for v007 are asked in chat.
 
-## Full HTML (authoritative — twin of `.html` file, assembled by script)
+## Full HTML (authoritative - twin of `.html` file, assembled by script)
 
 ```html
 <!DOCTYPE html>
@@ -21,7 +21,7 @@ Review questions for v007 are asked in chat.
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APC HUB v007 // mockup — snapshot 2026-09-13</title>
+<title>APC HUB v007 // mockup - snapshot 2026-09-13</title>
 <style>
 /* == themes.css: dark is default, light is alternate == */
 :root, html[data-theme="dark"]{
@@ -274,22 +274,22 @@ ol.chap li{margin-bottom:2px;}
 <main>
 
 <section id="01-overview">
-<p class="kicker"><span class="n">01</span>// OVERVIEW — src: apc.config.json + package.json</p>
+<p class="kicker"><span class="n">01</span>// OVERVIEW - src: apc.config.json + package.json</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Metric</th><th>Value</th><th>Status</th></tr>
 <tr><td>Framework</td><td class="mono">APC v1.4.0 (src: package.json)</td><td class="tok-ok">[OK]</td></tr>
-<tr><td>Upstream release</td><td class="mono">live check in app — spec §10</td><td class="mut">[..]</td></tr>
+<tr><td>Upstream release</td><td class="mono">live check in app - spec §10</td><td class="mut">[..]</td></tr>
 <tr><td>Plugins tracked</td><td>4 (1 SHIP / 2 DESIGN / 1 PLAN)</td><td class="tok-ok">[OK]</td></tr>
 <tr><td>UI default</td><td>webview · visage disabled</td><td class="tok-ok">[OK]</td></tr>
-<tr><td>JUCE pin</td><td>9.0.1 — <span class="mono">_tools/JUCE</span> present</td><td class="tok-ok">[OK]</td></tr>
+<tr><td>JUCE pin</td><td>9.0.1 - <span class="mono">_tools/JUCE</span> present</td><td class="tok-ok">[OK]</td></tr>
 <tr><td>pluginval</td><td><span class="mono">_tools/pluginval/pluginval.exe</span> present</td><td class="tok-ok">[OK]</td></tr>
-<tr><td>Configured dirs</td><td class="mono">../apc_plugins · ../apc_builds · ../apc_releases — all exist</td><td class="tok-ok">[OK]</td></tr>
+<tr><td>Configured dirs</td><td class="mono">../apc_plugins · ../apc_builds · ../apc_releases - all exist</td><td class="tok-ok">[OK]</td></tr>
 </table></div>
 <p class="mono pager"><span class="mut">START</span> <span class="mut">|</span> <a href="#02-projects">NEXT &gt;</a></p>
 </section>
 
 <section id="02-projects">
-<p class="kicker"><span class="n">02</span>// PROJECTS — src: &lt;plugins_dir&gt;/*/status.json</p>
+<p class="kicker"><span class="n">02</span>// PROJECTS - src: &lt;plugins_dir&gt;/*/status.json</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Plugin</th><th>Ver</th><th>Phase</th><th>UI</th><th>Cx</th><th>Validation</th><th>Next</th></tr>
 <tr><td><b>CloudWash</b></td><td>v1.0.0</td><td><span class="chip cur">[ SHIP_COMPLETE ]</span></td><td>WEBVIEW</td><td>5/5</td><td class="check"><span class="good">[x] 11/11</span></td><td class="mut">complete</td></tr>
@@ -297,16 +297,16 @@ ol.chap li{margin-bottom:2px;}
 <tr><td><b>nf_gnarly</b></td><td>v0.0.0</td><td><span class="chip cur">[ DESIGN_COMPLETE ]</span></td><td>WEBVIEW</td><td>2/5</td><td class="check"><span class="good">[x] 5</span> · <span class="mut">[ ] 2</span></td><td class="mono">/apc-impl nf_gnarly</td></tr>
 <tr><td><b>gnarly3</b></td><td>v0.1.0</td><td><span class="chip cur">[ PLAN_COMPLETE ]</span></td><td>VISAGE</td><td>2/5</td><td class="check"><span class="good">[x] 4</span> · <span class="mut">[ ] 3</span></td><td class="mono">/apc-design gnarly3</td></tr>
 </table></div>
-<h3>CloudWash — detail (7 phase_history entries, last 2026-01-31)</h3>
+<h3>CloudWash - detail (7 phase_history entries, last 2026-01-31)</h3>
 <p class="pipe mono">DREAM -&gt; PLAN -&gt; DESIGN -&gt; IMPL -&gt; <span class="chip cur">[ SHIP ]</span></p>
 <pre class="screen"><span class="good">[x]</span> creative brief  <span class="good">[x]</span> parameter spec  <span class="good">[x]</span> architecture  <span class="good">[x]</span> ui framework
 <span class="good">[x]</span> design  <span class="good">[x]</span> code (4.1.1/4.1.2/4.1.3)  <span class="good">[x]</span> tests  <span class="good">[x]</span> ship ready</pre>
-<p class="mut mono" style="font-size:13px">NOTE: repo-local plugins/ shown. Configured live dir ../apc_plugins exists — phase-2 lists both, labelled.</p>
+<p class="mut mono" style="font-size:13px">NOTE: repo-local plugins/ shown. Configured live dir ../apc_plugins exists - phase-2 lists both, labelled.</p>
 <p class="mono pager"><a href="#01-overview">&lt; PREV</a> <span class="mut">|</span> <a href="#03-skills">NEXT &gt;</a></p>
 </section>
 
 <section id="03-skills">
-<p class="kicker"><span class="n">03</span>// SKILLS — src: .agents/skills/ (18 dirs, single source of truth)</p>
+<p class="kicker"><span class="n">03</span>// SKILLS - src: .agents/skills/ (18 dirs, single source of truth)</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Skill dir</th><th>Kind</th><th>Flag</th></tr>
 <tr><td class="mono">apc-setup</td><td>phase</td><td class="tok-ok">[OK]</td></tr>
@@ -319,30 +319,30 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="04-commands">
-<p class="kicker"><span class="n">04</span>// COMMANDS — src: .agents/workflows/ (12 primary + 11 aliases)</p>
+<p class="kicker"><span class="n">04</span>// COMMANDS - src: .agents/workflows/ (12 primary + 11 aliases)</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Primary</th><th>Alias</th><th>Codex form</th></tr>
 <tr><td class="mono">/apc-setup · /apc-dream · /apc-plan</td><td class="mono">/setup · /dream · /plan</td><td class="mono" rowspan="4">$audio-plugin-coder:audio-plugin-coder &lt;action&gt; [Name]<br><span class="mut">action = setup|dream|plan|design|impl|test|debug|status|resume|ship|new</span></td></tr>
 <tr><td class="mono">/apc-design · /apc-impl(+implement) · /apc-test</td><td class="mono">/design · /impl · /test</td></tr>
 <tr><td class="mono">/apc-debug · /apc-ship · /apc-status</td><td class="mono">/debug · /ship · /status</td></tr>
-<tr><td class="mono">/apc-resume · /apc-new · <b>/apc-hub (this, proposed)</b></td><td class="mono">/resume · /new · —</td></tr>
+<tr><td class="mono">/apc-resume · /apc-new · <b>/apc-hub (this, proposed)</b></td><td class="mono">/resume · /new · -</td></tr>
 </table></div>
 <p class="mono pager"><a href="#03-skills">&lt; PREV</a> <span class="mut">|</span> <a href="#05-designs">NEXT &gt;</a></p>
 </section>
 
 <section id="05-designs">
-<p class="kicker"><span class="n">05</span>// DESIGNS — src: design_library/manifest.json (v1.1.0, 3 designs)</p>
+<p class="kicker"><span class="n">05</span>// DESIGNS - src: design_library/manifest.json (v1.1.0, 3 designs)</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Design</th><th>Category</th><th>Colors</th><th>UI</th><th>Best for</th></tr>
-<tr><td><b>rams60</b> — Rams 60</td><td>vintage-hardware</td><td><span class="sw" style="background:#1F7A3D"></span><span class="mono">#1F7A3D</span> · <span class="sw" style="background:#D9531E"></span><span class="mono">#D9531E</span> · <span class="sw" style="background:#EFE8D8"></span><span class="mono">#EFE8D8</span></td><td>WEBVIEW</td><td>lo-fi, hardware emulation</td></tr>
-<tr><td><b>amber-signal</b> — Amber Signal</td><td>modern</td><td><span class="sw" style="background:#FF9500"></span><span class="mono">#FF9500</span> · <span class="sw" style="background:#FFB946"></span><span class="mono">#FFB946</span> · <span class="sw" style="background:#1C1C1E"></span><span class="mono">#1C1C1E</span></td><td>WEBVIEW</td><td>dynamics, effects, metering</td></tr>
-<tr><td><b>neogrid-minimal</b> — NeoGrid Minimal</td><td>minimal</td><td><span class="sw" style="background:#00F5FF"></span><span class="mono">#00F5FF</span> · <span class="sw" style="background:#7B68EE"></span><span class="mono">#7B68EE</span> · <span class="sw" style="background:#0A0A0F"></span><span class="mono">#0A0A0F</span></td><td>WEBVIEW</td><td>synths, modulators</td></tr>
+<tr><td><b>rams60</b> - Rams 60</td><td>vintage-hardware</td><td><span class="sw" style="background:#1F7A3D"></span><span class="mono">#1F7A3D</span> · <span class="sw" style="background:#D9531E"></span><span class="mono">#D9531E</span> · <span class="sw" style="background:#EFE8D8"></span><span class="mono">#EFE8D8</span></td><td>WEBVIEW</td><td>lo-fi, hardware emulation</td></tr>
+<tr><td><b>amber-signal</b> - Amber Signal</td><td>modern</td><td><span class="sw" style="background:#FF9500"></span><span class="mono">#FF9500</span> · <span class="sw" style="background:#FFB946"></span><span class="mono">#FFB946</span> · <span class="sw" style="background:#1C1C1E"></span><span class="mono">#1C1C1E</span></td><td>WEBVIEW</td><td>dynamics, effects, metering</td></tr>
+<tr><td><b>neogrid-minimal</b> - NeoGrid Minimal</td><td>minimal</td><td><span class="sw" style="background:#00F5FF"></span><span class="mono">#00F5FF</span> · <span class="sw" style="background:#7B68EE"></span><span class="mono">#7B68EE</span> · <span class="sw" style="background:#0A0A0F"></span><span class="mono">#0A0A0F</span></td><td>WEBVIEW</td><td>synths, modulators</td></tr>
 </table></div>
 <p class="mono pager"><a href="#04-commands">&lt; PREV</a> <span class="mut">|</span> <a href="#06-scripts">NEXT &gt;</a></p>
 </section>
 
 <section id="06-scripts">
-<p class="kicker"><span class="n">06</span>// SCRIPTS — src: scripts/ (33 entries)</p>
+<p class="kicker"><span class="n">06</span>// SCRIPTS - src: scripts/ (33 entries)</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Group</th><th>Members</th></tr>
 <tr><td>build / state</td><td class="mono">build-and-install · state-management · backup · rollback · lib/Get-ApcPaths (ps1+sh)</td></tr>
@@ -354,7 +354,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="07-templates">
-<p class="kicker"><span class="n">07</span>// TEMPLATES — src: templates/ (27 files)</p>
+<p class="kicker"><span class="n">07</span>// TEMPLATES - src: templates/ (27 files)</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Template</th><th>Files</th><th>Notes</th></tr>
 <tr><td class="mono">webview/</td><td>4</td><td>CMakeLists, PluginEditor.{cpp,h}, README</td></tr>
@@ -367,7 +367,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="08-tools">
-<p class="kicker"><span class="n">08</span>// TOOLS — src: _tools/ + sampled 2026-09-13</p>
+<p class="kicker"><span class="n">08</span>// TOOLS - src: _tools/ + sampled 2026-09-13</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Tool</th><th>State</th><th>Status</th></tr>
 <tr><td class="mono">JUCE 9.0.1 (_tools/JUCE)</td><td>present, matches pin</td><td class="tok-ok">[OK]</td></tr>
@@ -379,7 +379,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="09-settings">
-<p class="kicker"><span class="n">09</span>// SETTINGS — src: apc.config.json (live) vs .example.json</p>
+<p class="kicker"><span class="n">09</span>// SETTINGS - src: apc.config.json (live) vs .example.json</p>
 <div class="scrollx"><table class="grid">
 <tr><th>Key</th><th>Live</th><th>Example</th></tr>
 <tr><td class="mono">paths.plugins_dir</td><td class="mono">../apc_plugins <span class="good">[OK]</span></td><td class="mono">plugins</td></tr>
@@ -394,9 +394,9 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="10-documentation">
-<p class="kicker"><span class="n">10</span>// DOCUMENTATION — src: docs/*.md · index baked 2026-09-13, full text live in app</p>
-<p><input class="docsearch mono" disabled placeholder="SEARCH DOCUMENTATION — live in app (phase-2, /api/v1/docs)"></p>
-<details class="doc" open><summary><b>APC Documentation</b> <span class="p">— docs/README.md · 12 §</span></summary>
+<p class="kicker"><span class="n">10</span>// DOCUMENTATION - src: docs/*.md · index baked 2026-09-13, full text live in app</p>
+<p><input class="docsearch mono" disabled placeholder="SEARCH DOCUMENTATION - live in app (phase-2, /api/v1/docs)"></p>
+<details class="doc" open><summary><b>APC Documentation</b> <span class="p">- docs/README.md · 12 §</span></summary>
 <ol class="mono">
 <li>§ Quick Start</li>
 <li>§ Documentation Index</li>
@@ -413,7 +413,7 @@ ol.chap li{margin-bottom:2px;}
 </ol>
 <p class="mono full"><a href="#doc-readme">OPEN AS SECTION →</a> · FULL TEXT → LIVE READER (APP)</p>
 </details>
-<details class="doc"><summary><b>Build System Documentation</b> <span class="p">— docs/build-system.md · 13 §</span></summary>
+<details class="doc"><summary><b>Build System Documentation</b> <span class="p">- docs/build-system.md · 13 §</span></summary>
 <ol class="mono">
 <li>§ Overview</li>
 <li>§ Build Architecture</li>
@@ -431,7 +431,7 @@ ol.chap li{margin-bottom:2px;}
 </ol>
 <p class="mono full"><a href="#doc-build-system">OPEN AS SECTION →</a> · FULL TEXT → LIVE READER (APP)</p>
 </details>
-<details class="doc"><summary><b>Codex Compatibility</b> <span class="p">— docs/codex-compatibility.md · 6 §</span></summary>
+<details class="doc"><summary><b>Codex Compatibility</b> <span class="p">- docs/codex-compatibility.md · 6 §</span></summary>
 <ol class="mono">
 <li>§ Compatibility Status</li>
 <li>§ Start in Codex</li>
@@ -442,7 +442,7 @@ ol.chap li{margin-bottom:2px;}
 </ol>
 <p class="mono full"><a href="#doc-codex-compatibility">OPEN AS SECTION →</a> · FULL TEXT → LIVE READER (APP)</p>
 </details>
-<details class="doc"><summary><b>Codex Cost-Aware Orchestration</b> <span class="p">— docs/codex-orchestration.md · 8 §</span></summary>
+<details class="doc"><summary><b>Codex Cost-Aware Orchestration</b> <span class="p">- docs/codex-orchestration.md · 8 §</span></summary>
 <ol class="mono">
 <li>§ Prerequisites</li>
 <li>§ Enable via `/apc-setup` (recommended for GitHub users)</li>
@@ -455,7 +455,7 @@ ol.chap li{margin-bottom:2px;}
 </ol>
 <p class="mono full"><a href="#doc-codex-orchestration">OPEN AS SECTION →</a> · FULL TEXT → LIVE READER (APP)</p>
 </details>
-<details class="doc"><summary><b>Command Reference</b> <span class="p">— docs/command-reference.md · 10 §</span></summary>
+<details class="doc"><summary><b>Command Reference</b> <span class="p">- docs/command-reference.md · 10 §</span></summary>
 <ol class="mono">
 <li>§ Primary slash commands (`/apc-*`)</li>
 <li>§ Overview</li>
@@ -470,7 +470,7 @@ ol.chap li{margin-bottom:2px;}
 </ol>
 <p class="mono full"><a href="#doc-command-reference">OPEN AS SECTION →</a> · FULL TEXT → LIVE READER (APP)</p>
 </details>
-<details class="doc"><summary><b>Frequently Asked Questions (FAQ)</b> <span class="p">— docs/FAQ.md · 13 §</span></summary>
+<details class="doc"><summary><b>Frequently Asked Questions (FAQ)</b> <span class="p">- docs/FAQ.md · 13 §</span></summary>
 <ol class="mono">
 <li>§ General Questions</li>
 <li>§ Getting Started</li>
@@ -488,7 +488,7 @@ ol.chap li{margin-bottom:2px;}
 </ol>
 <p class="mono full"><a href="#doc-faq">OPEN AS SECTION →</a> · FULL TEXT → LIVE READER (APP)</p>
 </details>
-<details class="doc"><summary><b>GitHub Actions CI/CD Documentation</b> <span class="p">— docs/github-actions.md · 9 §</span></summary>
+<details class="doc"><summary><b>GitHub Actions CI/CD Documentation</b> <span class="p">- docs/github-actions.md · 9 §</span></summary>
 <ol class="mono">
 <li>§ Overview</li>
 <li>§ Workflows</li>
@@ -502,7 +502,7 @@ ol.chap li{margin-bottom:2px;}
 </ol>
 <p class="mono full"><a href="#doc-github-actions">OPEN AS SECTION →</a> · FULL TEXT → LIVE READER (APP)</p>
 </details>
-<details class="doc"><summary><b>Plugin Icon Management Guide</b> <span class="p">— docs/icon-management-guide.md · 12 §</span></summary>
+<details class="doc"><summary><b>Plugin Icon Management Guide</b> <span class="p">- docs/icon-management-guide.md · 12 §</span></summary>
 <ol class="mono">
 <li>§ Overview</li>
 <li>§ Icon Requirements</li>
@@ -519,7 +519,7 @@ ol.chap li{margin-bottom:2px;}
 </ol>
 <p class="mono full"><a href="#doc-icon-management-guide">OPEN AS SECTION →</a> · FULL TEXT → LIVE READER (APP)</p>
 </details>
-<details class="doc"><summary><b>Installer Creation Guide</b> <span class="p">— docs/installer-creation.md · 7 §</span></summary>
+<details class="doc"><summary><b>Installer Creation Guide</b> <span class="p">- docs/installer-creation.md · 7 §</span></summary>
 <ol class="mono">
 <li>§ Overview</li>
 <li>§ Windows Installer</li>
@@ -531,7 +531,7 @@ ol.chap li{margin-bottom:2px;}
 </ol>
 <p class="mono full"><a href="#doc-installer-creation">OPEN AS SECTION →</a> · FULL TEXT → LIVE READER (APP)</p>
 </details>
-<details class="doc"><summary><b>Model Routing</b> <span class="p">— docs/model-routing.md · 6 §</span></summary>
+<details class="doc"><summary><b>Model Routing</b> <span class="p">- docs/model-routing.md · 6 §</span></summary>
 <ol class="mono">
 <li>§ Why this exists</li>
 <li>§ What APC can and cannot do</li>
@@ -542,7 +542,7 @@ ol.chap li{margin-bottom:2px;}
 </ol>
 <p class="mono full"><a href="#doc-model-routing">OPEN AS SECTION →</a> · FULL TEXT → LIVE READER (APP)</p>
 </details>
-<details class="doc"><summary><b>Plugin Development Lifecycle</b> <span class="p">— docs/plugin-development-lifecycle.md · 29 §</span></summary>
+<details class="doc"><summary><b>Plugin Development Lifecycle</b> <span class="p">- docs/plugin-development-lifecycle.md · 29 §</span></summary>
 <ol class="mono">
 <li>§ Overview</li>
 <li>§ Phase 1: DREAM (Ideation)</li>
@@ -576,7 +576,7 @@ ol.chap li{margin-bottom:2px;}
 </ol>
 <p class="mono full"><a href="#doc-plugin-development-lifecycle">OPEN AS SECTION →</a> · FULL TEXT → LIVE READER (APP)</p>
 </details>
-<details class="doc"><summary><b>APC Project Structure Guide</b> <span class="p">— docs/PROJECT_STRUCTURE.md · 10 §</span></summary>
+<details class="doc"><summary><b>APC Project Structure Guide</b> <span class="p">- docs/PROJECT_STRUCTURE.md · 10 §</span></summary>
 <ol class="mono">
 <li>§ Overview</li>
 <li>§ Core Directories</li>
@@ -591,7 +591,7 @@ ol.chap li{margin-bottom:2px;}
 </ol>
 <p class="mono full"><a href="#doc-project-structure">OPEN AS SECTION →</a> · FULL TEXT → LIVE READER (APP)</p>
 </details>
-<details class="doc"><summary><b>Ship Workflow Documentation</b> <span class="p">— docs/ship-workflow.md · 12 §</span></summary>
+<details class="doc"><summary><b>Ship Workflow Documentation</b> <span class="p">- docs/ship-workflow.md · 12 §</span></summary>
 <ol class="mono">
 <li>§ Overview</li>
 <li>§ Prerequisites</li>
@@ -608,7 +608,7 @@ ol.chap li{margin-bottom:2px;}
 </ol>
 <p class="mono full"><a href="#doc-ship-workflow">OPEN AS SECTION →</a> · FULL TEXT → LIVE READER (APP)</p>
 </details>
-<details class="doc"><summary><b>State Management Deep Dive</b> <span class="p">— docs/state-management-deep-dive.md · 13 §</span></summary>
+<details class="doc"><summary><b>State Management Deep Dive</b> <span class="p">- docs/state-management-deep-dive.md · 13 §</span></summary>
 <ol class="mono">
 <li>§ Overview</li>
 <li>§ Core Concepts</li>
@@ -626,7 +626,7 @@ ol.chap li{margin-bottom:2px;}
 </ol>
 <p class="mono full"><a href="#doc-state-management-deep-dive">OPEN AS SECTION →</a> · FULL TEXT → LIVE READER (APP)</p>
 </details>
-<details class="doc"><summary><b>Troubleshooting Guide</b> <span class="p">— docs/troubleshooting-guide.md · 9 §</span></summary>
+<details class="doc"><summary><b>Troubleshooting Guide</b> <span class="p">- docs/troubleshooting-guide.md · 9 §</span></summary>
 <ol class="mono">
 <li>§ Overview</li>
 <li>§ Known Issues Database</li>
@@ -640,7 +640,7 @@ ol.chap li{margin-bottom:2px;}
 </ol>
 <p class="mono full"><a href="#doc-troubleshooting-guide">OPEN AS SECTION →</a> · FULL TEXT → LIVE READER (APP)</p>
 </details>
-<details class="doc"><summary><b>WebView Framework Guide</b> <span class="p">— docs/webview-framework.md · 9 §</span></summary>
+<details class="doc"><summary><b>WebView Framework Guide</b> <span class="p">- docs/webview-framework.md · 9 §</span></summary>
 <ol class="mono">
 <li>§ Overview</li>
 <li>§ Architecture</li>
@@ -654,24 +654,24 @@ ol.chap li{margin-bottom:2px;}
 </ol>
 <p class="mono full"><a href="#doc-webview-framework">OPEN AS SECTION →</a> · FULL TEXT → LIVE READER (APP)</p>
 </details>
-<h3>READER PREVIEW — real text, reader typography (docs/README.md)</h3>
+<h3>READER PREVIEW - real text, reader typography (docs/README.md)</h3>
 <div class="reader">
 <h4>APC Documentation</h4>
 <p>Welcome to the comprehensive documentation for Audio Plugin Coder (APC) - the AI-powered framework for building professional audio plugins.</p>
 <h5>Quick Start</h5>
 <p>New to APC? Start here:</p>
 <ol>
-<li><b>Project Overview</b> — What is APC and key features</li>
-<li><b>Plugin Development Lifecycle</b> — The five-phase workflow</li>
-<li><b>Command Reference</b> — All available commands</li>
+<li><b>Project Overview</b> - What is APC and key features</li>
+<li><b>Plugin Development Lifecycle</b> - The five-phase workflow</li>
+<li><b>Command Reference</b> - All available commands</li>
 </ol>
-<p class="mono mut" style="font-size:12.5px">EXCERPT END — FULL TEXT → LIVE READER (APP)</p>
+<p class="mono mut" style="font-size:12.5px">EXCERPT END - FULL TEXT → LIVE READER (APP)</p>
 </div>
 <p class="mono pager"><a href="#09-settings">&lt; PREV</a> <span class="mut">|</span> <a href="#doc-readme">NEXT &gt;</a></p>
 </section>
 
 <section id="doc-readme">
-<p class="kicker"><span class="n">DOC</span>// docs/README.md — full text live in app</p>
+<p class="kicker"><span class="n">DOC</span>// docs/README.md - full text live in app</p>
 <h3>APC Documentation</h3>
 <p class="mono mut" style="font-size:13px">12 § · baked 2026-09-13 · <a href="#10-documentation">BACK TO INDEX</a></p>
 <ol class="mono chap">
@@ -693,7 +693,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="doc-build-system">
-<p class="kicker"><span class="n">DOC</span>// docs/build-system.md — full text live in app</p>
+<p class="kicker"><span class="n">DOC</span>// docs/build-system.md - full text live in app</p>
 <h3>Build System Documentation</h3>
 <p class="mono mut" style="font-size:13px">13 § · baked 2026-09-13 · <a href="#10-documentation">BACK TO INDEX</a></p>
 <ol class="mono chap">
@@ -716,7 +716,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="doc-codex-compatibility">
-<p class="kicker"><span class="n">DOC</span>// docs/codex-compatibility.md — full text live in app</p>
+<p class="kicker"><span class="n">DOC</span>// docs/codex-compatibility.md - full text live in app</p>
 <h3>Codex Compatibility</h3>
 <p class="mono mut" style="font-size:13px">6 § · baked 2026-09-13 · <a href="#10-documentation">BACK TO INDEX</a></p>
 <ol class="mono chap">
@@ -732,7 +732,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="doc-codex-orchestration">
-<p class="kicker"><span class="n">DOC</span>// docs/codex-orchestration.md — full text live in app</p>
+<p class="kicker"><span class="n">DOC</span>// docs/codex-orchestration.md - full text live in app</p>
 <h3>Codex Cost-Aware Orchestration</h3>
 <p class="mono mut" style="font-size:13px">8 § · baked 2026-09-13 · <a href="#10-documentation">BACK TO INDEX</a></p>
 <ol class="mono chap">
@@ -750,7 +750,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="doc-command-reference">
-<p class="kicker"><span class="n">DOC</span>// docs/command-reference.md — full text live in app</p>
+<p class="kicker"><span class="n">DOC</span>// docs/command-reference.md - full text live in app</p>
 <h3>Command Reference</h3>
 <p class="mono mut" style="font-size:13px">10 § · baked 2026-09-13 · <a href="#10-documentation">BACK TO INDEX</a></p>
 <ol class="mono chap">
@@ -770,7 +770,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="doc-faq">
-<p class="kicker"><span class="n">DOC</span>// docs/FAQ.md — full text live in app</p>
+<p class="kicker"><span class="n">DOC</span>// docs/FAQ.md - full text live in app</p>
 <h3>Frequently Asked Questions (FAQ)</h3>
 <p class="mono mut" style="font-size:13px">13 § · baked 2026-09-13 · <a href="#10-documentation">BACK TO INDEX</a></p>
 <ol class="mono chap">
@@ -793,7 +793,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="doc-github-actions">
-<p class="kicker"><span class="n">DOC</span>// docs/github-actions.md — full text live in app</p>
+<p class="kicker"><span class="n">DOC</span>// docs/github-actions.md - full text live in app</p>
 <h3>GitHub Actions CI/CD Documentation</h3>
 <p class="mono mut" style="font-size:13px">9 § · baked 2026-09-13 · <a href="#10-documentation">BACK TO INDEX</a></p>
 <ol class="mono chap">
@@ -812,7 +812,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="doc-icon-management-guide">
-<p class="kicker"><span class="n">DOC</span>// docs/icon-management-guide.md — full text live in app</p>
+<p class="kicker"><span class="n">DOC</span>// docs/icon-management-guide.md - full text live in app</p>
 <h3>Plugin Icon Management Guide</h3>
 <p class="mono mut" style="font-size:13px">12 § · baked 2026-09-13 · <a href="#10-documentation">BACK TO INDEX</a></p>
 <ol class="mono chap">
@@ -834,7 +834,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="doc-installer-creation">
-<p class="kicker"><span class="n">DOC</span>// docs/installer-creation.md — full text live in app</p>
+<p class="kicker"><span class="n">DOC</span>// docs/installer-creation.md - full text live in app</p>
 <h3>Installer Creation Guide</h3>
 <p class="mono mut" style="font-size:13px">7 § · baked 2026-09-13 · <a href="#10-documentation">BACK TO INDEX</a></p>
 <ol class="mono chap">
@@ -851,7 +851,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="doc-model-routing">
-<p class="kicker"><span class="n">DOC</span>// docs/model-routing.md — full text live in app</p>
+<p class="kicker"><span class="n">DOC</span>// docs/model-routing.md - full text live in app</p>
 <h3>Model Routing</h3>
 <p class="mono mut" style="font-size:13px">6 § · baked 2026-09-13 · <a href="#10-documentation">BACK TO INDEX</a></p>
 <ol class="mono chap">
@@ -867,7 +867,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="doc-plugin-development-lifecycle">
-<p class="kicker"><span class="n">DOC</span>// docs/plugin-development-lifecycle.md — full text live in app</p>
+<p class="kicker"><span class="n">DOC</span>// docs/plugin-development-lifecycle.md - full text live in app</p>
 <h3>Plugin Development Lifecycle</h3>
 <p class="mono mut" style="font-size:13px">29 § · baked 2026-09-13 · <a href="#10-documentation">BACK TO INDEX</a></p>
 <ol class="mono chap">
@@ -906,7 +906,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="doc-project-structure">
-<p class="kicker"><span class="n">DOC</span>// docs/PROJECT_STRUCTURE.md — full text live in app</p>
+<p class="kicker"><span class="n">DOC</span>// docs/PROJECT_STRUCTURE.md - full text live in app</p>
 <h3>APC Project Structure Guide</h3>
 <p class="mono mut" style="font-size:13px">10 § · baked 2026-09-13 · <a href="#10-documentation">BACK TO INDEX</a></p>
 <ol class="mono chap">
@@ -926,7 +926,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="doc-ship-workflow">
-<p class="kicker"><span class="n">DOC</span>// docs/ship-workflow.md — full text live in app</p>
+<p class="kicker"><span class="n">DOC</span>// docs/ship-workflow.md - full text live in app</p>
 <h3>Ship Workflow Documentation</h3>
 <p class="mono mut" style="font-size:13px">12 § · baked 2026-09-13 · <a href="#10-documentation">BACK TO INDEX</a></p>
 <ol class="mono chap">
@@ -948,7 +948,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="doc-state-management-deep-dive">
-<p class="kicker"><span class="n">DOC</span>// docs/state-management-deep-dive.md — full text live in app</p>
+<p class="kicker"><span class="n">DOC</span>// docs/state-management-deep-dive.md - full text live in app</p>
 <h3>State Management Deep Dive</h3>
 <p class="mono mut" style="font-size:13px">13 § · baked 2026-09-13 · <a href="#10-documentation">BACK TO INDEX</a></p>
 <ol class="mono chap">
@@ -971,7 +971,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="doc-troubleshooting-guide">
-<p class="kicker"><span class="n">DOC</span>// docs/troubleshooting-guide.md — full text live in app</p>
+<p class="kicker"><span class="n">DOC</span>// docs/troubleshooting-guide.md - full text live in app</p>
 <h3>Troubleshooting Guide</h3>
 <p class="mono mut" style="font-size:13px">9 § · baked 2026-09-13 · <a href="#10-documentation">BACK TO INDEX</a></p>
 <ol class="mono chap">
@@ -990,7 +990,7 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="doc-webview-framework">
-<p class="kicker"><span class="n">DOC</span>// docs/webview-framework.md — full text live in app</p>
+<p class="kicker"><span class="n">DOC</span>// docs/webview-framework.md - full text live in app</p>
 <h3>WebView Framework Guide</h3>
 <p class="mono mut" style="font-size:13px">9 § · baked 2026-09-13 · <a href="#10-documentation">BACK TO INDEX</a></p>
 <ol class="mono chap">
@@ -1009,9 +1009,9 @@ ol.chap li{margin-bottom:2px;}
 </section>
 
 <section id="11-consistency">
-<p class="kicker"><span class="n">++</span>// CONSISTENCY — tidy-up radar (display only)</p>
-<div class="banner mono"><span class="tok-warn">[!!]</span> 6 legacy <span class="mono">skill_*</span> dirs beside new-style phase skills — confirm redundant (§6.1 spec)</div>
-<div class="banner mono"><span class="tok-warn">[!!]</span> gnarly3 uses VISAGE while <span class="mono">enable_visage=false</span> — intent or leftover?</div>
+<p class="kicker"><span class="n">++</span>// CONSISTENCY - tidy-up radar (display only)</p>
+<div class="banner mono"><span class="tok-warn">[!!]</span> 6 legacy <span class="mono">skill_*</span> dirs beside new-style phase skills - confirm redundant (§6.1 spec)</div>
+<div class="banner mono"><span class="tok-warn">[!!]</span> gnarly3 uses VISAGE while <span class="mono">enable_visage=false</span> - intent or leftover?</div>
 <pre class="screen"><span class="mut">[ -- ]</span> root commands/ empty            -&gt; pointer: use .agents/workflows
 <span class="mut">[ -- ]</span> root skills/ = Codex package only -&gt; labelled, not a source
 <span class="good">[OK]</span> alias pointers resolve              -&gt; spot-checked (status.md chain)

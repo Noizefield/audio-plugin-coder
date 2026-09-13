@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `CMakeLists.txt` project version `1.0.0` → dynamic from `package.json` (`1.4.0`).
 - `bin/apc.js` config reader strips UTF-8 BOM (`apc.config.json` is PowerShell-written and may carry one).
 - Root `CMakeLists.txt` config reader uses `utf-8-sig`: a BOM-carrying `apc.config.json` previously failed silently (`ERROR_QUIET`) and fell back to `./plugins`, ignoring a custom `paths.plugins_dir`.
+- Legacy skill tidy-up: the 6 `skill_*` alias stubs stay as permanent redirects (verified content-free — each is a 2-line pointer), and all internal references now resolve to canonical skills. Dropped the redundant alias mirror dirs from `.kilocode/skills/` + `.agent/skills/` (matching `.claude/`), repointed `apc-ship.md` (7 refs), `apc-debug.md`, the `agent.md` phase table, both guides, `plan` skill routing, and the canonical `debug`/`design` frontmatter names. Hub no longer flags them: `aliasStub` detection with `[ALIAS]` display, consistency check `ok` (verified against the live server).
 
 ### Changed
 

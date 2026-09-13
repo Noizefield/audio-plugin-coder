@@ -1,4 +1,4 @@
-# APC Hub — Design Language Spec v003
+# APC Hub - Design Language Spec v003
 
 Status: DRAFT for review · Date: 2026-09-13 · App: `hub/` · Command: `/apc-hub`
 Supersedes: `hub_design_spec_v002.md` (kept, do not edit).
@@ -7,7 +7,7 @@ Supersedes: `hub_design_spec_v002.md` (kept, do not edit).
 
 1. APP SHELL replaces one-pager: fixed left sidebar (menu + categories +
    theme switch) / right content shows ONLY the active section.
-2. Switching is CSS-only (`:target` + `:has`) — bookmarks and back-button
+2. Switching is CSS-only (`:target` + `:has`) - bookmarks and back-button
    keep working natively, still no section JavaScript.
 3. Sidebar carries a compact ASCII mark; the full block logo moves to
    01 OVERVIEW. Below 900px the sidebar collapses to a top block.
@@ -39,7 +39,7 @@ read-only honesty). Token table identical.
   (snapshot stamp).
 - Content: single column, sections have no bottom border anymore (only one
   is ever visible); each section ends with a PREV/NEXT pager (5.12).
-- Responsive: below 900px the shell stacks — sidebar becomes a static top
+- Responsive: below 900px the shell stacks - sidebar becomes a static top
   block (`border-right: none; border-bottom: 2px`), nav links wrap
   horizontally, content full width. No hamburger, nothing hidden.
 - Print: all sections render stacked (switching CSS disabled in print).
@@ -95,7 +95,7 @@ body:has(#02-projects:target) a[href="#02-projects"]{...active...}
 - Default (no hash): 01 OVERVIEW.
 - Active nav highlighting uses one `:has` rule per section (11 rules).
 - `:has` + `:target` support: all current browsers (2023+). Fallback on
-  ancient engines: overview stays visible — acceptable, documented.
+  ancient engines: overview stays visible - acceptable, documented.
 
 ## 6. Page inventory
 
@@ -117,7 +117,7 @@ section mapping to the future live split
 
 ## 9. Open questions for the reviewer
 
-1. Sidebar width 264px — wider/narrower? Collapsible later, or fixed forever?
-2. Compact mark vs an attempt to squeeze the full block logo in — keep split?
+1. Sidebar width 264px - wider/narrower? Collapsible later, or fixed forever?
+2. Compact mark vs an attempt to squeeze the full block logo in - keep split?
 3. CSS-only switching accepted (ancient-browser fallback = overview only)?
 4. Pager useful, or is the sidebar alone enough?

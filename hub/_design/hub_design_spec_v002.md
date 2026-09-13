@@ -1,4 +1,4 @@
-# APC Hub — Design Language Spec v002
+# APC Hub - Design Language Spec v002
 
 Status: DRAFT for review · Date: 2026-09-13 · App: `hub/` · Command: `/apc-hub`
 Supersedes: `hub_design_spec_v001.md` (kept, do not edit).
@@ -8,7 +8,7 @@ Review loop: comment on this file, then a `_v003` revision is issued.
 
 1. DUAL THEME with switch. Default is DARK. Light theme = v001 look.
 2. SECOND SIGNAL COLOR: phosphor green for everything OK / calm / good.
-3. One tiny theme script (~20 lines, no deps) — the single JS exception.
+3. One tiny theme script (~20 lines, no deps) - the single JS exception.
 4. `hub/_design/CHANGELOG.md` opened.
 
 ---
@@ -28,7 +28,7 @@ Review loop: comment on this file, then a `_v003` revision is issued.
    - Everything else stays monochrome. If a third color seems needed, the
      spec is wrong, not the palette.
 4. DARK FIRST. Dark theme is the default and the reference design. Light is
-   a supported alternate, not an afterthought — but new components are
+   a supported alternate, not an afterthought - but new components are
    drawn dark-first.
 5. SYSTEM FONTS ONLY. No webfonts, no downloads, offline-safe.
 6. TABLES OVER CARDS. Dense ruled tables are the default container.
@@ -79,7 +79,7 @@ Unchanged, plus: header carries the theme switch at top-right
 tokens, data table, square chips, swatches, banners), with rendering notes:
 
 - 5.2 pipeline: current stage = amber fill; completed stages = green `[x]`?
-  No — completed stages stay plain ink. Only the bracketed current stage
+  No - completed stages stay plain ink. Only the bracketed current stage
   carries color. Restraint.
 - 5.3 checklist: `[x]` renders in `--good`, `[ ]` in `--muted`.
 - 5.4 tokens: `[OK]` = green bold; `[..]` = muted; `[!!]` = amber fill
@@ -102,7 +102,7 @@ THEME: [*DARK] [LIGHT]
 ### 5.10 Banners (amendment)
 
 Warning banners keep the amber left border. Informational "all clear" notes
-(if ever needed) use a green left border — same construction, other signal.
+(if ever needed) use a green left border - same construction, other signal.
 
 ## 6. Page inventory
 
@@ -118,10 +118,10 @@ re-renders all sections under the new tokens; no new sections.
 
 ## 8. File conventions
 
-- `hub/_design/hub_design_spec_vNNN.md` — spec, versioned, superseded kept.
-- `hub/_design/hub_design_mockup_vNNN.md` — mockup record + full HTML fence.
-- `hub/_design/hub_design_mockup_vNNN.html` — runnable twin (`file://`).
-- `hub/_design/CHANGELOG.md` — per-version notes (opened in v002).
+- `hub/_design/hub_design_spec_vNNN.md` - spec, versioned, superseded kept.
+- `hub/_design/hub_design_mockup_vNNN.md` - mockup record + full HTML fence.
+- `hub/_design/hub_design_mockup_vNNN.html` - runnable twin (`file://`).
+- `hub/_design/CHANGELOG.md` - per-version notes (opened in v002).
 - Live CSS split still maps 1:1 to mockup `<style>` sections, now plus
   `themes.css` (token blocks per `data-theme`).
 
@@ -129,12 +129,12 @@ re-renders all sections under the new tokens; no new sections.
 
 1. Phosphor shade: `#33FF33` classic, or softer `#4ADE80`-style? Light-theme
    `#0B7A30` readable enough?
-2. Amber/green balance: green currently on every `[x]`/`[OK]` — too loud in
+2. Amber/green balance: green currently on every `[x]`/`[OK]` - too loud in
    dark mode, or exactly the terminal feel we want?
 3. Kicker numbers (`01`, `02`…): keep monochrome, or amber in dark mode?
 
 ---
 
-## Appendix A — strict-ASCII logo fallback (unchanged from v001)
+## Appendix A - strict-ASCII logo fallback (unchanged from v001)
 
 (Same 7-bit block as v001.)

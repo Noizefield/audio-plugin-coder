@@ -12,17 +12,21 @@
   font-size:12px; margin:0 8px 6px 0;}
 .badge.ok{background:var(--good); border-color:var(--good);
   color:var(--good-ink); font-weight:bold;}
+.badge.amber{background:var(--amber); border-color:var(--amber);
+  color:var(--amber-ink); font-weight:bold;}
 .shell{display:grid; grid-template-columns:264px 1fr; flex:1 1 auto; min-height:0;}
 .side{border-right:2px solid var(--rule); padding:20px 16px; font-size:13px;
   overflow-y:auto; min-height:0;}
-.side pre.mark{font-size:13px; line-height:1.4; margin:0 0 12px; font-weight:bold;}
-.side pre.mark .mut{font-weight:normal;}
+a.badge{text-decoration:none;}
+a.badge:hover{border-color:var(--amber);}
 .siderel{margin:0 0 4px; font-size:12px;}
 .sidenav{margin:14px 0; border-top:1px solid var(--rule); padding-top:10px;}
 .sidenav a{display:block; padding:3px 8px; text-decoration:none;
   border:1px solid transparent; margin-bottom:2px;}
 .sidenav a:hover{border-color:var(--rule);}
 .sidenav a::before{content:"\00a0\00a0";}
+.sidenav a.on{background:var(--ink); color:var(--paper); font-weight:bold;}
+.sidenav a.on::before{content:"> ";}
 details.navsub{margin-bottom:2px;}
 details.navsub summary{display:block; padding:3px 8px; cursor:pointer;
   border:1px solid transparent; list-style:none;}

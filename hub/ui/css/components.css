@@ -23,3 +23,12 @@ h3{font-size:15px; margin:18px 0 6px;}
 pre.screen{border:1px solid var(--rule); padding:10px 12px; font-size:13px;
   overflow-x:auto; background:transparent;}
 .full{color:var(--muted); font-size:12.5px; margin:6px 0 2px;}
+button.minibtn{font:inherit; font-size:12px; background:transparent; color:var(--ink);
+  border:1px solid var(--rule); padding:1px 8px; cursor:pointer;}
+button.minibtn:hover{border-color:var(--amber);}
+fieldset{border:1px solid var(--rule); margin:0 0 14px; padding:10px 12px;}
+legend{padding:0 8px; font-size:12px; text-transform:uppercase; letter-spacing:.1em;}
+.frow{display:grid; grid-template-columns:220px 1fr; gap:4px 12px; margin-bottom:8px; align-items:center;}
+.frow input[type="text"], .frow input:not([type]), .frow select{width:100%; background:transparent; color:var(--ink);
+  border:1px solid var(--rule); padding:4px 8px; font-size:13px;}
+.frow input[type="checkbox"]{width:16px; height:16px; accent-color:var(--good);}

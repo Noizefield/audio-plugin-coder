@@ -1,10 +1,10 @@
-# APC Hub — Design Language Spec v001
+# APC Hub - Design Language Spec v001
 
 Status: DRAFT for review · Date: 2026-09-13 · App: `hub/` · Command: `/apc-hub`
 Review loop: comment on this file, then a `_v002` revision is issued.
 Nothing here is final until marked APPROVED.
 
-Working title of the language: **APC RASTER** — Swiss rectilinear minimalism
+Working title of the language: **APC RASTER** - Swiss rectilinear minimalism
 with an ASCII-first component set. No images, no shadows, no rounded corners.
 
 ---
@@ -136,10 +136,10 @@ ASCII box, 1px, amber left border 4px for warnings.
 ### 6.1 Redundancy flags (display only, no deletion in hub work)
 
 - `.agents/skills/skill_ideation|skill_planning|skill_design|skill_implementation|skill_packaging|skill_debug`
-  vs new-style `dream|plan|design|impl|test|debug|ship` — rendered with
+  vs new-style `dream|plan|design|impl|test|debug|ship` - rendered with
   `[LEGACY?]` token for tidy-up confirmation.
-- Root `commands/` empty — rendered as `[ -- ] pointer: use .agents/workflows`.
-- Root `skills/` = packaged Codex skill only — labelled as such.
+- Root `commands/` empty - rendered as `[ -- ] pointer: use .agents/workflows`.
+- Root `skills/` = packaged Codex skill only - labelled as such.
 
 ## 7. Interaction (v001 = static)
 
@@ -150,10 +150,10 @@ ASCII box, 1px, amber left border 4px for warnings.
 
 ## 8. File conventions
 
-- `hub/_design/hub_design_spec_vNNN.md` — this spec, versioned.
-- `hub/_design/hub_design_mockup_vNNN.md` — mockup record + full HTML in a
+- `hub/_design/hub_design_spec_vNNN.md` - this spec, versioned.
+- `hub/_design/hub_design_mockup_vNNN.md` - mockup record + full HTML in a
   fenced block + runnable `.html` twin (same basename) for `file://` review.
-- `hub/_design/CHANGELOG.md` — per-version review notes (created at v002).
+- `hub/_design/CHANGELOG.md` - per-version review notes (created at v002).
 - Future live CSS split maps 1:1 to the `<style>` sections of the mockup:
   `tokens.css / base.css / layout.css / components.css / docs.css`.
 
@@ -167,7 +167,7 @@ ASCII box, 1px, amber left border 4px for warnings.
 
 ---
 
-## Appendix A — strict-ASCII logo fallback (7-bit, for fragile fonts)
+## Appendix A - strict-ASCII logo fallback (7-bit, for fragile fonts)
 
 ```
   ###   #####    ### 
