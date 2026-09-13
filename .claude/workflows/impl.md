@@ -2,8 +2,6 @@
 description: "Deprecated alias — use /apc-impl"
 ---
 
-# Deprecated: `/impl`
+> **APC pointer** - canonical file: `.agents/workflows/impl.md`.
 
-Prefer **`/apc-impl`**. Short names collide with other frameworks and host builtins.
-
-Load and execute `.claude/workflows/apc-impl.md`.
+Load and follow `../../.agents/workflows/impl.md` exactly as written (it contains the full instructions, validation steps, and completion message).

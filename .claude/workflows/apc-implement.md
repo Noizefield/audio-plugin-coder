@@ -2,6 +2,6 @@
 description: "Alias for /apc-impl"
 ---
 
-# `/apc-implement`
+> **APC pointer** - canonical file: `.agents/workflows/apc-implement.md`.
 
-Alias for **`/apc-impl`**. Load `.claude/workflows/apc-impl.md`.
+Load and follow `../../.agents/workflows/apc-implement.md` exactly as written (it contains the full instructions, validation steps, and completion message).

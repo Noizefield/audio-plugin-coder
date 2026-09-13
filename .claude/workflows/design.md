@@ -2,8 +2,6 @@
 description: "Deprecated alias — use /apc-design"
 ---
 
-# Deprecated: `/design`
+> **APC pointer** - canonical file: `.agents/workflows/design.md`.
 
-Prefer **`/apc-design`**. Short names collide with other frameworks and host builtins.
-
-Load and execute `.claude/workflows/apc-design.md`.
+Load and follow `../../.agents/workflows/design.md` exactly as written (it contains the full instructions, validation steps, and completion message).

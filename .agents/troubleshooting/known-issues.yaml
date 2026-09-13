@@ -1,0 +1,322 @@
+# .agents\troubleshooting\known-issues.yaml
+issues:
+  - id: cmake-001
+    title: "CMake duplicate target error with JUCE modules"
+    category: build
+    severity: high
+    symptoms:
+      - "CMake Error: add_library cannot create target"
+      - "Target 'juce_core' already exists"
+    error_patterns:
+      - "duplicate target"
+      - "juce_add_modules"
+    resolution_status: solved
+    resolution_file: ../rules/juce-build-protocols.md
+    frequency: 8
+    last_occurred: 2026-01-22
+    
+  - id: webview-001
+    title: "WebView HTML files not loading - path issue"
+    category: webview
+    severity: medium
+    symptoms:
+      - "Blank white screen in plugin"
+      - "Failed to load resource"
+    error_patterns:
+      - "404 in WebView"
+      - "getResourceProviderRoot"
+    resolution_status: solved
+    resolution_file: resolutions/webview-blank-screen.md
+    frequency: 5
+    last_occurred: 2026-01-20
+    
+  - id: webview-002
+    title: "DAW crashes when unloading WebView plugin - member order"
+    category: webview
+    severity: critical
+    symptoms:
+      - "DAW crashes when closing plugin window"
+      - "Segmentation fault on plugin destructor"
+      - "Access violation in WebBrowserComponent destructor"
+      - "Crash only happens in release builds, not debug"
+      - "Crash during plugin unload or project close"
+    error_patterns:
+      - "Access violation"
+      - "Segmentation fault"
+      - "invalid memory access"
+      - "pure virtual function call"
+      - "0xC0000005: Access violation"
+    root_cause: "Member declaration order causes WebBrowserComponent to be destroyed after WebSliderRelay objects it references"
+    resolution_status: solved
+    resolution_file: resolutions/webview-member-order-crash.md
+    frequency: 1
+    last_occurred: 2026-01-24
+    attempts_before_resolution: 1
+    prevention: "Always declare members in order: Relays → WebView → Attachments"
+
+  - id: vst3-002
+    title: "VST3 not appearing in DAW after build"
+    category: packaging
+    severity: medium
+    symptoms:
+      - "Plugin builds but DAW doesn't see it"
+      - "VST3 folder exists but empty in DAW"
+    error_patterns:
+      - "VST3 not found"
+      - "rescan doesn't detect"
+    resolution_status: solved
+    resolution_file: ../../docs/troubleshooting-guide.md
+    frequency: 12
+    last_occurred: 2026-01-22
+
+  - id: build-003
+    title: "Permission denied when copying VST3 to Program Files"
+    category: build
+    severity: low
+    symptoms:
+      - "Plugin compiles successfully but fails during install step"
+      - "Permission denied when copying to C:\\Program Files\\Common Files\\VST3"
+      - "Build completes but VST3 not installed"
+    error_patterns:
+      - "Permission denied"
+      - "file INSTALL cannot make directory"
+      - "C:\\Program Files\\Common Files/VST3"
+    root_cause: "Windows requires administrator privileges to write to Program Files directory"
+    resolution_status: solved
+    resolution_file: ../../docs/troubleshooting-guide.md
+    frequency: 1
+    last_occurred: 2026-01-24
+    attempts_before_resolution: 0
+    prevention: "Run build script as administrator or manually copy VST3 from build directory"
+
+  - id: webview-003
+    title: "WebView plugin crashes on load - runtime crash"
+    category: webview
+    severity: critical
+    symptoms:
+      - "Plugin crashes immediately when opened in DAW"
+      - "Standalone version crashes on launch"
+      - "No error message, just crash"
+      - "Build succeeds but plugin crashes at runtime"
+      - "WebView2 destructor message appears in logs"
+    error_patterns:
+      - "Access violation"
+      - "Crash on plugin window open"
+      - "WebView2 not found"
+      - "EplDispatchQueue destructor"
+    root_cause: "Multiple possible causes: WebView2 runtime missing, resource provider issues, initialization order problems, standalone audio device issues"
+    resolution_status: solved
+    resolution_file: resolutions/webview-runtime-crash.md
+    frequency: 1
+    last_occurred: 2026-01-24
+    attempts_before_resolution: 3
+    prevention: "Test VST3 in DAW first (more stable than standalone), check WebView2 runtime installed, verify resource provider"
+    notes: "Resolved - was caused by webview-004 (attachment order). See webview-004 for the actual fix."
+
+  - id: webview-004
+    title: "WebView plugin crashes DAW - addAndMakeVisible called before attachments"
+    category: webview
+    severity: critical
+    symptoms:
+      - "Plugin crashes entire DAW when loaded"
+      - "Standalone crashes immediately on launch"
+      - "No error message, instant crash"
+      - "Build succeeds perfectly"
+      - "WebView2 runtime is installed"
+    error_patterns:
+      - "DAW crash on plugin load"
+      - "Instant crash with no error"
+      - "Access violation in parameter access"
+    root_cause: "addAndMakeVisible(webView) called BEFORE parameter attachments created. WebView initializes and tries to access attachments that don't exist yet → null pointer crash"
+    resolution_status: solved
+    resolution_file: resolutions/webview-attachment-order-crash.md
+    frequency: 1
+    last_occurred: 2026-01-24
+    attempts_before_resolution: 3
+    prevention: "ALWAYS create ALL parameter attachments BEFORE calling addAndMakeVisible(webView)"
+    critical_fix: "Order must be: 1. Relays 2. WebView 3. Attachments 4. addAndMakeVisible 5. goToURL 6. setSize"
+    notes: "This is the #1 most critical WebView bug. Following AngelGrain pattern prevents this entirely."
+
+  - id: linux-001
+    title: "Linux WebView plugin - gtk/gtk.h not found"
+    category: build
+    severity: critical
+    symptoms:
+      - "fatal error: gtk/gtk.h: No such file or directory"
+      - "Compiler can't find GTK headers despite libwebkit2gtk installed"
+      - "JUCE_WEB_BROWSER=1 is defined but GTK includes missing"
+    error_patterns:
+      - "gtk/gtk.h: No such file"
+      - "fatal error: gtk"
+      - "webkit2gtk installed but headers not found"
+    root_cause: "JUCE has TWO separate WebView flags: NEEDS_WEBVIEW2 (Windows) and NEEDS_WEB_BROWSER (Linux). Plugin only sets NEEDS_WEBVIEW2=FALSE on Linux, never sets NEEDS_WEB_BROWSER=TRUE. Without it, JUCE doesn't link webkit2gtk/GTK pkgconfig target, so include paths never get added."
+    resolution_status: solved
+    resolution_file: ../../docs/build-system.md
+    frequency: 1
+    last_occurred: 2026-02-05
+    attempts_before_resolution: 2
+    prevention: "ALWAYS set NEEDS_WEB_BROWSER TRUE in Linux section AND pass it to juce_add_plugin()"
+    critical_fix: "In plugin CMakeLists.txt: elseif(UNIX) set(NEEDS_WEB_BROWSER TRUE) ... juce_add_plugin(... NEEDS_WEB_BROWSER ${NEEDS_WEB_BROWSER})"
+
+  - id: linux-002
+    title: "Linux LV2 build - cannot open display (headless CI)"
+    category: build
+    severity: high
+    symptoms:
+      - "Gtk-WARNING: cannot open display:"
+      - "Build fails after successful link of LV2 .so"
+      - "juce_linux_subprocess error 141"
+      - "Only happens on headless CI, not local build with X11"
+    error_patterns:
+      - "cannot open display"
+      - "juce_linux_subprocess"
+      - "Gtk-WARNING"
+      - "Error 141"
+    root_cause: "JUCE LV2 manifest generator runs POST-LINK to load the plugin and extract parameter metadata for .ttl files. WebView plugins init GTK, which requires X11 display. GitHub Actions runners are headless."
+    resolution_status: solved
+    resolution_file: ../../docs/troubleshooting-guide.md
+    frequency: 1
+    last_occurred: 2026-02-05
+    attempts_before_resolution: 1
+    prevention: "Always use xvfb-run for LV2 and Standalone builds on headless Linux CI"
+    critical_fix: "Install xvfb, wrap build: xvfb-run cmake --build build --target Plugin_LV2"
+
+  - id: webview-010
+    title: "WebView black screen - resource provider callback not invoked"
+    category: webview
+    severity: critical
+    symptoms:
+      - "Black screen in plugin window"
+      - "WebView creates successfully but no UI"
+      - "getResource() callback never called"
+      - "URL loads (https://juce.backend/) but no resource requests"
+      - "Debug log shows zero resource requests"
+    error_patterns:
+      - "black screen"
+      - "resource provider not called"
+      - "WebBrowserComponent created but no resources"
+    root_cause: "TWO timing violations: (1) addAndMakeVisible() called BEFORE attachments created, causing WebView to initialize with bad state; (2) setSize() called BEFORE WebView created, preventing proper initialization"
+    resolution_status: solved
+    resolution_file: resolutions/webview-resource-provider-not-called.md
+    frequency: 1
+    last_occurred: 2026-02-10
+    attempts_before_resolution: 4
+    prevention: "MANDATORY ORDER: (1) Create attachments (2) Create WebView (3) addAndMakeVisible (4) goToURL (5) setSize LAST"
+    critical_fix: "Move addAndMakeVisible() to AFTER all attachments created, AND move setSize() to END of constructor (after goToURL)"
+    notes: "Affects XENON. Both CloudWash and AngelGrain patterns work if order is correct. Resource provider callback silently fails if WebView initialized in bad state."
+
+  - id: macos-001
+    title: "macOS universal binary - libPluginName_SharedCode.a not found"
+    category: build
+    severity: high
+    symptoms:
+      - "clang++: error: no such file or directory: libPluginName_SharedCode.a"
+      - "warning: None of the architectures in ARCHS (x86_64;arm64) are valid"
+      - "Intermediate static library missing during link"
+    error_patterns:
+      - "SharedCode.a not found"
+      - "architectures in ARCHS"
+      - "VALID_ARCHS"
+    root_cause: "Per-target XCODE_ATTRIBUTE_ARCHS in plugin CMakeLists.txt conflicts with workflow's global CMAKE_OSX_ARCHITECTURES. Xcode misinterprets format (parens in warning), causing intermediate libs to not build or build to wrong location."
+    resolution_status: solved
+    resolution_file: ../../docs/github-actions.md
+    frequency: 1
+    last_occurred: 2026-02-05
+    attempts_before_resolution: 1
+    prevention: "NEVER set XCODE_ATTRIBUTE_ARCHS on individual targets. Use CMAKE_OSX_ARCHITECTURES at configure time only."
+    critical_fix: "Remove set_target_properties(Plugin PROPERTIES XCODE_ATTRIBUTE_ARCHS ...) from plugin CMakeLists.txt"
+
+  - id: webview-005
+    title: "WebView native function bridge - wrong API (invokeNativeFunction)"
+    category: webview
+    severity: critical
+    symptoms:
+      - "UI buttons visually respond but have no effect"
+      - "No C++ native function handler logs appear"
+      - "JS-to-C++ bridge silently fails with no errors"
+      - "triggerNote / setParam / getFactoryPresets never reach C++"
+    error_patterns:
+      - "invokeNativeFunction"
+      - "native function not called"
+      - "gate never true"
+      - "no audio from trigger"
+    root_cause: "JavaScript used non-existent window.__JUCE__.backend.invokeNativeFunction() API. Correct API is window.Juce.getNativeFunction('name') which uses emitEvent('__juce__invoke')"
+    resolution_status: solved
+    resolution_file: resolutions/webview-005-juce-native-function-api.md
+    frequency: 1
+    last_occurred: 2026-02-12
+    attempts_before_resolution: 2
+    prevention: "ALWAYS use window.Juce.getNativeFunction('name'), NEVER use invokeNativeFunction. Check _tools/JUCE/modules/juce_gui_extra/native/javascript/index.js for correct API."
+    critical_fix: "Replace all invokeNativeFunction calls with getNativeFunction pattern"
+
+  - id: dsp-001
+    title: "Silent effects chain - JUCE DSP initialization bugs (Gain/Filter/SmoothedValue)"
+    category: dsp
+    severity: critical
+    symptoms:
+      - "Plugin generates signal internally but output is silent"
+      - "PRE-FX peak ~1.0 but POST-FX peak = 0.0"
+      - "Effects chain kills signal"
+      - "Visualizer shows nothing despite trigger working"
+    error_patterns:
+      - "post-fx peak 0"
+      - "silent output"
+      - "effects chain silence"
+      - "gain zero after prepare"
+    root_cause: "Three bugs: (1) ProcessorDuplicator has null coefficients after prepare() - outputs silence; (2) juce::dsp::Gain defaults to 0.0 after prepare(); (3) SmoothedValue stuck at 0.0 because getCurrentValue() doesn't advance ramp"
+    resolution_status: solved
+    resolution_file: resolutions/dsp-001-silent-effects-chain.md
+    frequency: 1
+    last_occurred: 2026-02-12
+    attempts_before_resolution: 4
+    prevention: "After prepare(): set filter coefficients, set gain to 1.0, init SmoothedValues with setCurrentAndTargetValue()"
+    critical_fix: "*filter.state = *Coefficients::makeLowPass(); gain.setGainLinear(1.0f); smoothed.setCurrentAndTargetValue(value)"
+
+  - id: webview-011
+    title: "WebView UI loads but looks messy / unstyled - external CSS + BinaryData path"
+    category: webview
+    severity: high
+    symptoms:
+      - "UI looks messy / overlapping / default HTML buttons"
+      - "Design preview looks correct in browser, plugin does not"
+      - "Broken logo icon, Windows scrollbar, preview hint footer"
+      - "HTML and JS load, Hackerbridge chrome missing"
+      - "VST3 updated but Standalone still unstyled"
+    error_patterns:
+      - "unstyled WebView"
+      - "messy UI"
+      - "link rel stylesheet"
+      - "css/tokens.css"
+      - "default buttons overlapping"
+      - "preview-stage"
+    root_cause: "Design HTML used <link rel=stylesheet>. WebView2 often does not apply linked CSS. getResource() collapsed relative CSS URLs to index.html (fromFirstOccurrenceOf miss). juce_add_binary_data stores basenames only. Running Standalone can lock a stale EXE while VST3 rebuilds."
+    resolution_status: solved
+    resolution_file: resolutions/webview-011-unstyled-external-css.md
+    frequency: 1
+    last_occurred: 2026-08-13
+    attempts_before_resolution: 2
+    prevention: "Inline ALL CSS and JS in WebUI/index.html (CloudWash). Map BinaryData by path AND basename; never default unknown URLs to index.html. Strip Design preview chrome in plugin. Kill Standalone before rebuild and verify BOTH binaries."
+    critical_fix: "Inline tokens.css + hackerbridge_style.css into index.html; explicit getResource map; plugin-host class; rebuild Standalone after stopping the old process"
+    notes: "Organik /impl 2026-08-13. Distinct from webview-007/010 (black screen) and webview-008 (knob dots / ES6 JS)."
+
+  - id: ci-001
+    title: "CI - JUCE submodule missing extras/Build/CMake"
+    category: build
+    severity: critical
+    symptoms:
+      - "CMake Error: include could not find requested file: extras/Build/CMake/JUCEModuleSupport.cmake"
+      - "Unknown CMake command juce_add_modules"
+      - "JUCE directory exists but CMake support missing"
+      - "Works locally but fails on GitHub Actions"
+    error_patterns:
+      - "JUCEModuleSupport.cmake"
+      - "juce_add_modules"
+      - "extras/Build"
+    root_cause: "_tools/JUCE was committed as 4600+ regular files instead of git submodule reference. GitHub Actions submodules: recursive had no gitlink to follow, checked out incomplete snapshot missing extras/Build/."
+    resolution_status: solved
+    resolution_file: ../../docs/github-actions.md
+    frequency: 1
+    last_occurred: 2026-02-05
+    attempts_before_resolution: 1
+    prevention: "ALWAYS use git submodule add, NEVER commit framework directories as regular files"
+    critical_fix: "git rm -r --cached _tools/JUCE && rm -rf _tools/JUCE && git submodule add https://github.com/juce-framework/JUCE _tools/JUCE"

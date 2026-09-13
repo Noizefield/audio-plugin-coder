@@ -2,8 +2,6 @@
 description: "Deprecated alias — use /apc-setup"
 ---
 
-# Deprecated: `/setup`
+> **APC pointer** - canonical file: `.agents/workflows/setup.md`.
 
-Prefer **`/apc-setup`**.
-
-Load and execute `.claude/workflows/apc-setup.md` / `.claude/skills/apc-setup/SKILL.md`.
+Load and follow `../../.agents/workflows/setup.md` exactly as written (it contains the full instructions, validation steps, and completion message).

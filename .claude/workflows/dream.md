@@ -2,8 +2,6 @@
 description: "Deprecated alias — use /apc-dream"
 ---
 
-# Deprecated: `/dream`
+> **APC pointer** - canonical file: `.agents/workflows/dream.md`.
 
-Prefer **`/apc-dream`**. Short names collide with other frameworks and host builtins.
-
-Load and execute `.claude/workflows/apc-dream.md`.
+Load and follow `../../.agents/workflows/dream.md` exactly as written (it contains the full instructions, validation steps, and completion message).

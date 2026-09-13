@@ -1,0 +1,9 @@
+---
+description: "Deprecated alias — use /apc-status"
+---
+
+# Deprecated: `/status`
+
+Prefer **`/apc-status`**. Short names collide with other frameworks and host builtins.
+
+Load and execute `.agents/workflows/apc-status.md`.

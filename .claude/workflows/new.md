@@ -2,8 +2,6 @@
 description: "Deprecated alias — use /apc-new"
 ---
 
-# Deprecated: `/new`
+> **APC pointer** - canonical file: `.agents/workflows/new.md`.
 
-Prefer **`/apc-new`**. Short names collide with other frameworks and host builtins.
-
-Load and execute `.claude/workflows/apc-new.md`.
+Load and follow `../../.agents/workflows/new.md` exactly as written (it contains the full instructions, validation steps, and completion message).

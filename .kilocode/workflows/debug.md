@@ -1,10 +1,7 @@
-﻿---
+---
 description: "Deprecated alias â€” use /apc-debug"
 ---
 
-# Deprecated: `/debug`
+> **APC pointer** - canonical file: `.agents/workflows/debug.md`.
 
-Prefer **`/apc-debug`**. Short names collide with other frameworks and host builtins.
-
-Load and execute `..kilocode/workflows/apc-debug.md`.
-
+Load and follow `../../.agents/workflows/debug.md` exactly as written (it contains the full instructions, validation steps, and completion message).
