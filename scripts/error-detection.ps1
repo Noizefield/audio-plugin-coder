@@ -56,7 +56,7 @@ function Parse-BuildErrors {
 
 function Find-KnownIssue ([array]$Errors) {
 
-    $knownIssuesPath = ".kilocode/troubleshooting/known-issues.yaml"
+    $knownIssuesPath = ".agents/troubleshooting/known-issues.yaml"
 
     if (-not (Test-Path $knownIssuesPath)) {
         Write-Warning "Known issues database not found at $knownIssuesPath"
@@ -98,7 +98,7 @@ function Find-KnownIssue ([array]$Errors) {
                         $solution = ""
                         if ($issue.Block -match "resolution_file: (.+)") {
                             $resolutionFile = $Matches[1]
-                            $resolutionPath = ".kilocode/troubleshooting/resolutions/$resolutionFile"
+                            $resolutionPath = ".agents/troubleshooting/resolutions/$resolutionFile"
                             if (Test-Path $resolutionPath) {
                                 $solution = Get-Content $resolutionPath -Raw
                             }
@@ -167,7 +167,7 @@ function New-IssueFromError ([array]$Errors, [string]$BuildOutput) {
 
     # Generate issue ID
     $category = if ($Errors[0].Category) { $Errors[0].Category } else { "build" }
-    $existingIssues = (Get-ChildItem ".kilocode/troubleshooting/resolutions/" -Filter "*.md" | Measure-Object).Count
+    $existingIssues = (Get-ChildItem ".agents/troubleshooting/resolutions/" -Filter "*.md" | Measure-Object).Count
     $newId = "$category-$(($existingIssues + 1).ToString('000'))"
 
     # Create issue summary
@@ -192,10 +192,10 @@ function New-IssueFromError ([array]$Errors, [string]$BuildOutput) {
     $newIssue += [Environment]::NewLine + "  resolution_status: investigating" + [Environment]::NewLine + "  resolution_file: resolutions/$newId.md" + [Environment]::NewLine + "  frequency: 1" + [Environment]::NewLine + "  last_occurred: $(Get-Date -Format "yyyy-MM-dd")" + [Environment]::NewLine + "  attempts_before_resolution: 1"
 
     # Append to known-issues.yaml
-    Add-Content -Path ".kilocode/troubleshooting/known-issues.yaml" -Value $newIssue
+    Add-Content -Path ".agents/troubleshooting/known-issues.yaml" -Value $newIssue
 
     # Create resolution document from template
-    $templatePath = ".kilocode/troubleshooting/_template.md"
+    $templatePath = ".agents/troubleshooting/_template.md"
     if (Test-Path $templatePath) {
         $templateContent = Get-Content $templatePath -Raw
         $templateContent = $templateContent -replace "\[auto-generated-id\]", $newId
@@ -210,11 +210,11 @@ function New-IssueFromError ([array]$Errors, [string]$BuildOutput) {
 
         $templateContent = $templateContent -replace "## 💡 Root Cause", ($errorDetails + [Environment]::NewLine + "## 💡 Root Cause")
 
-        Set-Content -Path ".kilocode/troubleshooting/resolutions/$newId.md" -Value $templateContent
+        Set-Content -Path ".agents/troubleshooting/resolutions/$newId.md" -Value $templateContent
     }
 
     Write-Host "Issue logged as $newId" -ForegroundColor Green
-    Write-Host ('See: .kilocode/troubleshooting/resolutions/' + $newId + '.md') -ForegroundColor Cyan
+    Write-Host ('See: .agents/troubleshooting/resolutions/' + $newId + '.md') -ForegroundColor Cyan
 }
 
 # Export functions

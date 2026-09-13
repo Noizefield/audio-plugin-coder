@@ -415,8 +415,21 @@ appimagetool AppDir "release/$PLUGIN_NAME-\$VERSION-x86_64.AppImage"
 
 ```powershell
 function New-LicenseFile {
-    param([string]$PluginName, [string]$OutputPath)
+    param([string]$PluginName, [string]$OutputPath, [string]$Version = "1.0.0",
+          [string]$CompanyName = "APC", [string]$CompanyUrl = "https://github.com/Noizefield/audio-plugin-coder")
 
+    # Prefer the full EULA template; fall back to the short inline text if missing
+    $TemplatePath = "templates/LICENSE.txt.template"
+    if (Test-Path $TemplatePath) {
+        $LicenseText = (Get-Content $TemplatePath -Raw) `
+            -replace '\{PLUGIN_NAME\}', $PluginName `
+            -replace '\{VERSION\}', $Version `
+            -replace '\{DATE\}', (Get-Date -Format "yyyy-MM-dd") `
+            -replace '\{COMPANY_NAME\}', $CompanyName `
+            -replace '\{YEAR\}', (Get-Date -Format "yyyy") `
+            -replace '\{COMPANY_URL\}', $CompanyUrl
+    }
+    else {
     $LicenseText = @"
 ================================================================================
                     $PluginName END USER LICENSE AGREEMENT
@@ -450,6 +463,7 @@ By installing this software, you acknowledge that you have read, understood,
 and agree to be bound by these terms.
 ================================================================================
 "@
+    }
 
     Set-Content -Path $OutputPath -Value $LicenseText
     Write-Host "✓ License file created: $OutputPath" -ForegroundColor Green
@@ -487,7 +501,7 @@ function New-DistributionPackage {
     # Copy documentation
     Copy-Item (Join-Path $PluginPath "README.md") $PackageDir/ -ErrorAction SilentlyContinue
     Copy-Item "CHANGELOG.md" $PackageDir/ -ErrorAction SilentlyContinue
-    New-LicenseFile -PluginName $PluginName -OutputPath "$PackageDir/LICENSE.txt"
+    New-LicenseFile -PluginName $PluginName -Version $Version -OutputPath "$PackageDir/LICENSE.txt"
 
     # Create unified README
     @"

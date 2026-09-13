@@ -175,7 +175,7 @@ plugins/
 
 PowerShell (`.ps1`, Windows) and Bash (`.sh`, macOS/Linux) scripts for building, testing, and packaging.
 Most scripts ship as `.ps1`/`.sh` pairs (see `lib/Get-ApcPaths.ps1` + `lib/apc-paths.sh` for path resolution);
-a few Windows-only helpers (e.g. `terminal-monitoring`, `copy-agent-folders`, `setup_bridges`) have no `.sh` counterpart.
+a few Windows-only helpers (e.g. `terminal-monitoring`, `setup_bridges`) have no `.sh` counterpart.
 
 ```
 scripts/
@@ -203,8 +203,13 @@ scripts/
 │   ├── create-windows-installer.ps1
 │   ├── create-macos-installer.sh
 │   └── installer-template.iss
-└── (Windows-only / legacy helpers: setup.ps1, setup_bridges, copy-agent-folders.ps1,
-    list-folder-structure.ps1, terminal-monitoring.ps1, add-icon-to-exe.ps1 + rcedit-x64.exe)
+└── (Windows-only helpers, kept per maintenance triage with documented purpose)
+    - `terminal-monitoring.ps1` — `Watch-TerminalOutput`: runs a long command as a
+      background job, streams output, matches error patterns in real time, enforces
+      a timeout (default 300s). Intended for supervised long builds.
+    - `list-folder-structure.ps1` — prints a folder tree (`-RootPath`, `-Depth`,
+      `-IncludeFiles`, `-OutputFile`). Intended for repo-overview snapshots.
+    - `setup_bridges.bat` — legacy CMD wrapper around `setup_bridges.ps1`.
 ```
 
 **Critical Scripts:**
