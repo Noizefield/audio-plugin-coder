@@ -1,0 +1,7 @@
+/* == layout.css == */
+.titleline{font-size:20px; font-weight:700;}
+.kicker{font-size:12px; text-transform:uppercase; letter-spacing:.12em; margin:0 0 10px;}
+.kicker .n{display:inline-block; background:var(--ink); color:var(--paper); padding:0 6px; margin-right:8px;}
+.pager{margin:18px 0 4px; font-size:13px;}
+.pager a{text-decoration:none; border:1px solid var(--rule); padding:1px 10px;}
+.pager a:hover{border-color:var(--amber);}

@@ -7,6 +7,8 @@
   "created_at": "",
   "last_modified": "",
   "phase_history": [],
+  "current_generation": null,
+  "generations": [],
   "validation": {
     "creative_brief_exists": false,
     "parameter_spec_exists": false,

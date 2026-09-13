@@ -604,6 +604,25 @@ release/
 
 ---
 
+## Post-Ship Iteration (Generations)
+
+Shipping is not the end. A shipped generation is **read-only** — new work
+always opens a generation first, so the agent never confuses "finished" with
+"abandoned":
+
+| Need | Command | What happens |
+|---|---|---|
+| Bug in shipped plugin | `/apc-patch MyPlugin` | Patch bump (`v1.0` → `v1.0.1`), phase → `code`, then impl → test → ship |
+| New feature / idea | `/apc-evolve MyPlugin` | Minor bump (`v1.0` → `v1.1`), feature brief, plan → design → impl → test → ship |
+
+Each generation freezes on re-ship (git tag + timestamp) and stays in
+`status.json` as permanent lineage (`/apc-status` renders the timeline).
+First open on a pre-generations plugin backfills the frozen v1.0 record
+automatically. `/apc-resume` on a shipped plugin suggests patch/evolve;
+`/apc-impl` on a frozen generation redirects instead of running.
+
+---
+
 ## State Transitions
 
 ### Valid Flow

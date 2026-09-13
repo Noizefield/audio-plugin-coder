@@ -24,6 +24,10 @@
  *       kind: webview | webview-order | visage | plugin | state
  *   apc backup <Plugin> <Version>
  *   apc rollback <Plugin> <Version>
+ *   apc patch <Plugin> [--json]
+ *   apc evolve <Plugin> [--codename "Name"] [--json]
+ *   apc freeze <Plugin> [--tag TAG] [--json]
+ *   apc status [--plugin N] [--json]
  *   apc help
  *
  * Exit codes: 0 ok · 1 backend failed · 2 usage/platform error.
@@ -667,6 +671,276 @@ if (typeof window !== "undefined") { window.APC_VERSION = APC_VERSION; }
   console.log(dim(`framework version ${version} — canonical source: package.json`));
 }
 
+// ─── Generations: post-ship iteration (patch / evolve) ─────────────────────
+// Rule: a shipped generation is read-only. New work always opens a
+// generation first (/apc-patch for bugs, /apc-evolve for features).
+const SHIPPED_PHASES = ['ship_complete', 'complete'];
+
+function readStatus(pluginDir) {
+  const p = path.join(pluginDir, 'status.json');
+  const raw = readText(p);
+  if (raw === null) return { error: `status.json not found at ${p}` };
+  try {
+    return { status: JSON.parse(raw) };
+  } catch {
+    return { error: `status.json is not valid JSON at ${p}` };
+  }
+}
+
+function writeStatus(pluginDir, status) {
+  status.last_modified = new Date().toISOString();
+  fs.writeFileSync(path.join(pluginDir, 'status.json'), JSON.stringify(status, null, 2) + '\n');
+}
+
+function loadPluginStatus(name) {
+  const dir = pluginPath(name);
+  if (!fs.existsSync(dir)) {
+    console.error(err(`Plugin '${name}' not found at ${dir}`));
+    process.exit(1);
+  }
+  const { status, error } = readStatus(dir);
+  if (error) {
+    console.error(err(error));
+    process.exit(1);
+  }
+  return { dir, status };
+}
+
+function isShipped(status) {
+  return SHIPPED_PHASES.includes(status.current_phase);
+}
+
+function openGen(status) {
+  return (status.current_generation && status.current_generation.status === 'open')
+    ? status.current_generation
+    : null;
+}
+
+function isFrozen(status) {
+  return isShipped(status) && !openGen(status);
+}
+
+// Version math preserves the input's prefix and never confuses the two kinds:
+// patch: v1.0 -> v1.0.1, v1.0.0 -> v1.0.1, v1 -> v1.0.1
+// evolve: v1.0 -> v1.1, v1.0.0 -> v1.1.0, v1 -> v2, v0.0.0 -> v0.1.0
+function splitVersion(v) {
+  const m = String(v || '').match(/^([^0-9]*)([0-9]+(?:\.[0-9]+)*)(.*)$/);
+  if (!m) return { prefix: 'v', parts: [0, 0, 0], suffix: '', width: 3 };
+  const parts = m[2].split('.').map(Number);
+  return { prefix: m[1], parts, suffix: m[3], width: parts.length };
+}
+
+function joinVersion(s) {
+  return s.prefix + s.parts.join('.') + s.suffix;
+}
+
+function bumpPatch(v) {
+  const s = splitVersion(v);
+  if (s.parts.length >= 3) {
+    s.parts[s.parts.length - 1] += 1;
+  } else {
+    while (s.parts.length < 2) s.parts.push(0);
+    s.parts.push(1);
+  }
+  return joinVersion(s);
+}
+
+function bumpMinor(v) {
+  const s = splitVersion(v);
+  while (s.parts.length < 3) s.parts.push(0);
+  const idx = s.width === 1 ? 0 : 1;
+  s.parts[idx] += 1;
+  for (let i = idx + 1; i < s.parts.length; i++) s.parts[i] = 0;
+  if (s.width === 1) s.parts = [s.parts[0]];
+  else if (s.width === 2) s.parts = s.parts.slice(0, 2);
+  return joinVersion(s);
+}
+
+// Backfill-on-first-open: synthesize the frozen v1.0-style record from
+// current state so pre-generations plugins migrate with zero upfront work.
+function backfillGeneration(status, name) {
+  if (Array.isArray(status.generations) && status.generations.length > 0) return false;
+  status.generations = [{
+    version: status.version || 'v0.0.0',
+    kind: 'initial',
+    status: 'shipped',
+    codename: null,
+    shipped_at: status.last_modified || null,
+    git_tag: `${status.version || 'v0.0.0'}-${name}`,
+    phase_history: status.phase_history || [],
+  }];
+  return true;
+}
+
+function cmdOpenGeneration(kind, args) {
+  const asJson = args.includes('--json');
+  const positional = args.filter((a) => !a.startsWith('--'));
+  const name = positional[0];
+  if (!name) {
+    console.error(err(`Usage: apc ${kind} <Plugin> [--codename "Name"] [--json]`));
+    process.exit(2);
+  }
+  const ci = args.indexOf('--codename');
+  const codename = ci !== -1 ? args[ci + 1] : undefined;
+  if (kind === 'patch' && codename) {
+    console.error(warn('patch generations do not take codenames - ignoring --codename'));
+  }
+  const { dir, status } = loadPluginStatus(name);
+  const already = openGen(status);
+  if (already) {
+    console.error(err(`Generation ${already.version} (${already.kind}) is already open on '${name}'. Re-ship it before opening another.`));
+    process.exit(1);
+  }
+  if (!isShipped(status)) {
+    console.error(err(`'${name}' is not shipped (phase: ${status.current_phase}). ${kind} opens only on shipped plugins - run /apc-resume to continue it.`));
+    process.exit(1);
+  }
+  const backfilled = backfillGeneration(status, name);
+  const newVersion = kind === 'patch' ? bumpPatch(status.version) : bumpMinor(status.version);
+  // Native snapshot: frozen record + rollback point, no shell needed.
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0].replace('T', '_');
+  const backupFile = `status.json.bak-${stamp}`;
+  fs.copyFileSync(path.join(dir, 'status.json'), path.join(dir, backupFile));
+  const now = new Date().toISOString();
+  const gen = {
+    version: newVersion,
+    kind,
+    status: 'open',
+    codename: kind === 'evolve' ? (codename || null) : null,
+    opened_at: now,
+    backup_file: backupFile,
+  };
+  status.current_generation = gen;
+  status.version = newVersion;
+  status.current_phase = kind === 'patch' ? 'code' : 'plan';
+  status.validation = status.validation || {};
+  if (kind === 'patch') {
+    // Design did not change: keep design flags, reset only test/ship gates.
+    status.validation.tests_passed = false;
+    status.validation.ship_ready = false;
+  } else {
+    for (const f of ['design_complete', 'code_complete', 'tests_passed', 'ship_ready']) status.validation[f] = false;
+    const briefName = `.ideas/${newVersion}-brief.md`;
+    if (!fs.existsSync(path.join(dir, briefName))) {
+      fs.writeFileSync(path.join(dir, briefName),
+        `# ${name} ${newVersion} Feature Brief\n\nCodename: ${gen.codename || '(none)'}\n\n## Goal\n\n## Changes\n\n- \n\n## Acceptance\n\n- [ ] prior validation still green (re-run /apc-test)\n`);
+    }
+    gen.brief = briefName;
+  }
+  status.phase_history = status.phase_history || [];
+  status.phase_history.push({ phase: `${kind}_opened`, version: newVersion, completed_at: now });
+  writeStatus(dir, status);
+  if (asJson) {
+    console.log(JSON.stringify({ plugin: name, generation: gen, backfilled, backup_file: backupFile }, null, 2));
+  } else {
+    if (backfilled) console.log(dim(`backfilled frozen ${status.generations[0].version} record (pre-generations plugin)`));
+    console.log(ok(`opened ${kind} generation ${newVersion}${gen.codename ? ` "${gen.codename}"` : ''} on '${name}'`));
+    console.log(`  snapshot: ${backupFile} | phase -> ${status.current_phase}`);
+    if (gen.brief) console.log(`  brief: ${gen.brief}`);
+    console.log(`  next: ${kind === 'patch' ? `/apc-impl ${name} (fix, tiny UI touch-ups ok) then /apc-test ${name}` : `/apc-plan ${name} (feature architecture)`}`);
+  }
+}
+
+// Called by the ship flow after gates pass. Freezes the open generation:
+// it becomes a permanent, read-only record and the machine returns to rest.
+function cmdFreeze(args) {
+  const asJson = args.includes('--json');
+  const positional = args.filter((a) => !a.startsWith('--'));
+  const name = positional[0];
+  if (!name) {
+    console.error(err('Usage: apc freeze <Plugin> [--tag TAG] [--json]'));
+    process.exit(2);
+  }
+  const ti = args.indexOf('--tag');
+  const { dir, status } = loadPluginStatus(name);
+  const gen = openGen(status);
+  if (!gen) {
+    console.error(err(`No open generation on '${name}'. Nothing to freeze.`));
+    process.exit(1);
+  }
+  const now = new Date().toISOString();
+  const frozen = {
+    ...gen,
+    status: 'shipped',
+    shipped_at: now,
+    git_tag: (ti !== -1 && args[ti + 1]) ? args[ti + 1] : `${gen.version}-${name}`,
+  };
+  status.generations = status.generations || [];
+  status.generations.push(frozen);
+  status.current_generation = null;
+  status.current_phase = 'ship_complete';
+  if (status.validation) status.validation.ship_ready = true;
+  status.phase_history = status.phase_history || [];
+  status.phase_history.push({ phase: 'shipped', version: gen.version, completed_at: now });
+  writeStatus(dir, status);
+  if (asJson) {
+    console.log(JSON.stringify({ plugin: name, frozen }, null, 2));
+  } else {
+    console.log(ok(`froze generation ${gen.version} on '${name}' (tag: ${frozen.git_tag})`));
+    console.log(`  machine at rest: phase -> ship_complete (read-only until next patch/evolve)`);
+  }
+}
+
+function statusView(name, dir, status) {
+  const gen = openGen(status);
+  return {
+    plugin: name,
+    version: status.version,
+    current_phase: status.current_phase,
+    ui_framework: status.ui_framework,
+    frozen: isFrozen(status),
+    open_generation: gen,
+    generations: (status.generations || []).map((g) => ({
+      version: g.version, kind: g.kind, status: g.status,
+      codename: g.codename || null, shipped_at: g.shipped_at || null, git_tag: g.git_tag || null,
+    })),
+  };
+}
+
+// Machine- and human-readable generation timeline. Agents use --json;
+// the /apc-status workflow renders this view.
+function cmdStatusCmd(args) {
+  const asJson = args.includes('--json');
+  const pi = args.indexOf('--plugin');
+  const names = pi !== -1 && args[pi + 1] ? [args[pi + 1]] : null;
+  const list = names || (() => {
+    try {
+      return fs.readdirSync(resolvePaths().pluginsDir, { withFileTypes: true })
+        .filter((e) => e.isDirectory() && !e.name.startsWith('.'))
+        .map((e) => e.name);
+    } catch {
+      console.error(err(`Plugins directory not found: ${resolvePaths().pluginsDir}`));
+      process.exit(1);
+    }
+  })();
+  const views = [];
+  for (const name of list) {
+    const dir = pluginPath(name);
+    const { status, error } = readStatus(dir);
+    if (error) {
+      if (names) {
+        console.error(err(error));
+        process.exit(1);
+      }
+      continue;
+    }
+    views.push(statusView(name, dir, status));
+  }
+  if (asJson) {
+    console.log(JSON.stringify(names ? views[0] : views, null, 2));
+    return;
+  }
+  for (const v of views) {
+    const state = v.open_generation
+      ? `${v.open_generation.kind} ${v.open_generation.version} OPEN @ ${v.current_phase}`
+      : (v.frozen ? 'SHIPPED (read-only)' : v.current_phase);
+    console.log(`${v.plugin} ${v.version} -- ${state}`);
+    const trail = [...v.generations.map((g) => `${g.version}${g.status === 'shipped' ? '' : `(${g.status})`}`)];
+    if (v.open_generation) trail.push(`${v.open_generation.version}(open)`);
+    if (trail.length > 0) console.log(`  lineage: ${trail.join(' -> ')}`);
+  }
+}
+
 // ─── Help ──────────────────────────────────────────────────────────────────
 function help() {
   const { version } = readPackageVersion();
@@ -684,6 +958,10 @@ function help() {
   console.log('    state tests the PowerShell module itself and stays shell-bound.');
   console.log('  backup <Plugin> <Version>');
   console.log('  rollback <Plugin> <Version>');
+  console.log('  patch <Plugin> [--json]           open a bugfix generation on a shipped plugin');
+  console.log('  evolve <Plugin> [--codename N] [--json]  open a feature generation on a shipped plugin');
+  console.log('  freeze <Plugin> [--tag T] [--json]  freeze the open generation (called by ship flow)');
+  console.log('  status [--plugin N] [--json]      generation timeline');
   console.log('  help                          this text');
   console.log('');
   console.log(`Canonical version source: package.json. Hub reads hub/version.js.`);
@@ -704,6 +982,10 @@ function main() {
     case 'validate': return cmdValidate(rest);
     case 'backup': return cmdBackupOrRollback('backup', rest);
     case 'rollback': return cmdBackupOrRollback('rollback', rest);
+    case 'patch': return cmdOpenGeneration('patch', rest);
+    case 'evolve': return cmdOpenGeneration('evolve', rest);
+    case 'freeze': return cmdFreeze(rest);
+    case 'status': return cmdStatusCmd(rest);
     default:
       console.error(err(`Unknown command: ${cmd}`));
       help();

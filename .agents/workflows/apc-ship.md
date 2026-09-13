@@ -168,8 +168,13 @@ Enter numbers (comma-separated) or 'all':
 1. Create unified distribution directory
 2. Copy all platform installers
 3. Add documentation (README, CHANGELOG, INSTALL guide)
-4. Create final ZIP archive
-5. Update plugin state to `ship_complete`
+4. If this ships generation 2+ (patch/evolve): bundle the generation brief
+   (`.ideas/{version}-brief.md`) as release notes ("What's new")
+5. Create final ZIP archive
+6. Update plugin state to `ship_complete`
+7. Freeze the open generation (if any — no-op on initial ships):
+   `node bin/apc.js freeze <PluginName>` (records tag `v{version}-{Plugin}`,
+   timestamp; the machine returns to rest, read-only until next patch/evolve)
 
 **Output Structure:**
 ```

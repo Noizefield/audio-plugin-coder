@@ -1,6 +1,6 @@
 ---
 name: audio-plugin-coder
-description: Run Audio Plugin Coder lifecycle actions for JUCE plugins, including setup, dream, plan, design, implement, test, debug, status, resume, and ship. Use when the user asks to create or continue an APC audio plugin or mentions an APC phase.
+description: Run Audio Plugin Coder lifecycle actions for JUCE plugins, including setup, dream, plan, design, implement, test, debug, status, resume, ship, patch, and evolve. Use when the user asks to create or continue an APC audio plugin or mentions an APC phase.
 ---
 
 # Audio Plugin Coder
@@ -58,6 +58,8 @@ Keep this adapter thin; load APC's existing knowledge just in time:
 | `ship` | `.agents/workflows/apc-ship.md` | `.agents/skills/ship/SKILL.md` or `.agents/skills/skill_packaging/SKILL.md` |
 | `status` | `.agents/workflows/apc-status.md` | Read-only state inspection |
 | `resume` | `.agents/workflows/apc-resume.md` | Route to the next incomplete phase, then complete only that phase |
+| `patch` | `.agents/workflows/apc-patch.md` | Open a bugfix generation on a shipped plugin, then complete only that fix |
+| `evolve` | `.agents/workflows/apc-evolve.md` | Open a feature generation on a shipped plugin, then run the delta pipeline |
 | `new` | `.agents/workflows/apc-new.md` | Run one phase at a time and obtain each required user confirmation |
 
 For WebView design or implementation, also load `.agents/skills/skill_design_webview/SKILL.md` when present.

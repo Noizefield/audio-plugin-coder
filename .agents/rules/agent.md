@@ -51,6 +51,7 @@ You must determine the **UI_FRAMEWORK** selection from `status.json` before gene
 1.  **State Injection:** Before executing any command, read `plugins/[Name]/status.json`.
     *   **Check Phase:** Ensure previous phase is complete (e.g., do not `/impl` if phase is "ideation").
     *   **Check Framework:** If `ui_framework` is "visage", do not suggest HTML.
+    *   **Check Frozen:** A shipped generation (`ship_complete`/`complete` with no open generation) is read-only. New work always opens a generation first: `/apc-patch` for bugs, `/apc-evolve` for features. Never `/apc-impl` a frozen plugin.
     *   **Use State Management:** Import `scripts/state-management.ps1` and use `Test-PluginState` for validation.
 2.  **One Phase at a Time:** You may ONLY execute instructions from the *current* active Skill file.
 3.  **State Updates:** After each phase completion, update `status.json` using `Update-PluginState` (Windows) or `update_plugin_state` (macOS).

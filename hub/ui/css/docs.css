@@ -1,0 +1,29 @@
+/* == docs.css: search, collapsers, chapters, reader == */
+.docsearch{width:100%; font:inherit; font-size:13px; background:transparent;
+  color:var(--ink); border:1px solid var(--rule); padding:8px 12px; margin:0 0 14px;}
+.docsearch:disabled{color:var(--muted);}
+details.doc{border:1px solid var(--rule); margin:0 0 6px; padding:8px 12px;}
+details.doc summary{cursor:pointer; font-size:13.5px;}
+details.doc summary{list-style:none;}
+details.doc summary::-webkit-details-marker{display:none;}
+details.doc summary::before{content:"+ "; font-weight:bold;}
+details.doc[open] summary::before{content:"- "; font-weight:bold;}
+details.doc summary .p{color:var(--muted); font-size:12.5px;}
+details.doc ol{margin:8px 0 4px; padding-left:22px; font-size:13px;}
+details.doc ol li{margin-bottom:2px;}
+ol.chap{margin:8px 0 12px; padding-left:22px; font-size:13px;}
+ol.chap li{margin-bottom:2px;}
+.reader{border:1px solid var(--rule); border-top:3px solid var(--good);
+  padding:14px 16px; margin:16px 0;}
+.reader h4{font-size:16px; margin:0 0 8px;}
+.reader h5{font-size:14px; margin:14px 0 6px;}
+.reader h6{font-size:13px; margin:12px 0 6px; text-transform:uppercase; letter-spacing:.08em;}
+.reader p, .reader li{font-size:14px;}
+.reader ol, .reader ul{padding-left:22px; margin:6px 0;}
+.reader pre{background:transparent; border:1px solid var(--rule);
+  padding:10px 12px; font-size:12.5px; overflow-x:auto;}
+.reader code{font-size:.92em;}
+.reader table{font-size:13px;}
+.reader blockquote{border-left:3px solid var(--amber); margin:10px 0; padding:4px 12px;}
+.reader hr{border:none; border-top:1px solid var(--rule); margin:14px 0;}
+.reader .bm{float:right; font-size:12px;}

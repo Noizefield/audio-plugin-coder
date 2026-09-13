@@ -27,6 +27,25 @@ $state.phase_history | ForEach-Object {
 }
 
 Write-Host ""
+Write-Host "=== Generation Timeline ===" -ForegroundColor Green
+$generations = @($state.generations | ForEach-Object {
+    $codename = if ($_.codename) { " `"$($_.codename)`"" } else { "" }
+    "$($_.version)$codename ($($_.kind), $($_.status))"
+})
+if ($state.current_generation -and $state.current_generation.status -eq "open") {
+    $g = $state.current_generation
+    $generations += "$($g.version) ($($g.kind), OPEN @ $($state.current_phase))"
+}
+if ($generations.Count -eq 0) {
+    Write-Host "(single initial generation - no patch/evolve history yet)"
+} else {
+    Write-Host ($generations -join " -> ")
+}
+if (($state.current_phase -eq "ship_complete" -or $state.current_phase -eq "complete") -and -not ($state.current_generation -and $state.current_generation.status -eq "open")) {
+    Write-Host "Read-only: v$($state.version) is shipped. New work: /apc-patch (bug) or /apc-evolve (feature)." -ForegroundColor Yellow
+}
+
+Write-Host ""
 Write-Host "=== Next Steps ===" -ForegroundColor Yellow
 switch ($state.current_phase) {
     "ideation" { Write-Host "/apc-plan [Name]" }

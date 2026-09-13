@@ -1,0 +1,127 @@
+/* == shell.css: centered frame, locked header+sidebar, content-only scroll == */
+.frame{max-width:1340px; margin:0 auto; height:100vh; height:100dvh;
+  display:flex; flex-direction:column;
+  border-left:2px solid var(--rule); border-right:2px solid var(--rule);}
+.topbar{display:flex; gap:28px; align-items:center; flex-wrap:wrap; flex:none;
+  border-bottom:2px solid var(--rule); padding:20px 24px 16px;}
+.topbar pre.logo{font-size:13px; line-height:1.25; margin:0; overflow-x:auto;}
+.topbar pre.logo .amber{color:var(--amber); font-weight:bold;}
+.topmeta .titleline{font-size:20px; font-weight:700; margin:0 0 8px;}
+.topmeta .badges{margin:0; font-size:12px;}
+.badge{display:inline-block; border:1px solid var(--rule); padding:1px 8px;
+  font-size:12px; margin:0 8px 6px 0;}
+.badge.ok{background:var(--good); border-color:var(--good);
+  color:var(--good-ink); font-weight:bold;}
+.shell{display:grid; grid-template-columns:264px 1fr; flex:1 1 auto; min-height:0;}
+.side{border-right:2px solid var(--rule); padding:20px 16px; font-size:13px;
+  overflow-y:auto; min-height:0;}
+.side pre.mark{font-size:13px; line-height:1.4; margin:0 0 12px; font-weight:bold;}
+.side pre.mark .mut{font-weight:normal;}
+.siderel{margin:0 0 4px; font-size:12px;}
+.sidenav{margin:14px 0; border-top:1px solid var(--rule); padding-top:10px;}
+.sidenav a{display:block; padding:3px 8px; text-decoration:none;
+  border:1px solid transparent; margin-bottom:2px;}
+.sidenav a:hover{border-color:var(--rule);}
+.sidenav a::before{content:"\00a0\00a0";}
+details.navsub{margin-bottom:2px;}
+details.navsub summary{display:block; padding:3px 8px; cursor:pointer;
+  border:1px solid transparent; list-style:none;}
+details.navsub summary::-webkit-details-marker{display:none;}
+details.navsub summary::before{content:"+ ";}
+details.navsub[open] summary::before{content:"- ";}
+details.navsub summary:hover{border-color:var(--rule);}
+details.navsub a{padding-left:20px; font-size:12.5px;}
+.theme{font-size:12px; margin:12px 0 0; white-space:nowrap;}
+.theme button{font:inherit; background:transparent; color:var(--ink);
+  border:1px solid var(--rule); padding:1px 8px; cursor:pointer;}
+.theme button.on{background:var(--ink); color:var(--paper); font-weight:bold;}
+.sidefoot{color:var(--muted); font-size:11.5px; margin:14px 0 0;
+  border-top:1px solid var(--rule); padding-top:10px;}
+.content{padding:8px 24px 0; overflow-y:auto; min-height:0;}
+.content>main,.content>footer{max-width:884px;}
+.content footer{padding:20px 0 40px; color:var(--muted); font-size:13px;
+  border-top:1px solid var(--rule); margin-top:8px;}
+/* single active section; hash IS the state */
+.content main section{display:none; padding:16px 0 8px;}
+.content main section:target{display:block;}
+body:not(:has(main section:target)) section[id="01-overview"]{display:block;}
+body:not(:has(main section:target)) a[href="#01-overview"],
+body:has(section[id="01-overview"]:target) a[href="#01-overview"],
+body:has(section[id="02-projects"]:target) a[href="#02-projects"],
+body:has(section[id="03-skills"]:target) a[href="#03-skills"],
+body:has(section[id="04-commands"]:target) a[href="#04-commands"],
+body:has(section[id="05-designs"]:target) a[href="#05-designs"],
+body:has(section[id="06-scripts"]:target) a[href="#06-scripts"],
+body:has(section[id="07-templates"]:target) a[href="#07-templates"],
+body:has(section[id="08-tools"]:target) a[href="#08-tools"],
+body:has(section[id="09-settings"]:target) a[href="#09-settings"],
+body:has(section[id="10-documentation"]:target) a[href="#10-documentation"],
+body:has(section[id="11-consistency"]:target) a[href="#11-consistency"],
+body:has(section[id="doc-readme"]:target) a[href="#doc-readme"],
+body:has(section[id="doc-build-system"]:target) a[href="#doc-build-system"],
+body:has(section[id="doc-codex-compatibility"]:target) a[href="#doc-codex-compatibility"],
+body:has(section[id="doc-codex-orchestration"]:target) a[href="#doc-codex-orchestration"],
+body:has(section[id="doc-command-reference"]:target) a[href="#doc-command-reference"],
+body:has(section[id="doc-faq"]:target) a[href="#doc-faq"],
+body:has(section[id="doc-github-actions"]:target) a[href="#doc-github-actions"],
+body:has(section[id="doc-icon-management-guide"]:target) a[href="#doc-icon-management-guide"],
+body:has(section[id="doc-installer-creation"]:target) a[href="#doc-installer-creation"],
+body:has(section[id="doc-model-routing"]:target) a[href="#doc-model-routing"],
+body:has(section[id="doc-plugin-development-lifecycle"]:target) a[href="#doc-plugin-development-lifecycle"],
+body:has(section[id="doc-project-structure"]:target) a[href="#doc-project-structure"],
+body:has(section[id="doc-ship-workflow"]:target) a[href="#doc-ship-workflow"],
+body:has(section[id="doc-state-management-deep-dive"]:target) a[href="#doc-state-management-deep-dive"],
+body:has(section[id="doc-troubleshooting-guide"]:target) a[href="#doc-troubleshooting-guide"],
+body:has(section[id="doc-webview-framework"]:target) a[href="#doc-webview-framework"]{
+  background:var(--ink); color:var(--paper); font-weight:bold;}
+body:has(section[id="10-documentation"]:target) details.navsub summary,
+body:has(section[id^="doc-"]:target) details.navsub summary{
+  background:var(--ink); color:var(--paper); font-weight:bold;}
+body:not(:has(main section:target)) a[href="#01-overview"]::before,
+body:has(section[id="01-overview"]:target) a[href="#01-overview"]::before,
+body:has(section[id="02-projects"]:target) a[href="#02-projects"]::before,
+body:has(section[id="03-skills"]:target) a[href="#03-skills"]::before,
+body:has(section[id="04-commands"]:target) a[href="#04-commands"]::before,
+body:has(section[id="05-designs"]:target) a[href="#05-designs"]::before,
+body:has(section[id="06-scripts"]:target) a[href="#06-scripts"]::before,
+body:has(section[id="07-templates"]:target) a[href="#07-templates"]::before,
+body:has(section[id="08-tools"]:target) a[href="#08-tools"]::before,
+body:has(section[id="09-settings"]:target) a[href="#09-settings"]::before,
+body:has(section[id="10-documentation"]:target) a[href="#10-documentation"]::before,
+body:has(section[id="11-consistency"]:target) a[href="#11-consistency"]::before,
+body:has(section[id="doc-readme"]:target) a[href="#doc-readme"]::before,
+body:has(section[id="doc-build-system"]:target) a[href="#doc-build-system"]::before,
+body:has(section[id="doc-codex-compatibility"]:target) a[href="#doc-codex-compatibility"]::before,
+body:has(section[id="doc-codex-orchestration"]:target) a[href="#doc-codex-orchestration"]::before,
+body:has(section[id="doc-command-reference"]:target) a[href="#doc-command-reference"]::before,
+body:has(section[id="doc-faq"]:target) a[href="#doc-faq"]::before,
+body:has(section[id="doc-github-actions"]:target) a[href="#doc-github-actions"]::before,
+body:has(section[id="doc-icon-management-guide"]:target) a[href="#doc-icon-management-guide"]::before,
+body:has(section[id="doc-installer-creation"]:target) a[href="#doc-installer-creation"]::before,
+body:has(section[id="doc-model-routing"]:target) a[href="#doc-model-routing"]::before,
+body:has(section[id="doc-plugin-development-lifecycle"]:target) a[href="#doc-plugin-development-lifecycle"]::before,
+body:has(section[id="doc-project-structure"]:target) a[href="#doc-project-structure"]::before,
+body:has(section[id="doc-ship-workflow"]:target) a[href="#doc-ship-workflow"]::before,
+body:has(section[id="doc-state-management-deep-dive"]:target) a[href="#doc-state-management-deep-dive"]::before,
+body:has(section[id="doc-troubleshooting-guide"]:target) a[href="#doc-troubleshooting-guide"]::before,
+body:has(section[id="doc-webview-framework"]:target) a[href="#doc-webview-framework"]::before{
+  content:"> ";}
+@media(max-width:900px){
+  .frame{display:block; height:auto;}
+  .topbar{position:sticky; top:0; z-index:60; background:var(--paper);}
+  .shell{grid-template-columns:1fr;}
+  .side{overflow:visible; border-right:none; border-bottom:2px solid var(--rule);}
+  .sidenav a{display:inline-block; margin:0 8px 6px 0;}
+  .content{overflow:visible;}
+  .topbar pre.logo{font-size:2.2vw; min-width:560px;}
+  .logoscr{overflow-x:auto;}
+}
+@media print{
+  .side{display:none;}
+  .frame{display:block; height:auto;}
+  .shell{display:block;}
+  .topbar{position:static;}
+  .content{overflow:visible;}
+  .content main section{display:block !important;}
+  .pager{display:none;}
+}

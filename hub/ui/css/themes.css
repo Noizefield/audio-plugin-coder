@@ -1,0 +1,11 @@
+/* == themes.css — dark is default, light is alternate == */
+:root, html[data-theme="dark"]{
+  --paper:#0B0B0B; --ink:#EDEAE0; --muted:#8A877E;
+  --rule:#3D3A33; --amber:#FF9500; --amber-ink:#000;
+  --good:#33FF33; --good-ink:#000;
+}
+html[data-theme="light"]{
+  --paper:#FAFAF7; --ink:#141414; --muted:#6B6B6B;
+  --rule:#1A1A1A; --amber:#FF9500; --amber-ink:#000;
+  --good:#0B7A30; --good-ink:#fff;
+}
