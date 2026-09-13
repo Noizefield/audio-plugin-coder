@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.22)
 # ============================================
 # MAX EXTERNAL PROJECT
 # ============================================
-# Use Min-DevKit (min-api) to build a modern Max External with JUCE 8
+# Use Min-DevKit (min-api) to build a modern Max External with JUCE 9
 project(JuceMaxExternal VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -24,7 +24,7 @@ endif()
 # DEPENDENCIES
 # ============================================
 
-# 1. JUCE 8
+# 1. JUCE 9
 # Assume JUCE is provided by parent or fetch it
 if(NOT TARGET juce::juce_core)
     find_package(JUCE CONFIG REQUIRED)

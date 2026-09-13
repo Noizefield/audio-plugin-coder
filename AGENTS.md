@@ -2,7 +2,7 @@
 
 ## Scope
 
-These instructions apply to the entire repository and are written for any coding agent that reads the `AGENTS.md` standard (Codex, Cursor, and others). Agents with their own APC configuration (Claude Code via `.claude/`, Kilo via `.kilocode/`) should treat that configuration as primary; this file stays consistent with it.
+These instructions apply to the entire repository and are written for any coding agent that reads the `AGENTS.md` standard (Codex, Cursor, Pi, Antigravity, OpenCode, and others). Canonical APC knowledge lives under `.agents/` (`skills/`, `workflows/`, `rules/`, `guides/`, `troubleshooting/`). Host-specific folders (`.claude/` for Claude Code, `.kilocode/` for Kilo, `.agent/` legacy, `.opencode/command/` for OpenCode, `.pi/` if present) contain pointers to those canonical files; treat them as equivalent.
 
 ## First run
 
@@ -38,8 +38,8 @@ These instructions apply to the entire repository and are written for any coding
 
 - Before changing a plugin under the configured plugins directory, read its `status.json`.
 - Resolve the plugin directory with `Get-ApcPluginPath` / `apc_plugin_path` (from `scripts/lib/Get-ApcPaths.ps1` or `scripts/lib/apc-paths.sh`). Do **not** hardcode `plugins/<Name>` — honor `paths.plugins_dir` in `apc.config.json`.
-- Read the relevant workflow and skill under `.claude/`; fall back to the matching `.agent/` file if needed.
-- Also read `.claude/rules/juce-build-protocols.md` and `.claude/rules/file-naming-conventions.md` before implementation, build, or packaging work.
+- Read the relevant workflow and skill under `.agents/`; host folders (`.claude/`, `.agent/`, `.kilocode/`) contain pointers to the same canonical files.
+- Also read `.agents/rules/juce-build-protocols.md` and `.agents/rules/file-naming-conventions.md` before implementation, build, or packaging work.
 - Preserve the selected `ui_framework`: Visage work must not introduce WebView files, and WebView work must not introduce Visage controls.
 - Announce the preferred model from `apc.config.json` → `models.phases.<phase>` at phase start (see `docs/model-routing.md`).
 

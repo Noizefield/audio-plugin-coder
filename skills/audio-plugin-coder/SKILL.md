@@ -37,9 +37,9 @@ Do not use bare `/plan` or `/status` spellings in Codex. Prefer skill actions or
 Keep this adapter thin; load APC's existing knowledge just in time:
 
 1. Read `AGENTS.md`.
-2. Read `.claude/rules/juce-build-protocols.md` and `.claude/rules/file-naming-conventions.md` for implementation, build, test, debug, or ship actions.
+2. Read `.agents/rules/juce-build-protocols.md` and `.agents/rules/file-naming-conventions.md` for implementation, build, test, debug, or ship actions.
 3. Read the workflow and primary instruction file from the routing table.
-4. If a routed `.claude/` file is missing, use the equivalent `.agent/` path.
+4. If a routed `.agents/` file is missing, fall back to the equivalent host-shim path (`.claude/`, `.agent/`, `.kilocode/` — pointers to the same canonical files).
 5. Resolve examples for the current OS: PowerShell on Windows, Bash/Zsh on macOS or Linux.
 6. Announce preferred model from `apc.config.json` → `models.phases.<phase>` when present.
 7. For automated Codex CLI cost routing (optional, not the default interactive path), see `docs/codex-orchestration.md` and `scripts/codex/apc-codex-run.ps1` / `.sh`. Do not nest `codex exec` under every interactive turn.
@@ -48,19 +48,19 @@ Keep this adapter thin; load APC's existing knowledge just in time:
 
 | Action | Workflow | Primary instructions |
 |---|---|---|
-| `setup` | `.claude/workflows/apc-setup.md` | `.claude/skills/apc-setup/SKILL.md` |
-| `dream` | `.claude/workflows/apc-dream.md` | `.claude/skills/dream/SKILL.md` or `.agent/skills/skill_ideation/SKILL.md` |
-| `plan` | `.claude/workflows/apc-plan.md` | `.claude/skills/plan/SKILL.md` or `.agent/skills/skill_planning/SKILL.md` |
-| `design` | `.claude/workflows/apc-design.md` | `.claude/skills/design/SKILL.md` or `.agent/skills/skill_design/SKILL.md` |
-| `impl` or `implement` | `.claude/workflows/apc-impl.md` | `.claude/skills/impl/SKILL.md` or `.agent/skills/skill_implementation/SKILL.md` |
-| `test` | `.claude/workflows/apc-test.md` | `.claude/skills/skill_testing/SKILL.md` |
-| `debug` | `.claude/workflows/apc-debug.md` | `.claude/skills/debug/SKILL.md` and `.claude/skills/skill_troubleshooting/SKILL.md` |
-| `ship` | `.claude/workflows/apc-ship.md` | `.claude/skills/ship/SKILL.md` or `.agent/skills/skill_packaging/SKILL.md` |
-| `status` | `.claude/workflows/apc-status.md` | Read-only state inspection |
-| `resume` | `.claude/workflows/apc-resume.md` | Route to the next incomplete phase, then complete only that phase |
-| `new` | `.claude/workflows/apc-new.md` | Run one phase at a time and obtain each required user confirmation |
+| `setup` | `.agents/workflows/apc-setup.md` | `.agents/skills/apc-setup/SKILL.md` |
+| `dream` | `.agents/workflows/apc-dream.md` | `.agents/skills/dream/SKILL.md` or `.agents/skills/skill_ideation/SKILL.md` |
+| `plan` | `.agents/workflows/apc-plan.md` | `.agents/skills/plan/SKILL.md` or `.agents/skills/skill_planning/SKILL.md` |
+| `design` | `.agents/workflows/apc-design.md` | `.agents/skills/design/SKILL.md` or `.agents/skills/skill_design/SKILL.md` |
+| `impl` or `implement` | `.agents/workflows/apc-impl.md` | `.agents/skills/impl/SKILL.md` or `.agents/skills/skill_implementation/SKILL.md` |
+| `test` | `.agents/workflows/apc-test.md` | `.agents/skills/skill_testing/SKILL.md` |
+| `debug` | `.agents/workflows/apc-debug.md` | `.agents/skills/debug/SKILL.md` and `.agents/skills/skill_troubleshooting/SKILL.md` |
+| `ship` | `.agents/workflows/apc-ship.md` | `.agents/skills/ship/SKILL.md` or `.agents/skills/skill_packaging/SKILL.md` |
+| `status` | `.agents/workflows/apc-status.md` | Read-only state inspection |
+| `resume` | `.agents/workflows/apc-resume.md` | Route to the next incomplete phase, then complete only that phase |
+| `new` | `.agents/workflows/apc-new.md` | Run one phase at a time and obtain each required user confirmation |
 
-For WebView design or implementation, also load `.claude/skills/skill_design_webview/SKILL.md` when present.
+For WebView design or implementation, also load `.agents/skills/skill_design_webview/SKILL.md` when present.
 
 ## Execution Rules
 
@@ -68,7 +68,7 @@ For WebView design or implementation, also load `.claude/skills/skill_design_web
 2. Preserve the recorded `ui_framework`.
 3. Treat shell snippets in workflow files as intent, not as permission to use the wrong platform shell.
 4. Use the repository's state-management and build scripts instead of reimplementing their behavior.
-5. Search `.claude/troubleshooting/known-issues.yaml` before trial-and-error debugging.
+5. Search `.agents/troubleshooting/known-issues.yaml` before trial-and-error debugging.
 6. Preserve unrelated user changes and generated plugin projects.
 7. Validate the requested phase's outputs.
 8. Update state only after successful validation.

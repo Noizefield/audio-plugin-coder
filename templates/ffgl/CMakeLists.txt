@@ -20,7 +20,7 @@ endif()
 # DEPENDENCIES
 # ============================================
 
-# 1. JUCE 8
+# 1. JUCE 9
 # We assume JUCE is available via find_package or add_subdirectory from parent
 # If not found, we try to find it
 if(NOT TARGET juce::juce_core)
