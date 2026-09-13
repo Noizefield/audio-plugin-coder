@@ -8,17 +8,22 @@ APC follows a monorepo architecture with clear separation between framework code
 
 ```
 audio-plugin-coder/
-├── .agent/                 # AI agent configuration and skills
-├── .agents/                # Codex repo-local skill discovery
+├── .agents/                # Canonical AI knowledge (skills, workflows, rules, guides, troubleshooting)
+├── .claude/ .kilocode/ .agent/  # Thin host pointers to .agents/ files (Claude, Kilo, legacy)
+├── .cursor/                # Cursor rules (pointer)
+├── .opencode/              # OpenCode command shims (-> .agents/workflows/)
 ├── .codex/                 # Optional Codex project agents (cost tiers)
-├── .codex-plugin/          # Codex plugin manifest
-├── _tools/                 # External dependencies (JUCE, pluginval)
+├── .codex-plugin/          # Codex plugin manifest (+ skills loader)
+├── _tools/                 # External dependencies (JUCE, pluginval, visage submodules)
 ├── build/                  # Build artifacts (gitignored)
 ├── release/                # Ship packages and installers (gitignored except README)
 ├── docs/                   # Documentation
 ├── plugins/                # Your plugin projects
-├── scripts/                # Build and utility scripts
-├── skills/                 # Packaged Codex skill
+├── scripts/                # Build and utility scripts (.ps1 + .sh)
+├── skills/                 # Packaged Codex skill adapter
+├── templates/              # Plugin templates (visage, webview, ffgl, max-external)
+├── design_library/         # UI design examples
+├── assets/                 # Logos and banners
 ├── .github/                # GitHub Actions workflows
 ├── AGENTS.md               # Agent guidance (AGENTS.md standard)
 ├── CMakeLists.txt          # Root CMake configuration
@@ -29,51 +34,56 @@ audio-plugin-coder/
 
 ## Core Directories
 
-### `.agent/` - AI Agent Configuration
+### `.agents/` - Canonical AI Knowledge
 
-Contains all configuration, skills, and knowledge base for AI agents.
+Single source of truth for all AI-agent instructions. Host-specific folders
+(`.claude/` for Claude Code, `.kilocode/` for Kilo, `.agent/` legacy,
+`.opencode/command/` for OpenCode) contain thin pointers to these files.
 
 ```
-.agent/
+.agents/
 ├── guides/                 # Reference documentation
+│   ├── documentation-system.md
 │   └── state-management-guide.md
 ├── rules/                  # System constraints and protocols
 │   ├── agent.md            # Main agent rules
 │   ├── file-naming-conventions.md
 │   └── juce-build-protocols.md
 ├── skills/                 # Domain knowledge modules
-│   ├── skill_debug/
-│   ├── skill_design/
+│   ├── apc-setup/
+│   ├── debug/              # (aliases: skill_debug/)
+│   ├── design/             # (aliases: skill_design/)
+│   ├── dream/              # (aliases: skill_ideation/)
+│   ├── impl/               # (aliases: skill_implementation/)
+│   ├── plan/               # (aliases: skill_planning/)
+│   ├── ship/               # (aliases: skill_packaging/)
+│   ├── test/
 │   ├── skill_design_webview/
-│   ├── skill_ideation/
-│   ├── skill_implementation/
-│   ├── skill_packaging/
-│   ├── skill_planning/
 │   ├── skill_testing/
 │   └── skill_troubleshooting/
-├── templates/              # Code templates
-│   ├── status-template.json
-│   └── webview/            # WebView plugin templates
+├── agents/                 # Worker profiles (Luna/Terra/Sol/Astra)
 ├── troubleshooting/        # Auto-captured issues
 │   ├── known-issues.yaml
 │   └── resolutions/
-└── workflows/              # Slash command orchestrators
-    ├── debug.md
-    ├── design.md
-    ├── dream.md
-    ├── impl.md
-    ├── new.md
-    ├── plan.md
-    ├── resume.md
-    ├── ship.md
-    ├── status.md
-    └── test.md
+└── workflows/              # Slash command orchestrators (apc-* + deprecated short aliases)
+    ├── apc-setup.md
+    ├── apc-dream.md
+    ├── apc-plan.md
+    ├── apc-design.md
+    ├── apc-impl.md (apc-implement.md alias)
+    ├── apc-test.md
+    ├── apc-debug.md
+    ├── apc-ship.md
+    ├── apc-status.md
+    ├── apc-resume.md
+    ├── apc-new.md
+    └── [short aliases: setup.md, dream.md, plan.md, ...]
 ```
 
 **Key Files:**
-- [`agent.md`](.agent/rules/agent.md) - Critical rules for AI agents
-- [`known-issues.yaml`](.agent/troubleshooting/known-issues.yaml) - Database of known issues
-- [`status-template.json`](.agent/templates/status-template.json) - Plugin state schema
+- [`agent.md`](../.agents/rules/agent.md) - Critical rules for AI agents
+- [`known-issues.yaml`](../.agents/troubleshooting/known-issues.yaml) - Database of known issues
+- [`status-template.json`](../templates/status-template.json) - Plugin state schema (lives under root `templates/`)
 
 ---
 
@@ -98,12 +108,13 @@ Third-party tools and frameworks required by APC.
 
 ```
 _tools/
-├── JUCE/                   # JUCE 8 framework
+├── JUCE/                   # JUCE 9 framework (submodule, pin 9.0.1)
 │   ├── modules/            # JUCE modules (audio, GUI, DSP)
 │   ├── examples/           # Example plugins
 │   └── CMakeLists.txt      # JUCE CMake configuration
-└── pluginval/              # Plugin validation tool
-    └── pluginval.exe       # Windows executable
+├── pluginval/              # Plugin validation tool (submodule)
+└── visage/                 # Visage GUI library (submodule)
+    # NOTE: _tools/DebugView/ (Sysinternals, Windows-only) is gitignored local tooling
 ```
 
 **Note:** These are Git submodules. Initialize with:
@@ -162,37 +173,38 @@ plugins/
 
 ### `scripts/` - Build Automation
 
-PowerShell scripts for building, testing, and packaging.
+PowerShell (`.ps1`, Windows) and Bash (`.sh`, macOS/Linux) scripts for building, testing, and packaging.
+Most scripts ship as `.ps1`/`.sh` pairs (see `lib/Get-ApcPaths.ps1` + `lib/apc-paths.sh` for path resolution);
+a few Windows-only helpers (e.g. `terminal-monitoring`, `copy-agent-folders`, `setup_bridges`) have no `.sh` counterpart.
 
 ```
 scripts/
-├── add-icon-to-exe.ps1
-├── backup.ps1
-├── build-and-install.ps1      # Main build script
+├── apc-write-config.ps1/.sh
+├── backup.ps1/.sh
+├── build-and-install.ps1/.sh  # Main build script
 ├── codex/                     # Optional Codex cost-aware orchestration
-│   ├── apc-codex-run.ps1
-│   ├── apc-codex-run.sh
-│   ├── smoke-proof.ps1
-│   ├── install-profiles.ps1
-│   ├── profiles/
+│   ├── apc-codex-run.ps1/.sh
+│   ├── smoke-proof.ps1/.sh
+│   ├── install-profiles.ps1/.sh
+│   ├── profiles/              # luna/terra/sol/astra tier configs
 │   └── routing-schema.json
-├── copy-agent-folders.ps1
-├── error-detection.ps1
-├── list-folder-structure.ps1
+├── error-detection.ps1/.sh
+├── lib/
+│   ├── Get-ApcPaths.ps1       # Path resolution (plugins/build/release)
+│   └── apc-paths.sh
 ├── pluginval-integration.ps1
-├── preview-design.ps1
-├── rollback.ps1
-├── setup.ps1
-├── state-management.ps1       # State management module
-├── system-check.ps1
-├── terminal-monitoring.ps1
-├── validate-plugin-status.ps1
-├── validate-state-management.ps1
-├── validate-webview-member-order.ps1
-├── validate-webview-setup.ps1
-└── installer/
-    ├── create-windows-installer.ps1
-    └── installer-template.iss
+├── preview-design.ps1/.sh
+├── rollback.ps1/.sh
+├── setup_bridges.bat/.ps1     # FFGL + Max/MSP bridge setup (Windows)
+├── state-management.ps1/.sh   # State management module
+├── system-check.ps1/.sh
+├── validate-*.ps1(.sh)         # Phase/setup validators (webview, visage, state, plugin)
+├── installer/
+│   ├── create-windows-installer.ps1
+│   ├── create-macos-installer.sh
+│   └── installer-template.iss
+└── (Windows-only / legacy helpers: setup.ps1, setup_bridges, copy-agent-folders.ps1,
+    list-folder-structure.ps1, terminal-monitoring.ps1, add-icon-to-exe.ps1 + rcedit-x64.exe)
 ```
 
 **Critical Scripts:**
@@ -209,12 +221,22 @@ Comprehensive documentation for the APC framework.
 
 ```
 docs/
-├── README.md                   # Documentation index
+├── README.md                   # Documentation index (start here)
+├── plugin-development-lifecycle.md  # Five-phase workflow detail
+├── command-reference.md        # Commands and scripts
+├── codex-compatibility.md      # Codex skill, plugin manifest, command mapping
+├── codex-orchestration.md      # Optional Luna/Terra/Sol/Astra codex exec routing
+├── model-routing.md            # Per-phase model preferences
+├── build-system.md             # CMake configuration and build scripts
 ├── github-actions.md           # CI/CD documentation
 ├── icon-management-guide.md    # Icon creation guide
-├── installer-creation.md       # Installer guide
-├── ship-workflow.md            # Shipping process
-└── [Additional guides...]
+├── installer-creation.md       # Platform installer how-to (Windows Inno Setup)
+├── ship-workflow.md            # End-to-end shipping process (uses installer-creation)
+├── state-management-deep-dive.md  # State tracking internals
+├── troubleshooting-guide.md    # Common issues and solutions
+├── webview-framework.md        # WebView UI framework
+├── PROJECT_STRUCTURE.md        # This file
+└── FAQ.md                      # Frequently asked questions
 ```
 
 ---
@@ -411,7 +433,27 @@ Thumbs.db
 ```
 _tools/JUCE
 _tools/pluginval
+_tools/visage
 ```
+
+---
+
+## Local-Only & Heavy Directories (kept, documented — not clutter)
+
+| Path | Size class | Tracked? | Notes |
+|------|-----------|----------|-------|
+| `_tools/` | ~226MB | 3 gitlinks + ignored `DebugView/` | JUCE 9.0.1 / pluginval / visage submodules. `_tools/DebugView/` (Sysinternals exes) is gitignored Windows-only tooling. Init with `git submodule update --init --recursive`. |
+| `.git/` | ~761MB | n/a | History + submodule objects. Do not rewrite history to shrink; `git gc` if needed. |
+| `.opencode/` | ~55MB on disk | 12 shims (`command/apc-*.md`) | Rest is ignored `node_modules/`. Only the shims are committed. |
+| `assets/APC_Logo.gif` | ~9.8MB | tracked | Used by README + `.codex-plugin` logo. Keep; optimize only if size matters. |
+| `build/` | regenerable | ignored | CMake dirty zone. Safe to delete locally, never commit. |
+| `release/` | ship output | only `README.md` tracked | `/apc-ship` writes here (honors `paths.release_dir`). Do not use `dist/`. |
+| `.tmp/` | logs | ignored | Codex smoke/usage logs. Safe to clear locally. |
+| `plans/` | local docs | ignored | Never published. Decision lists live here. |
+| `logs/` | empty placeholder | ignored | Kept for tooling that expects the dir. |
+| `github/` | local helpers | ignored | Personal `*.ps1` git helpers. Not `.github/` (CI) — different folder, similar name by accident of history. |
+| `design_library/_exclude/` | examples overflow | ignored | Not shipped. |
+| `bin/` (`setup.js`), `common/` (`VisageJuceHost.h`) | tiny | tracked | Intentional single-file dirs (npm `bin`, C++ bridge header). |
 
 ---
 
@@ -431,4 +473,5 @@ _tools/pluginval
 - [State Management Guide](state-management-deep-dive.md) - Deep dive into state tracking
 - [Build System](build-system.md) - Detailed build documentation
 - [WebView Framework](webview-framework.md) - WebView-specific paths
-- [File Naming Conventions](.agent/rules/file-naming-conventions.md) - Complete naming rules
+- [File Naming Conventions](../.agents/rules/file-naming-conventions.md) - Complete naming rules
+- [Maintenance Triage](maintenance-triage.md) - Orphan/legacy retirement list (nothing deleted without approval)

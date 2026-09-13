@@ -425,7 +425,7 @@ title_font_ = visage::Font(20.0f,
 fatal error: gtk/gtk.h: No such file or directory
 ```
 
-**Root Cause:** Plugin CMakeLists.txt sets `NEEDS_WEBVIEW2` but not `NEEDS_WEB_BROWSER`. JUCE 8 has separate flags: `NEEDS_WEBVIEW2` (Windows only) and `NEEDS_WEB_BROWSER` (Linux only). Without the latter, GTK/WebKit include paths are never added.
+**Root Cause:** Plugin CMakeLists.txt sets `NEEDS_WEBVIEW2` but not `NEEDS_WEB_BROWSER`. JUCE keeps separate flags: `NEEDS_WEBVIEW2` (Windows only) and `NEEDS_WEB_BROWSER` (Linux only). Without the latter, GTK/WebKit include paths are never added.
 
 **Solution:**
 In plugin CMakeLists.txt, add for Linux:

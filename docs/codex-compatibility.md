@@ -12,8 +12,8 @@ Audio Plugin Coder supports Codex through a repository instruction file and a Co
 | Packaged skill | `skills/audio-plugin-coder/SKILL.md` |
 | File editing and shell execution | Supported through Codex tools and approvals |
 | APC phase/state gating | Enforced by `AGENTS.md` and the APC skill |
-| Codex plugin slash commands | `commands/apc-*.md` |
-| Claude/Kilo workflow slash commands | `.claude/workflows/` and `.kilocode/workflows/` |
+| Codex plugin slash commands | `.opencode/command/apc-*.md` (OpenCode) / skill actions (Codex) |
+| Claude/Kilo workflow slash commands | `.agents/workflows/` via `.claude/` and `.kilocode/` pointers |
 
 ## Start in Codex
 
@@ -63,8 +63,7 @@ Do not type Codex built-ins `/plan` or `/status` to start APC phases. Use the sk
 ## Repo Skill vs Plugin
 
 - **Working in this checkout:** no installation is required. Codex discovers the repo-local skill under `.agents/skills/`.
-- **Codex command adapters:** the command files are included in this checkout under `commands/` for
-  plugin surfaces that support them; they do not create bare `/apc-*` aliases in Codex.
+- **Codex command adapters:** thin command shims live under `.opencode/command/` for surfaces that support them (the legacy `commands/` folder is an empty placeholder); they do not create bare `/apc-*` aliases in Codex.
 - **Packaging for a marketplace:** the repository root is a valid Codex plugin package through `.codex-plugin/plugin.json`.
 - **Codex IDE extension:** use the repo-local skill. Installable plugins are available in Codex CLI and supported desktop surfaces, while repo skills work in the IDE extension.
 
@@ -73,9 +72,9 @@ marketplace, then start a new Codex session if the update does not appear immedi
 
 ## Design Notes
 
-- `AGENTS.md` carries durable repository rules because Codex does not read `.agent/rules/` automatically.
-- The adapter loads the existing `.claude/` workflow wrappers first, then falls back to the equivalent `.agent/` files.
-- `commands/apc-*.md` are thin Codex adapters; the APC skill remains the source of truth for execution.
+- `AGENTS.md` carries durable repository rules because Codex does not read `.agents/rules/` automatically.
+- The adapter loads the canonical `.agents/` workflow files first, then falls back to the equivalent host-shim files (`.claude/`, `.agent/`, `.kilocode/`).
+- `.opencode/command/apc-*.md` are thin adapters; the APC skill remains the source of truth for execution.
 - A single `audio-plugin-coder` skill avoids duplicating APC's large domain knowledge base.
 - The adapter translates platform-specific examples and preserves APC's one-phase-at-a-time stopping rule.
 - Optional cost-aware `codex exec` routing (profiles, usage JSONL, escalation) is documented in [Codex Orchestration](codex-orchestration.md) and is separate from the interactive skill path.
