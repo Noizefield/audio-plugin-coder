@@ -15,8 +15,25 @@ $PluginPath = Get-ApcPluginPath -PluginName $PluginName
 
 $state = Get-PluginState -PluginPath $PluginPath
 
-if ($state.current_phase -ne "design_complete") {
+
+# Frozen-generation guard: a shipped generation is read-only.
+# New work always opens a generation first (/apc-patch for bugs, /apc-evolve for features).
+$gen = $state.current_generation
+$generationOpen = $gen -and $gen.status -eq "open"
+$patchOpen = $generationOpen -and $gen.kind -eq "patch"
+
+# Open patch generations skip the design gate (design did not change; its
+# flags stay true). Evolve generations run the normal plan -> design -> impl
+# pipeline, so they arrive here as design_complete like initial builds.
+if ($state.current_phase -ne "design_complete" -and -not $patchOpen) {
     Write-Error "Design phase not complete. Run /apc-design first."
+    exit 1
+}
+
+# Frozen-generation guard: a shipped generation is read-only.
+# New work always opens a generation first (/apc-patch for bugs, /apc-evolve for features).
+if (($state.current_phase -eq "ship_complete" -or $state.current_phase -eq "complete") -and -not $generationOpen) {
+    Write-Error "v$($state.version) is shipped and frozen. Open a generation first: /apc-patch $($state.plugin_name) (bug) or /apc-evolve $($state.plugin_name) (feature)."
     exit 1
 }
 

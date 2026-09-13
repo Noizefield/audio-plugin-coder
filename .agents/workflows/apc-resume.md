@@ -23,7 +23,15 @@ $nextCommand = switch ($state.current_phase) {
     "plan_complete" { "/apc-design $($state.plugin_name)" }
     "design_complete" { "/apc-impl $($state.plugin_name)" }
     "code_complete" { "/apc-ship $($state.plugin_name)" }
-    "ship_complete" { "Plugin is complete!" }
+    "ship_complete" {
+        $gen = $state.current_generation
+        if ($gen -and $gen.status -eq "open") {
+            if ($gen.kind -eq "patch") { "/apc-impl $($state.plugin_name) (finish open patch $($gen.version))" }
+            else { "/apc-plan $($state.plugin_name) (continue open evolve $($gen.version))" }
+        } else {
+            "/apc-patch $($state.plugin_name) (bug) or /apc-evolve $($state.plugin_name) (feature) - v$($state.version) is shipped and read-only"
+        }
+    }
     default { "/apc-status $($state.plugin_name)" }
 }
 

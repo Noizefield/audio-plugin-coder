@@ -25,6 +25,7 @@ New to APC? Start here:
 | [Codex Compatibility](codex-compatibility.md) | Codex skill, plugin manifest, and command mapping |
 | [Codex Orchestration](codex-orchestration.md) | Optional Luna/Terra/Sol/Astra `codex exec` routing |
 | [FAQ](FAQ.md) | Frequently asked questions |
+| [Hub](hub.md) | Live local dashboard (`/apc-hub`) |
 
 ### Core Concepts
 

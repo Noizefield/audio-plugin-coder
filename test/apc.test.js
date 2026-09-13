@@ -233,6 +233,130 @@ test('visage validator passes a good plugin, flags a missing link', () => {
   assert.match(r.stdout, /visage::visage/);
 });
 
+function shippedStatus(name, version) {
+  return JSON.stringify({
+    plugin_name: name, version, current_phase: 'ship_complete',
+    ui_framework: 'webview', complexity_score: 3,
+    created_at: '2026-01-01T00:00:00Z', last_modified: '2026-08-01T00:00:00Z',
+    phase_history: [{ phase: 'shipped', version, completed_at: '2026-08-01T00:00:00Z' }],
+    validation: {
+      creative_brief_exists: true, parameter_spec_exists: true,
+      architecture_defined: true, ui_framework_selected: true,
+      design_complete: true, code_complete: true,
+      tests_passed: true, ship_ready: true,
+    },
+    framework_selection: {}, error_recovery: { error_log: [] },
+  });
+}
+
+function shippedRoot(name, version) {
+  return makeRoot({
+    'package.json': pkgFixture('9.9.9'),
+    [`plugins/${name}/status.json`]: shippedStatus(name, version),
+    [`plugins/${name}/.ideas/creative-brief.md`]: '# brief',
+  });
+}
+
+function readStatusJson(root, name) {
+  return JSON.parse(fs.readFileSync(path.join(root, 'plugins', name, 'status.json'), 'utf8'));
+}
+
+// ─── generations ───────────────────────────────────────────────────────────
+test('patch opens on shipped: bump, pointer, flags, backfill, snapshot', () => {
+  const root = shippedRoot('Demo', 'v1.0');
+  const r = run(['patch', 'Demo'], root);
+  assert.equal(r.status, 0);
+  assert.match(r.stdout, /v1\.0\.1/);
+  const s = readStatusJson(root, 'Demo');
+  assert.equal(s.version, 'v1.0.1');
+  assert.equal(s.current_phase, 'code');
+  assert.equal(s.validation.design_complete, true); // design untouched
+  assert.equal(s.validation.tests_passed, false);
+  assert.equal(s.validation.ship_ready, false);
+  assert.equal(s.current_generation.kind, 'patch');
+  assert.equal(s.current_generation.status, 'open');
+  assert.equal(s.generations.length, 1); // backfilled frozen v1.0
+  assert.equal(s.generations[0].version, 'v1.0');
+  assert.equal(s.generations[0].status, 'shipped');
+  assert.ok(fs.existsSync(path.join(root, 'plugins', 'Demo', s.current_generation.backup_file)));
+  assert.ok(!s.current_generation.brief); // patch writes no brief
+});
+
+test('evolve opens with codename, brief stub, and reset design flags', () => {
+  const root = shippedRoot('Demo', 'v1.0');
+  const r = run(['evolve', 'Demo', '--codename', 'Warmth'], root);
+  assert.equal(r.status, 0);
+  const s = readStatusJson(root, 'Demo');
+  assert.equal(s.version, 'v1.1');
+  assert.equal(s.current_phase, 'plan');
+  assert.equal(s.current_generation.codename, 'Warmth');
+  assert.equal(s.validation.design_complete, false);
+  assert.equal(s.validation.creative_brief_exists, true); // foundation intact
+  assert.ok(s.current_generation.brief.endsWith('-brief.md'));
+  assert.ok(fs.existsSync(path.join(root, 'plugins', 'Demo', s.current_generation.brief)));
+});
+
+test('second open while one is open exits 1; open on unshipped exits 1', () => {
+  const root = shippedRoot('Demo', 'v1.0');
+  assert.equal(run(['patch', 'Demo'], root).status, 0);
+  assert.equal(run(['evolve', 'Demo'], root).status, 1);
+
+  const early = makeRoot({
+    'package.json': pkgFixture('9.9.9'),
+    'plugins/Early/status.json': goodStatus('Early', 'code'),
+  });
+  const r = run(['patch', 'Early'], early);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr + r.stdout, /not shipped/);
+});
+
+test('freeze records tag, returns machine to rest, keeps lineage', () => {
+  const root = shippedRoot('Demo', 'v1.0');
+  assert.equal(run(['patch', 'Demo'], root).status, 0);
+  const r = run(['freeze', 'Demo'], root);
+  assert.equal(r.status, 0);
+  assert.match(r.stdout, /v1\.0\.1-Demo/);
+  const s = readStatusJson(root, 'Demo');
+  assert.equal(s.current_phase, 'ship_complete');
+  assert.equal(s.current_generation, null);
+  assert.equal(s.generations.length, 2);
+  assert.equal(s.generations[1].status, 'shipped');
+  // next patch continues the lineage, no duplicate backfill
+  assert.equal(run(['patch', 'Demo'], root).status, 0);
+  const s2 = readStatusJson(root, 'Demo');
+  assert.equal(s2.version, 'v1.0.2');
+  assert.equal(s2.generations.length, 2);
+});
+
+test('freeze with no open generation exits 1', () => {
+  const root = shippedRoot('Demo', 'v1.0');
+  assert.equal(run(['freeze', 'Demo'], root).status, 1);
+});
+
+test('version math: three-part versions and v0 base', () => {
+  const a = shippedRoot('A', 'v1.0.0');
+  assert.equal(run(['patch', 'A'], a).status, 0);
+  assert.equal(readStatusJson(a, 'A').version, 'v1.0.1');
+  const b = shippedRoot('B', 'v1.0.0');
+  assert.equal(run(['evolve', 'B'], b).status, 0);
+  assert.equal(readStatusJson(b, 'B').version, 'v1.1.0');
+  const c = shippedRoot('C', 'v0.0.0');
+  assert.equal(run(['evolve', 'C'], c).status, 0);
+  assert.equal(readStatusJson(c, 'C').version, 'v0.1.0');
+});
+
+test('status --json reports frozen flag and lineage', () => {
+  const root = shippedRoot('Demo', 'v1.0');
+  const frozen = JSON.parse(run(['status', '--plugin', 'Demo', '--json'], root).stdout);
+  assert.equal(frozen.frozen, true);
+  assert.equal(frozen.generations.length, 0);
+  assert.equal(run(['patch', 'Demo'], root).status, 0);
+  const open = JSON.parse(run(['status', '--plugin', 'Demo', '--json'], root).stdout);
+  assert.equal(open.frozen, false);
+  assert.equal(open.open_generation.kind, 'patch');
+  assert.equal(open.generations.length, 1);
+});
+
 test('plugin validator skips hidden dirs in all-plugins mode', () => {
   const root = makeRoot({
     'package.json': pkgFixture('9.9.9'),

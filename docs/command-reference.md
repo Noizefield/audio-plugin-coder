@@ -18,6 +18,8 @@ Use the **`apc-` prefix** to avoid collisions with other frameworks and host bui
 | `/apc-ship` | `/ship` | Packaging |
 | `/apc-status` | `/status` | State inspection |
 | `/apc-resume` | `/resume` | Continue next incomplete phase |
+| `/apc-patch` | — | Open a bugfix generation on a shipped plugin |
+| `/apc-evolve` | — | Open a feature generation on a shipped plugin |
 | `/apc-new` | `/new` | Guided multi-phase with confirmations |
 
 Paths and models: see `apc.config.example.json`, `docs/model-routing.md`.
@@ -49,6 +51,8 @@ $audio-plugin-coder:audio-plugin-coder debug EchoReverb
 $audio-plugin-coder:audio-plugin-coder status EchoReverb
 $audio-plugin-coder:audio-plugin-coder resume EchoReverb
 $audio-plugin-coder:audio-plugin-coder ship EchoReverb
+$audio-plugin-coder:audio-plugin-coder patch EchoReverb
+$audio-plugin-coder:audio-plugin-coder evolve EchoReverb
 $audio-plugin-coder:audio-plugin-coder new EchoReverb
 ```
 
@@ -307,6 +311,41 @@ Next Step: Run /apc-impl EchoReverb to start implementation
 
 ---
 
+### `/apc-patch [Name]` (no alias)
+
+**Purpose:** Open a bugfix generation on a shipped plugin
+
+**Trigger:** Natural language: "Fix the click bug in shipped Organik"
+
+**Actions:**
+1. Verifies the plugin is shipped (refuses otherwise — use `/apc-resume`)
+2. Backfills the frozen prior-generation record on first use
+3. Snapshots `status.json`, bumps the patch digit (`v1.0` → `v1.0.1`)
+4. Points the phase at `code`; resets only `tests_passed` / `ship_ready`
+
+**Scope:** DSP/code fixes + tiny UI touch-ups (text, labels, positions).
+New controls or layout → `/apc-evolve`. Then `/apc-impl` → `/apc-test` →
+`/apc-ship` (ship freezes the generation).
+
+---
+
+### `/apc-evolve [Name]` (no alias)
+
+**Purpose:** Open a feature generation on a shipped plugin
+
+**Trigger:** Natural language: "Add a tape-hiss mode to shipped Organik"
+
+**Actions:**
+1. Asks for a one-line goal + optional codename (`v1.1 "Analog Warmth"`)
+2. Verifies shipped state, backfills, snapshots (as patch)
+3. Bumps minor (`v1.0` → `v1.1`), points the phase at `plan`
+4. Writes `.ideas/{version}-brief.md` as the feature scope contract
+
+**Flow:** `/apc-plan` → `/apc-design` → `/apc-impl` → `/apc-test` →
+`/apc-ship` (brief bundled as release notes; ship freezes the generation).
+
+---
+
 ## Platform Scripts
 
 Prefer the single cross-platform CLI (Node 18+, zero deps) — it dispatches
@@ -321,8 +360,18 @@ node bin/apc.js build <Name> [--no-install] [--skip-tests] [--strict]
 node bin/apc.js validate <kind> [--plugin N] [--json]  # webview|webview-order|visage|plugin run natively (cross-platform); state stays shell-bound
 node bin/apc.js backup <Name> <Version>
 node bin/apc.js rollback <Name> <Version>
+node bin/apc.js patch <Name> [--json]           # open bugfix generation (v1.0 -> v1.0.1)
+node bin/apc.js evolve <Name> [--codename N] [--json]  # open feature generation (v1.0 -> v1.1)
+node bin/apc.js freeze <Name> [--tag T] [--json]  # freeze open generation (called by ship flow)
+node bin/apc.js status [--plugin N] [--json]    # generation timeline (frozen flag + lineage)
 npm test                                    # CLI test suite (test/apc.test.js, zero deps)
 ```
+
+A shipped generation (`ship_complete` with no open generation) is read-only:
+open a generation first — `/apc-patch` for bugs (code-first, tiny UI
+touch-ups allowed), `/apc-evolve` for features (brief → plan → design →
+impl → test → ship). `/apc-resume` on a shipped plugin suggests these two
+instead of stopping.
 
 Raw `scripts/` invocation still works (the CLI delegates to it in phase 1):
 
@@ -593,6 +642,13 @@ gh run download <run-id> --dir release/github-artifacts
 | `/apc-resume` | Continue development |
 | `/apc-test` | Run validation |
 | `/apc-debug` | Debug issues |
+
+### Revisit Commands (shipped plugins)
+
+| Command | Purpose |
+|---------|---------|
+| `/apc-patch` | Open bugfix generation (patch bump, code-first) |
+| `/apc-evolve` | Open feature generation (minor bump, delta pipeline) |
 
 ### Script Commands
 

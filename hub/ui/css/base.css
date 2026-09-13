@@ -1,0 +1,11 @@
+/* == base.css == */
+*{box-sizing:border-box; border-radius:0 !important; box-shadow:none !important;}
+::selection{background:var(--good); color:var(--good-ink);}
+html,body{height:100%;}
+body{background:var(--paper); color:var(--ink);
+  font-family:system-ui,"Segoe UI",Roboto,Arial,sans-serif;
+  font-size:15px; line-height:1.5; margin:0; overflow:hidden;}
+.mono,pre,table,code,.kicker,.side{font-family:Consolas,"Cascadia Mono",Menlo,monospace;}
+a{color:var(--ink);}
+@media(max-width:900px){ body{overflow:auto;} }
+@media print{ body{overflow:visible;} }
