@@ -63,7 +63,8 @@ These instructions apply to the entire repository and are written for any coding
 
 - Run build operations from the repository root.
 - Do not invoke raw `cmake`, `xcodebuild`, `msbuild`, or compiler commands for normal APC builds.
-- Use `scripts/build-and-install.ps1` on Windows or `scripts/build-and-install.sh` on macOS/Linux (they honor `apc.config.json` paths).
+- Use `node bin/apc.js build <Name>` (preferred, cross-platform) or `scripts/build-and-install.ps1` on Windows / `scripts/build-and-install.sh` on macOS/Linux (they honor `apc.config.json` paths).
+- Check the framework version with `node bin/apc.js version` when reporting issues (canonical source: `package.json`).
 - Start with the narrowest validation relevant to the changed plugin.
 - Do not alter unrelated generated plugins, build artifacts, or user debug output.
 - APC targets **JUCE 9** (`_tools/JUCE`). WebView interop: `@juce-framework/webview` or `native/typescript/webview-interop/dist/index.js`.

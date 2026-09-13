@@ -15,7 +15,8 @@ The WebView framework uses Microsoft's WebView2 (Chromium-based) to render plugi
 
 **Trade-offs:**
 - ~100MB additional memory footprint
-- Windows 11 + WebView2 Runtime dependency
+- Platform backend dependency: WebView2 Runtime (Windows) / system WKWebView
+  (macOS) / WebKitGTK (Linux) — see `scripts/system-check.ps1` / `.sh`
 - Different performance characteristics than native C++
 
 ---
@@ -117,7 +118,7 @@ private:
     juce::WebSliderRelay gainRelay { "GAIN" };           // ❌ Too late!
 ```
 
-**See:** [Troubleshooting: WebView Member Order Crash](.agent/troubleshooting/resolutions/webview-member-order-crash.md)
+**See:** [Troubleshooting: WebView Member Order Crash](../.agents/troubleshooting/resolutions/webview-member-order-crash.md)
 
 ---
 
@@ -125,25 +126,37 @@ private:
 
 ### Step 1: Create Directory Structure
 
+> **JUCE 9 interop (do not use the removed JUCE 8 path).** The old
+> `juce_gui_extra/native/javascript/index.js` no longer exists. Use the npm
+> package **`@juce-framework/webview`** or
+> `_tools/JUCE/modules/juce_gui_extra/native/typescript/webview-interop/dist/index.js`,
+> **inlined** into `index.html` (ES6 modules and external scripts fail
+> silently in JUCE WebView — webview-008; the interop is exposed as
+> `window.Juce`). See `templates/webview/README.md` for the current pattern.
+
 ```
-plugins/YourPlugin/
+<plugins_dir>/YourPlugin/
 └── Source/
     └── ui/
         └── public/
-            ├── index.html
+            ├── index.html      (ALL CSS/JS inline - REQUIRED, see webview-008)
             └── js/
-                ├── index.js
-                └── juce/
-                    └── index.js    (Copy from JUCE)
+                └── index.js    (source only; inline into index.html for production)
 ```
 
-### Step 2: Copy JUCE Frontend Library
+### Step 2: Add the JUCE Frontend Library (JUCE 9)
 
 ```powershell
-# Copy from JUCE modules to your plugin
-Copy-Item "_tools/JUCE/modules/juce_gui_extra/native/javascript/index.js" `
-    "plugins/YourPlugin/Source/ui/public/js/juce/index.js"
+# Option A (preferred): npm package
+npm install @juce-framework/webview
+
+# Option B: copy the JUCE 9 dist bundle, then INLINE it into index.html
+Copy-Item "_tools/JUCE/modules/juce_gui_extra/native/typescript/webview-interop/dist/index.js" `
+    "<plugins_dir>/YourPlugin/Source/ui/public/js/juce/index.js"
 ```
+
+Never reference it as an external file or ES6 module import in production —
+inline everything into `index.html`.
 
 ### Step 3: Create index.html
 
@@ -194,10 +207,12 @@ Copy-Item "_tools/JUCE/modules/juce_gui_extra/native/javascript/index.js" `
 </html>
 ```
 
-### Step 4: Create index.js
+### Step 4: Create index.js (inline into index.html for production)
 
 ```javascript
-import * as Juce from "./juce/index.js";
+// Production: inline the JUCE 9 interop bundle above this code so that
+// `window.Juce` exists (ES6 `import` of ./juce/index.js fails in WebView).
+const Juce = window.Juce;
 
 document.addEventListener("DOMContentLoaded", () => {
     // Get parameter state from C++
@@ -226,12 +241,13 @@ document.addEventListener("DOMContentLoaded", () => {
 ### Step 5: Configure CMakeLists.txt
 
 ```cmake
-# Embed web files into binary
+# Embed web files into binary (JUCE 9: inline ALL JS/CSS into index.html —
+# webview-008/webview-011 — so only index.html needs embedding; if you keep
+# a separate source js/index.js, inline it at ship time, do not ship it as
+# an external module)
 juce_add_binary_data(YourPlugin_WebUI
     SOURCES
         Source/ui/public/index.html
-        Source/ui/public/js/index.js
-        Source/ui/public/js/juce/index.js
 )
 
 # Plugin definition
@@ -589,8 +605,8 @@ draw();
 **Check:**
 1. Parameter IDs match exactly (case-sensitive)
 2. `.withOptionsFrom()` called for each relay
-3. Attachments created after `addAndMakeVisible()`
-4. JavaScript imports JUCE library correctly
+3. Attachments created BEFORE `addAndMakeVisible()` (creating them after is the webview-004 crash)
+4. JUCE interop bundle inlined correctly (`window.Juce` exists; no ES6 import)
 
 ### DAW Crashes
 
@@ -612,7 +628,7 @@ draw();
 
 ## Related Documentation
 
-- [WebView Templates](.agent/templates/webview/) - Starter templates
-- [WebView Skill](.agent/skills/skill_design_webview/SKILL.md) - Detailed skill
-- [Known Issues](.agent/troubleshooting/known-issues.yaml) - WebView issues
-- [Member Order Crash](.agent/troubleshooting/resolutions/webview-member-order-crash.md) - Critical fix
+- [WebView Templates](../templates/webview/) - Starter templates
+- [WebView Skill](../.agents/skills/skill_design_webview/SKILL.md) - Detailed skill
+- [Known Issues](../.agents/troubleshooting/known-issues.yaml) - WebView issues
+- [Member Order Crash](../.agents/troubleshooting/resolutions/webview-member-order-crash.md) - Critical fix

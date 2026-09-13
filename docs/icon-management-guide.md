@@ -207,7 +207,7 @@ Consider adding a script to generate icons from a source SVG:
 
 ### Template Integration
 The APC template system could:
-1. Generate placeholder icons during `/dream` phase
+1. Generate placeholder icons during `/apc-dream` phase
 2. Include icon requirements in the creative brief
 3. Provide icon design guidelines per plugin type
 

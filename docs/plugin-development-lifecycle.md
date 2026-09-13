@@ -37,7 +37,7 @@ Transform a vague idea into a concrete plugin concept with defined parameters.
 
 ### Trigger
 ```
-/dream MyPlugin
+/apc-dream MyPlugin
 ```
 
 ### Activities
@@ -136,7 +136,7 @@ Design the DSP architecture and select the appropriate UI framework.
 
 ### Trigger
 ```
-/plan MyPlugin
+/apc-plan MyPlugin
 ```
 
 ### Activities
@@ -262,7 +262,7 @@ Create visual mockups and detailed UI specifications.
 
 ### Trigger
 ```
-/design MyPlugin
+/apc-design MyPlugin
 ```
 
 ### Activities
@@ -394,7 +394,7 @@ Write the C++ DSP and UI code.
 
 ### Trigger
 ```
-/impl MyPlugin
+/apc-impl MyPlugin
 ```
 
 ### Activities
@@ -433,13 +433,11 @@ $PluginPath/Source/
 ├── PluginProcessor.cpp
 ├── PluginEditor.h
 ├── PluginEditor.cpp
-└── ui/                      # WebView only
-    └── public/
+└── ui/                      # WebView only (JUCE 9: @juce-framework/webview /
+    └── public/              # native/typescript/webview-interop; see webview-framework.md)
         ├── index.html
         └── js/
-            ├── index.js
-            └── juce/
-                └── index.js
+            └── index.js
 ```
 
 **Key Implementation Points:**
@@ -523,7 +521,7 @@ Create professional installers and distribute the plugin.
 
 ### Trigger
 ```
-/ship MyPlugin
+/apc-ship MyPlugin
 ```
 
 ### Activities
@@ -572,8 +570,8 @@ release/
 | Platform | Local | GitHub Actions | Formats |
 |----------|-------|----------------|---------|
 | Windows | ✅ | ✅ | VST3, Standalone |
-| macOS | ❌ | ✅ | VST3, AU, Standalone |
-| Linux | ❌ | ✅ | VST3, LV2, Standalone |
+| macOS | ✅ | ✅ | VST3, AU, Standalone |
+| Linux | ✅ | ✅ | VST3, LV2, Standalone |
 
 ### Validation Criteria
 - [ ] All selected platforms built
@@ -592,8 +590,8 @@ release/
   },
   "distribution": {
     "platforms": ["Windows", "macOS", "Linux"],
-    "local_build": ["Windows"],
-    "github_build": ["macOS", "Linux"]
+    "local_build": ["current platform"],
+    "github_build": ["remaining platforms"]
   }
 }
 ```
@@ -627,9 +625,11 @@ ship → ship_complete → complete
 
 ### Recovery
 
-If you need to go back:
+If you need to go back (Windows PowerShell shown; `scripts/*.sh`
+equivalents on macOS/Linux):
 ```powershell
 # Manual state update
+. .\scripts\state-management.ps1
 Update-PluginState -PluginPath $PluginPath -Phase "design_complete"
 
 # Or restore from backup
@@ -649,9 +649,9 @@ Restore-PluginState -PluginPath $PluginPath
    ```
 
 2. **Validate before proceeding**
-   ```powershell
-   /status MyPlugin
-   ```
+    ```text
+    /apc-status MyPlugin
+    ```
 
 3. **Backup before risky changes**
    ```powershell

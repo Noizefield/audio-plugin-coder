@@ -140,8 +140,8 @@ Learn more: [WebView Framework Guide](webview-framework.md)
 | Platform | Local Build | GitHub Actions | Formats |
 |----------|-------------|----------------|---------|
 | Windows 11 | ✅ Native | ✅ | VST3, Standalone |
-| macOS | ❌ | ✅ | VST3, AU, Standalone |
-| Linux | ❌ | ✅ | VST3, LV2, Standalone |
+| macOS | ✅ Native | ✅ | VST3, AU, Standalone |
+| Linux | ✅ Native | ✅ | VST3, LV2, Standalone |
 
 ## Project Structure
 

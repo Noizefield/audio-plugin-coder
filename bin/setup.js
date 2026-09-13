@@ -34,10 +34,21 @@ const bold = (s) => `${c.bold}${s}${c.reset}`;
 const dim  = (s) => `${c.dim}${s}${c.reset}`;
 
 // ─── Banner ───────────────────────────────────────────────────────────────────
+// Framework version: canonical source is package.json (never hardcode).
+function frameworkVersion() {
+  try {
+    const pkg = require(path.join(__dirname, '..', 'package.json'));
+    return pkg.version || 'dev';
+  } catch {
+    return 'dev';
+  }
+}
 function banner() {
+  const v = frameworkVersion();
+  const inner = `         AUDIO PLUGIN CODER  —  APC v${v}`;
   console.log('');
   console.log(`${c.cyan}${c.bold}╔══════════════════════════════════════════════════════╗${c.reset}`);
-  console.log(`${c.cyan}${c.bold}║         AUDIO PLUGIN CODER  —  APC v1.4.0           ║${c.reset}`);
+  console.log(`${c.cyan}${c.bold}║${inner.padEnd(54)}║${c.reset}`);
   console.log(`${c.cyan}${c.bold}║   AI-powered VST3/AU plugin dev with JUCE 9          ║${c.reset}`);
   console.log(`${c.cyan}${c.bold}╚══════════════════════════════════════════════════════╝${c.reset}`);
   console.log('');

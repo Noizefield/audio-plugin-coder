@@ -27,10 +27,12 @@
   },
   "license": "MIT",
   "bin": {
-    "audio-plugin-coder": "bin/setup.js"
+    "audio-plugin-coder": "bin/setup.js",
+    "apc": "bin/apc.js"
   },
   "scripts": {
-    "setup": "node ./bin/setup.js"
+    "setup": "node ./bin/setup.js",
+    "test": "node --test test/apc.test.js"
   },
   "engines": {
     "node": ">=18.0.0"
