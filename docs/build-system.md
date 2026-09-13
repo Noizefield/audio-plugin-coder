@@ -81,7 +81,7 @@ The root [`CMakeLists.txt`](CMakeLists.txt) configures the global build environm
 
 ```cmake
 cmake_minimum_required(VERSION 3.22)
-project(AudioPluginCoder VERSION 1.4.0 LANGUAGES C CXX)
+project(AudioPluginCoder VERSION 1.5.0 LANGUAGES C CXX)
 
 # C++ Standard
 set(CMAKE_CXX_STANDARD 20)

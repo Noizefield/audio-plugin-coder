@@ -23,6 +23,8 @@ h3{font-size:15px; margin:18px 0 6px;}
 pre.screen{border:1px solid var(--rule); padding:10px 12px; font-size:13px;
   overflow-x:auto; background:transparent;}
 .full{color:var(--muted); font-size:12.5px; margin:6px 0 2px;}
+.vidwrap{max-width:720px; border:1px solid var(--rule); padding:6px; margin:0 0 12px;}
+.vidwrap iframe{display:block; width:100%; aspect-ratio:16/9; border:0; background:transparent;}
 button.minibtn{font:inherit; font-size:12px; background:transparent; color:var(--ink);
   border:1px solid var(--rule); padding:1px 8px; cursor:pointer;}
 button.minibtn:hover{border-color:var(--amber);}

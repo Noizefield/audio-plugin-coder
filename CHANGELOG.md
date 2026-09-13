@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [1.5.0] - 2026-09-13
 
 ### Added
+
+- **APC Hub — live local dashboard (`/apc-hub`).** Vanilla, zero-dependency web command center served by `hub/server.js` (Node stdlib, loopback, read-only `/api/v1/*` plus a validated Settings save and design previews): projects, skills, commands, designs, scripts, templates, tools, settings, documentation center with chapters/search/bookmarks, GitHub update check, and consistency radar. Approved design language in `hub/_design/` (APC RASTER: rectangles only, ASCII-first, dark default, amber/phosphor signals).
 
 - **`bin/apc.js` — single cross-platform CLI** (Idea 1, phase 1+2; `node bin/apc.js …`, also exposed as the `apc` npm bin). Zero deps, Node 18+. Commands: `version [--json]`, `version sync [--fix]`, `paths [--json] [--plugin N]`, `doctor [--fix]`, `build <Plugin> [--no-install] [--skip-tests] [--strict]`, `validate <webview|webview-order|visage|plugin|state> [--plugin N] [--json]`, `backup` / `rollback`. `version`/`paths` and 4 of 5 validators (`webview`, `webview-order`, `visage`, `plugin`) run natively in Node — same checks as the `.ps1` originals (PowerShell `-match` is case-insensitive, so all ported patterns use `/i`), with `--json` machine output for agents. `validate state` stays shell-bound: it functionally tests the PowerShell state-management module itself and can only migrate with it.
 - **`doctor --fix`**: safe mechanical auto-fixes only (create `apc.config.json` from example, create missing plugins/build/release dirs, init missing JUCE submodule). Toolchain installs are never run unsupervised — exact per-OS install commands are printed instead.

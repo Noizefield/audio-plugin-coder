@@ -1,5 +1,11 @@
 # APC Hub - Design Changelog
 
+## v012 - 2026-09-13 (DRAFT)
+
+- Update check: no upstream releases counts as CURRENT green (reason shown);
+  UNCHECKED reserved for real unknowns.
+- Form controls follow the theme via color-scheme (no more white inputs).
+
 ## v011 - 2026-09-13 (DRAFT)
 
 - Sidebar mark removed (header owns the version now).
