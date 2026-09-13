@@ -33,11 +33,14 @@ node hub/server.js --port 4872   # or: /apc-hub in your agent
 
 ## Video Tutorial Series
 
-A video playlist explains APC in detail - 7 episodes and more to come. The same playlist is embedded as a working player inside the Hub (`/apc-hub`, section 11 VIDEOS); GitHub removes `<iframe>` embeds from READMEs, so the card below opens the video directly on YouTube:
+<a href="https://www.youtube.com/watch?v=tD6T8MEGWm8&list=PLEOCbFL_Mq4o" target="_blank">
+<img src="assets/apc_walkthrough.jpg" alt="APC tutorial series - click to watch on YouTube">
+</a>
 
-[![APC YouTube tutorial series - click to watch](https://img.youtube.com/vi/tD6T8MEGWm8/hqdefault.jpg)](https://www.youtube.com/watch?v=tD6T8MEGWm8&list=PLEOCbFL_Mq4o)
+**APC Tutorial Series (YouTube Playlist)** - 7 episodes and more to come, explaining the framework in detail.
 
-Open the full playlist: https://www.youtube.com/watch?v=tD6T8MEGWm8&list=PLEOCbFL_Mq4o
+- Play the video: https://www.youtube.com/watch?v=tD6T8MEGWm8&list=PLEOCbFL_Mq4o
+- Open the playlist on YouTube: https://www.youtube.com/playlist?list=PLEOCbFL_Mq4o
 
 ## About
 
