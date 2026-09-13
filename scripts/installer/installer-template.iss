@@ -7,6 +7,10 @@
 ;   {#CompanyName}    - Company name (e.g., APC)
 ;   {#PluginURL}      - Plugin website URL
 ;   {#ReleaseDir}     - Absolute ship/output directory (from paths.release_dir)
+;   {#BuildDir}       - Absolute build directory (from paths.build_dir)
+;   {#PluginsDir}     - Absolute plugins directory (from paths.plugins_dir)
+;   {#IconPath}       - Absolute path to icon.ico (empty if missing)
+;   {#SetupIconLine}  - Full SetupIconFile= line, or empty if no icon
 
 #define PluginName "{#PluginName}"
 #define PluginVersion "{#PluginVersion}"
@@ -36,7 +40,7 @@ WizardStyle=modern
 LicenseFile="{#ReleaseDir}/LICENSE.txt"
 
 ; Appearance
-SetupIconFile={#IconPath}
+{#SetupIconLine}
 UninstallDisplayIcon={commoncf}\VST3\{#PluginName}.vst3\icon.ico
 UninstallDisplayName={#PluginName} {#PluginVersion}
 
@@ -75,44 +79,44 @@ Name: "{userappdata}\{#PluginName}"; Components: vst3 standalone
 
 [Files]
 ; VST3 Plugin
-Source: "..\..\build\plugins\{#PluginName}\{#PluginName}_artefacts\Release\VST3\{#PluginName}.vst3\*"; \
+Source: "{#BuildDir}/plugins/{#PluginName}/{#PluginName}_artefacts/Release/VST3/{#PluginName}.vst3\*"; \
     DestDir: "{app}"; \
     Components: vst3; \
     Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Icon for uninstaller display
-Source: "..\..\plugins\{#PluginName}\Assets\icon.ico"; \
+Source: "{#PluginsDir}/{#PluginName}/Assets/icon.ico"; \
     DestDir: "{app}"; \
     Components: vst3; \
-    Flags: ignoreversion
+    Flags: ignoreversion skipifsourcedoesntexist
 
 ; Standalone Application
-Source: "..\..\build\plugins\{#PluginName}\{#PluginName}_artefacts\Release\Standalone\{#PluginName}.exe"; \
+Source: "{#BuildDir}/plugins/{#PluginName}/{#PluginName}_artefacts/Release/Standalone/{#PluginName}.exe"; \
     DestDir: "{autopf}\{#PluginName}"; \
     Components: standalone; \
     Flags: ignoreversion
 
 ; Copy icon.ico to standalone folder for shortcut icons
-Source: "..\..\plugins\{#PluginName}\Assets\icon.ico"; \
+Source: "{#PluginsDir}/{#PluginName}/Assets/icon.ico"; \
     DestDir: "{autopf}\{#PluginName}"; \
     Components: standalone; \
-    Flags: ignoreversion
+    Flags: ignoreversion skipifsourcedoesntexist
 
 ; Presets (optional - only if they exist)
-Source: "..\..\plugins\{#PluginName}\Presets\*"; \
+Source: "{#PluginsDir}/{#PluginName}/Presets\*"; \
     DestDir: "{commonappdata}\{#PluginName}\Presets"; \
     Components: presets; \
     Flags: recursesubdirs createallsubdirs skipifsourcedoesntexist
 
 ; Documentation - Auto-include ALL files from Documentation folder
 ; This goes INSIDE the plugin bundle, not in VST3 root (keeps VST3 folder clean)
-Source: "..\..\plugins\{#PluginName}\Documentation\*"; \
+Source: "{#PluginsDir}/{#PluginName}/Documentation\*"; \
     DestDir: "{app}\Documentation"; \
     Components: documentation; \
     Flags: recursesubdirs createallsubdirs skipifsourcedoesntexist ignoreversion
 
 ; Also copy documentation to Standalone folder (if standalone is installed)
-Source: "..\..\plugins\{#PluginName}\Documentation\*"; \
+Source: "{#PluginsDir}/{#PluginName}/Documentation\*"; \
     DestDir: "{autopf}\{#PluginName}\Documentation"; \
     Components: standalone documentation; \
     Flags: recursesubdirs createallsubdirs skipifsourcedoesntexist ignoreversion
@@ -123,7 +127,7 @@ Source: "{#ReleaseDir}/LICENSE.txt"; \
     Components: documentation; \
     Flags: ignoreversion skipifsourcedoesntexist
 
-Source: "..\..\CHANGELOG.md"; \
+Source: "{#RepoRoot}/CHANGELOG.md"; \
     DestDir: "{app}\Documentation"; \
     Components: documentation; \
     Flags: ignoreversion skipifsourcedoesntexist
