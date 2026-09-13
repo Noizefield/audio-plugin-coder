@@ -1,8 +1,11 @@
 # Contributing to Audio Plugin Coder
 
-## ⚠️ Beta Version Disclaimer
+## Project status
 
-**Audio Plugin Coder (APC) is currently in beta development.** This means the project is not yet fully released or stable. Features may be incomplete, APIs may change, and there may be bugs. Use at your own risk in development environments only.
+APC is under active improvement — expect iteration — but the core workflow
+(setup → dream → plan → design → impl → ship) is ready for real plugin
+development on Windows, macOS, and Linux. See [README.md](README.md) and
+[`docs/`](docs/) for the current state.
 
 ## How to Contribute
 
@@ -47,6 +50,18 @@ We welcome contributions from the community! Whether you're fixing bugs, adding 
 - Update documentation if needed.
 - Provide a clear description of changes.
 
+### Docs-as-truth (prevent drift)
+
+APC treats docs as source of truth. When you change behavior, update the
+matching docs in the same PR:
+
+- Version/platform/format claims → `README.md`, `docs/README.md`, `docs/FAQ.md`
+- Commands → `docs/command-reference.md` (primary `/apc-*` names; short forms
+  are deprecated aliases), `docs/plugin-development-lifecycle.md`
+- Build/paths → `docs/build-system.md`, `docs/PROJECT_STRUCTURE.md`
+  (resolve via `apc.config.json` paths, never hardcode `./plugins`)
+- Troubleshooting paths → `.agents/troubleshooting/` (canonical; not `.agent/`)
+
 ### Issues and Discussions
 
 - Use issues for bugs and feature requests.
@@ -57,17 +72,21 @@ We welcome contributions from the community! Whether you're fixing bugs, adding 
 
 APC uses the following technologies:
 
-- **JUCE 8** - Cross-platform audio plugin framework
-- **Visage** - Planned native C++ UI framework (not yet implemented)
-- **WebView2** - HTML5 Canvas-based UI framework
-- **CMake** - Build system
-- **PowerShell** - Automation scripts
+- **JUCE 9** (pin 9.0.1, see `apc.config.json`) - Cross-platform audio plugin framework
+- **Visage** - Native C++ UI framework option (experimental; may be unstable on some hosts)
+- **WebView2 / WKWebView / WebKitGTK** - HTML5 UI framework (Windows / macOS / Linux)
+- **CMake (≥3.22)** - Build system
+- **PowerShell / Bash** - Automation scripts (platform-specific; never mix shells)
 - **YAML** - Configuration and knowledge base
 - **Markdown** - Documentation and workflows
 
-### Visage Integration (Planned)
+### Visage Integration
 
-Visage is a modern, high-performance UI framework for C++ applications. We plan to integrate Visage as an alternative to WebView for native UI rendering. Currently, Visage is included as a Git submodule but is not yet implemented in the workflow system. Contributions towards Visage integration are welcome once the core system is more stable.
+Visage is a modern, high-performance UI framework for C++ applications,
+available in APC as the native-UI alternative to WebView
+(`templates/visage/`, `APC_ENABLE_VISAGE` CMake option, validation via
+`scripts/validate-visage-setup.ps1`). Integration is experimental and under
+active testing — contributions stabilizing it are welcome.
 
 ## License
 

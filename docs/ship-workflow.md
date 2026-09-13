@@ -374,7 +374,7 @@ Always update:
 .\scripts\build-and-install.ps1 -PluginName CloudWash
 
 # 2. Start ship workflow
-/ship CloudWash
+/apc-ship CloudWash
 
 # 3. Select platforms: 1,4,5 (Use local Windows, GitHub for macOS/Linux)
 
@@ -394,7 +394,7 @@ gh run download --dir release/github-artifacts
 
 ```powershell
 # Already have Windows and Linux, just need macOS
-/ship CloudWash
+/apc-ship CloudWash
 
 # Select: 4 (macOS only)
 
@@ -406,7 +406,7 @@ gh run download --dir release/github-artifacts
 
 ```powershell
 # Want consistent builds across all platforms
-/ship CloudWash
+/apc-ship CloudWash
 
 # Select: 3,4,5 (Build all on GitHub)
 
@@ -425,5 +425,5 @@ gh run download --dir release/github-artifacts
 
 - [GitHub Actions CI/CD](github-actions.md) - Detailed workflow documentation
 - [Main README](README.md) - Project overview
-- `.agent/skills/skill_packaging/SKILL.md` - Implementation details
+- `.agents/skills/ship/SKILL.md` - Implementation details
 

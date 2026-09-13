@@ -87,11 +87,11 @@ $PluginPath/
 └── status.json
 ```
 
-**Next Step:** `/plan [Name]`
+**Next Step:** `/apc-plan [Name]`
 
 ---
 
-### `/plan [Name]`
+### `/apc-plan [Name]` (alias: `/plan`)
 
 **Purpose:** Define architecture and select UI framework
 
@@ -112,11 +112,11 @@ $PluginPath/.ideas/
 └── plan.md
 ```
 
-**Next Step:** `/design [Name]`
+**Next Step:** `/apc-design [Name]`
 
 ---
 
-### `/design [Name]`
+### `/apc-design [Name]` (alias: `/design`)
 
 **Purpose:** Create GUI mockups and visual design
 
@@ -145,11 +145,11 @@ $PluginPath/
     └── VisageControls.h
 ```
 
-**Next Step:** `/impl [Name]` or iterate design
+**Next Step:** `/apc-impl [Name]` or iterate design
 
 ---
 
-### `/impl [Name]`
+### `/apc-impl [Name]` (alias: `/impl`)
 
 **Purpose:** Implement DSP and UI code
 
@@ -172,11 +172,11 @@ $PluginPath/Source/
 └── PluginEditor.cpp
 ```
 
-**Next Step:** `/ship [Name]`
+**Next Step:** `/apc-ship [Name]`
 
 ---
 
-### `/ship [Name]`
+### `/apc-ship [Name]` (alias: `/ship`)
 
 **Purpose:** Package and distribute plugin
 
@@ -208,7 +208,7 @@ release/
 
 ---
 
-### `/status [Name]`
+### `/apc-status [Name]` (alias: `/status`)
 
 **Purpose:** Check current progress and state
 
@@ -238,12 +238,12 @@ Validation Status:
 𐄂 Tests passed
 𐄂 Ship ready
 
-Next Step: Run /impl EchoReverb to start implementation
+Next Step: Run /apc-impl EchoReverb to start implementation
 ```
 
 ---
 
-### `/resume [Name]`
+### `/apc-resume [Name]` (alias: `/resume`)
 
 **Purpose:** Continue development from last phase
 
@@ -261,7 +261,7 @@ Next Step: Run /impl EchoReverb to start implementation
 
 ---
 
-### `/test [Name]`
+### `/apc-test [Name]` (alias: `/test`)
 
 **Purpose:** Run validation tests
 
@@ -275,7 +275,7 @@ Next Step: Run /impl EchoReverb to start implementation
 
 ---
 
-### `/debug [Name]`
+### `/apc-debug [Name]` (alias: `/debug`)
 
 **Purpose:** Debug plugin issues
 
@@ -289,7 +289,7 @@ Next Step: Run /impl EchoReverb to start implementation
 
 ---
 
-### `/new [Name]`
+### `/apc-new [Name]` (alias: `/new`)
 
 **Purpose:** Run complete workflow with confirmations
 
@@ -302,10 +302,37 @@ Next Step: Run /impl EchoReverb to start implementation
 
 **Flow:**
 ```
-/dream → confirm → /plan → confirm → /design → confirm → /impl → confirm → /ship
+/apc-dream → confirm → /apc-plan → confirm → /apc-design → confirm → /apc-impl → confirm → /apc-ship
 ```
 
 ---
+
+## Platform Scripts
+
+Prefer the single cross-platform CLI (Node 18+, zero deps) — it dispatches
+to the right `scripts/` backend for the current OS, so agents never need the
+`.ps1`-vs-`.sh` matrix:
+
+```
+node bin/apc.js version [--json]           # framework version (from package.json)
+node bin/apc.js paths [--json] [--plugin N]  # resolved plugins/build/release dirs
+node bin/apc.js doctor [--fix]             # version header + system-check (--fix: safe auto-fixes only)
+node bin/apc.js build <Name> [--no-install] [--skip-tests] [--strict]
+node bin/apc.js validate <kind> [--plugin N] [--json]  # webview|webview-order|visage|plugin run natively (cross-platform); state stays shell-bound
+node bin/apc.js backup <Name> <Version>
+node bin/apc.js rollback <Name> <Version>
+npm test                                    # CLI test suite (test/apc.test.js, zero deps)
+```
+
+Raw `scripts/` invocation still works (the CLI delegates to it in phase 1):
+
+Windows uses PowerShell (`.ps1`); macOS/Linux use the matching Bash
+(`.sh`) script **where a twin exists**. Core flows (build, state, backup,
+system-check) ship as pairs; several validators (`validate-*.ps1`,
+`pluginval-integration.ps1`) are currently Windows-only — one reason the
+roadmap calls for a single cross-platform `apc` CLI (Idea 1). Examples below
+show PowerShell; swap in the `.sh` equivalent on macOS/Linux when available
+(e.g. `bash scripts/build-and-install.sh`).
 
 ## PowerShell Scripts
 
@@ -552,20 +579,20 @@ gh run download <run-id> --dir release/github-artifacts
 
 | Command | Phase | Output |
 |---------|-------|--------|
-| `/dream` | Ideation | Concept + Parameters |
-| `/plan` | Planning | Architecture + Framework |
-| `/design` | Design | UI Specifications |
-| `/impl` | Implementation | Working Code |
-| `/ship` | Shipping | Distribution Package |
+| `/apc-dream` | Ideation | Concept + Parameters |
+| `/apc-plan` | Planning | Architecture + Framework |
+| `/apc-design` | Design | UI Specifications |
+| `/apc-impl` | Implementation | Working Code |
+| `/apc-ship` | Shipping | Distribution Package |
 
 ### Status Commands
 
 | Command | Purpose |
 |---------|---------|
-| `/status` | Check progress |
-| `/resume` | Continue development |
-| `/test` | Run validation |
-| `/debug` | Debug issues |
+| `/apc-status` | Check progress |
+| `/apc-resume` | Continue development |
+| `/apc-test` | Run validation |
+| `/apc-debug` | Debug issues |
 
 ### Script Commands
 
@@ -584,26 +611,26 @@ gh run download <run-id> --dir release/github-artifacts
 
 ### New Plugin Workflow
 
-```powershell
-# Using slash commands
-/dream MyPlugin
-/plan MyPlugin
-/design MyPlugin
-/impl MyPlugin
-/ship MyPlugin
+```text
+# Using slash commands (short aliases like /dream still work but are deprecated)
+/apc-dream MyPlugin
+/apc-plan MyPlugin
+/apc-design MyPlugin
+/apc-impl MyPlugin
+/apc-ship MyPlugin
 
-# Or using /new
-/new MyPlugin
+# Or using /apc-new
+/apc-new MyPlugin
 ```
 
 ### Resume Workflow
 
-```powershell
+```text
 # Check status first
-/status MyPlugin
+/apc-status MyPlugin
 
 # Resume from current phase
-/resume MyPlugin
+/apc-resume MyPlugin
 ```
 
 ### Debug Workflow
@@ -613,20 +640,20 @@ gh run download <run-id> --dir release/github-artifacts
 .\scripts\validate-plugin-status.ps1 -PluginName MyPlugin
 
 # Check for known issues
-Get-Content .agent/troubleshooting/known-issues.yaml | Select-String "error pattern"
+Get-Content .agents/troubleshooting/known-issues.yaml | Select-String "error pattern"
 
 # Debug
-/debug MyPlugin
+/apc-debug MyPlugin
 ```
 
 ### Ship Workflow
 
-```powershell
-# Local build first
+```text
+# Local build first (Windows shown; .sh on macOS/Linux)
 .\scripts\build-and-install.ps1 -PluginName MyPlugin
 
 # Then ship
-/ship MyPlugin
+/apc-ship MyPlugin
 
 # Or manual trigger
 gh workflow run build-release.yml -f plugin_name=MyPlugin -f platforms=all

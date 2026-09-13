@@ -11,7 +11,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`bin/apc.js` — single cross-platform CLI** (Idea 1, phase 1+2; `node bin/apc.js …`, also exposed as the `apc` npm bin). Zero deps, Node 18+. Commands: `version [--json]`, `version sync [--fix]`, `paths [--json] [--plugin N]`, `doctor [--fix]`, `build <Plugin> [--no-install] [--skip-tests] [--strict]`, `validate <webview|webview-order|visage|plugin|state> [--plugin N] [--json]`, `backup` / `rollback`. `version`/`paths` and 4 of 5 validators (`webview`, `webview-order`, `visage`, `plugin`) run natively in Node — same checks as the `.ps1` originals (PowerShell `-match` is case-insensitive, so all ported patterns use `/i`), with `--json` machine output for agents. `validate state` stays shell-bound: it functionally tests the PowerShell state-management module itself and can only migrate with it.
+- **`doctor --fix`**: safe mechanical auto-fixes only (create `apc.config.json` from example, create missing plugins/build/release dirs, init missing JUCE submodule). Toolchain installs are never run unsupervised — exact per-OS install commands are printed instead.
+- **`npm test` — 15-test suite** (`test/apc.test.js`, `node:test`, zero deps): version/paths/validators/version-sync/arg-translation against isolated temp fixtures via `APC_ROOT`. All green on Windows; `.ps1`-dispatch test runs on Windows, native checks everywhere.
+- **Framework versioning, single source of truth: `package.json` (`1.4.0`).** `apc version` / `apc --version`, version header in `apc doctor`, README version badge (shields `github/package-json/v`, tracks `package.json` on main — no manual updates), and generated `hub/version.js` (`window.APC_VERSION`, for the Hub web UI over `file://`). Bump rule: change `package.json`, then run `node bin/apc.js version sync` (regenerates `hub/version.js`, verifies the CMake pin).
 - HOL Plugin Scanner GitHub Action, `SECURITY.md`, and Dependabot for the awesome-ai-plugins listing requirements.
+
+### Changed
+
+- **Root `CMakeLists.txt` reads the framework version from `package.json`** at configure time (`APC_VERSION`, reported as `APC version: X (from package.json)`). Fixes drift where CMake said `1.0.0` while `package.json` said `1.4.0`.
+- **`bin/setup.js` banner reads the version from `package.json`** instead of a hardcoded string.
+- `AGENTS.md` build rule prefers `node bin/apc.js build <Name>`; `docs/command-reference.md` documents the CLI surface (`validate` native kinds + `--json`, `doctor --fix`, `npm test`).
+- `docs/PROJECT_STRUCTURE.md` documents `hub/` (Hub dashboard → control app), `hub/version.js`, and `test/`.
+- `docs/PROJECT_STRUCTURE.md` documents `hub/` (Hub dashboard → control app) and `hub/version.js`.
+- **Docs-as-truth pass (12 files):** platform tables now show local build ✅ on Windows/macOS/Linux (`FAQ`, `docs/README`, lifecycle); `CONTRIBUTING.md` updated to JUCE 9 + current Visage status + docs-drift checklist; all command refs use primary `/apc-*` names; `.agent/` → `.agents/` paths fixed; `build-system.md` CMake example uses `APC_PLUGINS_DIR` + correct Linux EGL deps; `webview-framework.md` rewritten for the JUCE 9 interop path (`@juce-framework/webview`, inline bundle) instead of the deleted JUCE 8 `native/javascript` path.
+
+### Fixed
+
+- `webview-framework.md` attachment-order guidance: attachments must be created **BEFORE** `addAndMakeVisible()` (the old text described the webview-004 crash recipe).
+- `CMakeLists.txt` project version `1.0.0` → dynamic from `package.json` (`1.4.0`).
+- `bin/apc.js` config reader strips UTF-8 BOM (`apc.config.json` is PowerShell-written and may carry one).
+- Root `CMakeLists.txt` config reader uses `utf-8-sig`: a BOM-carrying `apc.config.json` previously failed silently (`ERROR_QUIET`) and fell back to `./plugins`, ignoring a custom `paths.plugins_dir`.
 
 ### Changed
 

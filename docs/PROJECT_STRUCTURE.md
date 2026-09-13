@@ -18,9 +18,11 @@ audio-plugin-coder/
 ├── build/                  # Build artifacts (gitignored)
 ├── release/                # Ship packages and installers (gitignored except README)
 ├── docs/                   # Documentation
+├── hub/                    # APC Hub web interface (dashboard now → framework control app; see hub/_design/)
 ├── plugins/                # Your plugin projects
 ├── scripts/                # Build and utility scripts (.ps1 + .sh)
 ├── skills/                 # Packaged Codex skill adapter
+├── test/                   # CLI test suite (test/apc.test.js; run: npm test)
 ├── templates/              # Plugin templates (visage, webview, ffgl, max-external)
 ├── design_library/         # UI design examples
 ├── assets/                 # Logos and banners
@@ -244,6 +246,28 @@ docs/
 └── FAQ.md                      # Frequently asked questions
 ```
 
+### `hub/` - APC Hub Web Interface
+
+Dashboard for the framework today, growing into a full control app.
+Command: `/apc-hub`.
+
+```
+hub/
+├── version.js                # AUTO-GENERATED framework version (window.APC_VERSION); regenerate via `node bin/apc.js version sync`
+└── _design/                  # Design specs + runnable mockups (versioned, superseded kept)
+    ├── hub_design_spec_vNNN.md
+    ├── hub_design_mockup_vNNN.{md,html}
+    └── CHANGELOG.md
+```
+
+- Current state: static dashboard mockups under `hub/_design/` (spec v002:
+  dark-first ASCII/terminal design language, read-only honesty — every value
+  shows its source file).
+- Next: live `hub/ui/` phase (search, copy-buttons, live `status.json` reads).
+- Later: full framework control app (run phases, builds, ship from the Hub).
+- Design language: rectangles only, ASCII-before-graphics, two signal colors
+  (amber = active/warning, phosphor green = ok/calm), system fonts only.
+
 ---
 
 ## File Naming Conventions
@@ -465,7 +489,7 @@ _tools/visage
 ## Best Practices
 
 1. **Always work from repository root** - Never run commands from plugin subdirectories
-2. **Use PowerShell scripts** - Don't run cmake/msbuild directly
+2. **Use platform scripts, never raw cmake** - `.ps1` on Windows, `.sh` on macOS/Linux; don't run cmake/msbuild/xcodebuild directly
 3. **Commit after each phase** - Preserve progress in git
 4. **Keep The Sanctuary clean** - Only source code and design files
 5. **Version design iterations** - Keep all versions, use latest for implementation

@@ -437,13 +437,13 @@ design → ship            (Missing code)
 
 State enables switching between AI agents:
 
-```powershell
+```text
 # Agent 1 completes ideation
-/dream MyPlugin
+/apc-dream MyPlugin
 # ... ideation complete
 
 # Agent 2 continues with planning
-/plan MyPlugin
+/apc-plan MyPlugin
 # Reads status.json, knows ideation is complete
 # Continues from correct phase
 ```
@@ -571,6 +571,6 @@ Set-PluginFramework -PluginPath $PluginPath -Framework "webview" -Rationale "...
 ## Related Documentation
 
 - [Project Structure](PROJECT_STRUCTURE.md) - Directory layout
-- [State Management Guide](.agent/guides/state-management-guide.md) - Original guide
+- [State Management Guide](../.agents/guides/state-management-guide.md) - Original guide
 - [Build System](build-system.md) - Build integration
-- [Workflows](.agent/workflows/) - Phase orchestration
+- [Workflows](../.agents/workflows/) - Phase orchestration

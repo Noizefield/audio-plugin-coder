@@ -21,8 +21,11 @@ APC is designed for:
 | Platform | Local Build | GitHub Actions |
 |----------|-------------|----------------|
 | Windows 11 | ✅ Native | ✅ |
-| macOS | ❌ | ✅ |
-| Linux | ❌ | ✅ |
+| macOS | ✅ Native | ✅ |
+| Linux | ✅ Native | ✅ |
+
+Local builds use `scripts/build-and-install.ps1` (Windows) or
+`scripts/build-and-install.sh` (macOS/Linux); run `/apc-setup` first.
 
 ### What plugin formats are supported?
 
@@ -41,7 +44,7 @@ APC is designed for:
 
 ```powershell
 # Clone with submodules
-git clone --recursive https://github.com/Noizefield/audio-plugin-coder.git
+git clone --recurse-submodules https://github.com/Noizefield/audio-plugin-coder.git
 cd audio-plugin-coder
 
 # Or clone and initialize separately
@@ -50,17 +53,31 @@ cd audio-plugin-coder
 git submodule update --init --recursive
 ```
 
+Then open the repo in your AI agent and run `/apc-setup` (first-run
+toolchain, paths, and model preferences). Codex:
+`$audio-plugin-coder:audio-plugin-coder setup`.
+
 ### What are the prerequisites?
 
-**Required:**
-- Windows 11
-- Visual Studio 2022 (with C++ tools)
-- CMake 3.22+
-- PowerShell 7+
-- Git
+**Required (all platforms):**
+- Git · Node.js (≥18) · Python (≥3.8) · CMake (≥3.22)
+- JUCE 9 (via submodule, pin 9.0.1 — see `apc.config.json`) · pluginval (submodule)
+- An LLM coding agent (Claude Code, Kilo, Codex, Cursor, Antigravity)
 
-**For WebView plugins:**
+**Windows**
+- Visual Studio 2022 with C++ tools
 - WebView2 Runtime (usually pre-installed on Windows 11)
+
+**macOS**
+- macOS 10.13+ · Xcode + Command Line Tools · `jq`
+- WebView uses system WKWebView (no separate install)
+
+**Linux**
+- GCC 9+ or Clang 10+ with C++20 · make or ninja · `jq` recommended
+- WebKitGTK (WebView) · libegl-dev / EGL (JUCE 9 OpenGL) · ALSA (optionally JACK)
+
+Run `.\scripts\system-check.ps1 -Human` (Windows) or
+`bash scripts/system-check.sh --human` (macOS/Linux) to verify.
 
 ### How do I create my first plugin?
 
@@ -94,7 +111,7 @@ No. APC enforces phase completion to ensure quality. Each phase validates prereq
 ### How do I check my progress?
 
 ```
-/status MyPlugin
+/apc-status MyPlugin
 ```
 
 This shows:
@@ -106,14 +123,15 @@ This shows:
 
 Yes:
 ```
-/resume MyPlugin
+/apc-resume MyPlugin
 ```
 
 This continues from the last completed phase.
 
 ### What if I want to change something in a completed phase?
 
-You can manually update files in any phase, then update the state:
+You can manually update files in any phase, then update the state
+(Windows PowerShell shown; use `scripts/state-management.sh` on macOS/Linux):
 ```powershell
 . .\scripts\state-management.ps1
 Update-PluginState -PluginPath $PluginPath -Updates @{
@@ -147,7 +165,7 @@ Most common causes:
 2. **Missing attachments** - Create attachments BEFORE addAndMakeVisible
 3. **Resource provider issues** - Files not embedded correctly
 
-Run validation:
+Run validation (Windows shown; `.sh` equivalents on macOS/Linux):
 ```powershell
 .\scripts\validate-webview-member-order.ps1 -PluginName MyPlugin
 .\scripts\validate-webview-setup.ps1 -PluginName MyPlugin
@@ -159,6 +177,9 @@ Run validation:
 
 ### How do I build my plugin?
 
+Run from the repository root (Windows shown; use
+`bash scripts/build-and-install.sh --help` on macOS/Linux):
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\build-and-install.ps1 -PluginName MyPlugin
 ```
@@ -169,10 +190,13 @@ No. Always use the build script. Never run cmake/msbuild directly.
 
 ### Where are the build outputs?
 
+Build artifacts go to the configured `paths.build_dir` (default `build/` —
+override in `apc.config.json`). Default layout:
+
 ```
-build/$PluginPath/MyPlugin_artefacts/Release/
+build/[PluginName]_artefacts/Release/
 ├── MyPlugin.vst3/          # VST3 plugin
-└── MyPlugin.exe            # Standalone
+└── MyPlugin.exe            # Standalone (Windows; equivalent binary on macOS/Linux)
 ```
 
 ### Why is my VST3 not showing in my DAW?
@@ -193,7 +217,7 @@ build/$PluginPath/MyPlugin_artefacts/Release/
 
 Yes, using GitHub Actions:
 ```
-/ship MyPlugin
+/apc-ship MyPlugin
 ```
 
 Select macOS and Linux platforms. The workflow will build them remotely.
@@ -205,7 +229,7 @@ Select macOS and Linux platforms. The workflow will build them remotely.
 ### How do I create an installer?
 
 ```
-/ship MyPlugin
+/apc-ship MyPlugin
 ```
 
 This creates:
@@ -222,7 +246,8 @@ This creates:
 
 ### Can I ship without GitHub Actions?
 
-Yes, but you'll only get the Windows installer. macOS and Linux require GitHub Actions (or building on those platforms).
+Yes, but you'll only get an installer for your current platform. Other
+platforms require GitHub Actions (or building on those platforms).
 
 ### How do I version my plugin?
 
@@ -233,7 +258,7 @@ Update in `status.json`:
 }
 ```
 
-Or let the `/ship` command handle it.
+Or let the `/apc-ship` command handle it.
 
 ---
 
@@ -249,7 +274,7 @@ Or let the `/ship` command handle it.
 
 1. Check known issues:
    ```powershell
-   Get-Content .agent/troubleshooting/known-issues.yaml | Select-String "error"
+   Get-Content .agents/troubleshooting/known-issues.yaml | Select-String "error"
    ```
 
 2. Run validation:
@@ -259,7 +284,7 @@ Or let the `/ship` command handle it.
 
 3. Use debug command:
    ```
-   /debug MyPlugin
+   /apc-debug MyPlugin
    ```
 
 ### How do I roll back to a previous state?
@@ -276,10 +301,10 @@ git checkout -- $PluginPath/
 
 ### What if the AI makes a mistake?
 
-1. Use `/debug MyPlugin` to analyze
+1. Use `/apc-debug MyPlugin` to analyze
 2. Manually fix the files
 3. Update state if needed
-4. Continue with `/resume MyPlugin`
+4. Continue with `/apc-resume MyPlugin`
 
 ---
 
@@ -292,10 +317,7 @@ git checkout -- $PluginPath/
 - ✅ Claude Code (Anthropic)
 - ✅ Antigravity (Google)
 - ✅ Kilo (kilo.ai)
-
-**May work:**
-- Cursor
-- Other LLM coding agents
+- ✅ Cursor
 
 ### Do I need a specific AI agent?
 
@@ -315,7 +337,7 @@ APC provides:
 ### Can I use APC without an AI agent?
 
 Yes, but it's designed for AI assistance. You can manually:
-1. Read the skill files in `.agent/skills/`
+1. Read the skill files in `.agents/skills/`
 2. Follow the instructions
 3. Run the scripts yourself
 
@@ -368,7 +390,7 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for details.
 
 ### How do I report a bug?
 
-1. Check if it's a [known issue](.agent/troubleshooting/known-issues.yaml)
+1. Check if it's a [known issue](../.agents/troubleshooting/known-issues.yaml)
 2. Create an issue on GitHub
 3. Include:
    - Error message
@@ -378,7 +400,7 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for details.
 
 ### Can I add my own skills?
 
-Yes! Create a new directory in `.agent/skills/`:
+Yes! Create a new directory in `.agents/skills/`:
 ```
 skill_myskill/
 └── SKILL.md
@@ -408,7 +430,7 @@ No, but it's appreciated. You can mention "Built with Audio Plugin Coder" if you
 
 - Check the [documentation index](README.md)
 - Review [troubleshooting guide](troubleshooting-guide.md)
-- Search [known issues](.agent/troubleshooting/known-issues.yaml)
+- Search [known issues](../.agents/troubleshooting/known-issues.yaml)
 - Create an issue on GitHub
 - Join the community discussions
 
@@ -419,9 +441,9 @@ No, but it's appreciated. You can mention "Built with Audio Plugin Coder" if you
 | Task | Command |
 |------|---------|
 | Create new plugin | `/apc-dream MyPlugin` |
-| Check progress | `/status MyPlugin` |
-| Continue working | `/resume MyPlugin` |
-| Build plugin | `powershell -ExecutionPolicy Bypass -File .\scripts\build-and-install.ps1 -PluginName MyPlugin` |
-| Validate setup | `.\scripts\validate-plugin-status.ps1 -PluginName MyPlugin` |
-| Ship plugin | `/ship MyPlugin` |
-| Debug issues | `/debug MyPlugin` |
+| Check progress | `/apc-status MyPlugin` |
+| Continue working | `/apc-resume MyPlugin` |
+| Build plugin | `powershell -ExecutionPolicy Bypass -File .\scripts\build-and-install.ps1 -PluginName MyPlugin` (Windows) / `bash scripts/build-and-install.sh` (macOS/Linux) |
+| Validate setup | `.\scripts\validate-plugin-status.ps1 -PluginName MyPlugin` (validators are currently Windows-only `.ps1`; `.sh` twins planned — see roadmap Idea 1) |
+| Ship plugin | `/apc-ship MyPlugin` |
+| Debug issues | `/apc-debug MyPlugin` |

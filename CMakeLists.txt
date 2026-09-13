@@ -1,5 +1,16 @@
 cmake_minimum_required(VERSION 3.22)
-project(APC_System VERSION 1.0.0 LANGUAGES C CXX)
+# APC framework version: canonical source is package.json ("version").
+# Keep it there; `node bin/apc.js version sync` verifies this stays aligned.
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/package.json" _apc_pkg_json)
+string(REGEX MATCH "\"version\"[ \t\r\n]*:[ \t\r\n]*\"([0-9]+\\.[0-9]+\\.[0-9]+)\"" _apc_ver_match "${_apc_pkg_json}")
+if(CMAKE_MATCH_1)
+    set(APC_VERSION "${CMAKE_MATCH_1}")
+else()
+    message(WARNING "Could not parse version from package.json; falling back to 1.4.0")
+    set(APC_VERSION "1.4.0")
+endif()
+project(APC_System VERSION ${APC_VERSION} LANGUAGES C CXX)
+message(STATUS "APC version: ${APC_VERSION} (from package.json)")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -84,7 +95,7 @@ if(NOT DEFINED APC_PLUGINS_DIR OR APC_PLUGINS_DIR STREQUAL "")
         if(Python3_Interpreter_FOUND)
             execute_process(
                 COMMAND "${Python3_EXECUTABLE}" -c
-                    "import json, pathlib, sys; p=pathlib.Path(sys.argv[1]); d=json.loads(p.read_text(encoding='utf-8')); print(d.get('paths',{}).get('plugins_dir','plugins'))"
+                    "import json, pathlib, sys; p=pathlib.Path(sys.argv[1]); d=json.loads(p.read_text(encoding='utf-8-sig')); print(d.get('paths',{}).get('plugins_dir','plugins'))"
                     "${_apc_cfg}"
                 OUTPUT_VARIABLE _apc_plugins_rel
                 OUTPUT_STRIP_TRAILING_WHITESPACE
