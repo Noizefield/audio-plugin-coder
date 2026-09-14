@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- **`scripts/terminal-monitoring.ps1`: failed native commands were reported as success.** A PowerShell job "completes" even when `cmake`/`msbuild` exit non-zero, so `Invoke-MonitoredCommand` returned exit code 0 for broken builds. The wrapped command now throws on a non-zero `$LASTEXITCODE`. Native stderr (CMake warnings) is collected as text instead of surfacing from `Receive-Job` as a terminating `NativeCommandError` under `$ErrorActionPreference = "Stop"`.
+- **`scripts/lib/Get-ApcPaths.ps1` + `build-and-install.ps1`: resolve a *working* cmake.** New `Resolve-ApcCMakeExe` / `Initialize-ApcCMakePath` / `Test-ApcCMakeExe` check PATH, then vswhere, then the VS 2022 and standalone install locations, and verify each candidate with `cmake --version`. A stale pip/py `cmake` shim on PATH (exits 1, prints nothing) no longer breaks the build; `system-check.ps1` shares the same resolver.
+- **`scripts/pluginval-integration.ps1`: `--strict` is not a pluginval flag.** Strictness is passed as `--strictness-level <1..10>` (default 5, `-Strict` = 10) with a 120 s per-test timeout. The binary is resolved from `_tools/pluginval-bin/`, the source submodule, a submodule build, or PATH instead of one hardcoded path.
+- **`scripts/state-management.{ps1,sh}`: accept the `*_complete` phase labels.** `agent.md`, the phase gates and every `status.json` use `ideation_complete` / `plan_complete` / ... but the schema only listed the bare names, so `Update-PluginState` rejected them and `Test-PluginState` could not order them.
+- **`scripts/validate-webview-setup.ps1`: don't require `js/index.js` for an inline UI.** Per webview-008 the preferred layout is a single `index.html` with the JUCE frontend library inlined; external `js/` files are only required when `index.html` actually references a `<script src>`.
+- `scripts/system-check.ps1`: Python probe no longer errors when neither `py` nor `python` is installed; new `webview2_sdk` check reports whether the Microsoft.Web.WebView2 NuGet package JUCE's `FindWebView2.cmake` needs is present (with the install command as a hint).
+
+### Added
+
+- **`build-and-install.ps1` caps compiler parallelism** at half the logical cores via `$env:CL=/MP<n>` (override with `APC_BUILD_JOBS`). JUCE's recommended flags add `/MP` + `/GL`, and 16+ concurrent LTO compiles of the JUCE unity files exhaust RAM with `C1060: compiler is out of heap space`.
+- Known issue `build-004` (C1060 out of heap space) with resolution doc.
+
 ## [1.5.0] - 2026-09-13
 
 ### Added
