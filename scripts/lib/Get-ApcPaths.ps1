@@ -247,3 +247,77 @@ function Test-ApcSetupCompleted {
     $cfg = Read-ApcConfig -RepoRoot $RepoRoot
     return [bool]($cfg.setup -and $cfg.setup.completed)
 }
+
+function Test-ApcCMakeExe {
+    <#
+    .SYNOPSIS
+        Returns $true when the given cmake.exe actually runs and reports a version.
+        A stale pip/py "cmake" shim (e.g. from a 32-bit Python install) can sit on
+        PATH, exit non-zero and print nothing; Get-Command alone cannot tell.
+    #>
+    param([string]$Exe)
+    if (-not $Exe -or -not (Test-Path $Exe)) { return $false }
+    try {
+        $out = & $Exe --version 2>$null
+        return ($LASTEXITCODE -eq 0 -and (($out -join "`n") -match 'cmake version'))
+    } catch { return $false }
+}
+
+function Resolve-ApcCMakeExe {
+    <#
+    .SYNOPSIS
+        Locate a WORKING cmake.exe: PATH first, then the copy bundled with any
+        Visual Studio 2022 edition (via vswhere), then common standalone installs.
+        Every candidate is verified with `cmake --version` before it is accepted.
+    #>
+    $cmd = Get-Command cmake -ErrorAction SilentlyContinue
+    if ($cmd -and $cmd.Source) {
+        if (Test-ApcCMakeExe $cmd.Source) { return $cmd.Source }
+        Write-Warning "cmake on PATH does not run ($($cmd.Source)); looking for another install."
+    }
+
+    $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+    if (Test-Path $vswhere) {
+        try {
+            $found = & $vswhere -latest -products * -find "Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" 2>$null
+            foreach ($f in @($found)) {
+                if ($f -and (Test-ApcCMakeExe $f)) { return $f }
+            }
+        } catch {}
+    }
+
+    $vsSuffix = "Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe"
+    $candidates = @(
+        (Join-Path $env:ProgramFiles "CMake\bin\cmake.exe"),
+        (Join-Path ${env:ProgramFiles(x86)} "CMake\bin\cmake.exe"),
+        (Join-Path $env:LOCALAPPDATA "Programs\CMake\bin\cmake.exe")
+    )
+    foreach ($root in @($env:ProgramFiles, ${env:ProgramFiles(x86)})) {
+        foreach ($edition in @("Community", "Professional", "Enterprise", "BuildTools")) {
+            $candidates += (Join-Path $root "Microsoft Visual Studio\2022\$edition\$vsSuffix")
+        }
+    }
+    foreach ($path in $candidates) {
+        if ($path -and (Test-ApcCMakeExe $path)) { return $path }
+    }
+    return $null
+}
+
+function Initialize-ApcCMakePath {
+    <#
+    .SYNOPSIS
+        Ensure `cmake` resolves to a working binary in this session. Prepends the
+        resolved cmake directory to $env:PATH so it shadows any broken shim.
+    #>
+    $exe = Resolve-ApcCMakeExe
+    if (-not $exe) {
+        Write-Warning "No working cmake found on PATH or in a Visual Studio 2022 install. Install CMake >= 3.22 or the VS 'C++ CMake tools' component."
+        return $false
+    }
+    $current = Get-Command cmake -ErrorAction SilentlyContinue
+    if (-not $current -or $current.Source -ne $exe) {
+        $env:PATH = (Split-Path $exe -Parent) + ";" + $env:PATH
+        Write-Host "Using CMake: $exe" -ForegroundColor DarkGray
+    }
+    return $true
+}

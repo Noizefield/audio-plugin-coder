@@ -142,12 +142,20 @@ if (-not (Test-Path $WebUIPath)) {
         }
     }
     
-    if (-not (Test-Path $IndexJs)) {
-        $Issues += "js/index.js not found: $IndexJs"
-    }
-    
-    if (-not (Test-Path $JuceIndexJs)) {
-        $Warnings += "js/juce/index.js not found - JUCE frontend library missing. Prefer npm @juce-framework/webview or copy _tools/JUCE/modules/juce_gui_extra/native/typescript/webview-interop/dist/index.js (JUCE 9)."
+    # webview-008: the preferred layout is ONE index.html with everything inline.
+    # Only require external js files when index.html actually references them.
+    $referencesExternalJs = (Test-Path $IndexHtml) -and ((Get-Content $IndexHtml -Raw) -match '<script[^>]+src=')
+    if ($referencesExternalJs) {
+        if (-not (Test-Path $IndexJs)) {
+            $Issues += "js/index.js not found: $IndexJs"
+        }
+        if (-not (Test-Path $JuceIndexJs)) {
+            $Warnings += "js/juce/index.js not found - JUCE frontend library missing. Prefer inlining _tools/JUCE/modules/juce_gui_extra/native/typescript/webview-interop/dist/index.js into index.html (JUCE 9)."
+        }
+    } elseif (Test-Path $IndexHtml) {
+        if ((Get-Content $IndexHtml -Raw) -notmatch 'getSliderState') {
+            $Warnings += "index.html has no external scripts and does not appear to inline the JUCE frontend library (no getSliderState found)."
+        }
     }
 }
 

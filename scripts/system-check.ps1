@@ -9,6 +9,8 @@ param(
     [switch]$Human
 )
 
+. "$PSScriptRoot\lib\Get-ApcPaths.ps1"
+
 function Write-JsonOutput { param([string]$Json) Write-Output $Json }
 
 function Escape-JsonString {
@@ -52,8 +54,13 @@ function Invoke-CheckNode {
 function Invoke-CheckPython {
     $min = "3.8"
     try {
-        $out = py --version 2>&1
-        if (-not $out) { $out = python --version 2>&1 }
+        $out = $null
+        if (Get-Command py -ErrorAction SilentlyContinue) { $out = (& py --version 2>&1 | Out-String).Trim() }
+        if (-not $out -and (Get-Command python -ErrorAction SilentlyContinue)) { $out = (& python --version 2>&1 | Out-String).Trim() }
+        if (-not $out) {
+            Write-JsonOutput -Json ("{`"found`":false,`"ok`":false}")
+            return
+        }
 
         if ($out -match "Microsoft Store") {
             Write-JsonOutput -Json ("{`"found`":false,`"error`":`"Microsoft Store Redirect`",`"ok`":false}")
@@ -81,21 +88,8 @@ function Invoke-CheckVisualStudio {
 }
 
 function Resolve-CMakeExe {
-    $cmd = Get-Command cmake -ErrorAction SilentlyContinue
-    if ($cmd -and $cmd.Source) { return $cmd.Source }
-
-    $candidates = @(
-        (Join-Path $env:ProgramFiles "CMake\bin\cmake.exe"),
-        (Join-Path ${env:ProgramFiles(x86)} "CMake\bin\cmake.exe"),
-        (Join-Path $env:LOCALAPPDATA "Programs\CMake\bin\cmake.exe"),
-        "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe",
-        "C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe",
-        "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe"
-    )
-    foreach ($path in $candidates) {
-        if ($path -and (Test-Path $path)) { return $path }
-    }
-    return $null
+    # Shared resolver (PATH -> vswhere -> known VS/standalone paths) lives in lib\Get-ApcPaths.ps1
+    return Resolve-ApcCMakeExe
 }
 
 function Invoke-CheckCMake {
@@ -128,6 +122,25 @@ function Invoke-CheckWebView2 {
     }
 }
 
+function Invoke-CheckWebView2Sdk {
+    # JUCE's FindWebView2.cmake looks for the Microsoft.Web.WebView2 NuGet package here
+    # (or in JUCE_WEBVIEW2_PACKAGE_LOCATION). The Evergreen Runtime alone is not enough
+    # to build NEEDS_WEBVIEW2 plugins - the static loader lib comes from this package.
+    $searchDir = Join-Path $env:USERPROFILE "AppData\Local\PackageManagement\NuGet\Packages"
+    $pkg = $null
+    try {
+        $pkg = Get-ChildItem -Path $searchDir -Directory -Filter "*Microsoft.Web.WebView2*" -ErrorAction SilentlyContinue |
+            Sort-Object Name -Descending | Select-Object -First 1
+    } catch {}
+    if ($pkg -and (Test-Path (Join-Path $pkg.FullName "build\native\include\WebView2.h"))) {
+        $ver = if ($pkg.Name -match '(\d+\.\d+\.\d+\.\d+)') { $matches[1] } else { "unknown" }
+        Write-JsonOutput -Json ("{`"found`":true,`"version`":`"$ver`",`"ok`":true,`"path`":`"$(Escape-JsonString $pkg.FullName)`"}")
+    } else {
+        $hint = "Register-PackageSource -provider NuGet -name nugetRepository -location https://www.nuget.org/api/v2; Install-Package Microsoft.Web.WebView2 -Scope CurrentUser -RequiredVersion 1.0.3485.44 -Source nugetRepository"
+        Write-JsonOutput -Json ("{`"found`":false,`"ok`":false,`"hint`":`"$(Escape-JsonString $hint)`"}")
+    }
+}
+
 function Invoke-CheckJUCE {
     $path = if ($JucePath) { $JucePath } else { ".\_tools\JUCE" }
     $header = Join-Path $path "modules\juce_core\system\juce_StandardHeader.h"
@@ -152,7 +165,9 @@ function Invoke-CheckJUCE {
 }
 
 function Invoke-CheckPluginval {
-    $path = ".\_tools\pluginval\pluginval.exe"
+    # Downloaded release (preferred), then a binary inside the source submodule
+    $path = ".\_tools\pluginval-bin\pluginval.exe"
+    if (-not (Test-Path $path)) { $path = ".\_tools\pluginval\pluginval.exe" }
     if (Test-Path $path) {
         Write-JsonOutput -Json ("{`"found`":true,`"path`":`"$(Escape-JsonString $path)`",`"ok`":true}")
     } else {
@@ -186,6 +201,7 @@ function Invoke-CheckAll {
     Write-Output "  `"vs2022`": $(Invoke-CheckVisualStudio),"
     Write-Output "  `"cmake`": $(Invoke-CheckCMake),"
     Write-Output "  `"webview2`": $(Invoke-CheckWebView2),"
+    Write-Output "  `"webview2_sdk`": $(Invoke-CheckWebView2Sdk),"
     Write-Output "  `"juce`": $(Invoke-CheckJUCE),"
     Write-Output "  `"pluginval`": $(Invoke-CheckPluginval),"
     Write-Output "  `"apc_config`": $(Invoke-CheckConfig)"
@@ -211,6 +227,7 @@ function Show-HumanSummary {
         vs2022 = "Visual Studio C++"
         cmake = "CMake (>=3.22)"
         webview2 = "WebView2 Runtime"
+        webview2_sdk = "WebView2 SDK (NuGet, needed to build)"
         juce = "JUCE (>=9)"
         pluginval = "pluginval"
     }
