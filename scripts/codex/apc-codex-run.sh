@@ -3,7 +3,7 @@
 # Usage:
 #   bash scripts/codex/apc-codex-run.sh --prompt "find TODOs" --phase status
 #   bash scripts/codex/apc-codex-run.sh --prompt "…" --dry-run
-#   bash scripts/codex/apc-codex-run.sh --prompt "…" --phase impl --plugin VinylNoize --escalate
+#   bash scripts/codex/apc-codex-run.sh --prompt "…" --phase impl --plugin ExamplePlugin --escalate
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

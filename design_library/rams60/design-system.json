@@ -45,7 +45,7 @@
   },
   "bestFor": ["lo-fi", "vintage", "hardware-emulation", "vinyl/tape character", "measurement-instrument aesthetics"],
   "supports": { "webview": true, "visage": false },
-  "referenceImplementation": "../apc_plugins/VinylNoize/Design/v9-test.html",
+  "referenceImplementation": "plugins/<Name>/Design/v9-test.html",
   "created": "2026-08-22",
   "usageCount": 0
 }

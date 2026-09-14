@@ -65,6 +65,14 @@ See [Codex Compatibility](codex-compatibility.md) for discovery and packaging de
 
 ---
 
+## DeepSeek Harness (DSH)
+
+DSH registers slash commands through a plugin-owned command registry, not repo markdown files (skills are different: `.agents/skills/` is auto-discovered). The `integrations/dsh/apc-commands.mjs` adapter registers all twelve `/apc-*` commands; mount it once per machine with one insert row in `~/.dsh/profiles/web/cordis.patch.yml` and restart the harness.
+
+See [the DSH integration README](../integrations/dsh/README.md) for install, uninstall, and troubleshooting.
+
+---
+
 ## Slash Commands
 
 Slash commands are the primary APC syntax in Claude Code and Kilo. Codex uses the skill action;
@@ -315,7 +323,7 @@ Next Step: Run /apc-impl EchoReverb to start implementation
 
 **Purpose:** Open a bugfix generation on a shipped plugin
 
-**Trigger:** Natural language: "Fix the click bug in shipped Organik"
+**Trigger:** Natural language: "Fix the click bug in shipped ExamplePlugin"
 
 **Actions:**
 1. Verifies the plugin is shipped (refuses otherwise — use `/apc-resume`)
@@ -333,7 +341,7 @@ New controls or layout → `/apc-evolve`. Then `/apc-impl` → `/apc-test` →
 
 **Purpose:** Open a feature generation on a shipped plugin
 
-**Trigger:** Natural language: "Add a tape-hiss mode to shipped Organik"
+**Trigger:** Natural language: "Add a tape-hiss mode to shipped ExamplePlugin"
 
 **Actions:**
 1. Asks for a one-line goal + optional codename (`v1.1 "Analog Warmth"`)

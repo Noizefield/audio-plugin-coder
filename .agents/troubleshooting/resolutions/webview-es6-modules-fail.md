@@ -218,6 +218,20 @@ plugins/CloudWash/Source/ui/public/
 
 ---
 
+## Pitfall: `evaluateJavascript` is not a substitute for inlining
+
+**ExamplePlugin / macOS WKWebView, 2026-08-22.** HTML structure loaded but knobs, canvas, and animations stayed dead. A previous workaround stripped `<script>` from `index.html` and injected `app.js` via `WebBrowserComponent::evaluateJavascript` once the canvas existed.
+
+That failed silently:
+
+1. **`evaluateJavaScript` is eval-like.** Class private fields (`#method`) and object rest (`let { a, ...rest } = obj`) throw a parse error. Pass an `EvaluationCallback` and log `result.getError()` — without it there is no DAW console output.
+2. **`DOMContentLoaded` already fired** by the time C++ injects. Boot code registered with `addEventListener("DOMContentLoaded", ...)` never runs. Boot with `document.readyState === "loading"` else call immediately. Set `window.__pluginBooted = true` only after init succeeds so C++ can detect the miss.
+3. **Do not treat `"1"` and `"true"` as interchangeable** when reading `EvaluationResult` (`var::toString()` of a JS boolean may be either). Prefer `JSON.stringify({ booted: !!window.__pluginBooted })`.
+
+**Correct fix remains inlining** the JUCE interop + UI into one `<script>` in `index.html` (this document). Injection is only a fallback if page scripts truly do not run, and the injected source must be the same parse-safe inline bundle.
+
+---
+
 ## Verification Steps
 
 ### 1. Test in Browser FIRST
@@ -275,6 +289,16 @@ plugins/YourPlugin/Source/ui/public/test-local.html
 **Problem:** `import` only works in `type="module"` which doesn't work.
 
 **Solution:** Remove `import`, copy JUCE library inline.
+
+### ❌ Mistake 5: Injecting app.js with evaluateJavascript instead of inlining
+```cpp
+// WRONG - WKWebView eval of a full app bundle fails silently
+webView->evaluateJavascript (juce::String (BinaryData::app_js, BinaryData::app_jsSize));
+```
+
+**Problem:** Private class fields and `DOMContentLoaded` listeners never boot the UI (`window.__pluginBooted` stays false). HTML chrome shows, canvas/knobs stay dead.
+
+**Solution:** Inline the same JS into `index.html`. Keep evaluateJavascript only for small live updates (VU) or as a fallback that logs `EvaluationCallback` errors.
 
 ### ❌ Mistake 3: Not Testing in Browser
 Building without browser test → waste time on build cycles.

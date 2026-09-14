@@ -1,12 +1,12 @@
 # RAMS 60 — Design Library Entry
 
-Dieter Rams / Swiss 1960s hi-fi instrument design system, extracted from the VinylNoize
+Dieter Rams / Swiss 1960s hi-fi instrument design system, extracted from the ExamplePlugin
 project (design v9).
 
 ## Contents
 
 - `preview.html` — working interactive preview (open directly in a browser)
-- `Noizefield_NF_Logo_150x150.webp` — sample label art asset used by the preview
+- `logo.webp` — sample label art asset used by the preview
   (replace with your own logo when reusing; the preview falls back to the cream
   "33⅓" label if the file is missing)
 - `design-system.json` — machine-readable tokens (palette, typography, components,

@@ -6,7 +6,7 @@
     then invoke `codex exec --json`. Aborts on API-key auth when require_chatgpt_auth is true,
     and on Plus usage-limit errors. Optional bounded escalation after a failed verify command.
 .EXAMPLE
-    pwsh -File scripts/codex/apc-codex-run.ps1 -Phase status -Prompt "Summarize VinylNoize status.json"
+    pwsh -File scripts/codex/apc-codex-run.ps1 -Phase status -Prompt "Summarize ExamplePlugin status.json"
     pwsh -File scripts/codex/apc-codex-run.ps1 -Prompt "find TODOs in Source/" -DryRun
     pwsh -File scripts/codex/apc-codex-run.ps1 -Phase impl -Prompt "Implement the requested change" -EscalateOnVerifyFail
 #>

@@ -2,7 +2,7 @@
 **Comprehensive guide for future AI developers**
 
 **Last Updated:** 2026-08-13
-**Based On:** CloudWash Plugin Development + Organik Design→WebUI conversion
+**Based On:** CloudWash Plugin Development + ExamplePlugin Design→WebUI conversion
 
 ---
 
@@ -42,7 +42,7 @@ ALL JavaScript must be inline in index.html (900+ lines typical).
 ```html
 <!-- ❌ WORKS IN EDGE, FAILS IN JUCE WEBVIEW — page looks like raw HTML -->
 <link rel="stylesheet" href="css/tokens.css" />
-<link rel="stylesheet" href="css/hackerbridge_style.css" />
+<link rel="stylesheet" href="css/app-style.css" />
 ```
 
 Copying `Design/index.html` into `WebUI/` without inlining CSS is the usual cause.
@@ -63,7 +63,7 @@ Inline ALL CSS in `index.html` (same rule as JS). Explicit BinaryData map by pat
 
 **Reference:**
 - `.agents/troubleshooting/resolutions/webview-011-unstyled-external-css.md`
-- Working example: `plugins/Organik/WebUI/index.html`, `plugins/CloudWash/Source/ui/public/index.html`
+- Working example: `plugins/<Name>/WebUI/index.html`, `plugins/CloudWash/Source/ui/public/index.html`
 
 ---
 
@@ -377,7 +377,7 @@ target_compile_definitions(YourPlugin
   - COMPLETE working implementation
   - Use as template for all new plugins
 
-- **`plugins/AngelGrain/`**
+- **`plugins/<Name>/`**
   - Another working WebView plugin
   - Simpler than CloudWash
 

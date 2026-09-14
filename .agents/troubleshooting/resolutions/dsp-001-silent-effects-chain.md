@@ -124,4 +124,4 @@ For ALL future plugins using JUCE DSP:
 
 **Resolved:** 2026-02-12
 **Attempts before resolution:** 4
-**Plugin:** XENON
+**Plugin:** ExamplePlugin
