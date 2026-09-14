@@ -387,13 +387,26 @@ async function getTools() {
   ]);
   toolCache = {
     juce: { path: '_tools/JUCE', present: isDir(path.join(REPO_ROOT, '_tools', 'JUCE')), pin: jucePin },
-    pluginval: { path: '_tools/pluginval/pluginval.exe', present: exists(path.join(REPO_ROOT, '_tools', 'pluginval', 'pluginval.exe')) },
+    pluginval: pluginvalInfo(),
     visage: { path: '_tools/visage', present: isDir(path.join(REPO_ROOT, '_tools', 'visage')), enabled: enableVisage },
     debugView: { path: '_tools/DebugView', present: isDir(path.join(REPO_ROOT, '_tools', 'DebugView')) },
     toolchain: { node: process.version, python, cmake },
   };
   toolCacheAt = now;
   return toolCache;
+}
+
+// pluginval ships per-OS: Windows builds pluginval.exe from the
+// _tools/pluginval submodule; macOS/Linux use the prebuilt release under
+// _tools/pluginval_bin (see scripts/test-plugin.sh). A hardcoded .exe path
+// reports MISSING forever on Mac/Linux.
+function pluginvalInfo() {
+  const segs = process.platform === 'win32'
+    ? ['_tools', 'pluginval', 'pluginval.exe']
+    : process.platform === 'darwin'
+      ? ['_tools', 'pluginval_bin', 'pluginval.app', 'Contents', 'MacOS', 'pluginval']
+      : ['_tools', 'pluginval_bin', 'pluginval'];
+  return { path: segs.join('/'), present: exists(path.join(REPO_ROOT, ...segs)) };
 }
 
 function docHeadings(file) {
