@@ -3,5 +3,5 @@
 // window.APC_VERSION from this file via a <script> tag (works over
 // file:// where fetch() of JSON is blocked). If this file is missing the
 // Hub must render [NOT FOUND] + this path (read-only honesty).
-var APC_VERSION = "1.5.0";
+var APC_VERSION = "1.5.1";
 if (typeof window !== "undefined") { window.APC_VERSION = APC_VERSION; }
