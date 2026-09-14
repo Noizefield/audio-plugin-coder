@@ -198,7 +198,7 @@ function renderOverview(meta, cfg, update) {
   const t = window.__tools;
   if (t) {
     rows.push(['JUCE pin', esc(t.juce.pin || '?') + ' - ' + mono('_tools/JUCE') + (t.juce.present ? ' present' : ' MISSING'), t.juce.present ? okTok() : warnTok()]);
-    rows.push(['pluginval', mono('_tools/pluginval/pluginval.exe') + (t.pluginval.present ? ' present' : ' MISSING'), t.pluginval.present ? okTok() : warnTok()]);
+    rows.push(['pluginval', mono(t.pluginval.path) + (t.pluginval.present ? ' present' : ' MISSING'), t.pluginval.present ? okTok() : warnTok()]);
     rows.push(['Configured dirs', mono([cfg.rel.plugins, cfg.rel.build, cfg.rel.release].join(' · ')) + (cfg.exists.plugins && cfg.exists.build && cfg.exists.release ? ' - all exist' : ' - CHECK'), (cfg.exists.plugins && cfg.exists.build && cfg.exists.release) ? okTok() : warnTok('[!!]')]);
   } else {
     rows.push(['System', mutTok('tools endpoint unreachable'), mutTok('[..]')]);
@@ -356,7 +356,7 @@ function renderTemplates(t) {
 function renderTools(t) {
   const rows = [
     [mono('JUCE ' + (t.juce.pin || '?') + ' (_tools/JUCE)'), t.juce.present ? 'present, matches pin' : 'MISSING', t.juce.present ? okTok() : warnTok()],
-    [mono('pluginval.exe'), t.pluginval.present ? 'prebuilt binary present' : 'MISSING', t.pluginval.present ? okTok() : warnTok()],
+    [mono(t.pluginval.path), t.pluginval.present ? 'prebuilt binary present' : 'MISSING', t.pluginval.present ? okTok() : warnTok()],
     [mono('visage (_tools/visage)'), 'source ' + (t.visage.present ? 'present' : 'MISSING') + ', enable_visage=' + t.visage.enabled, t.visage.present ? okTok() : warnTok()],
     [mono('node ' + (t.toolchain.node || '?') + ' · python ' + (t.toolchain.python || '?') + ' · ' + (t.toolchain.cmake || 'cmake ?')), 'sampled live', okTok()],
   ];
