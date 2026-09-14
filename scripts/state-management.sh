@@ -14,7 +14,8 @@ apc_load_paths
 # Exposes APC_PLUGINS_DIR / apc_plugin_path for callers
 
 # --- SCHEMA CONSTANTS ---
-STATE_PHASES=("ideation" "plan" "design" "code" "ship" "complete")
+# Ordered lifecycle; *_complete labels are what agent.md, phase gates, and status.json use.
+STATE_PHASES=("ideation" "ideation_complete" "plan" "plan_complete" "design" "design_complete" "code" "code_complete" "ship" "ship_complete" "complete")
 STATE_FRAMEWORKS=("visage" "webview" "pending")
 STATE_REQUIRED_FIELDS=("plugin_name" "version" "current_phase" "ui_framework" "complexity_score" "created_at" "last_modified" "phase_history" "validation" "framework_selection" "error_recovery")
 STATE_VALIDATION_FIELDS=("creative_brief_exists" "parameter_spec_exists" "architecture_defined" "ui_framework_selected" "design_complete" "code_complete" "tests_passed" "ship_ready")

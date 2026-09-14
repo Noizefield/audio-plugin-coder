@@ -21,7 +21,16 @@ $Script:StateSchema = @{
         'complexity_score', 'created_at', 'last_modified', 'phase_history', 
         'validation', 'framework_selection', 'error_recovery'
     )
-    phases = @('ideation', 'plan', 'design', 'code', 'ship', 'complete')
+    # Ordered lifecycle. Each phase has an in-progress label and a *_complete label
+    # (the *_complete form is what agent.md, the phase gates, and status.json use).
+    phases = @(
+        'ideation', 'ideation_complete',
+        'plan', 'plan_complete',
+        'design', 'design_complete',
+        'code', 'code_complete',
+        'ship', 'ship_complete',
+        'complete'
+    )
     frameworks = @('visage', 'webview', 'pending')
     validation_fields = @(
         'creative_brief_exists', 'parameter_spec_exists', 'architecture_defined',

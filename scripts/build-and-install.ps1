@@ -20,6 +20,7 @@ $ErrorActionPreference = "Stop"
 . "$PSScriptRoot\pluginval-integration.ps1"
 
 $ApcPaths = Get-ApcPaths
+if (-not (Initialize-ApcCMakePath)) { throw "cmake is required but was not found." }
 $RootPath = $ApcPaths.RepoRoot
 $BuildDir = $ApcPaths.BuildDir
 $PluginDir = Join-Path $ApcPaths.PluginsDir $PluginName
@@ -49,6 +50,13 @@ $state = Get-PluginState -PluginPath $PluginDir
 if ($state.current_phase -ne "code_complete" -and -not $SkipTests) {
     Write-Warning "Plugin implementation not marked as complete. Use -SkipTests to override."
 }
+
+# 0. Cap compiler parallelism. JUCE adds /MP (all cores) and LTO makes each cl.exe
+#    heavy; on 16+ core machines that exhausts RAM ("C1060 compiler is out of heap
+#    space"). Default to half the logical cores; override with $env:APC_BUILD_JOBS.
+$buildJobs = if ($env:APC_BUILD_JOBS) { [int]$env:APC_BUILD_JOBS } else { [Math]::Max(2, [int][Math]::Floor($env:NUMBER_OF_PROCESSORS / 2)) }
+$env:CL = (($env:CL + " /MP$buildJobs").Trim())
+Write-Host "Compiler jobs: $buildJobs (set APC_BUILD_JOBS to override)" -ForegroundColor DarkGray
 
 # 1. Configure with error monitoring
 Write-Host "Configuring build..." -ForegroundColor Yellow

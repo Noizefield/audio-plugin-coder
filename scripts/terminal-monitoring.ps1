@@ -25,8 +25,13 @@ function Watch-TerminalOutput {
             throw "Command timed out after $TimeoutSeconds seconds"
         }
 
-        # Get new output
-        $newOutput = Receive-Job $job
+        # Get new output. Native tools (cmake, msbuild) write warnings to stderr;
+        # under $ErrorActionPreference = "Stop" those would surface from Receive-Job
+        # as terminating NativeCommandError, so collect them as text instead.
+        $jobErrors = $null
+        $newOutput = Receive-Job $job -ErrorAction SilentlyContinue -ErrorVariable jobErrors
+        if ($jobErrors) { $newOutput = @($newOutput) + @($jobErrors | ForEach-Object { $_.ToString() }) }
+        if ($newOutput -is [array]) { $newOutput = ($newOutput -join "`n") + "`n" }
         if ($newOutput) {
             $output += $newOutput
 
@@ -54,8 +59,11 @@ function Watch-TerminalOutput {
         Start-Sleep -Milliseconds 100
     }
 
-    # Get final output
-    $finalOutput = Receive-Job $job
+    # Get final output (same stderr handling as above)
+    $jobErrors = $null
+    $finalOutput = Receive-Job $job -ErrorAction SilentlyContinue -ErrorVariable jobErrors
+    if ($jobErrors) { $finalOutput = @($finalOutput) + @($jobErrors | ForEach-Object { $_.ToString() }) }
+    if ($finalOutput -is [array]) { $finalOutput = ($finalOutput -join "`n") + "`n" }
     $output += $finalOutput
 
     if ($ShowOutput -and $finalOutput) {
@@ -92,7 +100,11 @@ function Invoke-MonitoredCommand {
 
     Write-Host "Executing:" $Command -ForegroundColor Cyan
 
-    $scriptBlock = [ScriptBlock]::Create($Command)
+    # A job "completes" even when the native tool returns non-zero, which used to
+    # report failed cmake/msbuild runs as success. Throw inside the job on a
+    # non-zero exit code so the job state becomes Failed and ExitCode becomes 1.
+    $wrapped = $Command + "`n" + 'if ($LASTEXITCODE -ne 0) { throw "native command exited with code $LASTEXITCODE" }'
+    $scriptBlock = [ScriptBlock]::Create($wrapped)
 
     try {
         $result = Watch-TerminalOutput -Command $scriptBlock -ErrorPatterns $ErrorPatterns -TimeoutSeconds $TimeoutSeconds -ShowOutput:$ShowOutput
