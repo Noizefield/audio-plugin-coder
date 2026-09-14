@@ -119,7 +119,7 @@ std::optional<juce::WebBrowserComponent::Resource> Gnarly2AudioProcessorEditor::
         };
     };
 
-    // Direct access to index.html (like AngelGrain)
+    // Direct access to index.html (like ExamplePlugin)
     if (url.isEmpty() || url == "/" || url == "/index.html")
     {
         DBG ("Gnarly2: Serving index.html directly");

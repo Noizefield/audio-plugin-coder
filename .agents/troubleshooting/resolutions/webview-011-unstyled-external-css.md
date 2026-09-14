@@ -6,7 +6,7 @@
 **Status:** SOLVED
 **First Detected:** 2026-08-13
 **Date Resolved:** 2026-08-13
-**Plugin:** Organik (also applies to any Hackerbridge / Design-to-WebUI conversion)
+**Plugin:** ExamplePlugin (also applies to any Design-to-WebUI conversion)
 
 ---
 
@@ -19,7 +19,7 @@ JUCE WebView2 is **not a browser**. A Design `index.html` that looks perfect in 
 1. **Inline all CSS and JS in `index.html`** (CloudWash pattern). External `.css` / `.js` files are optional copies for browser preview only.
 2. **`getResource()` must map BinaryData by basename AND path.** `juce_add_binary_data` stores `tokens.css`, not `css/tokens.css`. Never rewrite unknown URLs to `index.html`.
 3. **Do not ship Design preview chrome in the plugin.** `.preview-stage`, `.hint`, and `fit() * 0.96` are for the browser mockup. In the plugin, add `html.plugin-host` when `window.__JUCE__` exists.
-4. **Stop the running Standalone before rebuild.** VST3 can update while `Organik.exe` stays locked and stale. Search **both** binaries for a unique HTML marker after build.
+4. **Stop the running Standalone before rebuild.** VST3 can update while `ExamplePlugin.exe` stays locked and stale. Search **both** binaries for a unique HTML marker after build.
 
 This is **not** webview-007 (black screen / no HTML) and **not** webview-010 (resource provider never called). HTML and JS loaded; **CSS did not apply**.
 
@@ -27,7 +27,7 @@ This is **not** webview-007 (black screen / no HTML) and **not** webview-010 (re
 
 ## Problem description
 
-Plugin / Standalone window opens at the correct size. Structure is visible (tabs, buttons, sequencer labels) but the UI looks messy: default OS/WebView buttons, overlapping absolute layout, broken logo, Windows scrollbar, no Hackerbridge chrome.
+Plugin / Standalone window opens at the correct size. Structure is visible (tabs, buttons, sequencer labels) but the UI looks messy: default OS/WebView buttons, overlapping absolute layout, broken logo, Windows scrollbar, no custom chrome.
 
 Browser Design preview (`Design/v9-test.html`) looks correct.
 
@@ -36,14 +36,14 @@ Browser Design preview (`Design/v9-test.html`) looks correct.
 ## Symptoms
 
 - HTML is clearly loading (text, buttons, some canvas drawing)
-- Default white/grey form controls instead of Hackerbridge `.btn` / cards
+- Default white/grey form controls instead of custom `.btn` / cards
 - Overlapping rows (absolute Design layout without CSS)
 - Broken image icon for `assets/logo.svg`
-- Footer hint like `ORGANIK · Hackerbridge v6 · 954×810` still visible
+- Footer hint like `PLUGIN · App v1 · 954×810` still visible
 - Vertical scrollbar on a 954×810 editor
 - No black screen (that would be webview-007 / webview-010)
 
-**Organik 2026-08-13:** Standalone showed unstyled HTML; Design v9 in Edge was fine.
+**ExamplePlugin 2026-08-13:** Standalone showed unstyled HTML; Design v9 in Edge was fine.
 
 ---
 
@@ -57,7 +57,7 @@ Design HTML uses:
 
 ```html
 <link rel="stylesheet" href="css/tokens.css" />
-<link rel="stylesheet" href="css/hackerbridge_style.css" />
+<link rel="stylesheet" href="css/app-style.css" />
 ```
 
 That works in a normal browser. In JUCE WebView2, linked CSS often **never applies** (same class of failure as ES6 modules / webview-008). CloudWash inlines CSS in `index.html` for this reason.
@@ -75,6 +75,8 @@ if (path.isEmpty() || path == "/")
 
 `String::fromFirstOccurrenceOf` returns **empty** if the substring is missing. Relative requests such as `css/tokens.css` then become **`index.html`**. The stylesheet request gets HTML; WebView discards it; the page stays unstyled.
 
+On **macOS WKWebView**, the resource provider often receives only the NSURL path (`/logo.webp`), not `juce://juce.backend/...`. Stripping `getResourceProviderRoot()` misses, the path is treated as empty, and **images are served `index.html`**. Symptom: flip/label art never appears; `ui.log` shows two `index.html` fetches and zero `.webp` fetches. ExamplePlugin 2026-08-22.
+
 `juce_add_binary_data` original filenames are **basenames only** (`tokens.css`, `logo.svg`), not `css/tokens.css` / `assets/logo.svg`. Matching must accept both.
 
 ### 3. Design preview wrapper left in production
@@ -83,11 +85,11 @@ if (path.isEmpty() || path == "/")
 
 ### 4. Stale Standalone binary
 
-`build-and-install.ps1` can rebuild VST3 while a running Standalone **locks `Organik.exe`**. Next launch still uses the old unstyled HTML. Verify:
+`build-and-install.ps1` can rebuild VST3 while a running Standalone **locks `ExamplePlugin.exe`**. Next launch still uses the old unstyled HTML. Verify:
 
 ```powershell
-Select-String -Path "...\Standalone\Organik.exe" -Pattern "organik-embedded-css" -Encoding utf8
-Select-String -Path "...\VST3\...\Organik.vst3" -Pattern "organik-embedded-css" -Encoding utf8
+Select-String -Path "...\Standalone\ExamplePlugin.exe" -Pattern "exampleplugin-embedded-css" -Encoding utf8
+Select-String -Path "...\VST3\...\ExamplePlugin.vst3" -Pattern "exampleplugin-embedded-css" -Encoding utf8
 ```
 
 (Or search file bytes for the marker.) If VST3 has the marker and EXE does not: kill the process and rebuild Standalone.
@@ -100,7 +102,7 @@ Select-String -Path "...\VST3\...\Organik.vst3" -Pattern "organik-embedded-css" 
 
 In `plugins/<Name>/WebUI/index.html` (APC protocol path; not `Source/ui/public`):
 
-- Replace `<link rel="stylesheet" href="css/...">` with `<style>` containing `tokens.css` + `hackerbridge_style.css`.
+- Replace `<link rel="stylesheet" href="css/...">` with `<style>` containing `tokens.css` + `app-style.css`.
 - Fix `@font-face` URLs from `url('../fonts/...')` to `url('fonts/...')` (page root, not CSS-relative).
 - Keep JS inlined (webview-008). Stub `js/index.js` is fine if unused.
 
@@ -146,7 +148,7 @@ Hide `.hint`, drop browser-only scale, fill the WebView. Scale with `pad = 1.0` 
 Stop Standalone, then:
 
 ```powershell
-.\scripts\build-and-install.ps1 -PluginName Organik -SkipTests
+.\scripts\build-and-install.ps1 -PluginName ExamplePlugin -SkipTests
 ```
 
 Confirm **Standalone and VST3** timestamps and the HTML marker. Clear `%TEMP%\EBWebView` if WebView2 looks cached.
@@ -160,6 +162,7 @@ Confirm **Standalone and VST3** timestamps and the HTML marker. Clear `%TEMP%\EB
 | Pure black window, no controls | webview-007 / webview-010 | Constructor order; `getResource` called; BinaryData |
 | HTML/buttons visible, default OS chrome, overlap | **webview-011 (this)** | `<link rel="stylesheet">`; CSS URL → `index.html`; stale EXE |
 | HTML structure, knobs are dots, no arcs | webview-008 | ES6 `type="module"` / external JS |
+| HTML/JS work, logo or images missing; `ui.log` shows two `index.html` requests and no `.webp`/`.png` | **webview-011 getResource** | macOS passes `/file.webp`; empty `fromFirstOccurrenceOf(root)` must not become `index.html` |
 | UI correct in VST3, messy in Standalone | stale EXE | Kill process; rebuild Standalone; compare file times |
 
 **Validator:** `.\scripts\validate-webview-setup.ps1 -PluginName <Name>` flags external stylesheets.
@@ -176,7 +179,7 @@ Confirm **Standalone and VST3** timestamps and the HTML marker. Clear `%TEMP%\EB
 - [ ] Logo/fonts load (no broken-image icon)
 - [ ] No Design hint footer in plugin
 - [ ] Standalone **and** VST3 contain the new HTML (marker / file time)
-- [ ] Screenshot matches approved Design (Hackerbridge cards, not default buttons)
+- [ ] Screenshot matches approved Design (styled cards, not default buttons)
 
 ---
 
@@ -197,13 +200,13 @@ Confirm **Standalone and VST3** timestamps and the HTML marker. Clear `%TEMP%\EB
 - **webview-010:** Black screen — `getResource()` never called (constructor order)
 - **webview-001:** Path / 404
 - CloudWash: `plugins/CloudWash/Source/ui/public/index.html`
-- Organik production: `plugins/Organik/WebUI/index.html`, `Source/PluginEditor.cpp` `getResource()`
+- ExamplePlugin production: `plugins/<Name>/WebUI/index.html`, `Source/PluginEditor.cpp` `getResource()`
 
 ---
 
 ## Tags
 
-`webview` `css` `inline` `BinaryData` `hackerbridge` `organik` `standalone-stale`
+`webview` `css` `inline` `BinaryData` `custom-ui` `exampleplugin` `standalone-stale`
 
 ---
 

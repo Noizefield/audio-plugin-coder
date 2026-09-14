@@ -135,7 +135,7 @@ issues:
     attempts_before_resolution: 3
     prevention: "ALWAYS create ALL parameter attachments BEFORE calling addAndMakeVisible(webView)"
     critical_fix: "Order must be: 1. Relays 2. WebView 3. Attachments 4. addAndMakeVisible 5. goToURL 6. setSize"
-    notes: "This is the #1 most critical WebView bug. Following AngelGrain pattern prevents this entirely."
+    notes: "This is the #1 most critical WebView bug. Following ExamplePlugin pattern prevents this entirely."
 
   - id: linux-001
     title: "Linux WebView plugin - gtk/gtk.h not found"
@@ -203,7 +203,7 @@ issues:
     attempts_before_resolution: 4
     prevention: "MANDATORY ORDER: (1) Create attachments (2) Create WebView (3) addAndMakeVisible (4) goToURL (5) setSize LAST"
     critical_fix: "Move addAndMakeVisible() to AFTER all attachments created, AND move setSize() to END of constructor (after goToURL)"
-    notes: "Affects XENON. Both CloudWash and AngelGrain patterns work if order is correct. Resource provider callback silently fails if WebView initialized in bad state."
+    notes: "Affects ExamplePlugin. Both CloudWash and ExamplePlugin patterns work if order is correct. Resource provider callback silently fails if WebView initialized in bad state."
 
   - id: macos-001
     title: "macOS universal binary - libPluginName_SharedCode.a not found"
@@ -280,7 +280,7 @@ issues:
       - "UI looks messy / overlapping / default HTML buttons"
       - "Design preview looks correct in browser, plugin does not"
       - "Broken logo icon, Windows scrollbar, preview hint footer"
-      - "HTML and JS load, Hackerbridge chrome missing"
+      - "HTML and JS load, custom chrome missing"
       - "VST3 updated but Standalone still unstyled"
     error_patterns:
       - "unstyled WebView"
@@ -296,8 +296,35 @@ issues:
     last_occurred: 2026-08-13
     attempts_before_resolution: 2
     prevention: "Inline ALL CSS and JS in WebUI/index.html (CloudWash). Map BinaryData by path AND basename; never default unknown URLs to index.html. Strip Design preview chrome in plugin. Kill Standalone before rebuild and verify BOTH binaries."
-    critical_fix: "Inline tokens.css + hackerbridge_style.css into index.html; explicit getResource map; plugin-host class; rebuild Standalone after stopping the old process"
-    notes: "Organik /impl 2026-08-13. Distinct from webview-007/010 (black screen) and webview-008 (knob dots / ES6 JS)."
+    critical_fix: "Inline tokens.css + app-style.css into index.html; explicit getResource map; plugin-host class; rebuild Standalone after stopping the old process"
+    notes: "ExamplePlugin /impl 2026-08-13. ExamplePlugin /impl 2026-08-22: same getResource collapse hid logo.webp (macOS NSURL path /file.webp). Distinct from webview-007/010 (black screen) and webview-008 (knob dots / ES6 JS)."
+
+  - id: webview-008
+    title: "WebView JavaScript not running - ES6 modules / external scripts / eval injection"
+    category: webview
+    severity: critical
+    symptoms:
+      - "Plugin loads HTML chrome but knobs do not move"
+      - "Canvas / visualization is empty"
+      - "No JavaScript errors in the DAW"
+      - "Browser test works, plugin UI is dead"
+      - "evaluateJavascript injection leaves __pluginBooted false"
+    error_patterns:
+      - "type=\"module\""
+      - "script src"
+      - "import "
+      - "knobs don't move"
+      - "canvas not visible"
+      - "JavaScript not running"
+    root_cause: "ES6 modules and external script src fail silently in JUCE WebView. evaluateJavascript injection of a whole app.js also fails if the script uses private class fields or waits only for DOMContentLoaded (already fired)."
+    resolution_status: solved
+    resolution_file: resolutions/webview-es6-modules-fail.md
+    frequency: 2
+    last_occurred: 2026-08-22
+    attempts_before_resolution: 2
+    prevention: "Inline ALL JavaScript in index.html. Never type=module or import/export. Do not replace inlining with evaluateJavascript of app.js. If injecting as fallback, strip #private fields, boot on readyState, and log EvaluationCallback errors."
+    critical_fix: "One <script> block in Source/ui/public/index.html with window.Juce + UI; optional C++ fallback only if window.__pluginBooted is false"
+    notes: "CloudWash 2026-01-26 (canonical). ExamplePlugin 2026-08-22 (macOS WKWebView injection pitfall)."
 
   - id: ci-001
     title: "CI - JUCE submodule missing extras/Build/CMake"

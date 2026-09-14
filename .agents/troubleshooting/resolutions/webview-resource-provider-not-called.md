@@ -11,7 +11,7 @@
 
 ## Problem Description
 
-XENON plugin builds successfully and opens in DAW, but shows only a black screen. WebView component creates successfully and URL loads (`https://juce.backend/`), but **no resources are served** because the `getResource()` callback is never invoked.
+ExamplePlugin builds successfully and opens in DAW, but shows only a black screen. WebView component creates successfully and URL loads (`https://juce.backend/`), but **no resources are served** because the `getResource()` callback is never invoked.
 
 ### Symptoms
 - ✅ Plugin compiles without errors
@@ -25,7 +25,7 @@ XENON plugin builds successfully and opens in DAW, but shows only a black screen
 ### Debug Log Output
 ```
 10 Feb 2026 14:47:40 | ============================================
-10 Feb 2026 14:47:40 | XENON Editor Constructor Started
+10 Feb 2026 14:47:40 | ExamplePlugin Editor Constructor Started
 10 Feb 2026 14:47:40 | ============================================
 10 Feb 2026 14:47:40 | Creating WebBrowserComponent...
 10 Feb 2026 14:47:41 | WebBrowserComponent created successfully
@@ -45,7 +45,7 @@ XENON plugin builds successfully and opens in DAW, but shows only a black screen
 ### Issue 1: addAndMakeVisible() Called Too Early
 `addAndMakeVisible(*webView)` was called BEFORE parameter attachments were created.
 
-**XENON (WRONG):**
+**ExamplePlugin (WRONG):**
 ```cpp
 // Line 369: Create WebView
 webView = std::make_unique<juce::WebBrowserComponent>(options);
@@ -70,9 +70,9 @@ When `addAndMakeVisible()` is called before attachments exist:
 ### Issue 2: setSize() Called Before WebView Created
 `setSize()` was called at the START of constructor, before WebView was created.
 
-**XENON (WRONG):**
+**ExamplePlugin (WRONG):**
 ```cpp
-XenonAudioProcessorEditor::XenonAudioProcessorEditor(...)
+ExamplePluginAudioProcessorEditor::ExamplePluginAudioProcessorEditor(...)
 {
     // Line 36: Set size WAY TOO EARLY
     setSize(1280, 820);  // ❌ BEFORE WebView exists!
@@ -139,7 +139,7 @@ PluginEditor::PluginEditor(Processor& p)
 
 ---
 
-## Fixes Applied to XENON
+## Fixes Applied to ExamplePlugin
 
 ### Fix 1: Removed Early addAndMakeVisible()
 ```cpp
@@ -170,7 +170,7 @@ webView->goToURL(rootUrl);
 ### Fix 3: Moved setSize() to End
 ```cpp
 // OLD (Line 36):
-XenonAudioProcessorEditor::XenonAudioProcessorEditor(...)
+ExamplePluginAudioProcessorEditor::ExamplePluginAudioProcessorEditor(...)
 {
     setSize(1280, 820);  // ❌ TOO EARLY
     auto options = ...;
@@ -209,7 +209,7 @@ webView->goToURL(juce::WebBrowserComponent::getResourceProviderRoot());
 setSize(800, 500);
 ```
 
-### AngelGrain (CORRECT - Alternative Pattern)
+### ExamplePlugin (CORRECT - Alternative Pattern)
 ```cpp
 // 1. Create relays
 delayTimeRelay = std::make_unique<...>(...);
@@ -239,13 +239,13 @@ CloudWash's pattern (attachments before WebView) is safer and recommended.
 
 ### 1. Clean Rebuild
 ```powershell
-.\scripts\build-and-install.ps1 -PluginName XENON
+.\scripts\build-and-install.ps1 -PluginName ExamplePlugin
 ```
 
 ### 2. Check Debug Log
 Expected log after fixes:
 ```
-XENON Editor Constructor Started
+ExamplePlugin Editor Constructor Started
 Creating WebBrowserComponent...
 WebBrowserComponent created successfully
 All attachments created. Adding WebView to UI...
@@ -354,4 +354,4 @@ Additionally:
 **Attempts to Resolve:** 4 iterations
 **Time to Resolution:** 30 minutes
 **Related Skills:** `.agents/skills/skill_design_webview/SKILL.md`
-**Working Examples:** `plugins/CloudWash/`, `plugins/AngelGrain/`
+**Working Examples:** `plugins/CloudWash/`, `plugins/<Name>/`

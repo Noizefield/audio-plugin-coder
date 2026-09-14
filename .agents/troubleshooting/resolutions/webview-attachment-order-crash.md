@@ -55,11 +55,11 @@ NfGnarlyAudioProcessorEditor::NfGnarlyAudioProcessorEditor (NfGnarlyAudioProcess
 }
 ```
 
-### Correct Pattern (AngelGrain - WORKS)
+### Correct Pattern (ExamplePlugin - WORKS)
 
 ```cpp
 // CORRECT ORDER - WORKS PERFECTLY
-AngelGrainAudioProcessorEditor::AngelGrainAudioProcessorEditor (AngelGrainAudioProcessor& p)
+ExamplePluginAudioProcessorEditor::ExamplePluginAudioProcessorEditor (ExamplePluginAudioProcessor& p)
 {
     // 1. Create relays
     delayTimeRelay = std::make_unique<juce::WebSliderRelay> ("delayTime");
@@ -100,10 +100,10 @@ AngelGrainAudioProcessorEditor::AngelGrainAudioProcessorEditor (AngelGrainAudioP
 
 ### Fix 2: Simplified Resource Provider
 
-AngelGrain uses **direct BinaryData access**, not iteration:
+ExamplePlugin uses **direct BinaryData access**, not iteration:
 
 ```cpp
-// CORRECT - Direct access (AngelGrain pattern)
+// CORRECT - Direct access (ExamplePlugin pattern)
 std::optional<juce::WebBrowserComponent::Resource> getResource (const juce::String& url)
 {
     if (url.isEmpty() || url == "/" || url == "/index.html")

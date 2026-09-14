@@ -3,7 +3,7 @@
 **Date:** 2026-01-24
 **Analysis:** Comprehensive review of WebView implementation failures
 **Success Rate:** ~10% (9 out of 10 failures)
-**Working Example:** AngelGrain plugin
+**Working Example:** ExamplePlugin
 
 ---
 
@@ -20,9 +20,9 @@ The framework is failing to produce working WebView UIs because of **missing HTM
 
 ## Critical Findings
 
-### ✅ What's Working (AngelGrain Pattern)
+### ✅ What's Working (ExamplePlugin Pattern)
 
-AngelGrain demonstrates a **fully functional** WebView implementation:
+ExamplePlugin demonstrates a **fully functional** WebView implementation:
 
 #### 1. **Correct JavaScript Architecture** (3-Part System)
 
@@ -137,7 +137,7 @@ webView = std::make_unique<SinglePageBrowser>(
         .withWinWebView2Options(
             juce::WebBrowserComponent::Options::WinWebView2{}
                 .withUserDataFolder(juce::File::getSpecialLocation(
-                    juce::File::tempDirectory).getChildFile("NPS_AngelGrain")))
+                    juce::File::tempDirectory).getChildFile("NPS_ExamplePlugin")))
         .withNativeIntegrationEnabled()  // ← CRITICAL
         .withKeepPageLoadedWhenBrowserIsHidden()
         .withResourceProvider([&editor](const juce::String& url) {
@@ -229,7 +229,7 @@ document.addEventListener('mouseup', () => {
 |----------|--------|--------|
 | skill_design_webview/SKILL.md | ✅ Exists | Shows structure but doesn't include full JUCE bridge code |
 | WebView Quick Start | ✅ Exists | Good C++ documentation, minimal JS examples |
-| Working Example (AngelGrain) | ✅ Exists | Perfect reference but not templated |
+| Working Example (ExamplePlugin) | ✅ Exists | Perfect reference but not templated |
 
 ---
 
@@ -247,7 +247,7 @@ document.addEventListener('mouseup', () => {
 
 **Benefits:**
 - AI can copy-paste working JUCE bridge code
-- 100% consistent with AngelGrain's proven pattern
+- 100% consistent with ExamplePlugin's proven pattern
 - Eliminates JavaScript API guessing
 
 **Implementation:**
@@ -271,12 +271,12 @@ document.addEventListener('mouseup', () => {
         /******************************************************************************
          * PART 1: Native Interop (DO NOT MODIFY)
          ******************************************************************************/
-        // [COMPLETE check_native_interop.js CODE FROM ANGELGRAIN]
+        // [COMPLETE check_native_interop.js CODE FROM EXAMPLEPLUGIN]
 
         /******************************************************************************
          * PART 2: JUCE Bridge (DO NOT MODIFY)
          ******************************************************************************/
-        // [COMPLETE juce/index.js CODE FROM ANGELGRAIN]
+        // [COMPLETE juce/index.js CODE FROM EXAMPLEPLUGIN]
 
         /******************************************************************************
          * PART 3: Plugin UI Logic (CUSTOMIZE)
@@ -336,7 +336,7 @@ Before generating code, the AI should:
 ## Testing Plan
 
 ### Phase 1: Create Templates (1 hour)
-1. Extract JUCE bridge code from AngelGrain HTML
+1. Extract JUCE bridge code from ExamplePlugin HTML
 2. Create `index.html.template` with placeholders
 3. Test template with nf_gnarly plugin
 
@@ -347,7 +347,7 @@ Before generating code, the AI should:
 
 ### Phase 3: Validation (30 min)
 1. Create validation script
-2. Run against AngelGrain (should pass)
+2. Run against ExamplePlugin (should pass)
 3. Run against nf_gnarly (should fail initially)
 
 ### Phase 4: Implementation Test (1 hour)
@@ -376,7 +376,7 @@ Before generating code, the AI should:
 
 ## Implementation Checklist
 
-- [ ] Extract AngelGrain JUCE bridge code (Parts 1 & 2)
+- [ ] Extract ExamplePlugin JUCE bridge code (Parts 1 & 2)
 - [ ] Create `templates/webview/index.html.template`
 - [ ] Add parameter config template system
 - [ ] Update `skill_design_webview/SKILL.md` with bridge code requirements
@@ -391,21 +391,21 @@ Before generating code, the AI should:
 ## Appendix A: Complete JUCE Bridge Code
 
 ### Part 1: Native Interop (320 lines)
-See: `plugins/AngelGrain/Source/ui/public/index.html` lines 330-362
+See: `plugins/<Name>/Source/ui/public/index.html` lines 330-362
 
 ### Part 2: JUCE Bridge (58 lines)
-See: `plugins/AngelGrain/Source/ui/public/index.html` lines 364-418
+See: `plugins/<Name>/Source/ui/public/index.html` lines 364-418
 
 ### Part 3: Plugin Logic (Variable)
-See: `plugins/AngelGrain/Source/ui/public/index.html` lines 420-481
+See: `plugins/<Name>/Source/ui/public/index.html` lines 420-481
 
 ---
 
 ## Appendix B: File Structure Comparison
 
-### Working (AngelGrain)
+### Working (ExamplePlugin)
 ```
-plugins/AngelGrain/
+plugins/<Name>/
 └── Source/
     └── ui/
         └── public/
@@ -419,7 +419,7 @@ plugins/PluginName/
     └── index.html  ← Single file, all code inline
 ```
 
-**Note:** Both work, but AngelGrain uses `Source/ui/public/` while the framework documents `Design/`. The C++ CMakeLists.txt path must match the actual location.
+**Note:** Both work, but ExamplePlugin uses `Source/ui/public/` while the framework documents `Design/`. The C++ CMakeLists.txt path must match the actual location.
 
 ---
 
