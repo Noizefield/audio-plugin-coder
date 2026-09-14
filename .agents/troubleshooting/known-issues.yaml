@@ -89,6 +89,26 @@ issues:
     attempts_before_resolution: 0
     prevention: "Run build script as administrator or manually copy VST3 from build directory"
 
+  - id: build-004
+    title: "MSVC C1060 compiler is out of heap space during JUCE module compile"
+    category: build
+    severity: high
+    symptoms:
+      - "Many 'error C1060: compiler is out of heap space' lines across juce_core, juce_graphics, juce_gui_basics"
+      - "Fails while compiling JUCE modules, not the plugin sources"
+      - "Happens on machines with many cores while other large apps are open"
+    error_patterns:
+      - "C1060"
+      - "compiler is out of heap space"
+    root_cause: "JUCE's recommended flags add /MP (compile with all logical cores) and /GL link-time optimisation; each cl.exe instance then needs 1-2 GB. On a 16-core machine with the build script's --fresh full reconfigure, 16 concurrent LTO compiles exhaust RAM."
+    resolution_status: solved
+    resolution_file: resolutions/build-004-compiler-out-of-heap.md
+    frequency: 1
+    last_occurred: 2026-09-08
+    attempts_before_resolution: 1
+    prevention: "scripts/build-and-install.ps1 now caps cl.exe parallelism at half the logical cores via $env:CL=/MP<n>; override with $env:APC_BUILD_JOBS."
+    critical_fix: "Set APC_BUILD_JOBS lower (e.g. 4) or close memory-heavy apps, then rerun build-and-install.ps1"
+
   - id: webview-003
     title: "WebView plugin crashes on load - runtime crash"
     category: webview

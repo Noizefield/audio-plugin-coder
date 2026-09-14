@@ -8,15 +8,32 @@ function Test-WithPluginVal {
     param(
         [string]$PluginPath,
         [string]$PluginName,
-        [string]$PluginValPath = "_tools/pluginval/pluginval.exe",
+        [string]$PluginValPath = "",
+        [int]$StrictnessLevel = 5,
         [switch]$Strict,
         [switch]$Verbose
     )
 
     Write-Host "Running PluginVal tests..." -ForegroundColor Cyan
 
+    # Resolve the pluginval binary: explicit path, the downloaded release
+    # (_tools/pluginval-bin), a source build inside the submodule, or PATH.
+    if (-not $PluginValPath) {
+        $candidates = @(
+            "_tools/pluginval-bin/pluginval.exe",
+            "_tools/pluginval/pluginval.exe",
+            "_tools/pluginval/build/pluginval_artefacts/Release/pluginval.exe"
+        )
+        foreach ($c in $candidates) { if (Test-Path $c) { $PluginValPath = $c; break } }
+        if (-not $PluginValPath) {
+            $cmd = Get-Command pluginval -ErrorAction SilentlyContinue
+            if ($cmd) { $PluginValPath = $cmd.Source }
+        }
+    }
+
     # Check if PluginVal exists
-    if (-not (Test-Path $PluginValPath)) {
+    if (-not $PluginValPath -or -not (Test-Path $PluginValPath)) {
+        if (-not $PluginValPath) { $PluginValPath = "_tools/pluginval-bin/pluginval.exe" }
         Write-Warning "PluginVal not found at $PluginValPath"
         Write-Host "Skipping PluginVal tests" -ForegroundColor Yellow
         return @{
@@ -39,15 +56,15 @@ function Test-WithPluginVal {
     }
 
     # Run PluginVal
-    $arguments = @("--validate", $PluginPath)
+    # pluginval has no --strict switch; strictness is a level 1..10 (-Strict => 10)
+    $level = if ($Strict) { 10 } else { $StrictnessLevel }
+    $arguments = @("--strictness-level", $level, "--timeout-ms", 120000, "--validate", $PluginPath)
 
     if ($Verbose) {
         $arguments += "--verbose"
     }
 
-    if ($Strict) {
-        $arguments += "--strict"
-    }
+
 
     try {
         $startTime = Get-Date
