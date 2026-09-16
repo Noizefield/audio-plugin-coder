@@ -1,3 +1,8 @@
+---
+name: plan
+description: Define DSP architecture, assess complexity, and plan implementation for an APC audio plugin after ideation.
+---
+
 # SKILL: ARCHITECTURE & PLANNING
 **Goal:** Define DSP architecture, complexity assessment, and implementation strategy
 **Trigger:** `/plan [Name]`

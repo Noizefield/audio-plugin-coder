@@ -1,3 +1,8 @@
+---
+name: impl
+description: Implement an APC audio plugin's DSP and parameter processing during the implementation phase.
+---
+
 # SKILL: DSP IMPLEMENTATION
 **Goal:** Implement audio processing where parameters control DSP
 **Focus:** PluginProcessor.h, PluginProcessor.cpp

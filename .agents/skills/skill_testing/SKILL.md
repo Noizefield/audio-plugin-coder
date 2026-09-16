@@ -1,3 +1,8 @@
+---
+name: skill-testing
+description: Perform APC plugin stability checks with pluginval, crash analysis, manual DAW checks, and build-error triage as part of testing.
+---
+
 # SKILL: TESTING
 
 **Goal:** Stability Check.

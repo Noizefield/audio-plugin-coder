@@ -1,3 +1,8 @@
+---
+name: dream
+description: Define an APC audio plugin concept and initialize its project state during the dream phase.
+---
+
 # SKILL: IDEATION & DREAMING
 
 **Goal:** Define the plugin concept and initialize the project state.

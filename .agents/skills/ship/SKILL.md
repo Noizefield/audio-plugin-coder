@@ -1,3 +1,8 @@
+---
+name: ship
+description: Package a validated APC audio plugin into platform installers and release archives during the ship phase.
+---
+
 # SKILL: PACKAGING (Cross-Platform)
 
 **Goal:** Create professional, cross-platform plugin installers for Windows, macOS, and Linux

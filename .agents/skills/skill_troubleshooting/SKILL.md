@@ -1,3 +1,8 @@
+---
+name: skill-troubleshooting
+description: Diagnose APC build and plugin issues using the known-issues database and record new resolutions during troubleshooting.
+---
+
 # SKILL: TROUBLESHOOTING & ISSUE RESOLUTION
 
 ## STEP 1: CHECK KNOWN ISSUES FIRST

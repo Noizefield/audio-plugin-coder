@@ -1,6 +1,6 @@
 ---
 name: debug
-description: Autonomous Debugging Instructions for Visual Studio Code: for [plugin].
+description: "Autonomous Debugging Instructions for Visual Studio Code: for [plugin]."
 ---
 
 ## Purpose

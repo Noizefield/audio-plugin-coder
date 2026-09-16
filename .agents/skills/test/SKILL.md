@@ -1,3 +1,8 @@
+---
+name: test
+description: Run the APC testing and validation workflow for an audio plugin after implementation, including testing gates and results.
+---
+
 # Test - Plugin Testing & Validation
 
 **Trigger:** `/test [PluginName]`
