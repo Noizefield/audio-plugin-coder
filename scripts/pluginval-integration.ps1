@@ -58,7 +58,8 @@ function Test-WithPluginVal {
     # Run PluginVal
     # pluginval has no --strict switch; strictness is a level 1..10 (-Strict => 10)
     $level = if ($Strict) { 10 } else { $StrictnessLevel }
-    $arguments = @("--strictness-level", $level, "--timeout-ms", 120000, "--validate", $PluginPath)
+    # Start-Process joins -ArgumentList with spaces and does not quote: quote the path ourselves
+    $arguments = @("--strictness-level", $level, "--timeout-ms", 120000, "--validate", ("`"" + $PluginPath + "`""))
 
     if ($Verbose) {
         $arguments += "--verbose"

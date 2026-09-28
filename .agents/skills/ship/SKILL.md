@@ -536,8 +536,10 @@ Option 2: Install the .deb package with: `sudo dpkg -i $PluginName-$Version.deb`
 See LICENSE.txt for full license terms.
 "@ | Set-Content "$PackageDir/INSTALL.md"
 
-    # Create final ZIP
-    Compress-Archive -Path "$PackageDir/*" -DestinationPath "release/$PluginName-v$Version.zip" -Force
+    # Create final ZIP. Not Compress-Archive: on Windows PowerShell 5.1 it stores entry names
+    # with backslashes, which unpack as flat files on macOS/Linux.
+    . ".\scripts\lib\New-ReleaseZip.ps1"
+    $null = New-ReleaseZip -SourceDir $PackageDir -DestinationZip "release/$PluginName-v$Version.zip"
 
     Write-Host "`n✓ Distribution package created:" -ForegroundColor Green
     Write-Host "  Location: $PackageDir" -ForegroundColor Yellow

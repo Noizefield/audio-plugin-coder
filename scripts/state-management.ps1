@@ -69,7 +69,7 @@ function New-PluginState {
         return $null
     }
     
-    $template = Get-Content $templatePath -Raw | ConvertFrom-Json
+    $template = Get-Content $templatePath -Raw -Encoding UTF8 | ConvertFrom-Json
     $template.plugin_name = $PluginName
     $template.created_at = (Get-Date).ToString("o")
     $template.last_modified = (Get-Date).ToString("o")
@@ -99,7 +99,7 @@ function Update-PluginState {
         return $false
     }
     
-    $state = Get-Content $statusPath -Raw | ConvertFrom-Json
+    $state = Get-Content $statusPath -Raw -Encoding UTF8 | ConvertFrom-Json
     
     # Apply updates (Fixed for nested objects)
     foreach ($key in $Updates.Keys) {
@@ -194,7 +194,7 @@ function Test-PluginState {
         return $false
     }
     
-    $state = Get-Content $statusPath -Raw | ConvertFrom-Json
+    $state = Get-Content $statusPath -Raw -Encoding UTF8 | ConvertFrom-Json
     
     # Check schema validation
     if (-not (Test-StateSchema -State $state)) {
@@ -283,7 +283,7 @@ function Backup-PluginState {
     Write-Host "State backed up to $backupFile" -ForegroundColor Yellow
     
     # Update error recovery info
-    $state = Get-Content $statusPath -Raw | ConvertFrom-Json
+    $state = Get-Content $statusPath -Raw -Encoding UTF8 | ConvertFrom-Json
     $state.error_recovery.last_backup = $backupFile
     $state.error_recovery.rollback_available = $true
     $state | ConvertTo-Json -Depth 10 | Set-Content $statusPath -Encoding UTF8
@@ -326,7 +326,7 @@ function Restore-PluginState {
     Copy-Item $source $statusPath -Force
 
     # Update error recovery info
-    $state = Get-Content $statusPath -Raw | ConvertFrom-Json
+    $state = Get-Content $statusPath -Raw -Encoding UTF8 | ConvertFrom-Json
     $state.error_recovery.rollback_available = $false
     # Fix array append
     if (-not $state.error_recovery.error_log) { $state.error_recovery.error_log = @() }
@@ -349,7 +349,7 @@ function Get-PluginState {
     $statusPath = Join-Path $PluginPath "status.json"
     if (-not (Test-Path $statusPath)) { return $null }
     
-    return Get-Content $statusPath -Raw | ConvertFrom-Json
+    return Get-Content $statusPath -Raw -Encoding UTF8 | ConvertFrom-Json
 }
 
 function Add-StateError {
@@ -364,7 +364,7 @@ function Add-StateError {
     $statusPath = Join-Path $PluginPath "status.json"
     if (-not (Test-Path $statusPath)) { return }
     
-    $state = Get-Content $statusPath -Raw | ConvertFrom-Json
+    $state = Get-Content $statusPath -Raw -Encoding UTF8 | ConvertFrom-Json
     
     if (-not $state.error_recovery.error_log) { $state.error_recovery.error_log = @() }
     if ($state.error_recovery.error_log -isnot [Array]) { $state.error_recovery.error_log = @($state.error_recovery.error_log) }
