@@ -37,15 +37,21 @@ $env:APC_BUILD_JOBS = 4
 powershell -ExecutionPolicy Bypass -File .\scripts\build-and-install.ps1 -PluginName <Name>
 ```
 
-### Permanent Fix (applied 2026-09-08)
-`scripts/build-and-install.ps1` sets `$env:CL = "/MP<n>"` before configuring, where `n`
-defaults to half the logical cores. A later `/MP` on the command line overrides JUCE's
-`/MP`, so MSBuild still parallelises across projects but each project compiles with at
-most `n` files at once.
+### Permanent Fix (applied 2026-09-08, corrected 2026-09-28)
+`scripts/build-and-install.ps1` sets `$env:_CL_ = "/MP<n>"` before configuring, where `n`
+defaults to half the logical cores. cl.exe reads `_CL_` after its command line, so this
+`/MP<n>` comes after JUCE's `/MP` and wins: MSBuild still parallelises across projects but
+each project compiles with at most `n` files at once. (The first version of this fix used
+`$env:CL`, which cl.exe reads *before* the command line, so JUCE's `/MP` still won.)
+
+It also sets `$env:PreferredToolArchitecture = "x64"`, an MSBuild property that selects the
+64-bit-hosted compiler. The 32-bit-hosted cl.exe stops at about 4 GB per process however
+much RAM is free.
 
 ## Verification
 
 Rerun the build; the log should show `Compiler jobs: <n>` near the top and no `C1060`.
+In Task Manager, no more than `n` `cl.exe` processes per project run at once.
 
 ## Prevention
 
