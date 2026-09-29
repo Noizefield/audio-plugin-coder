@@ -121,6 +121,7 @@ Exception: For **Visage** only, a preview scaffold may be generated after Phase 
 2. **Primary Layout:** Big central knob? Horizontal strip? Vertical rack? Multi-section?
 3. **Control Count:** How many knobs/sliders/buttons? (affects spacing)
 4. **Window Size:** Compact (400x300)? Standard (600x400)? Large (800x600)?
+5. **Layout Mode (WebView):** `scalable` (default — resizable, aspect-locked, in-page corner grip), `fixed` (window never resizes), or `adaptive` (scalable + breakpoint view swaps like a meter-bridge mode). See `.agents/rules/ui-layout-system.md`.
 
 ### Tier 2 - Visual (ask if Tier 1 complete):
 5. **Color Palette:** Primary accent color? Dark/light theme?
@@ -268,73 +269,44 @@ function Apply-DesignFromLibrary {
 3. **Framework-specific preview artifacts:**
 
 ### If `ui_framework == webview`
-Generate **`$PluginPath/Design/v1-test.html`** - **WORKING HTML PREVIEW**:
-   
-   **CRITICAL:** For WebView framework, this HTML MUST be production-ready with proper JUCE integration.
+**Do NOT hand-author the preview HTML.** The design artifact is the contract
+file **`$PluginPath/Design/v1-ui-map.json`** (schema: `schemas/ui-map.schema.json`,
+rules: `.agents/rules/ui-layout-system.md`), rendered by the composer:
 
-   **Required structure:**
-   ```html
-   <!DOCTYPE html>
-   <html lang="en">
-   <head>
-     <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <title>[Name] Plugin</title>
-     <!-- webview-008: ALL JavaScript must be INLINE - external scripts fail silently -->
-     <style>
-       /* Complete CSS based on style guide */
-       :root {
-         --primary: [color from style guide];
-         --accent: [color from style guide];
-         --background: [color from style guide];
-       }
-       
-       body {
-         background: var(--background);
-         color: var(--primary);
-         font-family: [font from style guide];
-         margin: 0;
-         padding: [padding from style guide];
-         width: [width]px;
-         height: [height]px;
-         overflow: hidden;
-       }
-       
-       /* All UI component styles */
-     </style>
-   </head>
-   <body>
-     <!-- Complete HTML structure matching UI spec -->
-     <div id="plugin-ui">
-       <!-- Controls with proper IDs matching parameter IDs -->
-       <div class="control" id="[PARAMETER_ID]-control">
-         <div class="knob" id="[PARAMETER_ID]-knob"></div>
-         <div class="label">[Parameter Name]</div>
-         <div class="value" id="[PARAMETER_ID]-value">[Default Value]</div>
-       </div>
-       <!-- Repeat for all controls -->
-     </div>
-   </body>
-   </html>
-   ```
+```powershell
+node bin/apc.js ui-compose $PluginName          # or: node scripts/ui-compose.js $PluginName
+```
 
-   **JavaScript placeholder (for preview only):**
-   ```javascript
-   // This is a placeholder for preview - actual implementation goes INLINE in Source/ui/public/index.html
-   document.addEventListener("DOMContentLoaded", () => {
-       console.log("Preview mode - UI structure loaded");
-       // Preview-only code here
-   });
-   ```
+This emits `$PluginPath/Design/v1-test.html` + vendors `apc-ui/` (core CSS,
+component catalog, fit/grip JS) into `Design/apc-ui/`.
 
-   **For WebView plugins:** The HTML in `v1-test.html` should be **identical** to what will be in `Source/ui/public/index.html` (minus the preview JavaScript).
+**Author the map, not the markup:**
+1. `layout.plate` — pick `cols`/`rows` from the agreed window size
+   (e.g. 800×440 at 16px cells → `50 × 27.5`; grid cells are square).
+2. `layout.mode` / `aspect_lock` / `scale_range` / `edge_policy` /
+   `resize_handle` / `presets` — from the Phase 1 mode answer.
+3. `tokens` — palette + typography as CSS vars (e.g. `--plate`, `--ink`,
+   `--accent`, `--font-ui`).
+4. `sections` / `controls` / `canvases` — every element gets a `cell`
+   `{x,y,w,h}` in 0.25-cell steps. `controls[].param` must be a parameter ID
+   from `parameter-spec.md`; `component` must be a catalog component
+   (`knob|flip|psw|fader|screen|chip|well|grip|section|label|custom`).
+5. Compose → open the preview in `tools/ui-preview/` (grid overlay +
+   click-inspect + annotation export) or any browser. Via the APC Hub:
+   `http://localhost:4872/uipreview?plugin=<Name>` loads the newest
+   `vN-ui-map.json` + `vN-test.html` automatically.
 
-   **CRITICAL WebView Requirements:**
-   - ALL JavaScript must be inline in ONE `<script>` block - ES6 modules fail silently in JUCE WebView (webview-008)
-   - All element IDs must match parameter IDs from `parameter-spec.md`
-   - CSS must be complete and production-ready (embedded in `<style>` tag)
-   - HTML structure must match the approved design exactly
-   - No external dependencies (all assets embedded or served via resource provider)
+**Iteration = edit the map, re-compose.** User annotations land in
+`Design/annotations.json` (hub review tool "save → Design") or exported
+markdown / the map's `annotations[]` — treat them as mechanical deltas to
+apply, then re-compose and re-validate:
+`node bin/apc.js validate ui --plugin <Name> --map vN-ui-map.json --html Design/vN-test.html`
+
+**CRITICAL WebView Requirements (unchanged):**
+- ALL JavaScript must be inline in ONE `<script>` block - ES6 modules fail silently in JUCE WebView (webview-008)
+- All element IDs must match parameter IDs from `parameter-spec.md` (composer emits `id="ctl-<param>"` + `data-param`)
+- HTML structure must match the approved `ui-map.json` exactly — no invented elements
+- No external dependencies beyond the vendored `apc-ui/` kit
 
 ### If `ui_framework == visage`
 **Do NOT generate HTML.** Instead, offer a **Visage preview scaffold** (default **Yes**):
@@ -356,25 +328,29 @@ These files are **preview-only** and will be refined during `/impl`.
 ```
 🎨 Design specification v1 created
 Files:
-   - $PluginPath/Design/v1-ui-spec.md
+   - $PluginPath/Design/v1-ui-map.json    (WebView: the contract — source of truth)
+   - $PluginPath/Design/v1-ui-spec.md     (human-readable, generated from the map)
    - $PluginPath/Design/v1-style-guide.md
-   - WebView: $PluginPath/Design/v1-test.html (preview in browser)
+   - WebView: $PluginPath/Design/v1-test.html (composed preview + Design/apc-ui/ kit)
    - Visage: Source/VisageControls.h + PluginEditor.* (preview via preview-design.ps1)
 
 ⚠️ STOP HERE - Do NOT create Source/ files yet!
 What would you like to do?
-1. Iterate - Refine layout or style (creates v2)
-2  Implement - Generate production code in Source/
+1. Iterate - Edit ui-map + re-compose (creates v2); can apply Design/annotations.json
+2. Implement - Generate production code in Source/
 3. Save as template - Add to design library
-4. Preview - WebView: open v1-test.html in browser; Visage: run preview-design.ps1
+4. Preview - WebView: open v1-test.html in browser, or hub /uipreview?plugin=<Name>
+   for grid overlay + click-inspect + per-element annotations (save → Design or
+   copy AI prompt); Visage: preview-design.ps1
 Choose (1-4): _
 ```
 
 **Routing:**
-- Option 1: Collect feedback, create v2 specs and v2-test.html, return to this menu
+- Option 1: Collect feedback or apply exported `annotations.json` cell-by-cell →
+  update `v2-ui-map.json` → `node bin/apc.js ui-compose $PluginName` → return to menu
 - Option 2: Mark design as approved and complete Design phase, suggest starting Implementation phase
 - Option 3: Save to design_library/, return to menu
-- Option 4: Open v1-test.html or run Visage preview, return to menu
+- Option 4: Open v1-test.html / tools/ui-preview or run Visage preview, return to menu
 
 **After design approval (Option 2):**
 ```powershell

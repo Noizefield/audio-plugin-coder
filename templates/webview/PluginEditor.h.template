@@ -28,6 +28,23 @@ public:
 private:
     {{PLUGIN_NAME}}AudioProcessor& audioProcessor;
 
+    // UI layout contract (from Design/ui-map.json — do not improvise)
+    static constexpr int    kPlateW      = {{PLATE_W}};        // authored window width  (px)
+    static constexpr int    kPlateH      = {{PLATE_H}};        // authored window height (px)
+    static constexpr double kAspect      = (double) kPlateW / (double) kPlateH;
+    static constexpr double kMinUiScale  = {{MIN_SCALE}};
+    static constexpr double kMaxUiScale  = {{MAX_SCALE}};
+
+    // Host-initiated resizes bypass ComponentBoundsConstrainer (known JUCE
+    // trap). Re-assert the aspect so the webview can never letterbox.
+    void snapWindowToAspect();
+
+    // In-page resize grip state (apc-fit.js sends accumulated deltas)
+    int gripStartW = 0;
+    int gripStartH = 0;
+
+    void setUiScaleAndSize (double s);
+
     // ═══════════════════════════════════════════════════════════════════
     // CRITICAL: Member Declaration Order (Prevents DAW Crashes)
     // ═══════════════════════════════════════════════════════════════════
