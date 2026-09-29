@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APC UI Preview + Annotate</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #16161a; color: #d8d8de;
+               font: 12px/1.4 ui-monospace, "Cascadia Mono", monospace; }
+  body { display: grid; grid-template-columns: 1fr 320px; grid-template-rows: auto 1fr;
+         grid-template-areas: "bar bar" "stage side"; }
+  #bar { grid-area: bar; display: flex; gap: 10px; align-items: center;
+         padding: 8px 12px; background: #1e1e24; border-bottom: 1px solid #333;
+         flex-wrap: wrap; }
+  #bar label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+  #bar button, .filebtn, #aform button { background: #2a2a33; border: 1px solid #444;
+    color: #d8d8de; padding: 4px 10px; border-radius: 3px; cursor: pointer;
+    font: inherit; }
+  #bar button.on { border-color: #ffc300; color: #ffc300; }
+  #bar button:hover, .filebtn:hover, #aform button:hover { border-color: #888; }
+  #bar input[type="number"] { width: 3.4em; background: #2a2a33; border: 1px solid #444;
+    color: #d8d8de; padding: 3px 4px; border-radius: 3px; font: inherit; }
+  .filebtn input { display: none; }
+  .mut { color: #777; }
+  #stage { grid-area: stage; position: relative; overflow: auto; padding: 24px;
+           display: grid; place-items: center; }
+  #wrap { position: relative; }
+  #frame { border: 0; display: block; background: #000; }
+  #grid { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+  #pins { position: absolute; inset: 0; pointer-events: none; z-index: 6; }
+  .pin { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px;
+         border-radius: 50%; background: #ffc300; color: #111; font-size: 10px;
+         font-weight: bold; display: grid; place-items: center;
+         border: 1px solid #111; }
+  #pick { position: absolute; inset: 0; z-index: 7; cursor: crosshair; }
+  #pick.hidden { display: none; }
+  #cellinfo { position: absolute; z-index: 8; background: #ffc300; color: #111;
+              font-size: 10px; padding: 1px 5px; border-radius: 2px;
+              pointer-events: none; display: none; }
+  #side { grid-area: side; background: #1e1e24; border-left: 1px solid #333;
+          display: flex; flex-direction: column; }
+  #side h3 { margin: 0; padding: 10px 12px 6px; font-size: 11px;
+             text-transform: uppercase; letter-spacing: .12em; color: #888; }
+  #inspect { padding: 6px 12px; border-bottom: 1px solid #333; min-height: 46px; }
+  #inspect .bad { color: #ff6b6b; } #inspect .good { color: #7ee787; }
+  #inspect pre { margin: 4px 0 0; white-space: pre-wrap; font-size: 11px; }
+  #aform { display: none; padding: 8px 12px; border-bottom: 1px solid #333;
+           background: #20202a; }
+  #aform.open { display: block; }
+  #aform .tgt { color: #ffc300; margin-bottom: 6px; font-size: 11px;
+                word-break: break-all; }
+  #aform .row { display: flex; gap: 6px; margin-bottom: 6px; }
+  #aform select, #aform textarea { background: #2a2a33; border: 1px solid #444;
+    color: #d8d8de; padding: 3px 6px; border-radius: 3px; font: inherit; }
+  #aform select { flex: 1; }
+  #aform textarea { width: 100%; height: 64px; resize: vertical; margin-bottom: 6px; }
+  #aform .hint { color: #666; font-size: 10px; margin-top: 4px; }
+  #notes { flex: 1; overflow: auto; padding: 6px 12px; }
+  .note { border: 1px solid #333; border-radius: 4px; padding: 6px 8px;
+          margin-bottom: 6px; background: #24242c; }
+  .note .t { color: #ffc300; font-size: 10px; margin-bottom: 2px;
+             word-break: break-all; }
+  .note .x { float: right; cursor: pointer; color: #666; }
+  .note .x:hover { color: #ff6b6b; }
+  .note .cat { display: inline-block; border: 1px solid #555; color: #999;
+               font-size: 9px; padding: 0 4px; border-radius: 2px; margin-right: 4px; }
+  .note .cat.blocker { border-color: #ff6b6b; color: #ff6b6b; }
+  .note .cat.major { border-color: #ffc300; color: #ffc300; }
+  #side footer { padding: 8px 12px; border-top: 1px solid #333;
+                 display: flex; gap: 6px; flex-wrap: wrap; }
+  #side footer button { flex: 1; min-width: 88px; background: #2a2a33;
+    border: 1px solid #444; color: #d8d8de; padding: 4px 8px; border-radius: 3px;
+    cursor: pointer; font: inherit; }
+  #side footer button:hover { border-color: #888; }
+  #side footer button:disabled { opacity: .4; cursor: default; }
+  #dropzone { position: absolute; inset: 24px; border: 2px dashed #444;
+              border-radius: 8px; display: grid; place-items: center;
+              color: #666; text-align: center; }
+</style>
+</head>
+<body>
+<div id="bar">
+  <label class="filebtn">ui-map.json <input type="file" id="fMap" accept=".json"></label>
+  <label class="filebtn">preview.html <input type="file" id="fHtml" accept=".html,.htm"></label>
+  <button id="bGrid" class="on">grid</button>
+  <button id="bAnnot">annotate</button>
+  <button id="bExtract">extract map</button>
+  <label>scale <input type="range" id="rScale" min="40" max="200" value="100" style="width:90px"> <span id="scaleVal">1.0</span></label>
+  <label>cols <input type="number" id="iCols" step="1" min="1"></label>
+  <label>rows <input type="number" id="iRows" step="0.5" min="1"></label>
+  <label>cell px <input type="number" id="iCell" step="1" min="4" value="16"></label>
+  <span id="cells" class="mut"></span>
+</div>
+<div id="stage">
+  <div id="dropzone">drop <b>ui-map.json</b> + <b>preview.html</b> here<br>
+    <small>?plugin=NAME (hub) &middot; ?design=ID (library) &middot; &amp;file= / &amp;map= optional</small></div>
+  <div id="wrap" hidden>
+    <iframe id="frame"></iframe>
+    <canvas id="grid"></canvas>
+    <div id="pins"></div>
+    <div id="pick" class="hidden"></div>
+    <div id="cellinfo"></div>
+  </div>
+</div>
+<div id="side">
+  <h3>inspect</h3>
+  <div id="inspect">click a cell — annotate mode opens the editor</div>
+  <div id="aform">
+    <div class="tgt" id="aTgt"></div>
+    <div class="row">
+      <select id="aCat">
+        <option value="layout">layout</option>
+        <option value="style">style</option>
+        <option value="behaviour">behaviour</option>
+        <option value="copy">copy</option>
+        <option value="bug">bug</option>
+        <option value="other">other</option>
+      </select>
+      <select id="aSev">
+        <option value="minor">minor</option>
+        <option value="major">major</option>
+        <option value="blocker">blocker</option>
+      </select>
+    </div>
+    <textarea id="aText" placeholder="what's wrong / what should change…"></textarea>
+    <div class="row">
+      <button id="aAdd">add note</button>
+      <button id="aCancel">cancel</button>
+    </div>
+    <div class="hint">Ctrl+Enter adds · Esc cancels</div>
+  </div>
+  <h3>annotations <span id="nCount" style="color:#ffc300"></span></h3>
+  <div id="notes"></div>
+  <div id="exBox" style="display:none;padding:8px 12px;border-top:1px solid #333">
+    <h3 style="padding:0">extracted ui-map draft</h3>
+    <textarea id="exJson" style="width:100%;height:140px;background:#2a2a33;border:1px solid #444;color:#d8d8de;font:inherit;font-size:10px;border-radius:3px"></textarea>
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <button id="exApply">use as MAP</button>
+      <button id="exDl">download</button>
+      <button id="exClose">close</button>
+    </div>
+    <div class="hint" style="color:#666;font-size:10px;margin-top:4px">measured from DOM — check ids/params, then save as Design/vN-ui-map.json</div>
+  </div>
+  <footer>
+    <button id="bSave" disabled title="only when opened via ?plugin=">save → Design</button>
+    <button id="bPrompt">copy AI prompt</button>
+    <button id="bExport">annotations.json</button>
+    <button id="bMd">copy markdown</button>
+  </footer>
+</div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+let MAP = null;                       // ui-map.json contract (optional)
+let GRID = { cols: 50, rows: 27.5, cellPx: 16 };  // grid dims — from MAP, HTML, or manual
+let SCALE = 1, annotating = false, notes = [], htmlLabel = '';
+let pluginName = '', mapName = '', pending = null;
+
+/* ---------- grid source ---------- */
+function applyMap() {
+  const L = MAP.layout || {}, p = L.plate || {};
+  GRID = { cols: +p.cols || 50, rows: +p.rows || 27.5, cellPx: L.cell_px || 16 };
+  $('iCols').value = GRID.cols; $('iRows').value = GRID.rows; $('iCell').value = GRID.cellPx;
+  $('cells').textContent = `plate ${GRID.cols} × ${GRID.rows} · mode ${L.mode || '?'} · ${mapName}`;
+}
+function readGridInputs() {
+  GRID = { cols: +$('iCols').value || 50, rows: +$('iRows').value || 27.5,
+           cellPx: +$('iCell').value || 16 };
+}
+/* Guess grid dims from the preview HTML when no manifest exists.
+   Composed previews carry --cols/--rows; legacy fixed-px pages expose body dims. */
+function detectGrid(html) {
+  if (MAP) return;                                   // contract wins
+  const c = html.match(/--cols:\s*([\d.]+)/), r = html.match(/--rows:\s*([\d.]+)/);
+  if (c && r) {
+    GRID = { cols: +c[1], rows: +r[1], cellPx: GRID.cellPx };
+  } else {
+    const b = html.match(/body[^}]*?width:\s*(\d+)px[^}]*?height:\s*(\d+)px/s);
+    if (b) GRID = { cols: Math.round(+b[1] / 16), rows: Math.round(+b[2] / 16), cellPx: 16 };
+    $('cells').textContent = `no ui-map.json — manual grid (${GRID.cols} × ${GRID.rows})`;
+  }
+  $('iCols').value = GRID.cols; $('iRows').value = GRID.rows;
+}
+['iCols', 'iRows', 'iCell'].forEach(id => $(id).oninput = () => { readGridInputs(); sizeFrame(); });
+
+/* ---------- load ---------- */
+function loadMap(file) { return file.text().then(t => { MAP = JSON.parse(t); mapName = file.name; applyMap(); sizeFrame(); }); }
+function loadHtml(file) {
+  htmlLabel = file.name;
+  return file.text().then(t => { detectGrid(t); $('frame').removeAttribute('src'); $('frame').srcdoc = t; sizeFrame(); });
+}
+function sizeFrame() {
+  const w = Math.round(GRID.cols * GRID.cellPx * SCALE), h = Math.round(GRID.rows * GRID.cellPx * SCALE);
+  $('frame').width = w; $('frame').height = h;
+  const g = $('grid'); g.width = w; g.height = h;
+  $('wrap').hidden = false;
+  const dz = $('dropzone'); if (dz) dz.remove();
+  drawGrid(); drawPins();
+}
+$('fMap').onchange = e => e.target.files[0] && loadMap(e.target.files[0]);
+$('fHtml').onchange = e => e.target.files[0] && loadHtml(e.target.files[0]);
+$('stage').ondragover = e => e.preventDefault();
+$('stage').ondrop = e => {
+  e.preventDefault();
+  for (const f of e.dataTransfer.files)
+    (/\.json$/i.test(f.name) ? loadMap(f) : loadHtml(f));
+};
+$('rScale').oninput = e => { SCALE = e.target.value / 100; $('scaleVal').textContent = SCALE.toFixed(2); sizeFrame(); };
+
+/* ---------- hub integration: ?plugin=X[&file=][&map=] / ?design=X[&file=] ---------- */
+const q = new URLSearchParams(location.search);
+(async function loadFromHub() {
+  const plugin = q.get('plugin'), design = q.get('design');
+  if (!plugin && !design) return;
+  pluginName = plugin || '';
+  const prod = q.get('prod') === '1';          // load Source/ui/public (as-built)
+  const base = plugin ? (prod ? '/pbuild/' : '/pdesign/') + encodeURIComponent(plugin) + '/'
+                      : '/preview/' + encodeURIComponent(design) + '/';
+  let map = q.get('map'), html = q.get('file');
+  if (plugin && (!map || !html)) {
+    try {
+      const det = await (await fetch('/api/v1/plugins/' + encodeURIComponent(plugin))).json();
+      const files = (det && det.artifacts && det.artifacts.design) || [];
+      designFiles = files;
+      if (!map && !prod) map = files.includes('ui-map.json') ? 'ui-map.json'
+        : files.filter(f => /^v\d+-ui-map\.json$/i.test(f)).sort().pop() || null;
+      if (!html && prod) html = 'index.html';
+      if (!html) html = files.filter(f => /^v\d+-(?:test|preview)\.html$/i.test(f)).sort().pop()
+        || (files.includes('preview.html') ? 'preview.html'
+        : files.find(f => /\.html?$/i.test(f) && !/test-local/i.test(f))) || null;
+    } catch (e) { /* detail api unreachable — params must carry it */ }
+  }
+  if (design && !html) html = 'index.html';
+  if (map) {
+    try { MAP = await (await fetch(base + map)).json(); mapName = map; applyMap(); }
+    catch (e) { $('cells').textContent = 'ui-map.json failed to load — manual grid'; }
+  }
+  if (html) {
+    htmlLabel = html;
+    $('frame').src = base + html;                    // same-origin: inspect works
+    fetch(base + html).then(r => r.ok ? r.text() : '').then(t => { if (t) detectGrid(t); sizeFrame(); }).catch(() => sizeFrame());
+  }
+  if (pluginName) { $('bSave').disabled = false; $('bSave').title = 'write Design/annotations.json via hub'; }
+  if (!MAP) $('cells').textContent = $('cells').textContent || 'no ui-map.json — set cols/rows manually';
+  sizeFrame();
+})();
+
+/* ---------- grid ---------- */
+function drawGrid() {
+  const g = $('grid').getContext('2d'), w = $('grid').width;
+  g.clearRect(0, 0, 1e5, 1e5);
+  if (!$('bGrid').classList.contains('on')) return;
+  const cw = w / GRID.cols, ch = $('grid').height / GRID.rows;
+  g.strokeStyle = 'rgba(255,195,0,.28)'; g.lineWidth = 1;
+  g.beginPath();
+  for (let x = 0; x <= GRID.cols; x++) { g.moveTo(Math.round(x*cw)+.5, 0); g.lineTo(Math.round(x*cw)+.5, $('grid').height); }
+  for (let y = 0; y <= GRID.rows; y++) { g.moveTo(0, Math.round(y*ch)+.5); g.lineTo($('grid').width, Math.round(y*ch)+.5); }
+  g.stroke();
+  g.fillStyle = 'rgba(255,195,0,.55)'; g.font = '9px monospace'; g.textAlign = 'center';
+  for (let x = 4; x < GRID.cols; x += 4) g.fillText(x, x*cw, 10);
+  g.textAlign = 'left';
+  for (let y = 4; y < GRID.rows; y += 4) g.fillText(y, 3, y*ch);
+}
+function drawPins() {
+  const cw = $('grid').width / GRID.cols, ch = $('grid').height / GRID.rows;
+  $('pins').innerHTML = notes.map((n, i) =>
+    `<div class="pin" style="left:${(n.cell.x + .5) * cw}px;top:${(n.cell.y + .5) * ch}px" title="${(n.target || 'cell').replace(/"/g, '&quot;')}">${i + 1}</div>`).join('');
+}
+$('bGrid').onclick = () => { $('bGrid').classList.toggle('on'); drawGrid(); };
+$('bAnnot').onclick = () => {
+  annotating = !annotating;
+  $('bAnnot').classList.toggle('on', annotating);
+  $('pick').classList.toggle('hidden', !annotating);
+  if (!annotating) closeForm();
+};
+
+/* ---------- inspect / annotate ---------- */
+function cellAt(e) {
+  const r = $('grid').getBoundingClientRect();
+  const cx = Math.floor((e.clientX - r.left) / (r.width / GRID.cols) * 4) / 4;
+  const cy = Math.floor((e.clientY - r.top) / (r.height / GRID.rows) * 4) / 4;
+  return { x: Math.max(0, cx), y: Math.max(0, cy) };
+}
+function owner(cell) {
+  if (!MAP) return null;
+  const inside = c => cell.x >= c.x && cell.x < c.x + c.w && cell.y >= c.y && cell.y < c.y + c.h;
+  return (MAP.controls || []).find(c => inside(c.cell)) ||
+         (MAP.canvases || []).find(c => inside(c.cell)) ||
+         (MAP.sections || []).find(s => inside(s.cell)) || null;
+}
+/* DOM element under the click, inside the preview — gives a useful note target
+   even with no manifest (legacy previews). */
+function elAt(e) {
+  try {
+    const doc = $('frame').contentDocument;
+    if (!doc) return null;
+    const r = $('frame').getBoundingClientRect();
+    let el = doc.elementFromPoint(e.clientX - r.left, e.clientY - r.top);
+    for (let d = 0; el && d < 4; d++, el = el.parentElement)
+      if (el.id || (el.classList && el.classList.length)) {
+        const cls = (el.className && typeof el.className === 'string')
+          ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '';
+        return el.tagName.toLowerCase() + (el.id ? '#' + el.id : cls);
+      }
+    return el ? el.tagName.toLowerCase() : null;
+  } catch (err) { return null; }
+}
+function measured(idList) {
+  try {
+    const doc = $('frame').contentDocument;
+    if (!doc) return null;
+    const cw = $('grid').width / GRID.cols, ch = $('grid').height / GRID.rows;
+    for (const id of idList) {
+      const el = doc.getElementById(id);
+      if (el) { const r = el.getBoundingClientRect();
+        return { x: +(r.left / cw).toFixed(2), y: +(r.top / ch).toFixed(2),
+                 w: +(r.width / cw).toFixed(2), h: +(r.height / ch).toFixed(2) }; }
+    }
+  } catch (e) { /* cross-doc blocked */ }
+  return null;
+}
+function showInspect(cell) {
+  const it = owner(cell), el = $('inspect');
+  if (!it) {
+    const hit = elAt.last || '';
+    el.innerHTML = `cell ${cell.x},${cell.y} — ` +
+      (MAP ? '<span class="bad">empty</span>' : '<span class="mut">no manifest</span>') +
+      (hit ? `<pre>dom: ${hit.replace(/</g, '&lt;')}</pre>` : '');
+    return;
+  }
+  const want = it.cell, got = measured([`ctl-${it.id}`, `sec-${it.id}`, `cv-${it.id}`, it.param].filter(Boolean));
+  const match = got && Math.abs(got.x - want.x) < .3 && Math.abs(got.y - want.y) < .3;
+  el.innerHTML = `<b>${it.id}</b> (${it.component || it.kind || '?'})` +
+    `<pre>cell   ${cell.x},${cell.y}\ndeclared x:${want.x} y:${want.y} w:${want.w} h:${want.h}\n` +
+    (got ? `rendered x:${got.x} y:${got.y} w:${got.w} h:${got.h}  ` +
+      `<span class="${match ? 'good' : 'bad'}">${match ? 'OK' : 'MISMATCH'}</span>` : 'rendered: n/a') + `</pre>`;
+}
+$('pick').onmousemove = e => {
+  const c = cellAt(e), i = $('cellinfo'), r = $('grid').getBoundingClientRect();
+  i.style.display = 'block'; i.textContent = `${c.x}, ${c.y}`;
+  i.style.left = (e.clientX - r.left + 8) + 'px'; i.style.top = (e.clientY - r.top + 8) + 'px';
+};
+$('pick').onmouseleave = () => $('cellinfo').style.display = 'none';
+$('pick').onclick = e => {
+  const c = cellAt(e), it = owner(c), dom = elAt(e);
+  elAt.last = dom;
+  showInspect(c);
+  pending = { target: it ? it.id : (dom || null), cell: { x: c.x, y: c.y } };
+  $('aTgt').textContent = pending.target || `cell ${c.x},${c.y}`;
+  $('aText').value = '';
+  $('aform').classList.add('open');
+  $('aText').focus();
+};
+$('pick').onmousedown = e => e.preventDefault(); // keep clicks clean
+document.querySelector('#grid').style.pointerEvents = 'none';
+$('wrap').addEventListener('click', e => { if (!annotating) { elAt.last = elAt(e); showInspect(cellAt(e)); } });
+
+function closeForm() { $('aform').classList.remove('open'); pending = null; }
+function commitNote() {
+  if (!pending) return;
+  const txt = $('aText').value.trim();
+  if (txt) {
+    notes.push({ ...pending, cat: $('aCat').value, sev: $('aSev').value, note: txt, v: 1 });
+    renderNotes();
+  }
+  closeForm();
+}
+$('aAdd').onclick = commitNote;
+$('aCancel').onclick = closeForm;
+$('aText').onkeydown = e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); commitNote(); }
+  if (e.key === 'Escape') closeForm();
+};
+
+function renderNotes() {
+  $('nCount').textContent = notes.length ? `(${notes.length})` : '';
+  $('notes').innerHTML = notes.map((n, i) =>
+    `<div class="note"><span class="x" data-i="${i}">✕</span>` +
+    `<div class="t">${i + 1}. <span class="cat ${n.sev || ''}">${n.sev || '?'}</span>` +
+    `<span class="cat">${n.cat || 'note'}</span> ${(n.target || 'cell ' + n.cell.x + ',' + n.cell.y).replace(/</g, '&lt;')}</div>` +
+    `${n.note.replace(/</g, '&lt;')}</div>`).join('');
+  $('notes').querySelectorAll('.x').forEach(x => x.onclick = () => { notes.splice(+x.dataset.i, 1); renderNotes(); });
+  drawPins();
+}
+function payload() {
+  return { version: 1, plugin: pluginName || null, source: htmlLabel || null, map: mapName || null,
+           grid: { cols: GRID.cols, rows: GRID.rows }, scale: SCALE, annotations: notes };
+}
+$('bExport').onclick = () => {
+  const blob = new Blob([JSON.stringify(payload(), null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'annotations.json'; a.click(); URL.revokeObjectURL(a.href);
+};
+function notesMd() {
+  return notes.map((n, i) =>
+    `${i + 1}. **[${n.sev}/${n.cat}] ${n.target || `cell ${n.cell.x},${n.cell.y}`}** — ${n.note}`).join('\n');
+}
+$('bMd').onclick = () => {
+  navigator.clipboard.writeText(`## UI annotations${htmlLabel ? ' — ' + htmlLabel : ''}\n${notesMd()}`)
+    .then(() => $('bMd').textContent = 'copied!')
+    .then(() => setTimeout(() => $('bMd').textContent = 'copy markdown', 1200));
+};
+$('bPrompt').onclick = () => {
+  const target = pluginName ? `the ${pluginName} plugin` : 'this plugin';
+  const files = [mapName, htmlLabel].filter(Boolean).join(' + ') || 'the current design files';
+  const md =
+`## Design revision — apply these UI annotations to ${target}
+
+Working files: ${files}${pluginName ? `  (Design/ — create the next vN- version; do NOT edit the locked files)` : ''}
+Grid: ${GRID.cols} × ${GRID.rows} cells · preview scale ${SCALE}
+
+${notesMd() || '(no notes)'}
+
+Rules: treat each numbered note as a change request against the element/cell named.
+Preserve every other element's cell, component type and tokens. If a note conflicts
+with the ui-map contract (overlap, bounds, 0.25 snap), resolve it in the manifest
+and re-compose the preview. Then run: node bin/apc.js validate ui --plugin ${pluginName || '<Name>'}`;
+  navigator.clipboard.writeText(md).then(() => $('bPrompt').textContent = 'copied!')
+    .then(() => setTimeout(() => $('bPrompt').textContent = 'copy AI prompt', 1200));
+};
+/* ---------- extract: measure the rendered DOM → draft ui-map ---------- */
+let designFiles = [];
+function snap4(v) { return Math.round(v * 4) / 4; }
+function extractMap() {
+  const doc = $('frame').contentDocument;
+  if (!doc || !doc.body) { alert('load a preview first'); return; }
+  const pr = (doc.querySelector('.apc-plate') || doc.body).getBoundingClientRect();
+  const cw = $('grid').width / GRID.cols, ch = $('grid').height / GRID.rows;
+  const isSection = el =>
+    el.matches('section,fieldset,[id^="sec-"],.apc-section,.panel,.card,.zone');
+  const looksCtl = el =>
+    el.matches('button,input,select,canvas,[data-param],[role="button"],[tabindex]') ||
+    /knob|fader|flip|switch|psw|screen|chip|well|meter|toggle|slider|btn|button|dial|led|ctl/i.test(
+      (el.id || '') + ' ' + (typeof el.className === 'string' ? el.className : ''));
+  const els = [...doc.querySelectorAll('[id],[data-param],canvas,section,fieldset,.panel,.card')]
+    .filter(el => {
+      const r = el.getBoundingClientRect();
+      return r.width >= 4 && r.height >= 4 &&
+        r.left < pr.right && r.right > pr.left &&
+        r.top < pr.bottom && r.bottom > pr.top &&
+        el !== doc.body && !el.closest('#grid,#pick,#pins') &&
+        (isSection(el) || looksCtl(el));
+    })
+    // keep leaves for controls: drop an element contained by another collected non-section
+    .filter(el => !els.some(o => o !== el && !isSection(o) && o.contains(el) && !isSection(el)));
+  const secs = [], cvs = [], ctls = [], used = new Set();
+  const uid = raw => {
+    let id = String(raw).replace(/^(ctl|sec|cv)-/, '').replace(/[^\w-]/g, '-') || 'el';
+    let b = id, n = 2; while (used.has(id)) id = b + '-' + n++;
+    used.add(id); return id;
+  };
+  for (const el of els) {
+    const r = el.getBoundingClientRect();
+    const cell = {
+      x: Math.max(0, snap4((r.left - pr.left) / cw)),
+      y: Math.max(0, snap4((r.top - pr.top) / ch)),
+      w: Math.max(.25, snap4(r.width / cw)),
+      h: Math.max(.25, snap4(r.height / ch)),
+    };
+    if (cell.x >= GRID.cols || cell.y >= GRID.rows) continue;
+    if (cell.x === 0 && cell.y === 0 && cell.w >= GRID.cols && cell.h >= GRID.rows) continue; // the plate itself
+    const cls = typeof el.className === 'string' ? el.className : '';
+    const param = el.getAttribute('data-param') ||
+      (/^ctl-(.+)$/.exec(el.id) || [])[1] || null;
+    const id = uid(el.id || param || el.tagName.toLowerCase());
+    const txt = (el.getAttribute('aria-label') || '').trim();
+    if (isSection(el)) secs.push({ id, cell, ...(txt ? { title: txt.slice(0, 40) } : {}) });
+    else if (el.tagName === 'CANVAS' || /^cv-/.test(el.id) || /\bapc-well\b/.test(cls))
+      cvs.push({ id, cell, ...(txt ? { label: txt.slice(0, 40) } : {}) });
+    else {
+      const comp = (cls.match(/apc-(knob|flip|psw|fader|screen|chip|well)/) || [])[1] ||
+        (/knob|dial/i.test(cls + ' ' + el.id) ? 'knob'
+        : /fader|slider/i.test(cls + ' ' + el.id) ? 'fader'
+        : /flip/i.test(cls + ' ' + el.id) ? 'flip'
+        : el.tagName === 'BUTTON' ? 'psw' : 'custom');
+      ctls.push({ id, component: comp, cell, ...(param ? { param } : {}), ...(txt ? { label: txt.slice(0, 40) } : {}) });
+    }
+  }
+  const nextV = Math.max(0, ...designFiles.map(f => +(f.match(/^v(\d+)-/) || [])[1] || 0)) + 1;
+  const draft = {
+    version: 1,
+    name: (pluginName || 'plugin') + '-asbuilt',
+    _extracted: { from: htmlLabel || 'dropped file', at: new Date().toISOString(),
+                  note: 'MEASURED draft — verify ids, param bindings, tokens, layout block' },
+    layout: {
+      mode: 'scalable', aspect_lock: true,
+      plate: { cols: GRID.cols, rows: GRID.rows }, cell_px: GRID.cellPx,
+      edge_policy: 'letterbox', letterbox_fill: '--surface',
+      resize_handle: 'corner-gripper', scale_range: [0.5, 3], presets: [0.5, 0.75, 1, 1.5, 2],
+    },
+    tokens: {},
+    sections: secs, canvases: cvs, controls: ctls,
+  };
+  $('exJson').value = JSON.stringify(draft, null, 2);
+  $('exBox').style.display = 'block';
+  $('inspect').innerHTML = `extracted <b>${ctls.length}</b> controls, ` +
+    `<b>${cvs.length}</b> canvases, <b>${secs.length}</b> sections` +
+    `<pre>suggested name: v${nextV}-ui-map.json</pre>`;
+}
+$('bExtract').onclick = extractMap;
+$('exApply').onclick = () => {
+  try { MAP = JSON.parse($('exJson').value); mapName = 'extracted-draft'; applyMap(); sizeFrame(); }
+  catch (e) { alert('invalid JSON: ' + e.message); }
+};
+$('exDl').onclick = () => {
+  const blob = new Blob([$('exJson').value], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  const nextV = Math.max(0, ...designFiles.map(f => +(f.match(/^v(\d+)-/) || [])[1] || 0)) + 1;
+  a.download = pluginName ? `v${nextV}-ui-map.json` : 'ui-map.draft.json';
+  a.click(); URL.revokeObjectURL(a.href);
+};
+$('exClose').onclick = () => $('exBox').style.display = 'none';
+
+$('bSave').onclick = () => {
+  if (!pluginName) return;
+  $('bSave').textContent = 'saving…';
+  fetch('/api/v1/plugins/' + encodeURIComponent(pluginName) + '/annotations', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload()),
+  }).then(r => r.json()).then(j => {
+    $('bSave').textContent = j && j.ok ? 'saved ✓' : 'save failed';
+    setTimeout(() => $('bSave').textContent = 'save → Design', 1500);
+  }).catch(() => { $('bSave').textContent = 'save failed';
+    setTimeout(() => $('bSave').textContent = 'save → Design', 1500); });
+};
+</script>
+</body>
+</html>
