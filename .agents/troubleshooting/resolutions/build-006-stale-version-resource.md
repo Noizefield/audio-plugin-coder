@@ -1,6 +1,6 @@
 # Plugin reports the old version in Windows File Properties after a VERSION change
 
-**Issue ID:** build-005
+**Issue ID:** build-006
 **Category:** build
 **Severity:** medium
 **First Detected:** 2026-09-25

@@ -109,7 +109,7 @@ issues:
     prevention: "scripts/build-and-install.ps1 caps cl.exe parallelism at half the logical cores via $env:_CL_=/MP<n> (cl.exe reads _CL_ after its command line, so the cap overrides JUCE's own /MP; $env:CL is read before it and loses) and runs the 64-bit-hosted compiler ($env:PreferredToolArchitecture=x64). Override the job count with $env:APC_BUILD_JOBS."
     critical_fix: "Set APC_BUILD_JOBS lower (e.g. 4) or close memory-heavy apps, then rerun build-and-install.ps1"
 
-  - id: build-005
+  - id: build-006
     title: "Built plugin reports the old version in Windows File Properties after a VERSION change"
     category: build
     severity: medium
@@ -122,7 +122,7 @@ issues:
       - "FileVersion"
     root_cause: "JUCE's CMake (_juce_add_resources_rc in JUCEUtils.cmake) generates <Name>_artefacts/JuceLibraryCode/<Name>_resources.rc with juceaide from the configure-time Info.txt, but the custom command depends only on the icon, never on Info.txt. Once the .rc exists it is never regenerated, so VERSION changes do not reach the Windows version resource. JucePlugin_VersionString (a compile definition) does update."
     resolution_status: solved
-    resolution_file: resolutions/build-005-stale-version-resource.md
+    resolution_file: resolutions/build-006-stale-version-resource.md
     frequency: 1
     last_occurred: 2026-09-25
     attempts_before_resolution: 1

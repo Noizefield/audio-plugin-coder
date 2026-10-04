@@ -88,7 +88,7 @@ if ($configResult.Errors.Count -gt 0) {
     }
 }
 
-# 1b. Stale Windows version stamp (known issue build-005). JUCE generates <Name>_resources.rc
+# 1b. Stale Windows version stamp (known issue build-006). JUCE generates <Name>_resources.rc
 #     (File Properties > Details) once; its build rule watches only the icon, so after a VERSION
 #     change the DLL/EXE keep the old number. Configure has just rewritten Info.txt next to it
 #     with the current version: when the two disagree, delete the .rc so this build regenerates it.
