@@ -408,3 +408,40 @@ issues:
     attempts_before_resolution: 1
     prevention: "After changing paths.build_dir in apc.config.json, delete the new build dir's _deps folder once so FetchContent regenerates subbuild scripts with correct absolute paths."
     critical_fix: "Remove-Item -Recurse -Force <build_dir>/_deps, then rerun configure. Do NOT copy/move _deps between build dirs."
+
+  - id: visage-001
+    title: "Visage UI clipped to top-left with dead margins on large windows"
+    category: ui
+    severity: critical
+    symptoms:
+      - "Visage plugin UI renders into top-left sub-rect; black void right/bottom"
+      - "Gets worse the larger the editor window is dragged"
+      - "Content edge tracks canvas framebuffer size, paint() stretch has no effect"
+    error_patterns:
+      - "content only fills fraction of window"
+      - "black margins after resize"
+    root_cause: "visage::Canvas::beginRegion() applied state_.scale (dpi) to region bounds that are already device pixels -> clamp shrank to dpi^2 of the region whenever APC's windowless rasterQuality_ < 1. Latent upstream bug; harmless at dpi>=1."
+    resolution_status: solved
+    resolution_file: resolutions/visage-subnative-raster-clip.md
+    frequency: 1
+    last_occurred: 2026-09-29
+    attempts_before_resolution: 1
+    prevention: "Region/canvas dimensions in visage_graphics are device pixels. Never multiply them by state_.scale/dpi_scale_. Companion fix already in frame.h setDpiScale (rebakes native_bounds_)."
+  - id: visage-002
+    title: "Visage UI stays blurry after window resize"
+    category: ui
+    severity: high
+    symptoms:
+      - "UI soft/unsharp after enlarging the editor window"
+      - "Blur persists after the drag ends, never re-sharpens"
+      - "Worse on large windows"
+    error_patterns:
+      - "blurry after resize"
+      - "low-res upscaled UI"
+    root_cause: "Adaptive rasterQuality_ in VisageJuceHost.h ratcheted down during resize but only recovered when frameEma<7ms; reduced-raster frames landed in the 7-14ms deadband so the low raster (and its upscale blur) was pinned indefinitely. Second failure mode: a single >16ms EMA window stepped quality down ~1s after the settle snap (post-snap native-frame spike), oscillating sharp/soft."
+    resolution_status: solved
+    resolution_file: resolutions/visage-adaptive-raster-stuck-blurry.md
+    frequency: 2
+    last_occurred: 2026-09-30
+    attempts_before_resolution: 2
+    prevention: "Snap rasterQuality back to 1.0 ~0.5s after resize settles and reset the overload streak; down-step only on sustained >24ms EMA across ~3 check windows (instant bail >45ms), floor 0.70. MYRIAPLEX_RASTERLOG env var logs effective raster scale."

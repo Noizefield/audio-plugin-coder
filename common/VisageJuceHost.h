@@ -18,10 +18,59 @@
 #endif
 
 // Crash Handler
-static void npsCrashHandler(void*) {
-    auto logFile = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
-                   .getChildFile("APC_CRASH_REPORT.txt");
+#if JUCE_WINDOWS
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#include <DbgHelp.h>
+#endif
+
+// Windows: `opaque` is the EXCEPTION_POINTERS* JUCE passes from its
+// SEH wrapper — the dump captures the real faulting stack, which the
+// text backtrace in the report often can't resolve.
+static void npsCrashHandler(void* opaque) {
+    auto docs = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
+#if JUCE_WINDOWS
+    if (auto* dbghelp = ::LoadLibraryW(L"dbghelp.dll"))
+    {
+        typedef BOOL (WINAPI* MiniDumpWriteDumpFn) (HANDLE, DWORD, HANDLE,
+            MINIDUMP_TYPE, PMINIDUMP_EXCEPTION_INFORMATION,
+            PMINIDUMP_USER_STREAM_INFORMATION, PMINIDUMP_CALLBACK_INFORMATION);
+        if (auto* writeDump = (MiniDumpWriteDumpFn) ::GetProcAddress(dbghelp, "MiniDumpWriteDump"))
+        {
+            const auto dumpPath = docs.getChildFile("APC_CRASH_MINIDUMP.dmp")
+                                      .getFullPathName();
+            HANDLE hf = ::CreateFileW(dumpPath.toWideCharPointer(),
+                GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+            if (hf != INVALID_HANDLE_VALUE)
+            {
+                MINIDUMP_EXCEPTION_INFORMATION mei {};
+                mei.ThreadId = ::GetCurrentThreadId();
+                mei.ExceptionPointers = static_cast<EXCEPTION_POINTERS*>(opaque);
+                mei.ClientPointers = FALSE;
+                writeDump(::GetCurrentProcess(), ::GetCurrentProcessId(), hf,
+                    (MINIDUMP_TYPE) (MiniDumpWithIndirectlyReferencedMemory
+                                   | MiniDumpScanMemory),
+                    opaque != nullptr ? &mei : nullptr, nullptr, nullptr);
+                ::CloseHandle(hf);
+            }
+        }
+        ::FreeLibrary(dbghelp);
+    }
+#endif
+    auto logFile = docs.getChildFile("APC_CRASH_REPORT.txt");
     juce::String report = "TIME: " + juce::Time::getCurrentTime().toString(true, true) + "\n";
+#if JUCE_WINDOWS
+    if (auto* ep = static_cast<EXCEPTION_POINTERS*>(opaque))
+        if (ep->ExceptionRecord != nullptr)
+            report += "EXCEPTION: code=0x" + juce::String::toHexString(
+                          (juce::int64) ep->ExceptionRecord->ExceptionCode)
+                    + " addr=0x" + juce::String::toHexString(
+                          (juce::int64) ep->ExceptionRecord->ExceptionAddress)
+                    + " thread=0x" + juce::String::toHexString(
+                          (juce::int64) ::GetCurrentThreadId()) + "\n";
+#endif
     report += juce::SystemStats::getStackBacktrace();
     logFile.replaceWithText(report);
 }
@@ -61,11 +110,12 @@ public:
         g.fillAll(juce::Colours::black);
 
         if (windowless_ && backbuffer_.isValid()) {
-            // backbuffer_ is in raster pixels (native, or the windowless
-            // cap from applyCanvasSizing); the editor bounds are logical —
-            // stretchToFit bridges them. Low resample quality: a fast
-            // software blit beats a few % of sharpness at 60 Hz.
-            g.setImageResamplingQuality (juce::Graphics::lowResamplingQuality);
+            // backbuffer_ is in raster pixels (native, or below native while
+            // rasterQuality_ has stepped down); the editor bounds are logical —
+            // stretchToFit bridges them. Bilinear when sizes differ so thin
+            // hairline art doesn't stair-step into dashes on large windows;
+            // at 1:1 JUCE blits straight through anyway.
+            g.setImageResamplingQuality (juce::Graphics::mediumResamplingQuality);
             g.drawImageWithin(backbuffer_, 0, 0, getWidth(), getHeight(),
                               juce::RectanglePlacement::stretchToFit);
         }
@@ -88,9 +138,22 @@ public:
     }
 
     void resized() override {
+        settleTicks_ = 0;
+        snappedAfterResize_ = false;   // settle window re-arms one native-res render
         onResize(getWidth(), getHeight());
-        if (canvas_)
+        if (!canvas_)
+            return;
+        // A drag resize fires resized() per mouse step; reallocating the
+        // bgfx framebuffer on every event storms the message thread —
+        // that was the "unsharp + unstable for seconds" episode. Defer
+        // the realloc until ~130ms of quiet; paint() stretches the old
+        // backbuffer meanwhile. Swap-chain mode must track live.
+        if (windowless_) {
+            pendingResize_ = true;
+            resizeQuietTicks_ = 0;
+        } else {
             applyCanvasSizing();
+        }
     }
 
     void timerCallback() override {
@@ -106,7 +169,16 @@ public:
         if (std::abs(uiScale() - canvasScale_) > 0.001f)
             applyCanvasSizing();
 
+        // deferred canvas realloc from resized() — fires once the drag
+        // has been quiet for ~8 ticks (~130ms), turning a resize storm
+        // into one framebuffer realloc + one full repaint
+        if (pendingResize_ && ++resizeQuietTicks_ >= 8) {
+            pendingResize_ = false;
+            applyCanvasSizing();
+        }
+
         onRender();   // cheap state sync every tick — input handling stays 60 Hz
+        ++settleTicks_; // wall-clock ticks, not rendered frames — decimation mustn't stretch the resize settle window
 
         // Whole-pipeline decimation: a rendered tick costs raster +
         // bgfx submit + readback + swizzle, all on the message thread that
@@ -138,6 +210,73 @@ public:
         const double ms = std::chrono::duration<double, std::milli>(
             std::chrono::steady_clock::now() - t0).count();
         frameEma_ = frameEma_ * 0.75 + ms * 0.25;
+
+        // Adaptive raster quality: rendered cost scales with pixels, so when a
+        // rendered frame persistently exceeds the tick budget we shrink the
+        // raster in steps and let paint() upsample; when frames are cheap we
+        // climb back to native. Sharpness is the default, softness is earned —
+        // see the settle snap below.
+        if (windowless_ && rendererInitialized_) {
+            // Resize settle snap: a just-finished resize re-renders once at
+            // native. Without it, a resize that ratcheted quality down only
+            // climbs back while frames are cheap, and the [12,16]ms deadband
+            // below could pin the reduced raster indefinitely — the resting
+            // image must be sharp even when the drag itself was expensive.
+            // If native turns out unaffordable the overload step-down walks
+            // quality back from here.
+            if (!snappedAfterResize_ && settleTicks_ > 30) {
+                snappedAfterResize_ = true;
+                rasterQuality_ = 1.0f;
+                overloadStreak_ = 0;   // native gets a fresh evaluation window
+            }
+
+            // ~0.33s cooldown between checks so large windows settle instead of
+            // visibly breathing while the cost estimate oscillates. Degrade is
+            // the last resort — native raster is the product, so stepping down
+            // needs SUSTAINED heavy frames (>24ms ema across ~4 consecutive
+            // windows, i.e. seconds of real overload, not a one-off realloc or
+            // post-snap spike — that case used to re-blur the UI ~1s after the
+            // settle snap). A pathological streak (>45ms ema twice running)
+            // still bails quickly to protect the message thread; a single
+            // realloc/compile hitch no longer counts. The floor is 0.85 —
+            // at 0.70 the bilinear upscale was obvious blur; 0.85 saves ~28%
+            // of pixels with softness that's barely visible. Recovery at
+            // <14ms climbs back in 0.15 steps so post-spike blur lasts ~1s
+            // instead of several.
+            constexpr float kRasterFloor = 0.85f;
+            if (frameEma_ > 45.0 && rasterQuality_ > kRasterFloor) {
+                if (++panicStreak_ >= 2) {
+                    rasterQuality_ = juce::jmax (kRasterFloor, rasterQuality_ - 0.10f);
+                    panicStreak_ = 0;
+                    overloadStreak_ = 0;
+                    rasterCooldown_ = 0;
+                }
+            }
+            else {
+                panicStreak_ = 0;
+            }
+            if (++rasterCooldown_ >= 20) {
+                if (frameEma_ > 24.0) {
+                    if (++overloadStreak_ >= 4 && rasterQuality_ > kRasterFloor) {
+                        rasterQuality_ = juce::jmax (kRasterFloor, rasterQuality_ - 0.05f);
+                        overloadStreak_ = 0;
+                    }
+                    rasterCooldown_ = 0;
+                }
+                else {
+                    overloadStreak_ = 0;
+                    if (frameEma_ < 14.0 && rasterQuality_ < 1.0f) {
+                        rasterQuality_ = juce::jmin (1.0f, rasterQuality_ + 0.15f);
+                        rasterCooldown_ = 0;
+                    }
+                }
+            }
+            const int step = juce::roundToInt (rasterQuality_ * 20.0f);
+            if (step != rasterStep_) {
+                rasterStep_ = step;
+                applyCanvasSizing();
+            }
+        }
     }
 
     // Override these in your subclass
@@ -371,15 +510,23 @@ private:
         canvasScale_ = s;
         float raster = s;
         if (windowless_) {
+            raster = s * rasterQuality_;
             const double px = double(getWidth()) * double(getHeight())
-                              * double(s) * double(s);
-            constexpr double kMaxRasterPixels = 2160.0 * 1080.0;
+                              * double(raster) * double(raster);
+            constexpr double kMaxRasterPixels = 3840.0 * 2160.0;   // 4K bound
             if (px > kMaxRasterPixels)
-                raster = float (s * std::sqrt (kMaxRasterPixels / px));
+                raster = float (raster * std::sqrt (kMaxRasterPixels / px));
         }
         const int nw = juce::jmax(1, juce::roundToInt(getWidth()  * raster));
         const int nh = juce::jmax(1, juce::roundToInt(getHeight() * raster));
 
+        if (const char* dbg = std::getenv("MYRIAPLEX_RASTERLOG")) {
+            if (FILE* pf = std::fopen(dbg, "a")) {
+                std::fprintf(pf, "canvas=[%d,%d] raster=%.3f quality=%.3f uiScale=%.3f view=[%d,%d] ema=%.2f\n",
+                             nw, nh, raster, rasterQuality_, s, getWidth(), getHeight(), frameEma_);
+                std::fclose(pf);
+            }
+        }
         if (windowless_)
             canvas_->setWindowless(nw, nh);
         else
@@ -446,6 +593,15 @@ private:
     bool inputPending_ = false; // input pulls an early render (30 Hz floor)
     bool rendererInitialized_ = false;
     bool windowless_ = false;
+    float rasterQuality_ = 1.0f; // windowless raster scale, adapts to frame cost
+    int rasterStep_ = 20;        // rasterQuality_ * 20, hysteresis for realloc
+    int rasterCooldown_ = 0;     // ticks since last quality step
+    int overloadStreak_ = 0;     // consecutive windows over the degrade threshold
+    int panicStreak_ = 0;        // consecutive rendered frames >45ms (instant bail)
+    int settleTicks_ = 0;        // timer ticks since the last resized()
+    bool snappedAfterResize_ = false; // one native-res re-render per settled resize
+    bool pendingResize_ = false; // deferred canvas realloc waiting for drag quiet
+    int resizeQuietTicks_ = 0;   // ticks since the last resized() event
     juce::Image backbuffer_;
     visage::Frame* event_root_ = nullptr;
     visage::MouseButton last_button_id_ = visage::kMouseButtonLeft;
