@@ -58,10 +58,10 @@ function Read-ApcConfig {
     $examplePath = Join-Path $RepoRoot "apc.config.example.json"
 
     if (Test-Path $configPath) {
-        return Get-Content $configPath -Raw | ConvertFrom-Json
+        return Get-Content $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
     }
     if (Test-Path $examplePath) {
-        return Get-Content $examplePath -Raw | ConvertFrom-Json
+        return Get-Content $examplePath -Raw -Encoding UTF8 | ConvertFrom-Json
     }
     return (Get-ApcDefaultConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json)
 }
