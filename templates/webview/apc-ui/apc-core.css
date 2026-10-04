@@ -58,8 +58,10 @@ body {
   overflow: hidden;
 }
 
-/* --- authored-region helpers (composer uses absolute rem cells) --- */
-.apc-cell { position: absolute; box-sizing: border-box; }
+/* --- authored-region helpers (composer uses absolute rem cells) ---
+   Specificity must beat component bases like .apc-well{position:relative}. */
+.apc-plate .apc-cell { position: absolute; box-sizing: border-box; }
+.apc-cell { box-sizing: border-box; }
 
 /* --- corner resize gripper (in-page; JUCE corner can't overlay a webview) --- */
 .apc-grip {

@@ -39,6 +39,14 @@
   white-space: nowrap;
 }
 
+/* section frame tag — tiny documentation caption in the section corner */
+.apc-sec-tag {
+  position: absolute; left: .375rem; top: .1875rem;
+  font-size: .4rem; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-2); opacity: .55;
+  white-space: nowrap; pointer-events: none;
+}
+
 /* ---- detent flip (multiposition toggle) -------------------------------------
    <div class="apc-cell apc-flip" data-param="std"><button class="apc-flip-cap">
      <span class="apc-flip-value">VU</span></button>

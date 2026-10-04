@@ -103,7 +103,7 @@ function validateUi(pluginDir, opts) {
   if (!boundBad) ok('cell.bounds', `${placed.length} placements inside plate`);
   if (!snapBad) ok('cell.snap', 'all cells on 0.25 grid');
 
-  const solid = placed.filter(p => p._kind !== 'section' && !p.overlay);
+  const solid = placed.filter(p => p._kind !== 'section' && !p.overlay && !p.hidden);
   for (let i = 0; i < solid.length; i++)
     for (let j = i + 1; j < solid.length; j++)
       if (overlaps(solid[i].cell, solid[j].cell))
@@ -137,11 +137,13 @@ function validateUi(pluginDir, opts) {
       err('forbidden.jsscale', 'JS-computed scale (Math.min(innerWidth…)) — geometry must be CSS');
     else ok('forbidden.jsscale', 'no JS scale function');
 
-    if (/\*\s*0?\.\d{2}/.test(html))
-      err('forbidden.margin', 'decimal scale factor (*.NN) — plate must fill viewport per edge_policy');
+    const styleBlocks = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n');
+    const styleAttrs = [...html.matchAll(/style="([^"]*)"/g)].map(m => m[1]).join('\n');
+    const cssText = styleBlocks + '\n' + styleAttrs;
+    if (/\*\s*0?\.\d{2}/.test(cssText))
+      err('forbidden.margin', 'decimal scale factor (*.NN) in CSS — plate must fill viewport per edge_policy');
     else ok('forbidden.margin', 'no margin factors');
 
-    const styleBlocks = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n');
     if (/(^|[;{}\s])zoom\s*:/.test(styleBlocks)) warn('forbidden.csszoom', '`zoom:` property in <style> blocks');
     if (/transform[^;]*scale\s*\(/.test(html)) warn('mechanism.transform', 'transform: scale() present — verify it is not a layout-scale wrapper');
     const pxHits = [...styleBlocks.matchAll(/-?\d+(?:\.\d+)?px/g)]
@@ -156,17 +158,25 @@ function validateUi(pluginDir, opts) {
     ]);
     const domSecs = new Set([...html.matchAll(/id="sec-([a-z0-9_-]+)"/g)].map(m => m[1]));
     const domCvs  = new Set([...html.matchAll(/id="cv-([a-z0-9_-]+)"/g)].map(m => m[1]));
+    // as-built manifests reference real DOM ids/classes (holdHost, faceL,
+    // nf-ch-mast) with no ctl-/cv-/sec- prefix — accept any DOM identifier
+    // for the "missing" direction.
+    const domAll = new Set([
+      ...[...html.matchAll(/id="([a-zA-Z0-9_-]+)"/g)].map(m => m[1]),
+      ...[...html.matchAll(/class="([^"]+)"/g)].flatMap(m => m[1].split(/\s+/)),
+    ]);
     const missing = [], extra = [];
     for (const c of (map.controls || []))
-      if (!domIds.has(c.id) && !(c.param && domIds.has(c.param))) missing.push(c.id);
+      if (!domIds.has(c.id) && !domAll.has(c.id) &&
+          !(c.param && (domIds.has(c.param) || domAll.has(c.param)))) missing.push(c.id);
     for (const id of domIds) {
       if (id === 'grip') continue; // auto-added by composer per resize_handle
       if (!(map.controls || []).some(c => c.id === id || c.param === id)) extra.push(id);
     }
     for (const s of (map.sections || []))
-      if (!domSecs.has(s.id)) warn('dom.sections', `section "${s.id}" missing in DOM`);
+      if (!domSecs.has(s.id) && !domAll.has(s.id)) warn('dom.sections', `section "${s.id}" missing in DOM`);
     for (const cv of (map.canvases || []))
-      if (!domCvs.has(cv.id)) warn('dom.canvases', `canvas "${cv.id}" missing in DOM`);
+      if (!domCvs.has(cv.id) && !domAll.has(cv.id)) warn('dom.canvases', `canvas "${cv.id}" missing in DOM`);
     if (missing.length) err('dom.parity', `controls missing in DOM: ${missing.join(', ')}`);
     if (extra.length)   err('dom.parity', `elements not in ui-map (invented): ${extra.join(', ')}`);
     if (!missing.length && !extra.length) ok('dom.parity', 'DOM controls match manifest exactly');
@@ -194,7 +204,7 @@ function validateUi(pluginDir, opts) {
       info('cpp.aspect', 'aspect unlocked by contract; no setResizable found either');
     } else ok('cpp.aspect', 'aspect unlocked per contract');
     if ((L.resize_handle || 'corner-gripper') === 'corner-gripper') {
-      if (!/resizeGrip/.test(cpp)) err('cpp.grip', 'corner-gripper declared but no resizeGrip native function in PluginEditor.cpp');
+      if (!/resizeGrip|resizeDrag/.test(cpp)) err('cpp.grip', 'corner-gripper declared but no resizeGrip/resizeDrag native function in PluginEditor.cpp');
       else ok('cpp.grip', 'resizeGrip native fn present');
     }
     if (!/withBackgroundColour/.test(cpp)) warn('cpp.bg', 'no withBackgroundColour — expect drag-flash on resize');

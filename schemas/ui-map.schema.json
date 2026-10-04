@@ -110,7 +110,7 @@
       "type": "object",
       "required": ["id", "cell"],
       "properties": {
-        "id":      { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+        "id":      { "type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$" },
         "cell":    { "$ref": "#/definitions/cell" },
         "overlay": { "type": "boolean", "default": false }
       }

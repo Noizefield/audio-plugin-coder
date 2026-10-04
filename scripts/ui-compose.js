@@ -69,44 +69,101 @@ const cellStyle = c => `left:${c.x}rem;top:${c.y}rem;width:${c.w}rem;height:${c.
 const labelHtml = l => l ? `<div class="apc-ctl-label">${esc(l)}</div>` : '';
 
 const COMPONENTS = {
-  knob:    (ctl, cls, style) =>
-    `<div class="${cls} apc-knob"${attrs(ctl)} style="${style}">` +
+  knob:    (ctl, cls, style, ab) =>
+    `<div class="${cls} apc-knob"${attrs(ctl, ab)} style="${style}">` +
     `<div class="apc-knob-dial"><div class="apc-knob-pointer"></div></div>${labelHtml(ctl.label)}</div>`,
-  flip:    (ctl, cls, style) =>
-    `<div class="${cls} apc-flip"${attrs(ctl)} style="${style}">` +
+  flip:    (ctl, cls, style, ab) =>
+    `<div class="${cls} apc-flip"${attrs(ctl, ab)} style="${style}">` +
     `<button class="apc-flip-cap"><span class="apc-flip-value">${esc(ctl.value || (ctl.options && ctl.options[0]) || '')}</span></button>${labelHtml(ctl.label)}</div>`,
-  psw:     (ctl, cls, style) =>
-    `<button class="${cls} apc-psw"${attrs(ctl)} aria-checked="false" style="${style}">` +
+  psw:     (ctl, cls, style, ab) =>
+    `<button class="${cls} apc-psw"${attrs(ctl, ab)} aria-checked="false" style="${style}">` +
     `<span class="led"></span><span>${esc(ctl.label || ctl.id)}</span></button>`,
-  fader:   (ctl, cls, style) =>
-    `<div class="${cls} apc-fader"${attrs(ctl)} style="${style}">` +
+  fader:   (ctl, cls, style, ab) =>
+    `<div class="${cls} apc-fader"${attrs(ctl, ab)} style="${style}">` +
     `<div class="apc-fader-track"><div class="apc-fader-cap"></div></div>${labelHtml(ctl.label)}</div>`,
-  screen:  (ctl, cls, style) =>
-    `<div class="${cls} apc-screen"${attrs(ctl)} style="${style}">${esc(ctl.value || '—')}</div>`,
-  chip:    (ctl, cls, style) =>
-    `<button class="${cls} apc-chip"${attrs(ctl)} style="${style}">${esc(ctl.label || ctl.id)}</button>`,
-  well:    (ctl, cls, style) =>
-    `<div class="${cls} apc-well"${attrs(ctl)} style="${style}"><canvas${ctl.kind ? ` data-fit="fit_${ctl.id.replace(/-/g, '_')}"` : ''}></canvas></div>`,
-  grip:    (ctl, cls, style) =>
-    `<div class="${cls} apc-grip"${attrs(ctl)} style="${style}" title="Drag to resize"></div>`,
-  section: (ctl, cls, style) =>
-    `<div class="${cls} apc-section"${attrs(ctl)} style="${style}">${labelHtml(ctl.label)}</div>`,
-  label:   (ctl, cls, style) =>
-    `<div class="${cls} apc-ctl-label"${attrs(ctl)} style="${style}">${esc(ctl.label || ctl.value || ctl.id)}</div>`,
-  custom:  (ctl, cls, style) =>
-    `<div class="${cls} apc-custom"${attrs(ctl)} style="${style}"></div>`,
+  screen:  (ctl, cls, style, ab) =>
+    `<div class="${cls} apc-screen"${attrs(ctl, ab)} style="${style}">${esc(ctl.value || '—')}</div>`,
+  chip:    (ctl, cls, style, ab) =>
+    `<button class="${cls} apc-chip"${attrs(ctl, ab)} style="${style}">${esc(ctl.label || ctl.id)}</button>`,
+  well:    (ctl, cls, style, ab) =>
+    `<div class="${cls} apc-well"${attrs(ctl, ab)} style="${style}"><canvas${ctl.kind ? ` data-fit="fit_${ctl.id.replace(/-/g, '_')}"` : ''}></canvas></div>`,
+  grip:    (ctl, cls, style, ab) =>
+    `<div class="${cls} apc-grip"${attrs(ctl, ab)} style="${style}" title="Drag to resize"></div>`,
+  section: (ctl, cls, style, ab) =>
+    `<div class="${cls} apc-section"${attrs(ctl, ab)} style="${style}">${labelHtml(ctl.label)}</div>`,
+  label:   (ctl, cls, style, ab) =>
+    `<div class="${cls} apc-ctl-label"${attrs(ctl, ab)} style="${style}">${esc(ctl.label || ctl.value || ctl.id)}</div>`,
+  custom:  (ctl, cls, style, ab) =>
+    // as-built capture: a custom part renders as a labeled value box so the
+    // preview shows the control's real footprint instead of an empty slot.
+    `<div class="${cls} apc-flip"${attrs(ctl, ab)} style="${style}">` +
+    `<button class="apc-flip-cap"><span class="apc-flip-value">${esc(ctl.value || (ctl.options && ctl.options[0]) || ctl.kind || ctl.id)}</span></button>${labelHtml(ctl.label)}</div>`,
 };
 
-function attrs(ctl) {
-  const bits = [` id="ctl-${ctl.id}"`];
+function attrs(ctl, asBuilt) {
+  // as-built manifests capture the production DOM — emit the real id so
+  // preview annotations/parity target shipped elements, not ctl-* stubs.
+  const bits = [` id="${asBuilt ? esc(ctl.id) : `ctl-${esc(ctl.id)}`}"`];
   if (ctl.param) bits.push(` data-param="${esc(ctl.param)}"`);
   return bits.join('');
 }
 
 /* ---------- compose ---------- */
 
+/* Built-in preview painters for canvas.kind — let as-built maps show real
+   meter/readout art without copying production draw code. Emitted as
+   window.fit_<id> functions that apc-fit.js mounts via canvas[data-fit]. */
+const CANVAS_PAINTERS = {
+  'vu-meter': `function(ctx,w,h){
+    var st=getComputedStyle(document.documentElement);
+    var ink=st.getPropertyValue('--ink').trim()||'#28241d';
+    var face=st.getPropertyValue('--day-meter-face').trim()||'#f2ecdc';
+    var green=st.getPropertyValue('--accent').trim()||'#1f7a3d';
+    var red='#d9531e', cx=w/2, cy=h*0.97, R=Math.min(w*0.46,h*0.88);
+    var g=ctx.createLinearGradient(0,0,0,h);
+    g.addColorStop(0,'#f7f2e4'); g.addColorStop(1,face);
+    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+    function ang(db){return Math.PI*(1.15+0.7*(db+20)/23);}
+    var ticks=[-20,-15,-10,-7,-5,-3,-2,-1,0,1,2,3];
+    ctx.strokeStyle=ink;ctx.fillStyle=ink;ctx.lineWidth=R*0.008;
+    ctx.beginPath();ctx.arc(cx,cy,R,ang(-20),ang(3));ctx.stroke();
+    ctx.globalAlpha=.5;ctx.lineWidth=R*0.02;
+    ctx.strokeStyle=green;ctx.beginPath();ctx.arc(cx,cy,R*0.90,ang(-7),ang(-1));ctx.stroke();
+    ctx.globalAlpha=.25;ctx.strokeStyle=red;ctx.lineWidth=R*0.09;
+    ctx.beginPath();ctx.arc(cx,cy,R*0.955,ang(0),ang(3));ctx.stroke();ctx.globalAlpha=1;
+    ctx.strokeStyle=ink;ctx.lineWidth=R*0.012;
+    ctx.font='bold '+Math.round(R*0.10)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    for(var i=0;i<ticks.length;i++){var a=ang(ticks[i]),c1=Math.cos(a),s1=Math.sin(a);
+      var maj=(ticks[i]===-20||ticks[i]===-10||ticks[i]===-7||ticks[i]===0||ticks[i]===3);
+      ctx.beginPath();ctx.moveTo(cx+c1*R*(maj?0.86:0.91),cy+s1*R*(maj?0.86:0.91));
+      ctx.lineTo(cx+c1*R,cy+s1*R);ctx.stroke();
+      if(ticks[i]>-15&&ticks[i]<3&&ticks[i]%1===0){
+        ctx.fillStyle=ticks[i]>=0?red:ink;
+        ctx.fillText(ticks[i]>0?'+'+ticks[i]:''+ticks[i],cx+c1*R*0.74,cy+s1*R*0.74);}}
+    ctx.fillStyle=ink;ctx.globalAlpha=.8;
+    ctx.font='bold '+Math.round(R*0.16)+'px sans-serif';
+    ctx.fillText('NOIZEFIELD',cx,cy-R*0.52);
+    ctx.font=Math.round(R*0.075)+'px sans-serif';
+    ctx.fillText('CHANNEL '+(label||''),cx,cy-R*0.36);
+    ctx.globalAlpha=1;
+    ctx.strokeStyle=ink;ctx.lineWidth=R*0.018;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(ang(-3))*R*0.82,cy+Math.sin(ang(-3))*R*0.82);ctx.stroke();
+    ctx.fillStyle=ink;ctx.beginPath();ctx.arc(cx,cy,R*0.055,0,7);ctx.fill();
+    ctx.fillStyle=red;ctx.beginPath();ctx.arc(w-R*0.12,h*0.10,R*0.035,0,7);ctx.fill();
+    var sh=ctx.createLinearGradient(0,0,0,h*0.5);
+    sh.addColorStop(0,'rgba(255,255,255,.28)');sh.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=sh;ctx.fillRect(0,0,w,h*0.5);
+  }`,
+  'led-readout': `function(ctx,w,h){
+    ctx.fillStyle='#0a0906'; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='#4fc07a'; ctx.font='bold '+Math.floor(h*0.5)+'px monospace';
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(label||'—',w/2,h/2);
+  }`,
+};
+
 function compose(map) {
   const L = map.layout || {};
+  const ab = map.kind === 'as-built';
   const cols = L.plate && L.plate.cols, rows = L.plate && L.plate.rows;
   const cellPx = L.cell_px || 16;
   const letterbox = (L.letterbox_fill || '--surface').replace(/^--/, '--');
@@ -122,19 +179,31 @@ function compose(map) {
   const fixedCss = L.mode === 'fixed' ? `\nhtml { font-size: ${cellPx}px; }` : '';
 
   const parts = [];
-  for (const s of (map.sections || []))
-    parts.push(`    <div class="apc-cell apc-section" id="sec-${esc(s.id)}" style="${cellStyle(s.cell)}">${esc(s.label || '')}</div>`);
+  const hiddenCtls = [];
+  for (const s of (map.sections || [])) {
+    if (s.hidden) { hiddenCtls.push({ id: s.id, _sec: true }); continue; }
+    parts.push(`    <div class="apc-cell apc-section" id="${ab ? esc(s.id) : `sec-${esc(s.id)}`}" style="${cellStyle(s.cell)}"><span class="apc-sec-tag">${esc(s.title || s.label || '')}</span></div>`);
+  }
   for (const c of (map.canvases || []))
-    parts.push(`    <div class="apc-cell apc-well" id="cv-${esc(c.id)}" style="${cellStyle(c.cell)}"><canvas${c.kind ? ` data-fit="fit_${c.id.replace(/-/g, '_')}"` : ''}></canvas></div>`);
+    parts.push(`    <div class="apc-cell apc-well" id="${ab ? esc(c.id) : `cv-${esc(c.id)}`}" style="${cellStyle(c.cell)}"><canvas${c.kind ? ` data-fit="fit_${c.id.replace(/-/g, '_')}"` : ''}></canvas></div>`);
   for (const ctl of (map.controls || [])) {
+    if (ctl.hidden) { hiddenCtls.push(ctl); continue; } // real DOM element, not visible in this view
     const render = COMPONENTS[ctl.component] || COMPONENTS.custom;
-    parts.push('    ' + render(ctl, 'apc-cell', cellStyle(ctl.cell)));
+    parts.push('    ' + render(ctl, 'apc-cell', cellStyle(ctl.cell), ab));
   }
   if ((L.resize_handle || 'corner-gripper') === 'corner-gripper' &&
       !(map.controls || []).some(c => c.component === 'grip'))
     parts.push('    <div class="apc-grip" id="ctl-grip" title="Drag to resize"></div>');
 
-  const notes = (map.annotations || []).map(a => `  [note] ${a.note}${a.target ? ` (on ${a.target})` : ''}`).join('\n');
+  const painterScript = (map.canvases || [])
+    .filter(c => c.kind && CANVAS_PAINTERS[c.kind])
+    .map(c => `window.fit_${c.id.replace(/-/g, '_')} = (function(label){ return ${CANVAS_PAINTERS[c.kind]}; })(${JSON.stringify(c.label || '')});`)
+    .join('\n');
+
+  const notes = (map.annotations || []).map(a => {
+    if (typeof a === 'string') return `  [note] ${a}`;
+    return `  [note] ${a.note}${a.target ? ` (on ${a.target})` : ''}`;
+  }).join('\n');
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -153,9 +222,13 @@ ${fixedCss}
   <!-- composed from ui-map.json — do not hand-edit layout; edit the map -->
 <div class="apc-plate">
 ${parts.join('\n')}
-</div>
+</div>${hiddenCtls.length ? `
+<!-- hidden in this view (e.g. settings sheet) — DOM ids kept for parity -->
+<template id="apc-hidden">${hiddenCtls.map(c =>
+  `<div id="${ab ? esc(c.id) : `ctl-${esc(c.id)}`}"${c.param ? ` data-param="${esc(c.param)}"` : ''}></div>`).join('')}</template>` : ''}
 <script src="apc-ui/apc-fit.js"></script>
 <script>
+${painterScript}
   document.addEventListener("DOMContentLoaded", function () {
     if (window.APC) APC.mountKit(document);
   });
@@ -194,11 +267,22 @@ function main(argv) {
   if (!mapFile) { console.error(`no ui-map in ${designDir}`); process.exit(1); }
   const map = JSON.parse(fs.readFileSync(mapFile, 'utf8'));
 
-  vendorKit(repo, designDir);
-
   const versioned = path.basename(mapFile).match(/^v(\d+)-ui-map\.json$/);
   const outName = opt('--out') || (versioned ? `v${versioned[1]}-test.html` : 'v1-test.html');
   const outFile = path.join(designDir, outName);
+
+  // as-built capture: the manifest documents a shipped UI, so the preview IS
+  // the production file (pixel-faithful by definition). The map still drives
+  // grid overlay / annotation / lint on top of it.
+  if (map.kind === 'as-built' && map.source) {
+    const src = path.resolve(dir, String(map.source));
+    if (!fs.existsSync(src)) { console.error(`as-built source missing: ${src}`); process.exit(1); }
+    fs.copyFileSync(src, outFile);
+    console.log(`copied   ${outFile}  (${path.relative(repo, src)} → ${outName} — as-built verbatim)`);
+    process.exit(0);
+  }
+
+  vendorKit(repo, designDir);
   fs.writeFileSync(outFile, compose(map));
   console.log(`composed ${outFile}  (${path.relative(repo, mapFile)} → ${outName}, kit → Design/apc-ui/)`);
 }
