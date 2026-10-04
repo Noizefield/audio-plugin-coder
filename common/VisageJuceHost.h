@@ -11,6 +11,11 @@
 #include "visage/app.h"
 #include "visage/ui.h"
 #include "visage/graphics.h"
+#include <cstdlib>
+#include <chrono>
+#if defined(__SSE2__) || defined(_M_X64) || defined(_M_AMD64)
+#include <emmintrin.h>
+#endif
 
 // Crash Handler
 static void npsCrashHandler(void*) {
@@ -52,11 +57,17 @@ public:
         teardownVisage();
     }
 
-    void paint(juce::Graphics& g) override { 
+    void paint(juce::Graphics& g) override {
         g.fillAll(juce::Colours::black);
 
         if (windowless_ && backbuffer_.isValid()) {
-            g.drawImageAt(backbuffer_, 0, 0);
+            // backbuffer_ is in raster pixels (native, or the windowless
+            // cap from applyCanvasSizing); the editor bounds are logical —
+            // stretchToFit bridges them. Low resample quality: a fast
+            // software blit beats a few % of sharpness at 60 Hz.
+            g.setImageResamplingQuality (juce::Graphics::lowResamplingQuality);
+            g.drawImageWithin(backbuffer_, 0, 0, getWidth(), getHeight(),
+                              juce::RectanglePlacement::stretchToFit);
         }
     }
 
@@ -76,15 +87,10 @@ public:
         dispatchMouse(e, MouseDispatch::Move);
     }
 
-    void resized() override { 
-        onResize(getWidth(), getHeight()); 
-        if (canvas_) {
-            if (windowless_) {
-                canvas_->setWindowless(getWidth(), getHeight());
-            } else {
-                canvas_->setDimensions(getWidth(), getHeight());
-            }
-        }
+    void resized() override {
+        onResize(getWidth(), getHeight());
+        if (canvas_)
+            applyCanvasSizing();
     }
 
     void timerCallback() override {
@@ -96,14 +102,42 @@ public:
         if (!canvas_)
             return;
 
-        onRender();
-        drawStaleFrames();
-        canvas_->submit();
+        // monitor moves can change the peer's platform scale without a resize
+        if (std::abs(uiScale() - canvasScale_) > 0.001f)
+            applyCanvasSizing();
 
-        if (windowless_) {
+        onRender();   // cheap state sync every tick — input handling stays 60 Hz
+
+        // Whole-pipeline decimation: a rendered tick costs raster +
+        // bgfx submit + readback + swizzle, all on the message thread that
+        // also carries host calls — a busy DAW (or preset restore) starves
+        // when frames eat the slot back-to-back. While a rendered frame
+        // costs more than ~1/3 of the 16.6 ms budget the pipeline skips
+        // whole ticks (30/20/15 Hz); stale frames stay queued and draw once
+        // on the next rendered tick. Input events pull a render early, but
+        // never faster than every 2nd tick — a held drag can't defeat the
+        // divider.
+        const int dec = frameEma_ > 18.0 ? 4
+                      : frameEma_ > 11.0 ? 3
+                      : frameEma_ >  6.0 ? 2 : 1;
+        ++ticksSinceRender_;
+        if (dec > 1 && ticksSinceRender_ < dec
+            && !(inputPending_ && ticksSinceRender_ >= 2))
+            return;
+        inputPending_ = false;
+        ticksSinceRender_ = 0;
+
+        const auto t0 = std::chrono::steady_clock::now();
+        drawStaleFrames();
+        const int submitted = canvas_->submit();
+
+        if (windowless_ && (submitted > 0 || !backbuffer_.isValid())) {
             updateBackbufferFromScreenshot(canvas_->takeScreenshot());
             repaint();
         }
+        const double ms = std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - t0).count();
+        frameEma_ = frameEma_ * 0.75 + ms * 0.25;
     }
 
     // Override these in your subclass
@@ -132,8 +166,9 @@ protected:
         frame->setEventHandler(&eventHandler_);
         
         // Set DPI scale
-        frame->setDpiScale((float)getDesktopScaleFactor());
-        
+        frame->setDpiScale(uiScale());
+        attachedFrames_.push_back(frame);
+
         // Initialize the frame
         frame->init();
         
@@ -150,7 +185,11 @@ protected:
             
         // Clear event handler
         frame->setEventHandler(nullptr);
-        
+
+        auto fpos = std::find(attachedFrames_.begin(), attachedFrames_.end(), frame);
+        if (fpos != attachedFrames_.end())
+            attachedFrames_.erase(fpos);
+
         // Remove from stale list
         auto pos = std::find(staleFrames_.begin(), staleFrames_.end(), frame);
         if (pos != staleFrames_.end())
@@ -198,12 +237,17 @@ private:
     void dispatchMouse(const juce::MouseEvent& e, MouseDispatch type) {
         if (!event_root_)
             return;
+        inputPending_ = true;   // next tick renders even when decimated
 
         visage::MouseEvent me;
         me.event_frame = event_root_;
         me.position = { static_cast<float>(e.position.x), static_cast<float>(e.position.y) };
         me.relative_position = me.position;
-        me.window_position = { static_cast<float>(e.getScreenX()), static_cast<float>(e.getScreenY()) };
+        // visage hit-tests frames in window-local logical space — the editor
+        // fills its peer so component coords are exactly that. getScreenX/Y
+        // would be offset by the window's screen position.
+        me.window_position = me.position;
+        me.repeat_click_count = juce::jmax(1, e.getNumberOfClicks());
 
         int mods = visage::kModifierNone;
         if (e.mods.isShiftDown()) mods |= visage::kModifierShift;
@@ -225,7 +269,8 @@ private:
                               visage::kMouseButtonLeft;
         }
         me.button_id = last_button_id_;
-        me.is_down = (type != MouseDispatch::Up);
+        // a plain move is not a down event — only down and drag carry a press
+        me.is_down = (type == MouseDispatch::Down || type == MouseDispatch::Drag);
 
         switch (type) {
             case MouseDispatch::Down: event_root_->processMouseDown(me); break;
@@ -247,21 +292,35 @@ private:
         if (!nativeWindow)
             return;
 
-        visage::Renderer::instance().initialize(nativeWindow, nullptr);
+        // init headless first — a null nwh keeps bgfx's default framebuffer
+        // off the HWND so the composite layer's swap chain is the only one
+        // bound to the window (two swap chains on one HWND = crash). Caps
+        // need a live renderer, so init precedes swapChainSupported().
+        visage::Renderer::instance().initialize(nullptr, nullptr);
 
         canvas_ = std::make_unique<visage::Canvas>();
 
-        // TEMP: Swap-chain path is unstable in plugin hosting. Use windowless render for preview.
-        constexpr bool kForceWindowless = true;
-        if (kForceWindowless || !visage::Canvas::swapChainSupported()) {
-            windowless_ = true;
-            canvas_->setWindowless(getWidth(), getHeight());
-        } else {
-            windowless_ = false;
-            canvas_->pairToWindow(nativeWindow, getWidth(), getHeight());
-        }
+        // GPU path: a real D3D11/12 swap chain would present straight to
+        // the HWND — no per-frame GPU->CPU readback, pixel swizzle or JUCE
+        // blit. Visage expects to OWN the window it presents to; on a
+        // JUCE-hosted HWND the swap chain initializes but never displays
+        // (verified black screen), so it stays an experiment: opt in with
+        // MYRIAPLEX_GPUUI=1, force off with =0.
+        bool useSwapChain = false;
+        if (const char* e = std::getenv("MYRIAPLEX_GPUUI"))
+            useSwapChain = *e != '0';
+        if (useSwapChain && !visage::Canvas::swapChainSupported())
+            useSwapChain = false;
 
-        canvas_->setDpiScale((float)getDesktopScaleFactor());
+        windowless_ = !useSwapChain;
+        if (useSwapChain) {
+            // pairToWindow wants the HWND's client rect in native pixels
+            const float s = uiScale();
+            canvas_->pairToWindow(nativeWindow,
+                                  juce::jmax(1, juce::roundToInt(getWidth()  * s)),
+                                  juce::jmax(1, juce::roundToInt(getHeight() * s)));
+        }
+        applyCanvasSizing();
 
         eventHandler_.request_redraw = [this](visage::Frame* frame) {
             if (std::find(staleFrames_.begin(), staleFrames_.end(), frame) == staleFrames_.end())
@@ -290,6 +349,46 @@ private:
         backbuffer_ = juce::Image();
     }
 
+    // native pixels per logical point for this editor's peer
+    float uiScale() const {
+        if (auto* peer = getPeer())
+            return (float) peer->getPlatformScaleFactor();
+        return (float) getDesktopScaleFactor();
+    }
+
+    // canvas dimensions are native pixels; visage converts logical layout to
+    // native via dpi_scale_ — same contract as visage::ApplicationEditor.
+    // Windowless mode additionally caps the raster size: every submitted
+    // frame pays a GPU readback + RGBA->ARGB swizzle + JUCE blit over the
+    // whole buffer, so beyond ~2.3MP the message thread starves. Past the
+    // cap we render at a reduced scale and let paint() upscale — soft at
+    // extreme DPI, but the UI stays responsive.
+    void applyCanvasSizing() {
+        if (!canvas_)
+            return;
+
+        const float s = uiScale();
+        canvasScale_ = s;
+        float raster = s;
+        if (windowless_) {
+            const double px = double(getWidth()) * double(getHeight())
+                              * double(s) * double(s);
+            constexpr double kMaxRasterPixels = 2160.0 * 1080.0;
+            if (px > kMaxRasterPixels)
+                raster = float (s * std::sqrt (kMaxRasterPixels / px));
+        }
+        const int nw = juce::jmax(1, juce::roundToInt(getWidth()  * raster));
+        const int nh = juce::jmax(1, juce::roundToInt(getHeight() * raster));
+
+        if (windowless_)
+            canvas_->setWindowless(nw, nh);
+        else
+            canvas_->setDimensions(nw, nh);
+        canvas_->setDpiScale(raster);
+        for (visage::Frame* frame : attachedFrames_)
+            frame->setDpiScale(raster);
+    }
+
     void updateBackbufferFromScreenshot(const visage::Screenshot& shot) {
         if (shot.width() <= 0 || shot.height() <= 0)
             return;
@@ -300,10 +399,33 @@ private:
 
         juce::Image::BitmapData data(backbuffer_, juce::Image::BitmapData::writeOnly);
         const uint8_t* src = shot.data();
-        for (int y = 0; y < shot.height(); ++y) {
+        const int w = shot.width(), h = shot.height();
+#if defined(__SSE2__) || defined(_M_X64) || defined(_M_AMD64)
+        // RGBA -> BGRA (PixelARGB memory order) via SSE2: ~4px/iter vs 1px
+        const __m128i keep = _mm_set1_epi32((int) 0xFF00FF00u);  // G,A lanes
+        const __m128i lo8  = _mm_set1_epi32(0xFF);
+        for (int y = 0; y < h; ++y) {
+            auto* dst = reinterpret_cast<uint32_t*>(data.getLinePointer(y));
+            const uint8_t* row = src + (size_t) y * w * 4;
+            int x = 0;
+            for (; x + 4 <= w; x += 4) {
+                const __m128i v = _mm_loadu_si128((const __m128i*) (row + (size_t) x * 4));
+                const __m128i b = _mm_and_si128(_mm_srli_epi32(v, 16), lo8); // old B -> byte0
+                const __m128i r = _mm_slli_epi32(_mm_and_si128(v, lo8), 16); // old R -> byte2
+                _mm_storeu_si128((__m128i*) (dst + x),
+                                 _mm_or_si128(_mm_or_si128(b, r), _mm_and_si128(v, keep)));
+            }
+            for (; x < w; ++x) {
+                const uint8_t r = row[x * 4], g = row[x * 4 + 1],
+                              b = row[x * 4 + 2], a = row[x * 4 + 3];
+                reinterpret_cast<juce::PixelARGB*>(dst)[x].setARGB(a, r, g, b);
+            }
+        }
+#else
+        for (int y = 0; y < h; ++y) {
             auto* dst = reinterpret_cast<juce::PixelARGB*>(data.getLinePointer(y));
-            const uint8_t* row = src + (y * shot.width() * 4);
-            for (int x = 0; x < shot.width(); ++x) {
+            const uint8_t* row = src + (size_t) y * w * 4;
+            for (int x = 0; x < w; ++x) {
                 const uint8_t r = row[x * 4 + 0];
                 const uint8_t g = row[x * 4 + 1];
                 const uint8_t b = row[x * 4 + 2];
@@ -311,11 +433,17 @@ private:
                 dst[x].setARGB(a, r, g, b);
             }
         }
+#endif
     }
 
     std::unique_ptr<visage::Canvas> canvas_;
     visage::FrameEventHandler eventHandler_;
     std::vector<visage::Frame*> staleFrames_;
+    std::vector<visage::Frame*> attachedFrames_;
+    float canvasScale_ = 0.0f;  // platform scale the canvas was sized with
+    double frameEma_ = 0.0;    // smoothed rendered-tick cost (ms)
+    int ticksSinceRender_ = 0; // ticks since the last rendered frame
+    bool inputPending_ = false; // input pulls an early render (30 Hz floor)
     bool rendererInitialized_ = false;
     bool windowless_ = false;
     juce::Image backbuffer_;

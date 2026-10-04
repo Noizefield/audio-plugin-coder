@@ -2,7 +2,7 @@
 
 ## Scope
 
-These instructions apply to the entire repository and are written for any coding agent that reads the `AGENTS.md` standard (Codex, Cursor, Pi, Antigravity, OpenCode, and others). Canonical APC knowledge lives under `.agents/` (`skills/`, `workflows/`, `rules/`, `guides/`, `troubleshooting/`). Host-specific folders (`.claude/` for Claude Code, `.kilocode/` for Kilo, `.agent/` legacy, `.opencode/command/` for OpenCode, `.pi/` if present) contain pointers to those canonical files; treat them as equivalent.
+These instructions apply to the entire repository and are written for any coding agent that reads the `AGENTS.md` standard (Codex, Cursor, Pi, Antigravity, OpenCode, and others). Canonical APC knowledge lives under `.agents/` (`skills/`, `workflows/`, `rules/`, `guides/`, `troubleshooting/`). Host-specific folders (`.claude/` for Claude Code, `.kilocode/` for Kilo, `.agent/` legacy, `.opencode/command/` for OpenCode, `.devin/skills/` for Devin, `.pi/` if present) contain pointers to those canonical files; treat them as equivalent.
 
 ## First run
 
@@ -24,6 +24,7 @@ These instructions apply to the entire repository and are written for any coding
 - **Primary slash commands** are prefixed: `/apc-setup`, `/apc-dream`, `/apc-plan`, `/apc-design`, `/apc-impl`, `/apc-test`, `/apc-debug`, `/apc-ship`, `/apc-status`, `/apc-resume`, `/apc-new`.
 - Short forms (`/dream`, `/design`, `/impl`, …) remain as **deprecated aliases** that redirect to `/apc-*`.
 - Claude Code and Kilo use the bare `/apc-*` forms. Codex repo sessions use the `audio-plugin-coder` skill action; plugin surfaces may expose namespaced command adapters, but they do not create bare `/apc-*` aliases.
+- Devin exposes repo skills as slash commands via `.devin/skills/apc-*/SKILL.md` pointers to `.agents/workflows/apc-*.md`. `/apc-setup` is namespaced (`/devin:apc-setup`, `/agents:apc-setup`, `/claude:apc-setup`) because same-named skills exist in multiple imported dirs.
 - If the agent host does not expose slash commands, use the `audio-plugin-coder` skill or an equivalent natural-language request.
 
 ## Codex
@@ -39,7 +40,7 @@ These instructions apply to the entire repository and are written for any coding
 - Before changing a plugin under the configured plugins directory, read its `status.json`.
 - Resolve the plugin directory with `Get-ApcPluginPath` / `apc_plugin_path` (from `scripts/lib/Get-ApcPaths.ps1` or `scripts/lib/apc-paths.sh`). Do **not** hardcode `plugins/<Name>` — honor `paths.plugins_dir` in `apc.config.json`.
 - Read the relevant workflow and skill under `.agents/`; host folders (`.claude/`, `.agent/`, `.kilocode/`) contain pointers to the same canonical files.
-- Also read `.agents/rules/juce-build-protocols.md` and `.agents/rules/file-naming-conventions.md` before implementation, build, or packaging work.
+- Also read `.agents/rules/juce-build-protocols.md` and `.agents/rules/file-naming-conventions.md` before implementation, build, or packaging work; read `.agents/rules/ui-layout-system.md` before any WebView UI layout, scaling, or design-contract work.
 - Preserve the selected `ui_framework`: Visage work must not introduce WebView files, and WebView work must not introduce Visage controls.
 - Announce the preferred model from `apc.config.json` → `models.phases.<phase>` at phase start (see `docs/model-routing.md`).
 

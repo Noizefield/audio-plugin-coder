@@ -250,24 +250,57 @@ function renderProjects(data) {
     nextCommand(p),
   ]);
   const stages = ['DREAM', 'PLAN', 'DESIGN', 'IMPL', 'SHIP'];
-  const detail = ps.map((p) => {
+  const cards = ps.map((p) => {
     const st = stageOf(p.phase);
-    const pipe = stages.map((s, i) => i === st
-      ? '<span class="chip cur">[ ' + s + ' ]</span>' : s).join(' -&gt; ');
-    const flags = Object.entries(p.validation ? p.validation.flags : {})
-      .map(([k, v]) => (v ? '<span class="good">[x]</span>' : '<span class="mut">[ ]</span>') + ' ' + esc(k)).join('  ');
-    const hist = p.phaseHistory
-      ? ' <span class="mut">(' + p.phaseHistory + ' phase entries' + (p.lastPhaseAt ? ', last ' + esc(String(p.lastPhaseAt).slice(0, 10)) : '') + ')</span>' : '';
-    return '<h3>' + esc(p.name) + ' ' + mono(p.version || '') + ' ' + mono('[' + (p.framework || '?').toUpperCase() + ']') + hist + '</h3>' +
-      '<p class="pipe mono">' + pipe + '</p>' +
-      '<pre class="screen">' + (flags || mutTok('no validation flags')) + '</pre>';
+    const stage = stages.map((s, i) =>
+      '<span class="' + (i < st ? 'done' : i === st ? 'cur' : '') + '">' + s + '</span>').join('');
+    const flags = p.validation ? Object.entries(p.validation.flags || {}) : [];
+    const failed = flags.filter(([, v]) => !v).map(([k]) => k);
+    const vnum = p.validation && p.validation.total
+      ? '<span class="vn ' + (failed.length ? 'bad' : 'ok') + '">' + p.validation.passed + '/' + p.validation.total + ' checks</span>'
+      : '<span class="mut">no validation</span>';
+    const failChips = failed.map((f) => '<span class="flagx">' + esc(f) + '</span>').join(' ');
+    const when = p.lastPhaseAt ? '<span class="when">last ' + esc(String(p.lastPhaseAt).slice(0, 10)) + '</span>' : '';
+    return '<div class="pcard">' +
+      '<div class="ph"><b>' + esc(p.name) + '</b>' +
+        '<span class="meta">' + esc(p.version || '?') + ' &middot; ' + esc((p.framework || '?').toUpperCase()) + '</span>' +
+        (p.phase ? '<span class="chip cur">' + esc(p.phase.replace(/_complete$/, '').toUpperCase()) + '</span>' : '') +
+      '</div>' +
+      '<div class="stage">' + stage + '</div>' +
+      '<div class="vrow">' + vnum + failChips + when + '</div>' +
+      '<div class="dlinks mono" data-dl="' + esc(p.name) + '"></div>' +
+    '</div>';
   }).join('');
   const note = data.resolvedDir && !data.dirExists
     ? '<div class="banner mono">' + warnTok() + ' configured dir missing: ' + esc(data.resolvedDir) + '</div>' : '';
   return kicker('02', 'PROJECTS', '<plugins_dir>/*/status.json') + note +
-    (ps.length ? table(['Plugin', 'Ver', 'Phase', 'UI', 'Cx', 'Validation', 'Next'], rows) + detail
+    (ps.length ? table(['Plugin', 'Ver', 'Phase', 'UI', 'Cx', 'Validation', 'Next'], rows) +
+        '<div class="pcards">' + cards + '</div>'
       : '<div class="banner mono">' + warnTok() + ' no plugins found in ' + esc(data.configuredDir) + '</div>') +
     pager('01-overview', null, '03-skills');
+}
+
+/* Lazily fills each plugin's design links: raw previews open via /pdesign,
+   [annotate] opens the repo-level review tool (/uipreview) in a new tab. */
+function enrichPluginDesignLinks(ps) {
+  (ps || []).forEach((p) => {
+    const host = document.querySelector('.dlinks[data-dl="' + p.name.replace(/"/g, '') + '"]');
+    if (!host) return;
+    api('plugins/' + encodeURIComponent(p.name)).then((d) => {
+      const files = (d && d.artifacts && d.artifacts.design) || [];
+      const html = files.filter((f) => /\.html?$/i.test(f) && !/^test-local/i.test(f));
+      const hasMap = files.some((f) => /(^|v\d+-)ui-map\.json$/i.test(f));
+      const prodLink = '<a class="ann" href="/uipreview?plugin=' + encodeURIComponent(p.name) +
+        '&amp;prod=1" target="_blank" rel="noopener">[as-built]</a>';
+      host.innerHTML = (html.length ? html.map((f) => {
+        const fe = encodeURIComponent(f);
+        return '<a href="/pdesign/' + encodeURIComponent(p.name) + '/' + fe + '" target="_blank" rel="noopener">' + esc(f) + '</a>' +
+          ' <a class="ann" href="/uipreview?plugin=' + encodeURIComponent(p.name) + '&amp;file=' + fe + '" target="_blank" rel="noopener">[annotate]</a>';
+      }).join(' · ') + ' ' : '') +
+        prodLink +
+        (hasMap ? ' <span class="good">· ui-map</span>' : ' <span class="mut">· no ui-map</span>');
+    }).catch(() => {});
+  });
 }
 
 function renderSkills(skills) {
@@ -316,9 +349,11 @@ function renderCommands(cmds) {
 
 function renderDesigns(d) {
   const rows = (d.designs || []).map((g) => {
-    const files = (g.htmlFiles || []).map((f) =>
-      '<a href="/preview/' + encodeURIComponent(g.id) + '/' + String(f).split('/').map(encodeURIComponent).join('/') + '" target="_blank" rel="noopener">' + esc(f) + '</a>'
-    ).join('<br>') || mutTok('no HTML files');
+    const files = (g.htmlFiles || []).map((f) => {
+      const fe = String(f).split('/').map(encodeURIComponent).join('/');
+      return '<a href="/preview/' + encodeURIComponent(g.id) + '/' + fe + '" target="_blank" rel="noopener">' + esc(f) + '</a>' +
+        ' <a class="mut" href="/uipreview?design=' + encodeURIComponent(g.id) + '&amp;file=' + fe + '" target="_blank" rel="noopener">[annotate]</a>';
+    }).join('<br>') || mutTok('no HTML files');
     const miss = (g.missingExamples || []).length
       ? '<br>' + warnTok('[!!]') + ' <span class="mut">manifest lists missing: ' + esc(g.missingExamples.join(', ')) + '</span>' : '';
     const name = '<b>' + esc(g.id) + '</b> - ' + esc(g.name || '') + '<br>' + files + miss;
@@ -493,7 +528,7 @@ function wireSettings() {
 function renderVideos() {
   return kicker('11', 'VIDEOS', 'YouTube tutorial series - 7 episodes and more to come') +
     '<div class="vidwrap"><iframe src="https://www.youtube.com/embed/videoseries?list=PLEOCbFL_Mq4o" title="APC YouTube tutorial series" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></div>' +
-    '<p class="mono"><a href="https://www.youtube.com/watch?v=tD6T8MEGWm8&list=PLEOCbFL_Mq4o" target="_blank" rel="noopener">OPEN PLAYLIST ON YOUTUBE -&gt;</a></p>' +
+    '<p class="mono"><a href="https://www.youtube.com/playlist?list=PLEOCbFL_Mq4o" target="_blank" rel="noopener">OPEN PLAYLIST ON YOUTUBE -&gt;</a></p>' +
     '<p class="mut" style="font-size:13px">Explains the framework in detail: setup, workflow, plugins, and more.</p>' +
     pager('doc-webview-framework', null, '11-consistency');
 }
@@ -625,6 +660,7 @@ async function boot() {
     renderDocShell(order) +
     '<section id="11-videos">' + renderVideos() + '</section>' +
     '<section id="11-consistency">' + renderConsistency(consistency || { checks: [] }) + '</section>';
+  enrichPluginDesignLinks((plugins || {}).plugins || []);
   // docs search (live filter)
   const q = $('#docsearch');
   if (q) q.addEventListener('input', () => {

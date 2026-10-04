@@ -27,12 +27,56 @@
             .withWinWebView2Options(
                 juce::WebBrowserComponent::Options::WinWebView2{}
                     .withUserDataFolder(juce::File::getSpecialLocation(
-                        juce::File::SpecialLocationType::tempDirectory)))
+                        juce::File::SpecialLocationType::tempDirectory))
+                    .withBackgroundColour (juce::Colour ({{PLATE_BG_HEX}}))) // match plate — kills drag-flash
             .withNativeIntegrationEnabled()
             {{WITH_OPTIONS_FROM_RELAYS}}
             .withResourceProvider([this](const auto& url) {
                 return getResource(url);
             })
+            // Preset UI scales (settings chips): resize the window, aspect locked
+            .withNativeFunction ("setUiScale",
+                [this] (const juce::Array<juce::var>& args, juce::WebBrowserComponent::NativeFunctionCompletion complete)
+                {
+                    if (args.size() > 0)
+                        setUiScaleAndSize ((double) args[0]);
+                    complete ({});
+                })
+            // In-page corner grip (apc-fit.js). The heavyweight webview hides
+            // JUCE's ResizableCornerComponent, so the grip lives in the page.
+            .withNativeFunction ("resizeGripStart",
+                [this] (const juce::Array<juce::var>&, juce::WebBrowserComponent::NativeFunctionCompletion complete)
+                {
+                    gripStartW = getWidth();
+                    gripStartH = getHeight();
+                    complete ({});
+                })
+            .withNativeFunction ("resizeGrip",
+                [this] (const juce::Array<juce::var>& args, juce::WebBrowserComponent::NativeFunctionCompletion complete)
+                {
+                    if (args.size() >= 1 && gripStartW > 0)
+                    {
+                        const int lo = juce::roundToInt (kPlateW * kMinUiScale);
+                        const int hi = juce::roundToInt (kPlateW * kMaxUiScale);
+                        const int newW = juce::jlimit (lo, hi, gripStartW + (int) args[0]);
+                        setSize (newW, juce::roundToInt (newW / kAspect));
+                    }
+                    complete ({});
+                })
+            .withNativeFunction ("resizeGripEnd",
+                [this] (const juce::Array<juce::var>&, juce::WebBrowserComponent::NativeFunctionCompletion complete)
+                {
+                    gripStartW = gripStartH = 0;
+                    complete ({});
+                })
+            .withNativeFunction ("getUiPrefs",
+                [this] (const juce::Array<juce::var>&, juce::WebBrowserComponent::NativeFunctionCompletion complete)
+                {
+                    auto* prefs = new juce::DynamicObject();
+                    prefs->setProperty ("uiScale",
+                        (double) audioProcessor.apvts.state.getProperty ("uiScale", 1.0));
+                    complete (juce::var (prefs));
+                })
     );
 
     addAndMakeVisible(*webView);
@@ -40,8 +84,42 @@
     // CRITICAL: Create parameter attachments AFTER WebBrowserComponent
     {{CREATE_PARAMETER_ATTACHMENTS}}
 
+    // Resizable window — corner drag via in-page grip + preset scales, aspect locked.
+    // (layout.mode == "fixed": replace this block with setResizable (false, false).)
+    setResizable (true, true);
+    setResizeLimits (juce::roundToInt (kPlateW * kMinUiScale), juce::roundToInt (kPlateH * kMinUiScale),
+                     juce::roundToInt (kPlateW * kMaxUiScale), juce::roundToInt (kPlateH * kMaxUiScale));
+    if (auto* bc = getConstrainer())
+        bc->setFixedAspectRatio (kAspect);
+
+    // Restore persisted UI scale, then size the window.
+    const double uiScale = juce::jlimit (kMinUiScale, kMaxUiScale,
+        (double) audioProcessor.apvts.state.getProperty ("uiScale", 1.0));
+    setSize (juce::roundToInt (kPlateW * uiScale), juce::roundToInt (kPlateH * uiScale));
+
     // CRITICAL: Load embedded web content (NOT data URI!)
     webView->goToURL(juce::WebBrowserComponent::getResourceProviderRoot());
+}
+
+void {{PLUGIN_NAME}}AudioProcessorEditor::setUiScaleAndSize (double s)
+{
+    s = juce::jlimit (kMinUiScale, kMaxUiScale, s);
+    audioProcessor.apvts.state.setProperty ("uiScale", s, nullptr);
+    setSize (juce::roundToInt (kPlateW * s), juce::roundToInt (kPlateH * s));
+}
+
+void {{PLUGIN_NAME}}AudioProcessorEditor::snapWindowToAspect()
+{
+    // Host-initiated resizes bypass the constrainer; snap the window back so
+    // the webview viewport aspect always matches the authored plate.
+    if (getWidth() <= 0 || getHeight() <= 0)
+        return;
+
+    const double current = (double) getWidth() / (double) getHeight();
+    if (std::abs (current - kAspect) < 0.001)
+        return;
+
+    setSize (getWidth(), juce::roundToInt (getWidth() / kAspect));
 }
 
 {{PLUGIN_NAME}}AudioProcessorEditor::~{{PLUGIN_NAME}}AudioProcessorEditor()
@@ -59,6 +137,7 @@ void {{PLUGIN_NAME}}AudioProcessorEditor::resized()
 {
     // Make WebView fill the entire editor window
     webView->setBounds(getLocalBounds());
+    snapWindowToAspect();
 }
 
 //==============================================================================

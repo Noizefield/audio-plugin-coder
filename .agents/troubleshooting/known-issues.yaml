@@ -387,3 +387,24 @@ issues:
     attempts_before_resolution: 1
     prevention: "ALWAYS use git submodule add, NEVER commit framework directories as regular files"
     critical_fix: "git rm -r --cached _tools/JUCE && rm -rf _tools/JUCE && git submodule add https://github.com/juce-framework/JUCE _tools/JUCE"
+
+  - id: build-005
+    title: "FetchContent fails - stale _deps after build_dir relocation"
+    category: build
+    severity: high
+    symptoms:
+      - "CMake Error: CMake step for bgfx failed: 1"
+      - "FetchContent populate fails for bgfx/freetype during Visage configure"
+      - "git clone retries 3 times then fails inside populate subbuild"
+    error_patterns:
+      - "CMake step for bgfx failed"
+      - "Failed to clone repository"
+      - "Had to git clone more than once"
+    root_cause: "apc.config.json paths.build_dir moved the build tree (repo/build -> ../apc_builds). The copied _deps/*-subbuild scripts still hardcode the OLD build dir inside their generated gitclone.cmake. If the old dir no longer exists, git.exe cannot start (missing WORKING_DIRECTORY) and the clone fails 3x."
+    resolution_status: solved
+    resolution_file: resolutions/build-005-stale-deps-fetchcontent.md
+    frequency: 1
+    last_occurred: 2026-09-19
+    attempts_before_resolution: 1
+    prevention: "After changing paths.build_dir in apc.config.json, delete the new build dir's _deps folder once so FetchContent regenerates subbuild scripts with correct absolute paths."
+    critical_fix: "Remove-Item -Recurse -Force <build_dir>/_deps, then rerun configure. Do NOT copy/move _deps between build dirs."
