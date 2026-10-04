@@ -639,6 +639,57 @@ async function handleApi(parts, query, res) {
   }
 }
 
+function pluginDirFor(name) {
+  // Resolve a plugin directory the same way getPluginDetail does, but without
+  // requiring status.json — design files may exist before state is written.
+  const cfg = loadConfig();
+  const repoLocal = path.join(REPO_ROOT, 'plugins');
+  let dir = safeJoin(repoLocal, name);
+  if ((!dir || !exists(dir)) && cfg.resolved.plugins) {
+    const alt = safeJoin(cfg.resolved.plugins, name);
+    if (alt && exists(alt)) dir = alt;
+  }
+  return dir;
+}
+
+function servePluginDesign(parts, res, subdir) {
+  // GET /pdesign/:plugin/<file...> - read-only files from <plugin>/Design/.
+  // GET /pbuild/:plugin/<file...>  - read-only files from <plugin>/Source/ui/public/.
+  // Same traversal guards as serveDesignPreview; nested paths allowed so
+  // composed previews can reach Design/apc-ui/*.
+  const designDir = (() => {
+    const d = pluginDirFor(parts[1]);
+    if (!d) return null;
+    const dd = path.join(d, ...(subdir || ['Design']));
+    return exists(dd) ? dd : null;
+  })();
+  if (!designDir) return send(res, 404, 'unknown plugin or no ' + (subdir ? subdir.join('/') : 'Design') + ' dir');
+  const base = path.resolve(designDir);
+  let full = base;
+  for (const seg of parts.slice(2)) {
+    if (!seg || seg === '.' || !/^[A-Za-z0-9_][A-Za-z0-9_.\-]*$/.test(seg)) return send(res, 403, 'forbidden');
+    full = path.resolve(full, seg);
+    if (full !== base && !full.startsWith(base + path.sep)) return send(res, 403, 'forbidden');
+  }
+  fs.readFile(full, (err, data) => {
+    if (err) return send(res, 404, 'not found');
+    const ext = path.extname(full).toLowerCase();
+    if (!Object.prototype.hasOwnProperty.call(MIME, ext) && !['.webp', '.woff', '.woff2', '.map'].includes(ext)) {
+      return send(res, 403, 'forbidden type');
+    }
+    const type = MIME[ext] || (ext === '.webp' ? 'image/webp' : 'font/woff2');
+    send(res, 200, data, type);
+  });
+}
+
+function serveToolPreview(res) {
+  // GET /uipreview - the repo-level design preview/annotation tool.
+  fs.readFile(path.join(REPO_ROOT, 'tools', 'ui-preview', 'index.html'), (err, data) => {
+    if (err) return send(res, 404, 'not found');
+    send(res, 200, data, 'text/html; charset=utf-8');
+  });
+}
+
 function serveDesignPreview(parts, res) {
   // GET /preview/:design/<file> - read-only preview of design_library assets.
   // Design id must exist in manifest.json; path stays inside its directory.
@@ -676,6 +727,27 @@ function readBody(req, limit) {
     req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
     req.on('error', reject);
   });
+}
+
+async function handleAnnotationsPost(req, res, name) {
+  // POST /api/v1/plugins/:name/annotations - persists review-tool output to
+  // <plugin>/Design/annotations.json, the file the design phase consumes.
+  const dir = pluginDirFor(name);
+  if (!dir) return sendJson(res, 404, { ok: false, error: 'unknown-plugin' });
+  const designDir = path.join(dir, 'Design');
+  if (!exists(designDir)) return sendJson(res, 404, { ok: false, error: 'no-design-dir' });
+  let body;
+  try { body = await readBody(req, 512 * 1024); }
+  catch { return sendJson(res, 413, { ok: false, error: 'body-too-large' }); }
+  let payload;
+  try { payload = JSON.parse(String(body).replace(/^﻿/, '')); }
+  catch { return sendJson(res, 400, { ok: false, error: 'invalid-json' }); }
+  if (!payload || !Array.isArray(payload.annotations))
+    return sendJson(res, 400, { ok: false, error: 'invalid-annotations-shape' });
+  const file = path.join(designDir, 'annotations.json');
+  try { fs.writeFileSync(file, JSON.stringify(payload, null, 2) + '\n', 'utf8'); }
+  catch { return sendJson(res, 500, { ok: false, error: 'write-failed' }); }
+  sendJson(res, 200, { ok: true, file: 'Design/annotations.json' });
 }
 
 async function handleConfigPost(req, res) {
@@ -736,8 +808,10 @@ const server = http.createServer((req, res) => {
     for (const [k, v] of new URLSearchParams(rawUrl.slice(qpos + 1))) query[k] = v;
   }
   const isConfigPost = req.method === 'POST' && urlPath === '/api/v1/config';
-  if ((req.method !== 'GET' && req.method !== 'HEAD') && !isConfigPost) {
-    return send(res, 405, 'GET only (POST allowed: /api/v1/config)');
+  const annotMatch = req.method === 'POST' &&
+    urlPath.match(/^\/api\/v1\/plugins\/([^/?]+)\/annotations$/);
+  if ((req.method !== 'GET' && req.method !== 'HEAD') && !isConfigPost && !annotMatch) {
+    return send(res, 405, 'GET only (POST allowed: /api/v1/config, /api/v1/plugins/:name/annotations)');
   }
   if (urlPath === '/api' || urlPath.startsWith('/api/')) {
     const parts = urlPath.split('/').filter(Boolean);
@@ -746,12 +820,32 @@ const server = http.createServer((req, res) => {
       handleConfigPost(req, res).catch(() => sendJson(res, 500, { error: 'internal' }));
       return;
     }
+    if (annotMatch) {
+      handleAnnotationsPost(req, res, decodeURIComponent(annotMatch[1]))
+        .catch(() => sendJson(res, 500, { ok: false, error: 'internal' }));
+      return;
+    }
     handleApi(parts, query, res).catch(() => sendJson(res, 500, { error: 'internal' }));
     return;
   }
   if (urlPath === '/preview' || urlPath.startsWith('/preview/')) {
     if (req.method !== 'GET') return send(res, 405, 'GET only');
     serveDesignPreview(urlPath.split('/').filter(Boolean), res);
+    return;
+  }
+  if (urlPath === '/pdesign' || urlPath.startsWith('/pdesign/')) {
+    if (req.method !== 'GET') return send(res, 405, 'GET only');
+    servePluginDesign(urlPath.split('/').filter(Boolean), res, null);
+    return;
+  }
+  if (urlPath === '/pbuild' || urlPath.startsWith('/pbuild/')) {
+    if (req.method !== 'GET') return send(res, 405, 'GET only');
+    servePluginDesign(urlPath.split('/').filter(Boolean), res, ['Source', 'ui', 'public']);
+    return;
+  }
+  if (urlPath === '/uipreview' || urlPath === '/uipreview/') {
+    if (req.method !== 'GET') return send(res, 405, 'GET only');
+    serveToolPreview(res);
     return;
   }
   if (req.method === 'HEAD') return send(res, 200, '', 'text/plain; charset=utf-8');

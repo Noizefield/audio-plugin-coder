@@ -42,7 +42,7 @@ Backup-PluginState -PluginPath $PluginPath
 ```
 
 **Execute Skill:**
-Load and execute `..claude\skills\impl\SKILL.md`
+Load and execute `.agents/skills/impl/SKILL.md`
 
 **Key Steps:**
 1. **Design Conversion:** Convert approved design specs to framework-specific code (WebView HTML/JS or Visage C++)
@@ -51,7 +51,14 @@ Load and execute `..claude\skills\impl\SKILL.md`
 4. **Integration:** Connect parameters to UI controls
 
 **Framework Routing:**
-- **WebView:** Use templates in `templates/webview/` and run WebView validation scripts.
+- **WebView:** Read `.agents/rules/ui-layout-system.md` first. Use templates in
+  `templates/webview/` and run WebView validation scripts. The approved
+  `Design/vN-ui-map.json` is the layout contract — consume it **read-only**:
+  every control in `Source/ui/public/index.html` must map 1:1 to it
+  (`id="ctl-<param>"` / `data-param`). Vendor the kit by copying
+  `templates/webview/apc-ui/` → `Source/ui/public/apc-ui/` (never edit the
+  copy). If the design needs a new element, that is a spec revision
+  (`/apc-design` iterate), not a silent addition.
 - **Visage:** Use templates in `templates/visage/`. Do NOT generate HTML.
 
 **Pre-Build Validation (Visage):**
@@ -98,6 +105,17 @@ Fix the order before building to avoid crashes on plugin unload.
 }
 ```
 
+**UI Contract Gate (WebView only):**
+```powershell
+if ($state.ui_framework -eq "webview") {
+    node bin/apc.js validate ui --plugin $PluginName
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "UI contract violations — fix or revise the design map before building."
+        exit 1
+    }
+}
+```
+
 **Build & Test:**
 ```powershell
 # Run build script
@@ -132,7 +150,7 @@ Next step: /apc-test [Name] or /apc-ship [Name]
 **Before starting implementation:**
 ```powershell
 # Check for common issues related to this phase
-$phaseIssues = Get-Content ..claude\troubleshooting\known-issues.yaml | 
+$phaseIssues = Get-Content .agents/troubleshooting/known-issues.yaml | 
     ConvertFrom-Yaml | 
     Where-Object { $_.category -eq "implementation" }
 
@@ -214,7 +232,7 @@ Next time same error occurs:
 
 **Create these files:**
 ```
-..claude\troubleshooting\
+.agents/troubleshooting/
 Γö£ΓöÇΓöÇ known-issues.yaml           # ΓåÉ Machine-readable database
 Γö£ΓöÇΓöÇ _template.md                # ΓåÉ Template for new issues
 ΓööΓöÇΓöÇ resolutions\                # ΓåÉ Detailed solution docs
