@@ -1,42 +1,94 @@
 name: Build & Publish Plugin
 
+# Cross-platform JUCE plugin builds.
+# Trigger manually: pick a plugin (list auto-synced from plugins/ by the
+# sync-plugin-options workflow), the platforms, and the per-platform formats.
+# Artifacts upload per plugin+platform; optionally a GitHub Release is created.
+
 on:
   workflow_dispatch:
     inputs:
       plugin:
-        description: 'Which plugin to build?'
+        description: 'Plugin to build (auto-synced from plugins/)'
         required: true
         type: choice
         options:
+          - all
+          # PLUGIN_OPTIONS_BEGIN
           - CloudWash
           - gnarly2
+          - gnarly3
           - nf_gnarly
-          - all
-      platforms:
-        description: 'Which platforms to build?'
-        required: true
-        default: 'all'
-        type: choice
-        options:
-          - all
-          - windows
-          - macos
-          - linux
+          - VinylNoize
+          # PLUGIN_OPTIONS_END
+      build_windows:
+        description: 'Build on Windows (MSVC)'
+        required: false
+        default: true
+        type: boolean
+      build_macos:
+        description: 'Build on macOS (Xcode, universal x86_64+arm64)'
+        required: false
+        default: true
+        type: boolean
+      build_linux:
+        description: 'Build on Linux (Ubuntu)'
+        required: false
+        default: true
+        type: boolean
+      win_vst3:
+        description: 'Windows: VST3'
+        required: false
+        default: true
+        type: boolean
+      win_standalone:
+        description: 'Windows: Standalone .exe'
+        required: false
+        default: true
+        type: boolean
       macos_vst3:
-        description: 'macOS: Build VST3?'
+        description: 'macOS: VST3'
         required: false
         default: true
         type: boolean
       macos_au:
-        description: 'macOS: Build AU?'
+        description: 'macOS: Audio Unit (.component)'
         required: false
         default: true
         type: boolean
       macos_standalone:
-        description: 'macOS: Build Standalone?'
+        description: 'macOS: Standalone .app'
         required: false
         default: false
         type: boolean
+      linux_vst3:
+        description: 'Linux: VST3'
+        required: false
+        default: true
+        type: boolean
+      linux_lv2:
+        description: 'Linux: LV2'
+        required: false
+        default: false
+        type: boolean
+      linux_standalone:
+        description: 'Linux: Standalone'
+        required: false
+        default: true
+        type: boolean
+      create_release:
+        description: 'Create a GitHub Release with the built artifacts'
+        required: false
+        default: false
+        type: boolean
+      release_tag:
+        description: 'Release tag (blank = "<plugin>-v<version>" from status.json; required for "all")'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: write  # for the optional release job
 
 env:
   BUILD_TYPE: Release
@@ -49,22 +101,38 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      plugin_count: ${{ steps.set-matrix.outputs.plugin_count }}
     steps:
-      - name: Set plugin matrix
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Discover plugins and build matrix
         id: set-matrix
         run: |
-          if [ "${{ inputs.plugin }}" == "all" ]; then
-            echo 'matrix={"plugin":["CloudWash","gnarly2","nf_gnarly"]}' >> $GITHUB_OUTPUT
+          set -e
+          if [ "${{ inputs.plugin }}" = "all" ]; then
+            # enumerate every dir under plugins/ that has a CMakeLists.txt
+            list=$(for d in plugins/*/; do
+              [ -f "$d/CMakeLists.txt" ] && basename "$d"
+            done | sort | jq -R . | jq -cs .)
           else
-            echo 'matrix={"plugin":["${{ inputs.plugin }}"]}' >> $GITHUB_OUTPUT
+            [ -f "plugins/${{ inputs.plugin }}/CMakeLists.txt" ] || {
+              echo "::error::plugins/${{ inputs.plugin }} has no CMakeLists.txt. Available:" >&2
+              ls plugins/ >&2
+              exit 1
+            }
+            list=$(jq -cn '["${{ inputs.plugin }}"]')
           fi
+          echo "plugins: $list"
+          echo "matrix={\"plugin\":$list}" >> "$GITHUB_OUTPUT"
+          echo "plugin_count=$(echo "$list" | jq length)" >> "$GITHUB_OUTPUT"
 
   # ============================================
-  # WINDOWS BUILD
+  # WINDOWS BUILD (MSVC, Release)
   # ============================================
   build-windows:
     needs: setup
-    if: inputs.platforms == 'all' || inputs.platforms == 'windows'
+    if: inputs.build_windows
     runs-on: windows-latest
     strategy:
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
@@ -72,44 +140,104 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-          fetch-depth: 0
+
+      - name: Init JUCE (+ visage only if the plugin needs it)
+        shell: pwsh
+        run: |
+          git submodule update --init _tools/JUCE
+          $ui = ""
+          if (Test-Path "plugins/${{ matrix.plugin }}/status.json") {
+            $ui = (Get-Content "plugins/${{ matrix.plugin }}/status.json" -Raw -Encoding UTF8 | ConvertFrom-Json).ui_framework
+          }
+          $needsVisage = ($ui -eq "visage") -or (Select-String -Path "plugins/${{ matrix.plugin }}/CMakeLists.txt" -Pattern "visage" -Quiet)
+          if ($needsVisage) {
+            Write-Host "${{ matrix.plugin }} uses visage -> init submodule"
+            git submodule update --init _tools/visage
+            echo "VISAGE_FLAG=-DAPC_ENABLE_VISAGE:BOOL=ON" >> $env:GITHUB_ENV
+          }
+
+      - name: Install WebView2 SDK (NuGet package JUCE FindWebView2 expects)
+        shell: pwsh
+        run: |
+          $dest = "$env:USERPROFILE\AppData\Local\PackageManagement\NuGet\Packages"
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          if (-not (Get-ChildItem $dest -Directory -Filter "Microsoft.Web.WebView2*" -ErrorAction SilentlyContinue)) {
+            try {
+              Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser | Out-Null
+              if (-not (Get-PackageSource -Name nugetRepository -ProviderName NuGet -ErrorAction SilentlyContinue)) {
+                Register-PackageSource -Name nugetRepository -ProviderName NuGet -Location https://www.nuget.org/api/v2 -Force | Out-Null
+              }
+              Install-Package Microsoft.Web.WebView2 -Scope CurrentUser -Source nugetRepository -Force | Out-Null
+            } catch { Write-Host "Install-Package failed, falling back to nupkg download" }
+          }
+          if (-not (Get-ChildItem $dest -Directory -Filter "Microsoft.Web.WebView2*" -ErrorAction SilentlyContinue)) {
+            $v = "1.0.2903.40"
+            Invoke-WebRequest "https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/$v" -OutFile "$env:TEMP\wv2.nupkg"
+            Expand-Archive "$env:TEMP\wv2.nupkg" "$dest\Microsoft.Web.WebView2.$v"
+          }
+          Get-ChildItem $dest -Directory -Filter "Microsoft.Web.WebView2*" | Select-Object -Expand Name
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
 
       - name: Configure CMake
-        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+        shell: pwsh
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DAPC_PLUGINS_DIR=plugins $env:VISAGE_FLAG
 
-      - name: Build VST3
-        run: cmake --build build --config Release --target "${{ matrix.plugin }}_VST3"
+      - name: Resolve build targets
+        id: targets
+        shell: pwsh
+        run: |
+          $cmk = Get-Content "plugins/${{ matrix.plugin }}/CMakeLists.txt" -Raw
+          $wanted = @()
+          if ('${{ inputs.win_vst3 }}' -eq 'true')      { $wanted += 'VST3' }
+          if ('${{ inputs.win_standalone }}' -eq 'true'){ $wanted += 'Standalone' }
+          # Keep only formats the plugin declares (FORMATS token absent -> JUCE defaults cover these)
+          $targets = @()
+          foreach ($f in $wanted) {
+            if ($cmk -match '\bFORMATS\b' -and $cmk -notmatch "\b$f\b") {
+              Write-Host "SKIP: ${{ matrix.plugin }} does not declare $f"
+            } else { $targets += "${{ matrix.plugin }}_$f" }
+          }
+          if ($targets.Count -eq 0) { Write-Error "No build targets selected/declared"; exit 1 }
+          Write-Host "targets: $($targets -join ', ')"
+          "targets=$($targets -join ' ')" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
-      - name: Build Standalone
-        run: cmake --build build --config Release --target "${{ matrix.plugin }}_Standalone"
+      - name: Build targets
+        shell: pwsh
+        run: |
+          foreach ($t in '${{ steps.targets.outputs.targets }}'.Split(' ')) {
+            Write-Host "=== cmake --build build --config Release --target $t"
+            cmake --build build --config Release --target $t
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
 
       - name: Collect artifacts
-        shell: bash
+        shell: pwsh
         run: |
-          mkdir -p release
-          find build -name "*.vst3" -exec cp -R {} release/ \;
-          find build -name "*.exe" -not -path "*/CMakeFiles/*" -exec cp {} release/ \;
-          echo "Collected:" && ls release/
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          Get-ChildItem -Path "build/plugins/${{ matrix.plugin }}" -Recurse -Directory -Filter "*.vst3" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match '[\\/]Release[\\/]VST3[\\/]' } |
+            Copy-Item -Destination out -Recurse
+          Get-ChildItem -Path "build/plugins/${{ matrix.plugin }}" -Recurse -Filter "*.exe" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match '[\\/]Release[\\/]Standalone[\\/]' } |
+            Copy-Item -Destination out
+          Get-ChildItem out | Format-Table Name, Length
 
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: windows-${{ matrix.plugin }}
-          path: release/
+          path: out/
           if-no-files-found: error
           retention-days: 30
 
   # ============================================
-  # MACOS BUILD
+  # MACOS BUILD (Xcode, universal)
   # ============================================
   build-macos:
     needs: setup
-    if: inputs.platforms == 'all' || inputs.platforms == 'macos'
+    if: inputs.build_macos
     runs-on: macos-latest
     strategy:
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
@@ -117,53 +245,74 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-          fetch-depth: 0
 
-      - name: Install Dependencies
-        run: brew install cmake || true
+      - name: Init JUCE (+ visage only if the plugin needs it)
+        run: |
+          git submodule update --init _tools/JUCE
+          ui=""
+          [ -f "plugins/${{ matrix.plugin }}/status.json" ] && \
+            ui=$(python3 -c "import json;print(json.load(open('plugins/${{ matrix.plugin }}/status.json',encoding='utf-8-sig')).get('ui_framework',''))")
+          if [ "$ui" = "visage" ] || grep -qi visage "plugins/${{ matrix.plugin }}/CMakeLists.txt"; then
+            echo "${{ matrix.plugin }} uses visage -> init submodule"
+            git submodule update --init _tools/visage
+            echo "VISAGE_FLAG=-DAPC_ENABLE_VISAGE:BOOL=ON" >> "$GITHUB_ENV"
+          fi
 
       - name: Configure CMake
         run: |
           cmake -S . -B build -G Xcode \
             -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" \
-            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 \
+            -DAPC_PLUGINS_DIR=plugins $VISAGE_FLAG
 
-      - name: Build VST3
-        if: inputs.macos_vst3
-        run: cmake --build build --config Release --target "${{ matrix.plugin }}_VST3"
+      - name: Resolve build targets
+        id: targets
+        run: |
+          cmk=$(cat "plugins/${{ matrix.plugin }}/CMakeLists.txt")
+          wanted=()
+          [ "${{ inputs.macos_vst3 }}" = "true" ]       && wanted+=(VST3)
+          [ "${{ inputs.macos_au }}" = "true" ]         && wanted+=(AU)
+          [ "${{ inputs.macos_standalone }}" = "true" ] && wanted+=(Standalone)
+          targets=()
+          for f in "${wanted[@]}"; do
+            if grep -qw FORMATS <<<"$cmk" && ! grep -qw "$f" <<<"$cmk"; then
+              echo "SKIP: ${{ matrix.plugin }} does not declare $f"
+            else
+              targets+=("${{ matrix.plugin }}_$f")
+            fi
+          done
+          [ ${#targets[@]} -eq 0 ] && { echo "::error::No build targets selected/declared"; exit 1; }
+          echo "targets: ${targets[*]}"
+          echo "targets=${targets[*]}" >> "$GITHUB_OUTPUT"
 
-      - name: Build AU
-        if: inputs.macos_au
-        run: cmake --build build --config Release --target "${{ matrix.plugin }}_AU"
-
-      - name: Build Standalone
-        if: inputs.macos_standalone
-        run: cmake --build build --config Release --target "${{ matrix.plugin }}_Standalone"
+      - name: Build targets
+        run: |
+          for t in ${{ steps.targets.outputs.targets }}; do
+            echo "=== cmake --build build --config Release --target $t"
+            cmake --build build --config Release --target "$t"
+          done
 
       - name: Collect artifacts
         run: |
-          mkdir -p release
-          find build -name "*.vst3" -exec cp -R {} release/ \;
-          find build -name "*.component" -exec cp -R {} release/ \;
-          find build -name "*.app" -not -path "*/CMakeFiles/*" -exec cp -R {} release/ \;
-          echo "Collected:" && ls release/
+          mkdir -p out
+          find "build/plugins/${{ matrix.plugin }}" \( -name "*.vst3" -o -name "*.component" -o -name "*.app" \) \
+            -path "*Release*" -exec cp -R {} out/ \;
+          ls -la out/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: macos-${{ matrix.plugin }}
-          path: release/
+          path: out/
           if-no-files-found: error
           retention-days: 30
 
   # ============================================
-  # LINUX BUILD
+  # LINUX BUILD (Ubuntu)
   # ============================================
   build-linux:
     needs: setup
-    if: inputs.platforms == 'all' || inputs.platforms == 'linux'
+    if: inputs.build_linux
     runs-on: ubuntu-latest
     strategy:
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
@@ -171,54 +320,124 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-          fetch-depth: 0
 
-      - name: Install Dependencies
+      - name: Init JUCE (+ visage only if the plugin needs it)
+        run: |
+          git submodule update --init _tools/JUCE
+          ui=""
+          [ -f "plugins/${{ matrix.plugin }}/status.json" ] && \
+            ui=$(python3 -c "import json;print(json.load(open('plugins/${{ matrix.plugin }}/status.json',encoding='utf-8-sig')).get('ui_framework',''))")
+          if [ "$ui" = "visage" ] || grep -qi visage "plugins/${{ matrix.plugin }}/CMakeLists.txt"; then
+            echo "${{ matrix.plugin }} uses visage -> init submodule"
+            git submodule update --init _tools/visage
+            echo "VISAGE_FLAG=-DAPC_ENABLE_VISAGE:BOOL=ON" >> "$GITHUB_ENV"
+          fi
+
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            cmake \
-            libasound2-dev \
-            libfreetype6-dev \
-            libgl1-mesa-dev \
-            libx11-dev \
-            libxcomposite-dev \
-            libxcursor-dev \
-            libxext-dev \
-            libxinerama-dev \
-            libxrandr-dev \
-            libwebkit2gtk-4.1-dev \
-            libgtk-3-dev \
-            libjack-jackd2-dev \
+            cmake pkg-config \
+            libasound2-dev libfreetype6-dev libgl1-mesa-dev libcurl4-openssl-dev \
+            libx11-dev libxcomposite-dev libxcursor-dev libxext-dev \
+            libxinerama-dev libxrandr-dev \
+            libwebkit2gtk-4.1-dev libgtk-3-dev libjack-jackd2-dev \
             xvfb
 
       - name: Configure CMake
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DAPC_PLUGINS_DIR=plugins $VISAGE_FLAG
 
-      - name: Build VST3
-        run: cmake --build build --target "${{ matrix.plugin }}_VST3"
+      - name: Resolve build targets
+        id: targets
+        run: |
+          cmk=$(cat "plugins/${{ matrix.plugin }}/CMakeLists.txt")
+          wanted=()
+          [ "${{ inputs.linux_vst3 }}" = "true" ]       && wanted+=(VST3)
+          [ "${{ inputs.linux_lv2 }}" = "true" ]        && wanted+=(LV2)
+          [ "${{ inputs.linux_standalone }}" = "true" ] && wanted+=(Standalone)
+          targets=()
+          for f in "${wanted[@]}"; do
+            if grep -qw FORMATS <<<"$cmk" && ! grep -qw "$f" <<<"$cmk"; then
+              echo "SKIP: ${{ matrix.plugin }} does not declare $f"
+            else
+              targets+=("${{ matrix.plugin }}_$f")
+            fi
+          done
+          [ ${#targets[@]} -eq 0 ] && { echo "::error::No build targets selected/declared"; exit 1; }
+          echo "targets: ${targets[*]}"
+          echo "targets=${targets[*]}" >> "$GITHUB_OUTPUT"
 
-      - name: Build LV2
-        run: xvfb-run cmake --build build --target "${{ matrix.plugin }}_LV2"
-
-      - name: Build Standalone
-        run: xvfb-run cmake --build build --target "${{ matrix.plugin }}_Standalone"
+      - name: Build targets
+        run: |
+          # xvfb-run: the LV2 target runs juce_lv2_helper at build time to emit
+          # .ttl manifests, which instantiates the plugin (needs a display)
+          for t in ${{ steps.targets.outputs.targets }}; do
+            echo "=== cmake --build build --target $t"
+            xvfb-run cmake --build build --target "$t"
+          done
 
       - name: Collect artifacts
         run: |
-          mkdir -p release
-          find build -name "*.vst3" -exec cp -R {} release/ \;
-          find build -name "*.lv2" -exec cp -R {} release/ \;
-          find build -name "${{ matrix.plugin }}" -type f -exec cp {} release/ \;
-          echo "Collected:" && ls release/
+          mkdir -p out
+          find "build/plugins/${{ matrix.plugin }}" \( -name "*.vst3" -o -name "*.lv2" \) \
+            -path "*Release*" -exec cp -R {} out/ \;
+          # standalone binary may be named after PRODUCT_NAME, not the dir —
+          # grab any executable under the Release/Standalone output
+          find "build/plugins/${{ matrix.plugin }}" -type f -executable \
+            -path "*Release*Standalone*" -exec cp {} out/ \;
+          ls -la out/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: linux-${{ matrix.plugin }}
-          path: release/
+          path: out/
           if-no-files-found: error
           retention-days: 30
 
+  # ============================================
+  # OPTIONAL GITHUB RELEASE
+  # ============================================
+  release:
+    needs: [setup, build-windows, build-macos, build-linux]
+    if: always() && inputs.create_release && !cancelled() &&
+        (needs['build-windows'].result == 'success' || needs['build-macos'].result == 'success' || needs['build-linux'].result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository (for version lookup)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@e3e08381554ac60b6a3e7f72d201cfe7eb315871 # v5.0.0
+        with:
+          path: dist/
+          merge-multiple: false
+
+      - name: Resolve release tag
+        id: tag
+        run: |
+          tag="${{ inputs.release_tag }}"
+          if [ -z "$tag" ]; then
+            [ "${{ inputs.plugin }}" = "all" ] && { echo "::error::release_tag is required when plugin=all"; exit 1; }
+            v=$(python3 -c "import json;print(json.load(open('plugins/${{ inputs.plugin }}/status.json',encoding='utf-8-sig'))['version'].lstrip('v'))")
+            tag="${{ inputs.plugin }}-v$v"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "release tag: $tag"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # one zip per platform artifact (windows-<p>.zip, macos-<p>.zip, ...)
+          mkdir -p release-files
+          cd dist
+          for d in */; do
+            zip -rq "../release-files/${d%/}.zip" "$d"
+          done
+          cd ..
+          gh release create "${{ steps.tag.outputs.tag }}" \
+            release-files/*.zip \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "${{ steps.tag.outputs.tag }}" \
+            --notes "Automated build of ${{ inputs.plugin }} (workflow_dispatch run ${{ github.run_id }})"
