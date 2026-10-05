@@ -91,12 +91,26 @@ class VisagePluginEditor : public juce::AudioProcessorEditor,
 {
 public:
     VisagePluginEditor(juce::AudioProcessor& p) : AudioProcessorEditor(&p) {
+        // F30: a hosted plugin must never replace the DAW's process-wide
+        // crash handler — JUCE's setApplicationCrashHandler installs a
+        // process-global SetUnhandledExceptionFilter whose code lives in
+        // this DLL (unsafe to invoke after unload, and it clobbers whatever
+        // handler the host installed). Only the standalone wrapper gets the
+        // local report writer; APC_CRASH_HANDLER=1 is the explicit dev
+        // opt-in for diagnostic hosted runs.
         static bool crashHandlerSet = false;
-        if (!crashHandlerSet) {
+        const bool standalone =
+            p.wrapperType == juce::AudioProcessor::wrapperType_Standalone;
+        if (!crashHandlerSet
+            && (standalone || [] {
+                    if (const char* v = std::getenv("APC_CRASH_HANDLER"))
+                        return v[0] == '1';
+                    return false;
+                }())) {
             juce::SystemStats::setApplicationCrashHandler(npsCrashHandler);
             crashHandlerSet = true;
         }
-        
+
         setOpaque(true);
         startTimerHz(60);
     }
