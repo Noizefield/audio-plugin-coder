@@ -4,9 +4,14 @@
 plugins/AngelGrain
 plugins/gainknob
 plugins/CloudWash/Org_Code
-plugins/XENON
-plugins/Organik
-plugins/HARMONEON
+
+# plugin sync scratch dirs / oversized assets (source of truth: ../apc_plugins)
+plugins/*/_state_backups/
+plugins/*/_source/
+plugins/*/_design/
+plugins/*/status.json.bak*
+plugins/NoizeMeter/Design/test-tones/
+plugins/GrooXtract/Models/htdemucs_fp16weights.*
 
 # _tools folder
 _tools/DebugView/
@@ -67,3 +72,6 @@ cloudwash_crash_log.txt
 
 # Backups
 _backups/
+# python caches
+__pycache__/
+*.pyc

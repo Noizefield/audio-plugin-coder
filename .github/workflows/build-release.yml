@@ -15,11 +15,21 @@ on:
         options:
           - all
           # PLUGIN_OPTIONS_BEGIN
+          - BC-Voice
           - CloudWash
+          - GrooXtract
+          - Myriaplex
+          - NoizeMeter
+          - NoizePhase
+          - OXYGene
+          - Organik
+          - SwarmSynth
+          - VinylNoize
+          - XENON
           - gnarly2
           - gnarly3
+          - harmoNEON
           - nf_gnarly
-          - VinylNoize
           # PLUGIN_OPTIONS_END
       build_windows:
         description: 'Build on Windows (MSVC)'
@@ -110,21 +120,27 @@ jobs:
         id: set-matrix
         run: |
           set -e
+          emit() {
+            # $1 = plugin dir name; target = first juce_add_plugin() arg
+            local dir="$1" t
+            t=$(grep -oE 'juce_add_plugin\([[:space:]]*[A-Za-z0-9_-]+' "$dir/CMakeLists.txt" \
+                | head -1 | sed 's/^juce_add_plugin(//' | tr -d '[:space:]')
+            jq -cn --arg d "${dir##*/}" --arg t "${t:-${dir##*/}}" '{dir:$d, target:$t}'
+          }
           if [ "${{ inputs.plugin }}" = "all" ]; then
-            # enumerate every dir under plugins/ that has a CMakeLists.txt
             list=$(for d in plugins/*/; do
-              [ -f "$d/CMakeLists.txt" ] && basename "$d"
-            done | sort | jq -R . | jq -cs .)
+              [ -f "$d/CMakeLists.txt" ] && emit "$d"
+            done | jq -cs 'sort_by(.dir)')
           else
             [ -f "plugins/${{ inputs.plugin }}/CMakeLists.txt" ] || {
               echo "::error::plugins/${{ inputs.plugin }} has no CMakeLists.txt. Available:" >&2
               ls plugins/ >&2
               exit 1
             }
-            list=$(jq -cn '["${{ inputs.plugin }}"]')
+            list=$(emit "plugins/${{ inputs.plugin }}" | jq -cs .)
           fi
-          echo "plugins: $list"
-          echo "matrix={\"plugin\":$list}" >> "$GITHUB_OUTPUT"
+          echo "matrix rows: $list"
+          echo "matrix={\"include\":$list}" >> "$GITHUB_OUTPUT"
           echo "plugin_count=$(echo "$list" | jq length)" >> "$GITHUB_OUTPUT"
 
   # ============================================
@@ -146,12 +162,12 @@ jobs:
         run: |
           git submodule update --init _tools/JUCE
           $ui = ""
-          if (Test-Path "plugins/${{ matrix.plugin }}/status.json") {
-            $ui = (Get-Content "plugins/${{ matrix.plugin }}/status.json" -Raw -Encoding UTF8 | ConvertFrom-Json).ui_framework
+          if (Test-Path "plugins/${{ matrix.dir }}/status.json") {
+            $ui = (Get-Content "plugins/${{ matrix.dir }}/status.json" -Raw -Encoding UTF8 | ConvertFrom-Json).ui_framework
           }
-          $needsVisage = ($ui -eq "visage") -or (Select-String -Path "plugins/${{ matrix.plugin }}/CMakeLists.txt" -Pattern "visage" -Quiet)
+          $needsVisage = ($ui -eq "visage") -or (Select-String -Path "plugins/${{ matrix.dir }}/CMakeLists.txt" -Pattern "visage" -Quiet)
           if ($needsVisage) {
-            Write-Host "${{ matrix.plugin }} uses visage -> init submodule"
+            Write-Host "${{ matrix.dir }} uses visage -> init submodule"
             git submodule update --init _tools/visage
             echo "VISAGE_FLAG=-DAPC_ENABLE_VISAGE:BOOL=ON" >> $env:GITHUB_ENV
           }
@@ -188,7 +204,7 @@ jobs:
         id: targets
         shell: pwsh
         run: |
-          $cmk = Get-Content "plugins/${{ matrix.plugin }}/CMakeLists.txt" -Raw
+          $cmk = Get-Content "plugins/${{ matrix.dir }}/CMakeLists.txt" -Raw
           $wanted = @()
           if ('${{ inputs.win_vst3 }}' -eq 'true')      { $wanted += 'VST3' }
           if ('${{ inputs.win_standalone }}' -eq 'true'){ $wanted += 'Standalone' }
@@ -196,8 +212,8 @@ jobs:
           $targets = @()
           foreach ($f in $wanted) {
             if ($cmk -match '\bFORMATS\b' -and $cmk -notmatch "\b$f\b") {
-              Write-Host "SKIP: ${{ matrix.plugin }} does not declare $f"
-            } else { $targets += "${{ matrix.plugin }}_$f" }
+              Write-Host "SKIP: ${{ matrix.dir }} does not declare $f"
+            } else { $targets += "${{ matrix.target }}_$f" }
           }
           if ($targets.Count -eq 0) { Write-Error "No build targets selected/declared"; exit 1 }
           Write-Host "targets: $($targets -join ', ')"
@@ -216,10 +232,10 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path out | Out-Null
-          Get-ChildItem -Path "build/plugins/${{ matrix.plugin }}" -Recurse -Directory -Filter "*.vst3" -ErrorAction SilentlyContinue |
+          Get-ChildItem -Path "build/plugins/${{ matrix.dir }}" -Recurse -Directory -Filter "*.vst3" -ErrorAction SilentlyContinue |
             Where-Object { $_.FullName -match '[\\/]Release[\\/]VST3[\\/]' } |
             Copy-Item -Destination out -Recurse
-          Get-ChildItem -Path "build/plugins/${{ matrix.plugin }}" -Recurse -Filter "*.exe" -ErrorAction SilentlyContinue |
+          Get-ChildItem -Path "build/plugins/${{ matrix.dir }}" -Recurse -Filter "*.exe" -ErrorAction SilentlyContinue |
             Where-Object { $_.FullName -match '[\\/]Release[\\/]Standalone[\\/]' } |
             Copy-Item -Destination out
           Get-ChildItem out | Format-Table Name, Length
@@ -227,7 +243,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: windows-${{ matrix.plugin }}
+          name: windows-${{ matrix.dir }}
           path: out/
           if-no-files-found: error
           retention-days: 30
@@ -250,10 +266,10 @@ jobs:
         run: |
           git submodule update --init _tools/JUCE
           ui=""
-          [ -f "plugins/${{ matrix.plugin }}/status.json" ] && \
-            ui=$(python3 -c "import json;print(json.load(open('plugins/${{ matrix.plugin }}/status.json',encoding='utf-8-sig')).get('ui_framework',''))")
-          if [ "$ui" = "visage" ] || grep -qi visage "plugins/${{ matrix.plugin }}/CMakeLists.txt"; then
-            echo "${{ matrix.plugin }} uses visage -> init submodule"
+          [ -f "plugins/${{ matrix.dir }}/status.json" ] && \
+            ui=$(python3 -c "import json;print(json.load(open('plugins/${{ matrix.dir }}/status.json',encoding='utf-8-sig')).get('ui_framework',''))")
+          if [ "$ui" = "visage" ] || grep -qi visage "plugins/${{ matrix.dir }}/CMakeLists.txt"; then
+            echo "${{ matrix.dir }} uses visage -> init submodule"
             git submodule update --init _tools/visage
             echo "VISAGE_FLAG=-DAPC_ENABLE_VISAGE:BOOL=ON" >> "$GITHUB_ENV"
           fi
@@ -268,7 +284,7 @@ jobs:
       - name: Resolve build targets
         id: targets
         run: |
-          cmk=$(cat "plugins/${{ matrix.plugin }}/CMakeLists.txt")
+          cmk=$(cat "plugins/${{ matrix.dir }}/CMakeLists.txt")
           wanted=()
           [ "${{ inputs.macos_vst3 }}" = "true" ]       && wanted+=(VST3)
           [ "${{ inputs.macos_au }}" = "true" ]         && wanted+=(AU)
@@ -276,9 +292,9 @@ jobs:
           targets=()
           for f in "${wanted[@]}"; do
             if grep -qw FORMATS <<<"$cmk" && ! grep -qw "$f" <<<"$cmk"; then
-              echo "SKIP: ${{ matrix.plugin }} does not declare $f"
+              echo "SKIP: ${{ matrix.dir }} does not declare $f"
             else
-              targets+=("${{ matrix.plugin }}_$f")
+              targets+=("${{ matrix.target }}_$f")
             fi
           done
           [ ${#targets[@]} -eq 0 ] && { echo "::error::No build targets selected/declared"; exit 1; }
@@ -295,14 +311,14 @@ jobs:
       - name: Collect artifacts
         run: |
           mkdir -p out
-          find "build/plugins/${{ matrix.plugin }}" \( -name "*.vst3" -o -name "*.component" -o -name "*.app" \) \
+          find "build/plugins/${{ matrix.dir }}" \( -name "*.vst3" -o -name "*.component" -o -name "*.app" \) \
             -path "*Release*" -exec cp -R {} out/ \;
           ls -la out/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: macos-${{ matrix.plugin }}
+          name: macos-${{ matrix.dir }}
           path: out/
           if-no-files-found: error
           retention-days: 30
@@ -325,10 +341,10 @@ jobs:
         run: |
           git submodule update --init _tools/JUCE
           ui=""
-          [ -f "plugins/${{ matrix.plugin }}/status.json" ] && \
-            ui=$(python3 -c "import json;print(json.load(open('plugins/${{ matrix.plugin }}/status.json',encoding='utf-8-sig')).get('ui_framework',''))")
-          if [ "$ui" = "visage" ] || grep -qi visage "plugins/${{ matrix.plugin }}/CMakeLists.txt"; then
-            echo "${{ matrix.plugin }} uses visage -> init submodule"
+          [ -f "plugins/${{ matrix.dir }}/status.json" ] && \
+            ui=$(python3 -c "import json;print(json.load(open('plugins/${{ matrix.dir }}/status.json',encoding='utf-8-sig')).get('ui_framework',''))")
+          if [ "$ui" = "visage" ] || grep -qi visage "plugins/${{ matrix.dir }}/CMakeLists.txt"; then
+            echo "${{ matrix.dir }} uses visage -> init submodule"
             git submodule update --init _tools/visage
             echo "VISAGE_FLAG=-DAPC_ENABLE_VISAGE:BOOL=ON" >> "$GITHUB_ENV"
           fi
@@ -350,7 +366,7 @@ jobs:
       - name: Resolve build targets
         id: targets
         run: |
-          cmk=$(cat "plugins/${{ matrix.plugin }}/CMakeLists.txt")
+          cmk=$(cat "plugins/${{ matrix.dir }}/CMakeLists.txt")
           wanted=()
           [ "${{ inputs.linux_vst3 }}" = "true" ]       && wanted+=(VST3)
           [ "${{ inputs.linux_lv2 }}" = "true" ]        && wanted+=(LV2)
@@ -358,9 +374,9 @@ jobs:
           targets=()
           for f in "${wanted[@]}"; do
             if grep -qw FORMATS <<<"$cmk" && ! grep -qw "$f" <<<"$cmk"; then
-              echo "SKIP: ${{ matrix.plugin }} does not declare $f"
+              echo "SKIP: ${{ matrix.dir }} does not declare $f"
             else
-              targets+=("${{ matrix.plugin }}_$f")
+              targets+=("${{ matrix.target }}_$f")
             fi
           done
           [ ${#targets[@]} -eq 0 ] && { echo "::error::No build targets selected/declared"; exit 1; }
@@ -379,18 +395,18 @@ jobs:
       - name: Collect artifacts
         run: |
           mkdir -p out
-          find "build/plugins/${{ matrix.plugin }}" \( -name "*.vst3" -o -name "*.lv2" \) \
+          find "build/plugins/${{ matrix.dir }}" \( -name "*.vst3" -o -name "*.lv2" \) \
             -path "*Release*" -exec cp -R {} out/ \;
           # standalone binary may be named after PRODUCT_NAME, not the dir —
           # grab any executable under the Release/Standalone output
-          find "build/plugins/${{ matrix.plugin }}" -type f -executable \
+          find "build/plugins/${{ matrix.dir }}" -type f -executable \
             -path "*Release*Standalone*" -exec cp {} out/ \;
           ls -la out/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: linux-${{ matrix.plugin }}
+          name: linux-${{ matrix.dir }}
           path: out/
           if-no-files-found: error
           retention-days: 30
