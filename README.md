@@ -66,7 +66,7 @@ node hub/server.js --port 4872   # or: /apc-hub in your agent
 <img src="assets/apc_walkthrough.jpg" alt="APC tutorial series - click to watch on YouTube">
 </a>
 
-**APC Tutorial Series (YouTube Playlist)** - 7 episodes and more to come, explaining the framework in detail.
+**APC Tutorial Series (YouTube Playlist)** - 10 episodes, explaining the framework in detail.
 
 - Play the video: https://www.youtube.com/watch?v=tD6T8MEGmW8&list=PLEOCbFL_Mq4o
 - Open the playlist on YouTube: https://www.youtube.com/playlist?list=PLEOCbFL_Mq4o
