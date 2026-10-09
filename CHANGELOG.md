@@ -9,16 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.6.0] - 2026-10-09
+## [1.7.0] - 2026-10-09
 
 ### Added
 
 - **Host-agnostic subagent orchestration (`/apc-orchestrate`).** Canonical worker profiles in `.agents/agents/*.md` (`cheap-worker` / `standard-worker` / `deep-worker` / `expert-worker`, mirroring the Codex TOML tiers) are read natively by Devin and synced to `.claude/agents/` + `.opencode/agent/` by `scripts/sync-agents.ps1` / `.sh` (tool-name normalization, `mode: subagent`, write/patch hard-deny on restricted profiles, `-Check`/`--check` CI mode). New `orchestrate` skill + `apc-orchestrate` workflow/command decompose a goal into disjoint-file subtasks, run workers in bounded parallel waves, verify objectively, and integrate — with sequential/`codex exec` fallback on hosts without native subagents. Docs: `docs/orchestration.md`.
 
+## [1.6.0] - 2026-09-29
+
+### Added
+
+- **UI layout contract — rem-grid system, `ui-map` as-built manifest, lint gate, Hub review tool** (`schemas/ui-map.schema.json`, `scripts/ui-compose.js`, `scripts/ui-lint.js`, `tools/ui-preview/`). Plugin UIs declare geometry against a shared contract; `ui-lint` runs as a gate.
+- **Visage adaptive raster recovery + Windows crash minidumps** (known-issue docs visage-001/002); crash handler gated to the Standalone wrapper.
+- **`.devin/skills/apc-*` — first-class Devin command adapters** pointing at `.agents/workflows/apc-*.md`; namespaced as `/devin:apc-*` where same-named skills exist in multiple imported dirs.
+- **Cross-platform plugin build CI** with selectors; plugin sources live under `plugins/` and the plugin build workflows moved to the apc-plugins repo.
+
 ### Fixed
 
 - YAML frontmatter for APC skills (names/descriptions no longer broken or empty in host skill loaders).
 - Hub tools check resolves the pluginval binary per OS instead of a single hardcoded path.
+- **`build-and-install.ps1`: stale version in Windows File Properties after a `VERSION` bump (known issue `build-006`).** JUCE generates `<Name>_resources.rc` once and its build rule depends only on the icon, so the DLL/EXE kept the old version number. After configure, the script now compares the `.rc` with the `VERSION` in `Info.txt` and deletes the `.rc` only when they differ, so it is regenerated then and only then (no extra relink on ordinary builds).
+- **`build-and-install.ps1` + `pluginval-integration.ps1`: plugins whose `PRODUCT_NAME` differs from the folder name.** The VST3 bundle and Standalone `.exe` are named after `PRODUCT_NAME` (`My Plugin.vst3` for `plugins/MyPlugin`), so the name-based lookup found nothing and pluginval, the install and the icon step were skipped. They are now found by location in the plugin's own `Release` output. pluginval gets the path quoted: `Start-Process` joins `-ArgumentList` without quoting, so a path with a space was split.
+- **`state-management.ps1` + `lib/Get-ApcPaths.ps1`: read `status.json` and `apc.config.json` as UTF-8.** Windows PowerShell 5.1 decodes `Get-Content` without `-Encoding` as ANSI, so a file saved without a BOM (by an agent, a text editor, the `.sh` scripts, or `apc doctor --fix`) had its non-ASCII text (an em dash, a publisher name with an accent) garbled on the next read-modify-write.
+- **`backup.ps1` and the ship skill: zips with forward-slash entry names.** `Compress-Archive` in Windows PowerShell 5.1 stores entry names with backslashes (`Windows\VST3\...`), which macOS and Linux unzip as flat files with backslashes in their names. New `scripts/lib/New-ReleaseZip.ps1` writes `/` separators with the .NET zip classes that ship with PowerShell 5.1 and 7 (nothing to install); the zip layout is unchanged.
+- Known issue `build-006` (stale version resource) with resolution doc.
 
 ## [1.5.1] - 2026-09-14
 
@@ -38,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **`build-and-install.ps1` caps compiler parallelism** at half the logical cores via `$env:_CL_=/MP<n>` (override with `APC_BUILD_JOBS`), and selects the 64-bit-hosted compiler (`$env:PreferredToolArchitecture=x64`; the 32-bit-hosted `cl.exe` stops at about 4 GB). JUCE's recommended flags add `/MP` + `/GL`, and 16+ concurrent LTO compiles of the JUCE unity files exhaust RAM with `C1060: compiler is out of heap space`. `_CL_`, not `CL`: `cl.exe` reads `CL` before its command line, where JUCE's own `/MP` comes later and wins, so the first version of this cap had no effect.
-- Known issues `build-004` (C1060 out of heap space) and `build-006` (stale version resource) with resolution docs.
+- Known issue `build-004` (C1060 out of heap space) with resolution doc.
 
 ## [1.5.0] - 2026-09-13
 

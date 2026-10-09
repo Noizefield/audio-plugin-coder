@@ -13,7 +13,7 @@ dispatch (Codex path) or sequential execution.
 
 | Invocation | Host |
 |---|---|
-| `/apc-orchestrate <goal>` | Devin, Claude Code, Kilo, OpenCode (`/apc-orchestrate` command file) |
+| `/apc-orchestrate <goal>` | Devin (`.devin/skills/apc-orchestrate` adapter, or `/devin:apc-orchestrate` when namespaced), Claude Code, Kilo, OpenCode (`/apc-orchestrate` command file) |
 | `/orchestrate <goal>` | Devin/Windsurf (`.agents/skills/orchestrate/` is picked up natively) |
 | `$audio-plugin-coder:audio-plugin-coder orchestrate <goal>` | Codex skill action |
 | "orchestrate X across subagents" | any host — natural-language equivalent |

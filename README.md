@@ -12,10 +12,16 @@
 
 ## What's new
 
-### v1.6.0
+### v1.7.0
 
 **Your AI assistant can now split big jobs across a team of subagents.**
 Type `/apc-orchestrate <goal>` and APC acts as the orchestrator: it breaks the work into independent pieces, hands them to worker agents (four tiers, from `cheap-worker` for searches up to `expert-worker` for the really hard stuff), runs them in parallel, verifies the results for real, and merges everything back. It works the same way across Devin, Claude Code, OpenCode, Codex and friends — worker profiles live once in `.agents/agents/` and a `sync-agents` script generates the per-host copies. On hosts without subagents, workers run as headless CLI calls or sequentially instead.
+
+### v1.6.0
+
+**A shared layout contract for plugin UIs.** A rem-grid system plus a `ui-map` manifest describe what the UI actually looks like, `ui-lint` gates it, and the Hub can review the result — so generated interfaces stay consistent instead of drifting.
+
+**Visage and Windows got tougher.** Adaptive raster recovery, Windows crash minidumps for real debugging, and the crash handler only wraps Standalone builds now. Devin CLI also joined as a first-class host with `/apc-*` command adapters.
 
 **Builds got sturdier (v1.5.1 + v1.6.0).** CMake resolution now finds a *working* compiler even with a broken shim on PATH, failed builds are correctly reported as failures, pluginval gets the right strictness flag, and compiler parallelism is capped so big JUCE builds stop running out of memory.
 
