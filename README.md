@@ -181,8 +181,9 @@ Prefer the `/apc-*` names (unique across frameworks). Short aliases (`/dream`, .
 | `/apc-patch [Name]` | `$audio-plugin-coder:audio-plugin-coder patch [Name]` | Bugfix generation on a shipped plugin |
 | `/apc-evolve [Name]` | `$audio-plugin-coder:audio-plugin-coder evolve [Name]` | Feature generation on a shipped plugin |
 | `/apc-hub` | `$audio-plugin-coder:audio-plugin-coder hub` | Open the live local dashboard |
+| `/apc-orchestrate <goal>` | `$audio-plugin-coder:audio-plugin-coder orchestrate <goal>` | Decompose a goal across subagent workers |
 
-See [Command Reference](docs/command-reference.md), [Codex Compatibility](docs/codex-compatibility.md), and [Model Routing](docs/model-routing.md).
+See [Command Reference](docs/command-reference.md), [Codex Compatibility](docs/codex-compatibility.md), [Orchestration](docs/orchestration.md), and [Model Routing](docs/model-routing.md).
 
 ### Example Session
 
