@@ -10,7 +10,16 @@
 [![HOL Guard Scanner](https://img.shields.io/badge/HOL%20Guard-passing-00a67e)](https://github.com/hashgraph-online/hol-guard)
 [![Sponsor](https://img.shields.io/badge/Sponsor-Project-pink.svg?style=social&logo=heart)](https://github.com/sponsors/Noizefield)
 
-## What's new in v1.5.0
+## What's new
+
+### v1.6.0
+
+**Your AI assistant can now split big jobs across a team of subagents.**
+Type `/apc-orchestrate <goal>` and APC acts as the orchestrator: it breaks the work into independent pieces, hands them to worker agents (four tiers, from `cheap-worker` for searches up to `expert-worker` for the really hard stuff), runs them in parallel, verifies the results for real, and merges everything back. It works the same way across Devin, Claude Code, OpenCode, Codex and friends — worker profiles live once in `.agents/agents/` and a `sync-agents` script generates the per-host copies. On hosts without subagents, workers run as headless CLI calls or sequentially instead.
+
+**Builds got sturdier (v1.5.1 + v1.6.0).** CMake resolution now finds a *working* compiler even with a broken shim on PATH, failed builds are correctly reported as failures, pluginval gets the right strictness flag, and compiler parallelism is capped so big JUCE builds stop running out of memory.
+
+### v1.5.0
 
 APC 1.5 is a big step forward - especially if you are a musician or hobbyist who just wants to build your own plugin without fighting tooling. Here is what changed, in plain words.
 

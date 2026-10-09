@@ -21,8 +21,9 @@ Use the **`apc-` prefix** to avoid collisions with other frameworks and host bui
 | `/apc-patch` | — | Open a bugfix generation on a shipped plugin |
 | `/apc-evolve` | — | Open a feature generation on a shipped plugin |
 | `/apc-new` | `/new` | Guided multi-phase with confirmations |
+| `/apc-orchestrate` | — | Decompose a goal across subagent workers |
 
-Paths and models: see `apc.config.example.json`, `docs/model-routing.md`.
+Paths and models: see `apc.config.example.json`, `docs/model-routing.md`. Subagent workers: see `docs/orchestration.md`.
 
 ## Overview
 

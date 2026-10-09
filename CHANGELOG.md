@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-10-09
+
+### Added
+
+- **Host-agnostic subagent orchestration (`/apc-orchestrate`).** Canonical worker profiles in `.agents/agents/*.md` (`cheap-worker` / `standard-worker` / `deep-worker` / `expert-worker`, mirroring the Codex TOML tiers) are read natively by Devin and synced to `.claude/agents/` + `.opencode/agent/` by `scripts/sync-agents.ps1` / `.sh` (tool-name normalization, `mode: subagent`, write/patch hard-deny on restricted profiles, `-Check`/`--check` CI mode). New `orchestrate` skill + `apc-orchestrate` workflow/command decompose a goal into disjoint-file subtasks, run workers in bounded parallel waves, verify objectively, and integrate — with sequential/`codex exec` fallback on hosts without native subagents. Docs: `docs/orchestration.md`.
+
+### Fixed
+
+- YAML frontmatter for APC skills (names/descriptions no longer broken or empty in host skill loaders).
+- Hub tools check resolves the pluginval binary per OS instead of a single hardcoded path.
+
+## [1.5.1] - 2026-09-14
+
 ### Fixed
 
 - **`scripts/terminal-monitoring.ps1`: failed native commands were reported as success.** A PowerShell job "completes" even when `cmake`/`msbuild` exit non-zero, so `Invoke-MonitoredCommand` returned exit code 0 for broken builds. The wrapped command now throws on a non-zero `$LASTEXITCODE`. Native stderr (CMake warnings) is collected as text instead of surfacing from `Receive-Job` as a terminating `NativeCommandError` under `$ErrorActionPreference = "Stop"`.

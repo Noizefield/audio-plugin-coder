@@ -24,6 +24,7 @@ New to APC? Start here:
 | [Command Reference](command-reference.md) | All slash commands and PowerShell scripts |
 | [Codex Compatibility](codex-compatibility.md) | Codex skill, plugin manifest, and command mapping |
 | [Codex Orchestration](codex-orchestration.md) | Optional Luna/Terra/Sol/Astra `codex exec` routing |
+| [Orchestration](orchestration.md) | Host-agnostic subagent workers and `/apc-orchestrate` |
 | [FAQ](FAQ.md) | Frequently asked questions |
 | [Hub](hub.md) | Live local dashboard (`/apc-hub`) |
 
