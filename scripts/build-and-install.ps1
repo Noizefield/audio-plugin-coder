@@ -25,6 +25,13 @@ $RootPath = $ApcPaths.RepoRoot
 $BuildDir = $ApcPaths.BuildDir
 $PluginDir = Join-Path $ApcPaths.PluginsDir $PluginName
 $StatusJson = Join-Path $PluginDir "status.json"
+# The VST3 bundle and the Standalone .exe are named after PRODUCT_NAME, which can differ from the
+# folder name ("My Plugin.vst3" for plugins\MyPlugin), so find them by location in the plugin's
+# own Release output rather than by name.
+function Find-BuiltProduct([string]$Format, [string]$Filter, [switch]$Directory) {
+    Get-ChildItem -Path (Join-Path $BuildDir "plugins\$PluginName") -Recurse -Filter $Filter -Directory:$Directory -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -match "[\\/]Release[\\/]$Format[\\/][^\\/]+$" } | Select-Object -First 1
+}
 $UseVisage = $false
 
 if (Test-Path $StatusJson) {
@@ -53,9 +60,14 @@ if ($state.current_phase -ne "code_complete" -and -not $SkipTests) {
 
 # 0. Cap compiler parallelism. JUCE adds /MP (all cores) and LTO makes each cl.exe
 #    heavy; on 16+ core machines that exhausts RAM ("C1060 compiler is out of heap
-#    space"). Default to half the logical cores; override with $env:APC_BUILD_JOBS.
+#    space", known issue build-004). Default to half the logical cores; override with
+#    $env:APC_BUILD_JOBS. _CL_, not CL: cl.exe reads CL BEFORE its command line, where
+#    JUCE's own /MP comes later and wins; _CL_ is read AFTER it, so this cap is the one used.
+#    And the 64-bit-hosted compiler: the 32-bit one stops at ~4 GB per cl.exe however
+#    much RAM is free. (An MSBuild property from the environment, so no CMake cache change.)
 $buildJobs = if ($env:APC_BUILD_JOBS) { [int]$env:APC_BUILD_JOBS } else { [Math]::Max(2, [int][Math]::Floor($env:NUMBER_OF_PROCESSORS / 2)) }
-$env:CL = (($env:CL + " /MP$buildJobs").Trim())
+$env:_CL_ = (($env:_CL_ + " /MP$buildJobs").Trim())
+$env:PreferredToolArchitecture = "x64"
 Write-Host "Compiler jobs: $buildJobs (set APC_BUILD_JOBS to override)" -ForegroundColor DarkGray
 
 # 1. Configure with error monitoring
@@ -73,6 +85,23 @@ if ($configResult.Errors.Count -gt 0) {
         Apply-KnownSolution -Issue $knownIssue
         # Retry configuration
         $configResult = Invoke-MonitoredCommand -Command $configureCommand -ShowOutput -ThrowOnError
+    }
+}
+
+# 1b. Stale Windows version stamp (known issue build-006). JUCE generates <Name>_resources.rc
+#     (File Properties > Details) once; its build rule watches only the icon, so after a VERSION
+#     change the DLL/EXE keep the old number. Configure has just rewritten Info.txt next to it
+#     with the current version: when the two disagree, delete the .rc so this build regenerates it.
+#     Only on a mismatch - regenerating it every time would force a full LTO relink every build.
+$rcFile = Get-ChildItem -Path (Join-Path $BuildDir "plugins\$PluginName") -Recurse -Filter "$($PluginName)_resources.rc" -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($rcFile) {
+    $infoFile = Join-Path $rcFile.DirectoryName "Info.txt"
+    $infoRecord = if (Test-Path -LiteralPath $infoFile) { (Get-Content -LiteralPath $infoFile -Raw) -split [char]30 | Where-Object { $_.StartsWith("VERSION" + [char]31) } | Select-Object -First 1 } else { $null }
+    $configuredVersion = if ($infoRecord) { $infoRecord.Substring(8).Trim() } else { "" }
+    $stampedVersion = if ((Get-Content -LiteralPath $rcFile.FullName -Raw) -match 'VALUE "FileVersion",\s*"([^"\\]*)') { $Matches[1] } else { "" }
+    if ($configuredVersion -and $stampedVersion -and $configuredVersion -ne $stampedVersion) {
+        Write-Host "Version stamp says $stampedVersion, plugin is $($configuredVersion): regenerating $($rcFile.Name)" -ForegroundColor Yellow
+        Remove-Item -LiteralPath $rcFile.FullName
     }
 }
 
@@ -129,7 +158,7 @@ if (-not $SkipTests) {
     Write-Host "Running PluginVal validation..." -ForegroundColor Yellow
 
     # Find the built VST3 plugin
-    $vst3Path = Get-ChildItem -Path "$BuildDir" -Recurse -Filter "$PluginName.vst3" | Select-Object -First 1
+    $vst3Path = Find-BuiltProduct -Format "VST3" -Filter "*.vst3" -Directory
     if ($vst3Path) {
         $pluginvalResult = Test-WithPluginVal -PluginPath $vst3Path.FullName -PluginName $PluginName -Strict:$Strict
 
@@ -149,7 +178,7 @@ if (-not $SkipTests) {
 # 5. Install VST3
 if (-not $NoInstall) {
     Write-Host "Installing VST3..." -ForegroundColor Yellow
-    $Vst = Get-ChildItem -Path "$BuildDir" -Recurse -Filter "$($PluginName).vst3" | Select-Object -First 1
+    $Vst = Find-BuiltProduct -Format "VST3" -Filter "*.vst3" -Directory
     if ($Vst) {
         $Dest = "C:\Program Files\Common Files\VST3\$($Vst.Name)"
         try {
@@ -162,7 +191,7 @@ if (-not $NoInstall) {
     }
 
     # Locate Standalone
-    $Exe = Get-ChildItem -Path "$BuildDir" -Recurse -Filter "$($PluginName).exe" | Select-Object -First 1
+    $Exe = Find-BuiltProduct -Format "Standalone" -Filter "*.exe"
     if ($Exe) {
         Write-Host "STANDALONE built at: $($Exe.FullName)" -ForegroundColor Green
 

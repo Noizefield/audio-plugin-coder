@@ -7,6 +7,7 @@ param(
     [string]$PluginsDir = "plugins",
     [string]$BuildDir = "build",
     [string]$ReleaseDir = "release",
+    [string]$Vst3InstallDir,
     [ValidateSet("webview", "visage")][string]$UiPreference = "webview",
     [switch]$EnableVisage,
     [ValidateSet("quality", "balanced", "budget")][string]$ModelProfile = "balanced",
@@ -52,6 +53,9 @@ if (Test-Path $example) {
 $cfg.paths.plugins_dir = $PluginsDir
 $cfg.paths.build_dir = $BuildDir
 $cfg.paths.release_dir = $ReleaseDir
+if ($PSBoundParameters.ContainsKey('Vst3InstallDir')) {
+    $cfg.paths | Add-Member -NotePropertyName vst3_install_dir -NotePropertyValue $Vst3InstallDir -Force
+}
 $cfg.defaults.ui_framework_preference = $UiPreference
 $cfg.defaults.enable_visage = [bool]$EnableVisage
 $cfg.models.profile = $ModelProfile

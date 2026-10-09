@@ -274,6 +274,7 @@ const VALIDATORS = {
   'webview': { native: true, needsPlugin: true, ps1: 'validate-webview-setup' },
   'webview-order': { native: true, needsPlugin: true, ps1: 'validate-webview-member-order' },
   'visage': { native: true, needsPlugin: true, ps1: 'validate-visage-setup' },
+  'ui': { native: true, needsPlugin: true },
   'plugin': { native: true, needsPlugin: false, ps1: 'validate-plugin-status' },
   // 'state' is a functional test OF the PowerShell state-management module
   // (dot-sources state-management.ps1 and calls its functions), so it cannot
@@ -594,10 +595,52 @@ function cmdValidate(args) {
     if (kind === 'webview') r = validateWebview(dir);
     else if (kind === 'webview-order') r = validateMemberOrder(dir);
     else if (kind === 'visage') r = validateVisage(dir);
+    else if (kind === 'ui') {
+      const mi = args.indexOf('--map'), hi = args.indexOf('--html');
+      r = uiToReport(require('../scripts/ui-lint.js').validateUi(dir, {
+        map: mi !== -1 ? args[mi + 1] : null,
+        html: hi !== -1 ? args[hi + 1] : null,
+      }));
+    }
     else r = validateOnePluginStatus(dir, plugin);
     code = printReport(kind, plugin, r, asJson);
   }
   process.exit(code);
+}
+
+// scripts/ui-lint.js returns {errors:[string], warnings:[string], checks:[…]};
+// adapt it to the report shape printReport consumes.
+function uiToReport(res) {
+  const r = newReport();
+  for (const c of res.checks) {
+    if (c.status === 'fail') r.issues.push({ check: c.check, message: `${c.check}: ${c.msg}` });
+    else if (c.status === 'warn') r.warnings.push({ check: c.check, message: `${c.check}: ${c.msg}` });
+    r.checks.push({ check: c.check, status: c.status, message: c.msg });
+  }
+  return r;
+}
+
+// apc ui-compose <Plugin> — render Design preview from ui-map.json + vendor kit.
+function cmdUiCompose(args) {
+  const plugin = args.find((a) => !a.startsWith('--'));
+  const mi = args.indexOf('--map');
+  const oi = args.indexOf('--out');
+  if (!plugin) {
+    console.error(err('Usage: apc ui-compose <Plugin> [--map ui-map.json] [--out file.html]'));
+    process.exit(2);
+  }
+  const lib = require('../scripts/ui-compose.js');
+  const dir = pluginPath(plugin);
+  const designDir = path.join(dir, 'Design');
+  const mapFile = lib.findMapFile(designDir, mi !== -1 ? args[mi + 1] : null);
+  if (!mapFile) { console.error(err(`no ui-map in ${designDir}`)); process.exit(1); }
+  const map = JSON.parse(fs.readFileSync(mapFile, 'utf8'));
+  lib.vendorKit(findRepoRoot(), designDir);
+  const versioned = path.basename(mapFile).match(/^v(\d+)-ui-map\.json$/);
+  const outName = (oi !== -1 ? args[oi + 1] : null) || (versioned ? `v${versioned[1]}-test.html` : 'v1-test.html');
+  const outFile = path.join(designDir, outName);
+  fs.writeFileSync(outFile, lib.compose(map));
+  console.log(ok(`composed ${outFile}`));
 }
 
 function cmdBackupOrRollback(which, args) {
@@ -953,8 +996,9 @@ function help() {
   console.log('  paths [--json] [--plugin N]   resolved plugins/build/release dirs');
   console.log('  doctor [--fix]                version header + system-check (fix: safe auto-fixes only)');
   console.log('  build <Plugin> [--no-install] [--skip-tests] [--strict]');
-  console.log('  validate <kind> [--plugin N] [--json]  webview|webview-order|visage|plugin|state');
-  console.log('    webview|webview-order|visage|plugin run natively (cross-platform);');
+  console.log('  validate <kind> [--plugin N] [--json]  webview|webview-order|visage|ui|plugin|state');
+  console.log('    webview|webview-order|visage|ui|plugin run natively (cross-platform);');
+  console.log('  ui-compose <Plugin>           render Design preview from ui-map.json + vendor apc-ui kit');
   console.log('    state tests the PowerShell module itself and stays shell-bound.');
   console.log('  backup <Plugin> <Version>');
   console.log('  rollback <Plugin> <Version>');
@@ -980,6 +1024,7 @@ function main() {
     case 'doctor': return cmdDoctor(rest);
     case 'build': return cmdBuild(rest);
     case 'validate': return cmdValidate(rest);
+    case 'ui-compose': return cmdUiCompose(rest);
     case 'backup': return cmdBackupOrRollback('backup', rest);
     case 'rollback': return cmdBackupOrRollback('rollback', rest);
     case 'patch': return cmdOpenGeneration('patch', rest);

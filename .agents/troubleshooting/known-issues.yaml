@@ -106,8 +106,28 @@ issues:
     frequency: 1
     last_occurred: 2026-09-08
     attempts_before_resolution: 1
-    prevention: "scripts/build-and-install.ps1 now caps cl.exe parallelism at half the logical cores via $env:CL=/MP<n>; override with $env:APC_BUILD_JOBS."
+    prevention: "scripts/build-and-install.ps1 caps cl.exe parallelism at half the logical cores via $env:_CL_=/MP<n> (cl.exe reads _CL_ after its command line, so the cap overrides JUCE's own /MP; $env:CL is read before it and loses) and runs the 64-bit-hosted compiler ($env:PreferredToolArchitecture=x64). Override the job count with $env:APC_BUILD_JOBS."
     critical_fix: "Set APC_BUILD_JOBS lower (e.g. 4) or close memory-heavy apps, then rerun build-and-install.ps1"
+
+  - id: build-006
+    title: "Built plugin reports the old version in Windows File Properties after a VERSION change"
+    category: build
+    severity: medium
+    symptoms:
+      - "CMakeLists and status.json say the new version, but the VST3 DLL / Standalone EXE Properties > Details show the old one"
+      - "A full rebuild, even with --fresh, does not change it"
+      - "The host and pluginval see the new version: only the file's version resource is stale"
+    error_patterns:
+      - "_resources.rc"
+      - "FileVersion"
+    root_cause: "JUCE's CMake (_juce_add_resources_rc in JUCEUtils.cmake) generates <Name>_artefacts/JuceLibraryCode/<Name>_resources.rc with juceaide from the configure-time Info.txt, but the custom command depends only on the icon, never on Info.txt. Once the .rc exists it is never regenerated, so VERSION changes do not reach the Windows version resource. JucePlugin_VersionString (a compile definition) does update."
+    resolution_status: solved
+    resolution_file: resolutions/build-006-stale-version-resource.md
+    frequency: 1
+    last_occurred: 2026-09-25
+    attempts_before_resolution: 1
+    prevention: "scripts/build-and-install.ps1 step 1b compares the .rc FileVersion with Info.txt's VERSION after configure and deletes the .rc when they differ (only then: regenerating it every build would force an LTO relink every build)."
+    critical_fix: "Get-ChildItem build\\plugins\\<Name> -Recurse -Filter <Name>_resources.rc | Remove-Item; then rerun build-and-install.ps1"
 
   - id: webview-003
     title: "WebView plugin crashes on load - runtime crash"
@@ -367,3 +387,61 @@ issues:
     attempts_before_resolution: 1
     prevention: "ALWAYS use git submodule add, NEVER commit framework directories as regular files"
     critical_fix: "git rm -r --cached _tools/JUCE && rm -rf _tools/JUCE && git submodule add https://github.com/juce-framework/JUCE _tools/JUCE"
+
+  - id: build-005
+    title: "FetchContent fails - stale _deps after build_dir relocation"
+    category: build
+    severity: high
+    symptoms:
+      - "CMake Error: CMake step for bgfx failed: 1"
+      - "FetchContent populate fails for bgfx/freetype during Visage configure"
+      - "git clone retries 3 times then fails inside populate subbuild"
+    error_patterns:
+      - "CMake step for bgfx failed"
+      - "Failed to clone repository"
+      - "Had to git clone more than once"
+    root_cause: "apc.config.json paths.build_dir moved the build tree (repo/build -> ../apc_builds). The copied _deps/*-subbuild scripts still hardcode the OLD build dir inside their generated gitclone.cmake. If the old dir no longer exists, git.exe cannot start (missing WORKING_DIRECTORY) and the clone fails 3x."
+    resolution_status: solved
+    resolution_file: resolutions/build-005-stale-deps-fetchcontent.md
+    frequency: 1
+    last_occurred: 2026-09-19
+    attempts_before_resolution: 1
+    prevention: "After changing paths.build_dir in apc.config.json, delete the new build dir's _deps folder once so FetchContent regenerates subbuild scripts with correct absolute paths."
+    critical_fix: "Remove-Item -Recurse -Force <build_dir>/_deps, then rerun configure. Do NOT copy/move _deps between build dirs."
+
+  - id: visage-001
+    title: "Visage UI clipped to top-left with dead margins on large windows"
+    category: ui
+    severity: critical
+    symptoms:
+      - "Visage plugin UI renders into top-left sub-rect; black void right/bottom"
+      - "Gets worse the larger the editor window is dragged"
+      - "Content edge tracks canvas framebuffer size, paint() stretch has no effect"
+    error_patterns:
+      - "content only fills fraction of window"
+      - "black margins after resize"
+    root_cause: "visage::Canvas::beginRegion() applied state_.scale (dpi) to region bounds that are already device pixels -> clamp shrank to dpi^2 of the region whenever APC's windowless rasterQuality_ < 1. Latent upstream bug; harmless at dpi>=1."
+    resolution_status: solved
+    resolution_file: resolutions/visage-subnative-raster-clip.md
+    frequency: 1
+    last_occurred: 2026-09-29
+    attempts_before_resolution: 1
+    prevention: "Region/canvas dimensions in visage_graphics are device pixels. Never multiply them by state_.scale/dpi_scale_. Companion fix already in frame.h setDpiScale (rebakes native_bounds_)."
+  - id: visage-002
+    title: "Visage UI stays blurry after window resize"
+    category: ui
+    severity: high
+    symptoms:
+      - "UI soft/unsharp after enlarging the editor window"
+      - "Blur persists after the drag ends, never re-sharpens"
+      - "Worse on large windows"
+    error_patterns:
+      - "blurry after resize"
+      - "low-res upscaled UI"
+    root_cause: "Adaptive rasterQuality_ in VisageJuceHost.h ratcheted down during resize but only recovered when frameEma<7ms; reduced-raster frames landed in the 7-14ms deadband so the low raster (and its upscale blur) was pinned indefinitely. Second failure mode: a single >16ms EMA window stepped quality down ~1s after the settle snap (post-snap native-frame spike), oscillating sharp/soft."
+    resolution_status: solved
+    resolution_file: resolutions/visage-adaptive-raster-stuck-blurry.md
+    frequency: 2
+    last_occurred: 2026-09-30
+    attempts_before_resolution: 2
+    prevention: "Snap rasterQuality back to 1.0 ~0.5s after resize settles and reset the overload streak; down-step only on sustained >24ms EMA across ~3 check windows (instant bail >45ms), floor 0.70. MYRIAPLEX_RASTERLOG env var logs effective raster scale."

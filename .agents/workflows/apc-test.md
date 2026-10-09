@@ -22,12 +22,23 @@ if ($state.current_phase -ne "code_complete" -and $state.current_phase -ne "desi
 ```
 
 **Execute Skill:**
-Load and execute `..claude\skills\skill_testing\SKILL.md`
+Load and execute `.agents/skills/skill_testing/SKILL.md`
+
+**UI Contract Gate (WebView only):**
+```powershell
+if ($state.ui_framework -eq "webview") {
+    node bin/apc.js validate ui --plugin $PluginName
+    # Then screenshot the rendered UI at scale_range endpoints + midpoint and
+    # compare against the approved design shots (Design/shots/ if present):
+    # relative geometry must be identical at every scale — same cells, no
+    # letterbox margins, no clipped edges.
+}
+```
 
 **Tests Run:**
 - Build verification
 - Parameter functionality
-- UI rendering
+- UI rendering (contract gate above + visual check at min/mid/max scale)
 - DAW compatibility
 - Memory leaks
 

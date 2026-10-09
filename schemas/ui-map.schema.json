@@ -1,0 +1,119 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "apc-ui-map",
+  "title": "APC UI Map — the design-lock contract",
+  "type": "object",
+  "required": ["version", "name", "layout", "controls"],
+  "properties": {
+    "version": { "const": 1 },
+    "name":    { "type": "string" },
+    "layout": {
+      "type": "object",
+      "required": ["mode", "plate"],
+      "properties": {
+        "mode":          { "enum": ["fixed", "scalable", "adaptive"] },
+        "plate": {
+          "type": "object",
+          "required": ["cols", "rows"],
+          "properties": {
+            "cols": { "type": "number", "exclusiveMinimum": 0 },
+            "rows": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "aspect_lock":    { "type": "boolean", "default": true },
+        "scale_range":    { "type": "array", "items": {"type":"number"}, "minItems": 2, "maxItems": 2, "default": [0.5, 3.0] },
+        "edge_policy":    { "enum": ["letterbox", "fill"], "default": "letterbox" },
+        "letterbox_fill": { "type": "string", "default": "--surface" },
+        "resize_handle":  { "enum": ["corner-gripper", "edge-only", "none"], "default": "corner-gripper" },
+        "presets":        { "type": "array", "items": {"type":"number"}, "default": [0.5, 0.75, 1.0, 1.5, 2.0] },
+        "breakpoints":    {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["view"],
+            "properties": {
+              "view":        { "type": "string" },
+              "below_scale": { "type": "number" },
+              "plate":       { "type": "object", "properties": { "cols": {"type":"number"}, "rows": {"type":"number"} } }
+            }
+          },
+          "default": []
+        }
+      }
+    },
+    "tokens":   { "type": "object", "additionalProperties": { "type": "string" }, "default": {} },
+    "sections": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/placed" },
+      "default": []
+    },
+    "controls": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          { "$ref": "#/definitions/placed" },
+          {
+            "type": "object",
+            "required": ["id", "component", "cell"],
+            "properties": {
+              "param":     { "type": "string" },
+              "component": {
+                "enum": ["knob", "flip", "psw", "fader", "screen", "chip", "well",
+                         "grip", "section", "label", "custom"]
+              },
+              "label":     { "type": "string" },
+              "value":     { "type": "string" },
+              "options":   { "type": "array", "items": { "type": "string" } },
+              "overlay":   { "type": "boolean", "default": false },
+              "kind":      { "type": "string" }
+            }
+          }
+        ]
+      }
+    },
+    "canvases": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          { "$ref": "#/definitions/placed" },
+          { "type": "object", "properties": { "kind": { "type": "string" } } }
+        ]
+      },
+      "default": []
+    },
+    "annotations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["note"],
+        "properties": {
+          "cell":   { "$ref": "#/definitions/cell" },
+          "target": { "type": "string" },
+          "note":   { "type": "string" }
+        }
+      },
+      "default": []
+    }
+  },
+  "definitions": {
+    "cell": {
+      "type": "object",
+      "required": ["x", "y", "w", "h"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "w": { "type": "number", "exclusiveMinimum": 0 },
+        "h": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "placed": {
+      "type": "object",
+      "required": ["id", "cell"],
+      "properties": {
+        "id":      { "type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$" },
+        "cell":    { "$ref": "#/definitions/cell" },
+        "overlay": { "type": "boolean", "default": false }
+      }
+    }
+  }
+}

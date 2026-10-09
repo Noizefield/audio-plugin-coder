@@ -31,6 +31,7 @@ function Get-ApcDefaultConfig {
             plugins_dir = "plugins"
             build_dir = "build"
             release_dir = "release"
+            vst3_install_dir = $null
         }
         defaults = @{
             ui_framework_preference = "webview"
@@ -57,10 +58,10 @@ function Read-ApcConfig {
     $examplePath = Join-Path $RepoRoot "apc.config.example.json"
 
     if (Test-Path $configPath) {
-        return Get-Content $configPath -Raw | ConvertFrom-Json
+        return Get-Content $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
     }
     if (Test-Path $examplePath) {
-        return Get-Content $examplePath -Raw | ConvertFrom-Json
+        return Get-Content $examplePath -Raw -Encoding UTF8 | ConvertFrom-Json
     }
     return (Get-ApcDefaultConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json)
 }
@@ -73,6 +74,9 @@ function Resolve-ApcPath {
 
     if ([string]::IsNullOrWhiteSpace($PathValue)) {
         throw "Empty path value"
+    }
+    if ($PathValue -match '^~[/\\]') {
+        return [System.IO.Path]::GetFullPath((Join-Path $HOME $PathValue.Substring(2)))
     }
     if ([System.IO.Path]::IsPathRooted($PathValue)) {
         return [System.IO.Path]::GetFullPath($PathValue)
@@ -93,21 +97,26 @@ function Get-ApcPaths {
     $pluginsRel = if ($cfg.paths.plugins_dir) { $cfg.paths.plugins_dir } else { "plugins" }
     $buildRel = if ($cfg.paths.build_dir) { $cfg.paths.build_dir } else { "build" }
     $releaseRel = if ($cfg.paths.release_dir) { $cfg.paths.release_dir } else { "release" }
+    $vst3Default = if ($env:OS -eq 'Windows_NT') { "C:\Program Files\Common Files\VST3" } else { "~/Library/Audio/Plug-Ins/VST3" }
+    $vst3Rel = if ($cfg.paths.vst3_install_dir) { [string]$cfg.paths.vst3_install_dir } else { $vst3Default }
 
     $plugins = Resolve-ApcPath -PathValue $pluginsRel -RepoRoot $RepoRoot
     $build = Resolve-ApcPath -PathValue $buildRel -RepoRoot $RepoRoot
     $release = Resolve-ApcPath -PathValue $releaseRel -RepoRoot $RepoRoot
+    $vst3Install = Resolve-ApcPath -PathValue $vst3Rel -RepoRoot $RepoRoot
 
     return [pscustomobject]@{
-        RepoRoot     = $RepoRoot
-        ConfigPath   = (Join-Path $RepoRoot "apc.config.json")
-        PluginsDir   = $plugins
-        BuildDir     = $build
-        ReleaseDir   = $release
-        PluginsRel   = $pluginsRel
-        BuildRel     = $buildRel
-        ReleaseRel   = $releaseRel
-        Config       = $cfg
+        RepoRoot       = $RepoRoot
+        ConfigPath     = (Join-Path $RepoRoot "apc.config.json")
+        PluginsDir     = $plugins
+        BuildDir       = $build
+        ReleaseDir     = $release
+        Vst3InstallDir = $vst3Install
+        PluginsRel     = $pluginsRel
+        BuildRel       = $buildRel
+        ReleaseRel     = $releaseRel
+        Vst3InstallRel = $vst3Rel
+        Config         = $cfg
     }
 }
 

@@ -193,6 +193,7 @@ scripts/
 ├── error-detection.ps1/.sh
 ├── lib/
 │   ├── Get-ApcPaths.ps1       # Path resolution (plugins/build/release)
+│   ├── New-ReleaseZip.ps1     # Zips with forward-slash entry names (backup, ship)
 │   └── apc-paths.sh
 ├── pluginval-integration.ps1
 ├── preview-design.ps1/.sh

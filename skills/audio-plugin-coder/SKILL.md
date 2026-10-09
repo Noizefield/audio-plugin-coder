@@ -15,6 +15,13 @@ Prefer either form:
 $audio-plugin-coder:audio-plugin-coder setup
 $audio-plugin-coder:audio-plugin-coder dream TapeDelay
 $audio-plugin-coder:audio-plugin-coder plan TapeDelay
+$audio-plugin-coder:audio-plugin-coder resume TapeDelay
+```
+
+For `resume`, the plugin name may be omitted when the target plugin can be inferred safely from the current workspace:
+
+```text
+$audio-plugin-coder:audio-plugin-coder resume
 ```
 
 Natural-language requests such as "design the TapeDelay plugin" or "set up APC" also work.
@@ -27,7 +34,7 @@ Do not use bare `/plan` or `/status` spellings in Codex. Prefer skill actions or
 
 1. Confirm the current workspace is an APC checkout by finding `templates/status-template.json`, `scripts/`, and `CMakeLists.txt`.
 2. If those files are absent, explain that the workflow must run from an APC checkout and stop.
-3. For plugin phases, determine the action and plugin name. Ask for a missing plugin name only when it cannot be inferred safely.
+3. For plugin phases, determine the action and plugin name. For `resume`, infer the target when there is one clear candidate; ask for a missing plugin name only when it cannot be inferred safely.
 4. Resolve the plugins directory via `scripts/lib/Get-ApcPaths.ps1` / `scripts/lib/apc-paths.sh` (defaults to `./plugins`).
 5. Before changing an existing plugin, read `<plugins_dir>/<PluginName>/status.json`.
 6. If `apc.config.json` is missing or `setup.completed` is false and the action is not `setup`, warn once and suggest `setup` / `/apc-setup`.

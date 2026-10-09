@@ -27,6 +27,25 @@ Build audio plugin UIs using modern web technologies (HTML/CSS/JavaScript) inste
 
 ---
 
+## 📐 UI Layout & Scaling (read before any layout work)
+
+Canonical rules live in **`.agents/rules/ui-layout-system.md`**. In short:
+
+- Geometry is authored on a grid in `rem` (1 rem = 1 cell); scaling is pure CSS
+  via `html { font-size: min(100vw/cols, 100vh/rows) }` — **never** CSS `zoom`,
+  `transform: scale` wrappers, or JS-computed scale factors.
+- `Design/ui-map.json` is the contract; `index.html` must match it 1:1
+  (`id="ctl-<param>"`). Vendor `templates/webview/apc-ui/` →
+  `Source/ui/public/apc-ui/`, don't hand-roll components.
+- Resizable plugins use an **in-page** `.apc-grip` (the JUCE
+  `ResizableCornerComponent` cannot paint over a heavyweight webview), wired to
+  the `resizeGrip` native function; aspect is locked via
+  `setFixedAspectRatio` **and** re-asserted in `resized()`.
+- Set `WinWebView2{}.withBackgroundColour(<plate colour>)` to kill drag-flash.
+- Gate: `node bin/apc.js validate ui --plugin <Name>` must pass before build.
+
+---
+
 ## 🔴 CRITICAL: Member Declaration Order (PREVENTS DAW CRASHES)
 
 **⚠️ #1 CAUSE OF WEBVIEW PLUGIN CRASHES - MUST FOLLOW**

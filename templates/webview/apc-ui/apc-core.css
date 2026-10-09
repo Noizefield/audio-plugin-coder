@@ -1,0 +1,106 @@
+/* =============================================================================
+   apc-core.css — APC UI Layout System (WebView)
+   Scaling contract: authored plate in rem. 1 rem = 1 square grid cell.
+   Vendored per plugin — edit templates/webview/apc-ui/, not the copy.
+   Spec: .agents/rules/ui-layout-system.md
+   ============================================================================= */
+
+:root {
+  /* --- per-plugin, emitted from ui-map.json (defaults shown) --- */
+  --cols: 50;
+  --rows: 27.5;
+
+  /* --- letterbox / surround --- */
+  --apc-letterbox: #000;
+
+  /* --- design tokens (per-plugin theme overrides these) --- */
+  --plate:      #1a1a1f;
+  --plate-2:    #232329;
+  --surface:    #101014;
+  --inset:      #0a0a0d;
+  --rule:       #3a3a45;
+  --rule-2:     #2a2a33;
+  --ink:        #f0f0f5;
+  --ink-2:      #a0a0a5;
+  --accent:     #ffc300;
+  --grip-ink:   #4a4a55;
+
+  --r-control:  4px;
+  --r-panel:    6px;
+  --font-ui:    "Roboto Mono", ui-monospace, monospace;
+
+  --sh-recess:  inset 0 1px 3px rgba(0,0,0,.55);
+  --sh-raised:  0 1px 0 rgba(255,255,255,.06), 0 3px 6px rgba(0,0,0,.35);
+}
+
+/* --- the scaling engine (do not modify) --- */
+html {
+  font-size: min(calc(100vw / var(--cols)), calc(100vh / var(--rows)));
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--apc-letterbox);
+  font-family: var(--font-ui);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* --- the plate: 1 rem = 1 cell, in BOTH axes --- */
+.apc-plate {
+  position: relative;
+  width:  calc(var(--cols) * 1rem);
+  height: calc(var(--rows) * 1rem);
+  background: var(--plate);
+  overflow: hidden;
+}
+
+/* --- authored-region helpers (composer uses absolute rem cells) ---
+   Specificity must beat component bases like .apc-well{position:relative}. */
+.apc-plate .apc-cell { position: absolute; box-sizing: border-box; }
+.apc-cell { box-sizing: border-box; }
+
+/* --- corner resize gripper (in-page; JUCE corner can't overlay a webview) --- */
+.apc-grip {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  cursor: nwse-resize;
+  touch-action: none;
+  z-index: 90;
+}
+.apc-grip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(100% 0, 0 100%, 100% 100%);
+  background:
+    repeating-linear-gradient(-45deg,
+      var(--grip-ink) 0 1px,
+      transparent 1px calc(.375rem));
+  opacity: .8;
+}
+.apc-grip:hover::before { opacity: 1; }
+
+/* --- section chrome --- */
+.apc-section {
+  position: absolute;
+  box-sizing: border-box;
+  background: var(--plate-2);
+  border: 1px solid var(--rule-2);
+  border-radius: var(--r-panel);
+}
+
+/* --- fixed-mode escape (layout.mode = "fixed"): lock the unit to authored px ---
+   When mode is fixed, the composer emits `html { font-size: <px>px }` after this
+   sheet so rem degenerates to authored px and the window is not resizable.    */
+
+/* --- legibility floors: text that may not shrink below device px --- */
+.apc-micro  { font-size: max(9px, .5rem);  }
+.apc-label  { font-size: max(10px, .625rem); }
+.apc-readout{ font-size: max(11px, .75rem); }

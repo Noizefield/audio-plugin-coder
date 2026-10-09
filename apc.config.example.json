@@ -7,7 +7,8 @@
   "paths": {
     "plugins_dir": "plugins",
     "build_dir": "build",
-    "release_dir": "release"
+    "release_dir": "release",
+    "vst3_install_dir": null
   },
   "defaults": {
     "ui_framework_preference": "webview",
