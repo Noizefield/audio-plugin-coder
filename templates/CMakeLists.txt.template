@@ -76,6 +76,28 @@ juce_add_plugin({PLUGIN_NAME}
 )
 
 # ============================================
+# CLAP FORMAT (opt-in)
+# ============================================
+# Emitted only when the plugin opted into CLAP during /apc-plan
+# (recorded in status.json -> formats.clap). Requires the
+# _tools/clap-juce-extensions submodule (root option APC_ENABLE_CLAP);
+# the COMMAND guard keeps configure working if the submodule is absent.
+#
+# CLAP_ID: {clap.id_prefix from apc.config.json}.{plugin-slug}, e.g.
+#   "com.noizefield.cloudwash" - must be stable across versions.
+# CLAP_FEATURES: first entry is the category. Common mappings:
+#   effect      -> audio-effect
+#   synth       -> instrument synthesizer
+#   note/MIDI   -> note-effect
+#   analyzer    -> analyzer
+option({PLUGIN_NAME}_ENABLE_CLAP "Build {PLUGIN_NAME} in CLAP format" {CLAP_ENABLED})
+if({PLUGIN_NAME}_ENABLE_CLAP AND COMMAND clap_juce_extensions_plugin)
+    clap_juce_extensions_plugin(TARGET {PLUGIN_NAME}
+        CLAP_ID "{CLAP_ID}"
+        CLAP_FEATURES {CLAP_FEATURES})
+endif()
+
+# ============================================
 # SOURCE FILES
 # ============================================
 target_sources({PLUGIN_NAME}
@@ -194,8 +216,34 @@ add_custom_target({PLUGIN_NAME}_CopyStandalone
     COMMENT "Copying Standalone for packaging"
 )
 
+# Copy CLAP to build output for packaging (only when CLAP is enabled;
+# .clap is a single file on Windows/Linux, a bundle directory on macOS)
+if({PLUGIN_NAME}_ENABLE_CLAP AND COMMAND clap_juce_extensions_plugin)
+    if(APPLE)
+        add_custom_target({PLUGIN_NAME}_CopyCLAP
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "$<TARGET_FILE_DIR:{PLUGIN_NAME}_CLAP>/../.."
+                ${CMAKE_BINARY_DIR}/dist/{PLUGIN_NAME}.clap
+            DEPENDS {PLUGIN_NAME}_CLAP
+            COMMENT "Copying CLAP bundle for packaging"
+        )
+    else()
+        add_custom_target({PLUGIN_NAME}_CopyCLAP
+            COMMAND ${CMAKE_COMMAND} -E copy
+                $<TARGET_FILE:{PLUGIN_NAME}_CLAP>
+                ${CMAKE_BINARY_DIR}/dist/
+            DEPENDS {PLUGIN_NAME}_CLAP
+            COMMENT "Copying CLAP for packaging"
+        )
+    endif()
+endif()
+
 # Create distribution directory
 add_custom_target({PLUGIN_NAME}_Dist
     DEPENDS {PLUGIN_NAME}_CopyVST3 {PLUGIN_NAME}_CopyStandalone
     COMMENT "Creating distribution package"
 )
+
+if({PLUGIN_NAME}_ENABLE_CLAP AND COMMAND clap_juce_extensions_plugin)
+    add_dependencies({PLUGIN_NAME}_Dist {PLUGIN_NAME}_CopyCLAP)
+endif()

@@ -61,6 +61,18 @@ Load and execute `.agents/skills/impl/SKILL.md`
   (`/apc-design` iterate), not a silent addition.
 - **Visage:** Use templates in `templates/visage/`. Do NOT generate HTML.
 
+**CLAP Format (opt-in):**
+```powershell
+# Only if the plugin opted in during /apc-plan:
+if ($state.formats -and $state.formats.clap -eq $true) {
+    # The plugin CMakeLists must contain the CLAP block
+    # (option <Name>_ENABLE_CLAP + clap_juce_extensions_plugin call) with
+    # CLAP_ID = $state.formats.clap_id and CLAP_FEATURES = $state.formats.clap_features.
+    # The build script then produces <Name>.clap via the <Name>_CLAP target.
+    # Non-opted-in plugins: no CLAP block ({{CLAP_ENABLED}} = OFF).
+}
+```
+
 **Pre-Build Validation (Visage):**
 ```powershell
 # If Visage framework, validate Visage setup

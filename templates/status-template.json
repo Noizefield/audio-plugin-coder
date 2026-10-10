@@ -24,6 +24,11 @@
     "rationale": "",
     "implementation_strategy": "pending"
   },
+  "formats": {
+    "clap": false,
+    "clap_id": null,
+    "clap_features": []
+  },
   "error_recovery": {
     "last_backup": null,
     "rollback_available": false,

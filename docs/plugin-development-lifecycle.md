@@ -569,9 +569,11 @@ release/
 
 | Platform | Local | GitHub Actions | Formats |
 |----------|-------|----------------|---------|
-| Windows | ✅ | ✅ | VST3, Standalone |
-| macOS | ✅ | ✅ | VST3, AU, Standalone |
-| Linux | ✅ | ✅ | VST3, LV2, Standalone |
+| Windows | ✅ | ✅ | VST3, CLAP*, Standalone |
+| macOS | ✅ | ✅ | VST3, AU, CLAP*, Standalone |
+| Linux | ✅ | ✅ | VST3, LV2, CLAP*, Standalone |
+
+*\* CLAP only when the plugin opted in during Plan (`status.json` -> `formats.clap`).*
 
 ### Validation Criteria
 - [ ] All selected platforms built

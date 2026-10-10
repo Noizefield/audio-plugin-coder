@@ -384,7 +384,13 @@ exit 1
 | `[Name]_Standalone` | Standalone app | `.exe` |
 | `[Name]_AU` | Audio Unit (macOS) | `.component` |
 | `[Name]_LV2` | LV2 plugin (Linux) | `.lv2` bundle |
+| `[Name]_CLAP` | CLAP plugin (opt-in) | `.clap` file / bundle |
 | `[Name]_All` | All formats | Multiple |
+
+`[Name]_CLAP` exists only when the plugin opted into CLAP during `/apc-plan`
+(`status.json` -> `formats.clap`, emitted as `<Name>_ENABLE_CLAP ON` in the
+plugin CMakeLists) and `_tools/clap-juce-extensions` is present
+(`APC_ENABLE_CLAP`, default ON).
 
 ### Target Dependencies
 
@@ -462,6 +468,27 @@ Linux:
 /usr/lib/vst3/
 ~/.vst3/
 ```
+
+### CLAP Installation Path (opt-in plugins)
+
+Windows (per-user, no admin needed):
+```
+%LOCALAPPDATA%\Programs\Common\CLAP\
+C:\Program Files\Common Files\CLAP\   (system-wide, used by the Inno installer)
+```
+
+macOS:
+```
+~/Library/Audio/Plug-Ins/CLAP/
+```
+
+Linux:
+```
+~/.clap/
+/usr/lib/clap/
+```
+
+Override via `paths.clap_install_dir` in `apc.config.json`.
 
 ### CMake Install Configuration
 

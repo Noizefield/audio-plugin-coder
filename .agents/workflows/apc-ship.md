@@ -41,11 +41,16 @@ The Ship phase creates distribution-ready plugin packages for Windows, macOS, an
 
 ### Supported Platforms & Formats
 
-| Platform | VST3 | AU | Standalone | LV2 | Build Method |
-|----------|------|-----|------------|-----|--------------|
-| Windows  | Γ£ô    | -   | Γ£ô          | -   | Local or GitHub |
-| macOS    | Γ£ô    | Γ£ô   | Γ£ô          | -   | GitHub only |
-| Linux    | Γ£ô    | -   | Γ£ô          | Γ£ô   | GitHub only |
+| Platform | VST3 | CLAP* | AU | Standalone | LV2 | Build Method |
+|----------|------|-------|-----|------------|-----|--------------|
+| Windows  | Γ£ô    | Γ£ô     | -   | Γ£ô          | -   | Local or GitHub |
+| macOS    | Γ£ô    | Γ£ô     | Γ£ô   | Γ£ô          | -   | GitHub only |
+| Linux    | Γ£ô    | Γ£ô     | -   | Γ£ô          | Γ£ô   | GitHub only |
+
+\* CLAP ships only for plugins that opted in during /apc-plan (`status.json` ->
+`formats.clap`). The Windows installer gains a "CLAP Plugin" component
+(`{commoncf}\CLAP`) and the macOS DMG gains a `CLAP/` folder
+(`~/Library/Audio/Plug-Ins/CLAP`) automatically when a `.clap` artifact exists.
 
 ---
 
@@ -196,7 +201,7 @@ release/{PluginName}-v{version}/
 
 ## Validation
 
-- Verify all formats built (VST3/AU/LV2/Standalone)
+- Verify all formats built (VST3/AU/LV2/CLAP/Standalone)
 - Verify tests passed
 - Verify installer created in release/
 - Verify GitHub commit successful

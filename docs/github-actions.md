@@ -69,15 +69,18 @@ platforms: windows
 **Runner:** `windows-latest`
 
 **Steps:**
-1. Checkout repository with submodules
+1. Checkout repository with submodules (recursive — pulls `clap`/`clap-helpers` inside `clap-juce-extensions`)
 2. Setup MSVC compiler
 3. Configure CMake with Visual Studio 2022
-4. Build VST3 target
-5. Build Standalone target
-6. Upload artifacts
+4. Check CLAP opt-in (`jq` reads `formats.clap` from the plugin's status.json)
+5. Build VST3 target
+6. Build Standalone target
+7. Build `{PluginName}_CLAP` target (skipped when the plugin didn't opt in)
+8. Upload artifacts
 
 **Outputs:**
 - `{PluginName}.vst3` bundle
+- `{PluginName}.clap` (only when the plugin opted into CLAP)
 - `{PluginName}.exe` standalone
 
 ### macOS Build
@@ -96,6 +99,7 @@ platforms: windows
 **Outputs:**
 - `{PluginName}.vst3` bundle
 - `{PluginName}.component` (AU)
+- `{PluginName}.clap` bundle (only when the plugin opted into CLAP)
 - `{PluginName}.app` standalone
 
 **Universal Binary:**
@@ -126,6 +130,7 @@ libwebkit2gtk-4.1-dev libjack-jackd2-dev xvfb
 **Outputs:**
 - `{PluginName}.vst3` bundle
 - `{PluginName}.lv2` bundle
+- `{PluginName}.clap` (only when the plugin opted into CLAP)
 - `{PluginName}` standalone binary
 
 ## Release Job

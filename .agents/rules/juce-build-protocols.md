@@ -38,6 +38,18 @@
   target_compile_definitions(TailSync PUBLIC JUCE_WEB_BROWSER=1)
   ```
 
+### C. CLAP Format (opt-in per plugin)
+- JUCE 9 has **no native CLAP wrapper** — APC uses `_tools/clap-juce-extensions` (MIT, submodule with nested `clap`/`clap-helpers` deps; `git submodule update --init --recursive`).
+- A plugin opts in during `/apc-plan` (`status.json -> formats.clap`); its CMakeLists then sets `<Name>_ENABLE_CLAP ON` and calls:
+  ```cmake
+  clap_juce_extensions_plugin(TARGET <Name> CLAP_ID "com.noizefield.<slug>" CLAP_FEATURES audio-effect)
+  ```
+- Build target: `<Name>_CLAP` -> artefact `build/plugins/<Name>/<Name>_artefacts/Release/CLAP/<Name>.clap` (single file on Windows/Linux, bundle dir on macOS).
+- Install dirs (CLAP spec): Windows `%LOCALAPPDATA%\Programs\Common\CLAP` (per-user, no admin) or `C:\Program Files\Common Files\CLAP`; macOS `~/Library/Audio/Plug-Ins/CLAP`; Linux `~/.clap` or `/usr/lib/clap`.
+- **pluginval cannot read .clap** — `clap-validator` runs automatically in build-and-install for opted-in plugins (`scripts/clap-validator-integration.*`).
+- A missing submodule never breaks configure: root `APC_ENABLE_CLAP` + `if(COMMAND clap_juce_extensions_plugin)` guards.
+- **Known upstream issue (clap-001):** at the pinned commit the wrapper skips `paramsRescan` after `state.load`, so `clap-validator`'s three `state-reproducibility-*` tests fail on every APVTS plugin. Non-fatal, real DAWs unaffected; see `.agents/troubleshooting/resolutions/clap-001-state-reproducibility-rescan.md`.
+
 ---
 
 ## 3. 🐧 LINUX/MACOS CRITICAL REQUIREMENTS

@@ -42,6 +42,7 @@ echo ""
 # Check for build artifacts
 VST3_BUNDLE="$(find "$BUILD_DIR" -name "${PLUGIN_NAME}.vst3" -type d 2>/dev/null | head -1 || true)"
 AU_BUNDLE="$(find "$BUILD_DIR" -name "${PLUGIN_NAME}.component" -type d 2>/dev/null | head -1 || true)"
+CLAP_BUNDLE="$(find "$BUILD_DIR" -name "${PLUGIN_NAME}.clap" -type d 2>/dev/null | head -1 || true)"
 STANDALONE_APP="$(find "$BUILD_DIR" -name "${PLUGIN_NAME}.app" -type d 2>/dev/null | head -1 || true)"
 
 if [[ -z "$VST3_BUNDLE" ]]; then
@@ -53,6 +54,7 @@ fi
 echo "[OK] Build artifacts found"
 echo "  VST3: $VST3_BUNDLE"
 [[ -n "$AU_BUNDLE" ]] && echo "  AU: $AU_BUNDLE"
+[[ -n "$CLAP_BUNDLE" ]] && echo "  CLAP: $CLAP_BUNDLE"
 [[ -n "$STANDALONE_APP" ]] && echo "  Standalone: $STANDALONE_APP"
 
 # --- CREATE LICENSE FILE ---
@@ -121,6 +123,13 @@ if [[ -n "$AU_BUNDLE" ]]; then
     echo "  Added AudioUnit"
 fi
 
+# Copy CLAP
+if [[ -n "$CLAP_BUNDLE" ]]; then
+    mkdir -p "$DMG_CONTENTS/CLAP"
+    cp -R "$CLAP_BUNDLE" "$DMG_CONTENTS/CLAP/"
+    echo "  Added CLAP"
+fi
+
 # Copy Standalone
 if [[ -n "$STANDALONE_APP" ]]; then
     cp -R "$STANDALONE_APP" "$DMG_CONTENTS/"
@@ -153,6 +162,10 @@ MANUAL INSTALLATION:
   AudioUnit Plugin:
     Copy "$PLUGIN_NAME.component" from the AU folder to:
     ~/Library/Audio/Plug-Ins/Components/
+
+  CLAP Plugin (if included):
+    Copy "$PLUGIN_NAME.clap" from the CLAP folder to:
+    ~/Library/Audio/Plug-Ins/CLAP/
 
   Standalone Application:
     Drag "$PLUGIN_NAME.app" to your Applications folder.
@@ -193,6 +206,15 @@ if [[ -d "\$SCRIPT_DIR/AU/${PLUGIN_NAME}.component" ]]; then
     rm -rf "\$AU_DIR/${PLUGIN_NAME}.component"
     cp -R "\$SCRIPT_DIR/AU/${PLUGIN_NAME}.component" "\$AU_DIR/"
     echo "  Installed AU to \$AU_DIR/"
+fi
+
+# Install CLAP
+if [[ -d "\$SCRIPT_DIR/CLAP/${PLUGIN_NAME}.clap" ]]; then
+    CLAP_DIR="\$HOME/Library/Audio/Plug-Ins/CLAP"
+    mkdir -p "\$CLAP_DIR"
+    rm -rf "\$CLAP_DIR/${PLUGIN_NAME}.clap"
+    cp -R "\$SCRIPT_DIR/CLAP/${PLUGIN_NAME}.clap" "\$CLAP_DIR/"
+    echo "  Installed CLAP to \$CLAP_DIR/"
 fi
 
 # Install Standalone

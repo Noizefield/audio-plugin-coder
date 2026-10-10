@@ -15,6 +15,7 @@ plugins/GrooXtract/Models/htdemucs_fp16weights.*
 
 # _tools folder
 _tools/DebugView/
+_tools/clap-validator-bin/
 
 # Design Libraries (examples)
 design_library/_exclude/

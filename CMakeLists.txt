@@ -18,6 +18,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # OPTIONAL FEATURES
 # ============================================
 option(APC_ENABLE_VISAGE "Enable Visage UI framework support" OFF)
+option(APC_ENABLE_CLAP "Enable CLAP plugin format via clap-juce-extensions" ON)
 
 # ============================================
 # PLATFORM DETECTION
@@ -62,6 +63,7 @@ endif()
 # ============================================
 set(JUCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/_tools/JUCE")
 set(VISAGE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/_tools/visage")
+set(CLAP_JUCE_EXTENSIONS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/_tools/clap-juce-extensions")
 
 if(NOT EXISTS "${JUCE_DIR}")
     message(FATAL_ERROR "JUCE missing at ${JUCE_DIR}")
@@ -76,6 +78,17 @@ if(APC_ENABLE_VISAGE)
     add_subdirectory("${VISAGE_DIR}")
     if(TARGET visage AND NOT TARGET visage::visage)
         add_library(visage::visage ALIAS visage)
+    endif()
+endif()
+
+# clap-juce-extensions provides clap_juce_extensions_plugin(). Per-plugin
+# CMakeLists opt in via that call; a missing submodule must not break configure.
+if(APC_ENABLE_CLAP)
+    if(EXISTS "${CLAP_JUCE_EXTENSIONS_DIR}/CMakeLists.txt")
+        add_subdirectory("${CLAP_JUCE_EXTENSIONS_DIR}")
+        message(STATUS "CLAP: enabled (clap-juce-extensions)")
+    else()
+        message(STATUS "CLAP: requested but _tools/clap-juce-extensions is missing - skipping (git submodule update --init --recursive)")
     endif()
 endif()
 

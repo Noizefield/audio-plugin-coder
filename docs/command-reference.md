@@ -217,7 +217,9 @@ release/
 └── EchoReverb-v1.0.zip
 ```
 
-**Platforms:** Windows (VST3, Standalone), macOS (VST3, AU, Standalone), Linux (VST3, LV2, Standalone)
+**Platforms:** Windows (VST3, CLAP*, Standalone), macOS (VST3, AU, CLAP*, Standalone), Linux (VST3, LV2, CLAP*, Standalone)
+
+*\* CLAP only when the plugin opted in (`status.json` -> `formats.clap`).*
 
 ---
 

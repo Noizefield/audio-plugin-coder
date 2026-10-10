@@ -1,0 +1,55 @@
+﻿{
+    "plugin_name":  "ClapSmokeTest",
+    "version":  "v0.1.0",
+    "current_phase":  "code_complete",
+    "ui_framework":  "webview",
+    "complexity_score":  1,
+    "created_at":  "2026-01-01T00:00:00Z",
+    "last_modified":  "2026-01-01T00:00:00Z",
+    "phase_history":  [
+
+                      ],
+    "current_generation":  null,
+    "generations":  [
+
+                    ],
+    "validation":  {
+                       "creative_brief_exists":  false,
+                       "parameter_spec_exists":  false,
+                       "architecture_defined":  true,
+                       "ui_framework_selected":  true,
+                       "design_complete":  true,
+                       "code_complete":  true,
+                       "tests_passed":  false,
+                       "ship_ready":  false,
+                       "build_completed":  true,
+                       "build_timestamp":  "2026-10-10T11:12:00Z",
+                       "build_errors":  0,
+                       "clap_validator_results":  {
+                                                      "duration_seconds":  1.3292465999999998,
+                                                      "last_run":  "2026-10-10T11:12:15Z",
+                                                      "output_summary":  "\u001b[2mâ”‚\u001b[0m \u001b[2mâ””\u001b[0m\u001b[2mâ”€\u001b[0m\u001b[2mâ”€\u001b[0m \u001b[31mFAILED\u001b[0m \u001b[2mâ”€\u001b[0m \u001b[2m153ms\u001b[0m; \u001b[2mâ”‚\u001b[0m \u001b[2mâ””\u001b[0m\u001b[2mâ”€\u001b[0m\u001b[2mâ”€\u001b[0m \u001b[31mFAILED\u001b[0m \u001b[2mâ”€\u001b[0m \u001b[2m149ms\u001b[0m; \u001b[2mâ”‚\u001b[0m \u001b[2mâ””\u001b[0m\u001b[2mâ”€\u001b[0m\u001b[2mâ”€\u001b[0m \u001b[31mFAILED\u001b[0m \u001b[2mâ”€\u001b[0m \u001b[2m130ms\u001b[0m; 44 tests run, \u001b[1;32m28\u001b[0m passed, \u001b[1;31m3\u001b[0m failed, \u001b[1;33m1\u001b[0m warnings, \u001b[1m12\u001b[0m skipped",
+                                                      "failed":  true,
+                                                      "passed":  false
+                                                  }
+                   },
+    "framework_selection":  {
+                                "decision":  "webview",
+                                "rationale":  "smoke test for CLAP integration",
+                                "implementation_strategy":  "minimal"
+                            },
+    "formats":  {
+                    "clap":  true,
+                    "clap_id":  "com.noizefield.clapsmoketest",
+                    "clap_features":  [
+                                          "audio-effect"
+                                      ]
+                },
+    "error_recovery":  {
+                           "last_backup":  null,
+                           "rollback_available":  false,
+                           "error_log":  [
+
+                                         ]
+                       }
+}
