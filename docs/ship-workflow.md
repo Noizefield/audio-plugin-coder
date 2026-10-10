@@ -19,11 +19,14 @@ The Ship phase creates professional, cross-platform plugin installers ready for 
 
 ### Supported Platforms
 
-| Platform | VST3 | AU | Standalone | LV2 | Local Build | GitHub Actions |
-|----------|------|-----|------------|-----|-------------|----------------|
-| Windows  | ✓    | -   | ✓          | -   | ✓ (native)  | ✓              |
-| macOS    | ✓    | ✓   | ✓          | -   | ✗           | ✓              |
-| Linux    | ✓    | -   | ✓          | ✓   | ✗           | ✓              |
+| Platform | VST3 | CLAP* | AU | Standalone | LV2 | Local Build | GitHub Actions |
+|----------|------|-------|-----|------------|-----|-------------|----------------|
+| Windows  | ✓    | ✓     | -   | ✓          | -   | ✓ (native)  | ✓              |
+| macOS    | ✓    | ✓     | ✓   | ✓          | -   | ✗           | ✓              |
+| Linux    | ✓    | ✓     | -   | ✓          | ✓   | ✗           | ✓              |
+
+\* CLAP only for plugins that opted in during `/apc-plan` (`status.json` ->
+`formats.clap`). Installers pick up the `.clap` artifact automatically.
 
 ## Prerequisites
 
@@ -69,9 +72,9 @@ Local Build Status: Found
 Select platforms to include:
 [1] Current Platform - USE LOCAL BUILD
 [2] Current Platform - BUILD WITH GITHUB ACTIONS  
-[3] Windows (VST3, Standalone) - GITHUB ACTIONS
-[4] macOS (VST3, AU, Standalone) - GITHUB ACTIONS
-[5] Linux (VST3, LV2, Standalone) - GITHUB ACTIONS
+[3] Windows (VST3, CLAP*, Standalone) - GITHUB ACTIONS
+[4] macOS (VST3, AU, CLAP*, Standalone) - GITHUB ACTIONS
+[5] Linux (VST3, LV2, CLAP*, Standalone) - GITHUB ACTIONS
 [6] ALL PLATFORMS - Use local for current, GitHub for others
 
 Enter numbers (comma-separated) or 'all':

@@ -68,6 +68,7 @@ Name: "custom"; Description: "Custom installation"; Flags: iscustom
 
 [Components]
 Name: "vst3"; Description: "VST3 Plugin"; Types: full custom; Flags: fixed
+{#ClapComponent}
 Name: "standalone"; Description: "Standalone Application"; Types: full custom
 Name: "presets"; Description: "Factory Presets"; Types: full custom
 Name: "documentation"; Description: "Documentation"; Types: full custom
@@ -89,6 +90,9 @@ Source: "{#PluginsDir}/{#PluginName}/Assets/icon.ico"; \
     DestDir: "{app}"; \
     Components: vst3; \
     Flags: ignoreversion skipifsourcedoesntexist
+
+; CLAP Plugin (single file on Windows; per CLAP spec installs to Common Files\CLAP)
+{#ClapFiles}
 
 ; Standalone Application
 Source: "{#BuildDir}/plugins/{#PluginName}/{#PluginName}_artefacts/Release/Standalone/{#PluginName}.exe"; \
@@ -221,5 +225,5 @@ end;
 
 [Messages]
 ; Custom messages
-WelcomeLabel2=This will install [name] [version] on your computer.%n%nThe plugin includes VST3 format for use in your DAW, and a standalone application.%n%nIt is recommended that you close all DAW applications before continuing.
+WelcomeLabel2=This will install [name] [version] on your computer.%n%nThe plugin includes VST3 / CLAP formats for use in your DAW, and a standalone application.%n%nIt is recommended that you close all DAW applications before continuing.
 FinishedLabel=Setup has finished installing [name] on your computer. You may need to restart your DAW for the plugin to appear.

@@ -7,3 +7,6 @@
 [submodule "_tools/JUCE"]
 	path = _tools/JUCE
 	url = https://github.com/juce-framework/JUCE
+[submodule "_tools/clap-juce-extensions"]
+	path = _tools/clap-juce-extensions
+	url = https://github.com/free-audio/clap-juce-extensions

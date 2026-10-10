@@ -8,11 +8,16 @@
     "plugins_dir": "plugins",
     "build_dir": "build",
     "release_dir": "release",
-    "vst3_install_dir": null
+    "vst3_install_dir": null,
+    "clap_install_dir": null
   },
   "defaults": {
     "ui_framework_preference": "webview",
-    "enable_visage": false
+    "enable_visage": false,
+    "enable_clap": false
+  },
+  "clap": {
+    "id_prefix": "com.noizefield"
   },
   "models": {
     "profile": "balanced",

@@ -40,13 +40,20 @@ STATUS_JSON="$PLUGIN_DIR/status.json"
 . "$SCRIPT_DIR/state-management.sh"
 # shellcheck source=error-detection.sh
 . "$SCRIPT_DIR/error-detection.sh"
+# shellcheck source=clap-validator-integration.sh
+. "$SCRIPT_DIR/clap-validator-integration.sh"
 
 # --- DETECT FRAMEWORK ---
 USE_VISAGE=false
+USE_CLAP=false
 if [[ -f "$STATUS_JSON" ]] && command -v jq &>/dev/null; then
     fw="$(jq -r '.ui_framework // "pending"' "$STATUS_JSON" 2>/dev/null || echo "pending")"
     if [[ "$fw" == "visage" ]]; then
         USE_VISAGE=true
+    fi
+    clap_opt="$(jq -r '.formats.clap // false' "$STATUS_JSON" 2>/dev/null || echo "false")"
+    if [[ "$clap_opt" == "true" ]]; then
+        USE_CLAP=true
     fi
 fi
 
@@ -55,6 +62,9 @@ echo "Plugins: $APC_PLUGINS_DIR"
 echo "Build:   $BUILD_DIR"
 if $USE_VISAGE; then
     echo "Framework: visage"
+fi
+if $USE_CLAP; then
+    echo "CLAP: opted in (formats.clap)"
 fi
 
 # --- VALIDATE PREREQUISITES ---
@@ -136,6 +146,29 @@ STANDALONE_OUTPUT=$(cmake --build "$BUILD_DIR" --config Release --target "${PLUG
     echo "$STANDALONE_OUTPUT" >&2
 }
 
+# --- 4b. BUILD CLAP (opt-in, non-fatal) ---
+if $USE_CLAP; then
+    echo "Compiling CLAP..."
+    CLAP_OUTPUT=""
+    CLAP_OUTPUT=$(cmake --build "$BUILD_DIR" --config Release --target "${PLUGIN_NAME}_CLAP" 2>&1) || {
+        echo "WARNING: CLAP build failed (non-fatal) - VST3/AU are unaffected" >&2
+        echo "$CLAP_OUTPUT" >&2
+    }
+
+    # clap-validator (pluginval can't read CLAP); non-fatal, skipped if absent
+    if ! $SKIP_TESTS; then
+        CLAP_BUILT="$(find "$BUILD_DIR" -name "${PLUGIN_NAME}.clap" 2>/dev/null | head -1 || true)"
+        if [[ -n "$CLAP_BUILT" ]]; then
+            test_with_clap_validator "$CLAP_BUILT" "$PLUGIN_NAME" || {
+                rc=$?
+                if [[ $rc -ne 2 ]]; then
+                    echo "WARNING: clap-validator tests failed - proceeding anyway" >&2
+                fi
+            }
+        fi
+    fi
+fi
+
 # --- 5. INSTALL ---
 if ! $NO_INSTALL; then
     echo "Installing plugins..."
@@ -162,6 +195,24 @@ if ! $NO_INSTALL; then
         fi
         cp -R "$AU_BUNDLE" "$AU_DEST"
         echo "INSTALLED AU to: $AU_DEST"
+    fi
+
+    # Install CLAP (.clap is a bundle dir on macOS, single file on Linux)
+    if $USE_CLAP; then
+        CLAP_ART=""
+        CLAP_ART="$(find "$BUILD_DIR" -name "${PLUGIN_NAME}.clap" 2>/dev/null | head -1 || true)"
+        if [[ -n "$CLAP_ART" ]]; then
+            CLAP_DEST_DIR="${APC_CLAP_INSTALL_DIR:-$HOME/Library/Audio/Plug-Ins/CLAP}"
+            mkdir -p "$CLAP_DEST_DIR"
+            CLAP_DEST="$CLAP_DEST_DIR/${PLUGIN_NAME}.clap"
+            if [[ -e "$CLAP_DEST" ]]; then
+                rm -rf "$CLAP_DEST"
+            fi
+            cp -R "$CLAP_ART" "$CLAP_DEST"
+            echo "INSTALLED CLAP to: $CLAP_DEST"
+        else
+            echo "WARNING: CLAP binary not found in build output"
+        fi
     fi
 
     # Report Standalone location

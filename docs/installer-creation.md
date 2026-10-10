@@ -52,17 +52,22 @@ Output goes to the configured `paths.release_dir` (default `release/`).
 
 - ✅ License agreement (EULA)
 - ✅ Custom installation path
-- ✅ Component selection (VST3, Standalone, Presets, Docs)
+- ✅ Component selection (VST3, CLAP*, Standalone, Presets, Docs)
 - ✅ Start Menu shortcuts
 - ✅ Desktop shortcut option
 - ✅ Uninstaller
 
+*\* The "CLAP Plugin" component is injected into the generated `.iss` only when a
+`{PluginName}.clap` artifact exists in the build output (i.e. the plugin opted
+into CLAP during `/apc-plan`).*
+
 ### Installation Paths
 
 ```
-VST3:     C:\Program Files\Common Files\VST3\{PluginName}.vst3
+VST3:       C:\Program Files\Common Files\VST3\{PluginName}.vst3
+CLAP:       C:\Program Files\Common Files\CLAP\{PluginName}.clap
 Standalone: C:\Program Files\{PluginName}\{PluginName}.exe
-Presets:  C:\ProgramData\{PluginName}\Presets\
+Presets:    C:\ProgramData\{PluginName}\Presets\
 ```
 
 ---
@@ -79,7 +84,7 @@ Presets:  C:\ProgramData\{PluginName}\Presets\
 bash scripts/installer/create-macos-installer.sh <PluginName> <Version> [CompanyName]
 ```
 
-This bundles the VST3, AU, and Standalone builds into `{PluginName}-{Version}-macOS.dmg`.
+This bundles the VST3, AU, CLAP (when present), and Standalone builds into `{PluginName}-{Version}-macOS.dmg`.
 
 ### Why it can't run on Windows
 macOS installers require macOS-specific tools:

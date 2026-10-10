@@ -18,6 +18,7 @@ $ErrorActionPreference = "Stop"
 . "$PSScriptRoot\error-detection.ps1"
 . "$PSScriptRoot\terminal-monitoring.ps1"
 . "$PSScriptRoot\pluginval-integration.ps1"
+. "$PSScriptRoot\clap-validator-integration.ps1"
 
 $ApcPaths = Get-ApcPaths
 if (-not (Initialize-ApcCMakePath)) { throw "cmake is required but was not found." }
@@ -26,12 +27,16 @@ $BuildDir = $ApcPaths.BuildDir
 $PluginDir = Join-Path $ApcPaths.PluginsDir $PluginName
 $StatusJson = Join-Path $PluginDir "status.json"
 $UseVisage = $false
+$UseClap = $false
 
 if (Test-Path $StatusJson) {
     try {
         $state = Get-Content $StatusJson -Raw | ConvertFrom-Json
         if ($state.ui_framework -eq "visage") {
             $UseVisage = $true
+        }
+        if ($state.formats -and $state.formats.clap -eq $true) {
+            $UseClap = $true
         }
     } catch {
         Write-Warning "Could not read status.json; proceeding without framework hints."
@@ -43,6 +48,9 @@ Write-Host "Plugins: $($ApcPaths.PluginsDir)" -ForegroundColor DarkGray
 Write-Host "Build:   $BuildDir" -ForegroundColor DarkGray
 if ($UseVisage) {
     Write-Host "Framework: visage" -ForegroundColor DarkGray
+}
+if ($UseClap) {
+    Write-Host "CLAP: opted in (formats.clap)" -ForegroundColor DarkGray
 }
 
 # Validate prerequisites
@@ -124,6 +132,23 @@ if ($standaloneResult.Errors.Count -gt 0) {
     }
 }
 
+# 3b. Build CLAP (opt-in, non-fatal: CLAP failures warn but don't fail the build)
+if ($UseClap) {
+    Write-Host "Compiling CLAP..." -ForegroundColor Yellow
+    $buildClapCommand = "cmake --build `"$BuildDir`" --config Release --target `"$($PluginName)_CLAP`""
+    $clapResult = Invoke-MonitoredCommand -Command $buildClapCommand -ShowOutput
+
+    if ($clapResult.Errors.Count -gt 0) {
+        Write-Warning "CLAP build failed (non-fatal) - VST3/Standalone are unaffected"
+        $knownIssue = Find-KnownIssue -Errors $clapResult.Errors
+        if ($knownIssue) {
+            Write-Host "Known issue detected: $($knownIssue.Title)" -ForegroundColor Cyan
+            Apply-KnownSolution -Issue $knownIssue
+            $clapResult = Invoke-MonitoredCommand -Command $buildClapCommand -ShowOutput
+        }
+    }
+}
+
 # 4. Run PluginVal tests
 if (-not $SkipTests) {
     Write-Host "Running PluginVal validation..." -ForegroundColor Yellow
@@ -144,6 +169,23 @@ if (-not $SkipTests) {
     } else {
         Write-Warning "VST3 plugin not found for PluginVal testing"
     }
+
+    # 4b. Run clap-validator on the .clap binary (pluginval can't read CLAP)
+    if ($UseClap) {
+        $clapPath = Get-ChildItem -Path "$BuildDir" -Recurse -Filter "$PluginName.clap" | Select-Object -First 1
+        if ($clapPath) {
+            $clapValResult = Test-WithClapValidator -PluginPath $clapPath.FullName -PluginName $PluginName
+            if (-not $clapValResult.Passed -and -not $clapValResult.Skipped) {
+                if ($Strict) {
+                    throw "clap-validator validation failed in strict mode"
+                } else {
+                    Write-Warning "clap-validator tests failed - proceeding anyway"
+                }
+            }
+        } else {
+            Write-Warning "CLAP binary not found for clap-validator testing"
+        }
+    }
 }
 
 # 5. Install VST3
@@ -158,6 +200,24 @@ if (-not $NoInstall) {
             Write-Host "INSTALLED VST3 to: $Dest" -ForegroundColor Green
         } catch {
             Write-Warning "Access Denied. Run as Admin to install VST3."
+        }
+    }
+
+    # Install CLAP (per-user dir - no admin required per CLAP spec)
+    if ($UseClap) {
+        Write-Host "Installing CLAP..." -ForegroundColor Yellow
+        $Clap = Get-ChildItem -Path "$BuildDir" -Recurse -Filter "$($PluginName).clap" | Select-Object -First 1
+        if ($Clap) {
+            try {
+                $ClapDest = $ApcPaths.ClapInstallDir
+                New-Item -ItemType Directory -Path $ClapDest -Force | Out-Null
+                Copy-Item -Path $Clap.FullName -Destination (Join-Path $ClapDest $Clap.Name) -Force
+                Write-Host "INSTALLED CLAP to: $(Join-Path $ClapDest $Clap.Name)" -ForegroundColor Green
+            } catch {
+                Write-Warning "Failed to install CLAP: $_"
+            }
+        } else {
+            Write-Warning "CLAP binary not found in build output"
         }
     }
 

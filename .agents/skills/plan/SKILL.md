@@ -181,6 +181,36 @@ Based on the architecture complexity and plugin requirements:
 **Decision: [visage/webview]**
 **Rationale: [Explain the choice based on plugin requirements]**
 
+### 3.1b Format Decision: CLAP (opt-in)
+
+CLAP output is **opt-in per plugin** (default: VST3 + Standalone only).
+If the user has not stated a preference, ask:
+
+"Also build a CLAP version of this plugin? (Loads in Bitwig, REAPER, FL Studio,
+Studio One and more — no extra code needed, `clap-juce-extensions` wraps the
+same AudioProcessor. Pro Tools does not load CLAP.)"
+
+If the plugin opts in, record it in `status.json` via `Complete-Phase`/`Update-PluginState`:
+
+```json
+"formats": {
+  "clap": true,
+  "clap_id": "<clap.id_prefix>.<plugin-slug>",
+  "clap_features": ["audio-effect"]
+}
+```
+
+- **clap_id:** `clap.id_prefix` from `apc.config.json` (default `com.noizefield`)
+  + `.` + plugin slug, lowercase (e.g. `com.noizefield.cloudwash`).
+  Must be unique and **stable across versions** — hosts key presets/automation to it.
+- **clap_features:** first entry is the category:
+  - effect -> `audio-effect`
+  - synth/instrument -> `instrument synthesizer`
+  - note/MIDI effect -> `note-effect`
+  - analyzer -> `analyzer`
+- The impl phase emits the `clap_juce_extensions_plugin(...)` block in the
+  plugin CMakeLists with `<Name>_ENABLE_CLAP ON`. Build target: `<Name>_CLAP`.
+
 ### 3.2 Update Project State
 Use the state management system to update project state:
 
@@ -250,6 +280,11 @@ Complete-Phase -PluginPath $PluginPath -Phase "plan" -Updates @{
     "decision": "[visage/webview]",
     "rationale": "[Framework choice explanation]",
     "implementation_strategy": "[single-pass/phased]"
+  },
+  "formats": {
+    "clap": false,
+    "clap_id": null,
+    "clap_features": []
   },
   "error_recovery": {
     "last_backup": null,

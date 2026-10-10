@@ -22,8 +22,15 @@ Load and follow `.agents/skills/plan/SKILL.md` exactly.
 - Update status.json with framework selection
 - Set complexity score (1-5)
 
+**Format Decision (CLAP opt-in):**
+- If user has not stated a preference, ASK: "Also build a CLAP version?"
+- If yes: record `formats.clap=true`, `formats.clap_id` (`clap.id_prefix` from
+  apc.config.json + plugin slug) and `formats.clap_features` in status.json.
+- See `.agents/skills/plan/SKILL.md` step 3.1b for the feature mapping.
+
 **Success Criteria:**
 - `status.json` updated with `ui_framework` = "visage" or "webview"
+- `status.json` updated with `formats.clap` (opt-in decision recorded)
 - Architecture document created
 - Framework selection rationale documented
 

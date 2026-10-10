@@ -304,6 +304,12 @@ See: `.agents/troubleshooting/resolutions/webview-member-order-crash.md`
 - `{{WITH_OPTIONS_FROM_RELAYS}}` → `.withOptionsFrom()` calls
 - `{{CREATE_PARAMETER_ATTACHMENTS}}` → Code to create attachments
 
+**CLAP placeholders (opt-in — read `status.json` -> `formats` first):**
+- `{{CLAP_ENABLED}}` → `ON` only when `formats.clap` is `true`, else `OFF`
+- `{{CLAP_ID}}` → `formats.clap_id` (assigned during /apc-plan, e.g. `com.noizefield.myplugin`)
+- `{{CLAP_FEATURES}}` → `formats.clap_features` (e.g. `audio-effect`; synth: `instrument synthesizer`)
+- If the plugin did NOT opt in, the emitted block must leave `{{PLUGIN_NAME_LOWER}}_ENABLE_CLAP OFF`.
+
 ### If Validation Fails:
 
 1. Review error messages from validation script

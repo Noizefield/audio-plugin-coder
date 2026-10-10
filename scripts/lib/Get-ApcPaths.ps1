@@ -32,10 +32,15 @@ function Get-ApcDefaultConfig {
             build_dir = "build"
             release_dir = "release"
             vst3_install_dir = $null
+            clap_install_dir = $null
         }
         defaults = @{
             ui_framework_preference = "webview"
             enable_visage = $false
+            enable_clap = $false
+        }
+        clap = @{
+            id_prefix = "com.noizefield"
         }
         models = @{
             profile = "balanced"
@@ -99,11 +104,15 @@ function Get-ApcPaths {
     $releaseRel = if ($cfg.paths.release_dir) { $cfg.paths.release_dir } else { "release" }
     $vst3Default = if ($env:OS -eq 'Windows_NT') { "C:\Program Files\Common Files\VST3" } else { "~/Library/Audio/Plug-Ins/VST3" }
     $vst3Rel = if ($cfg.paths.vst3_install_dir) { [string]$cfg.paths.vst3_install_dir } else { $vst3Default }
+    # CLAP: per-user dirs need no admin (Win: %LOCALAPPDATA%\Programs\Common\CLAP)
+    $clapDefault = if ($env:OS -eq 'Windows_NT') { "$env:LOCALAPPDATA\Programs\Common\CLAP" } else { "~/Library/Audio/Plug-Ins/CLAP" }
+    $clapRel = if ($cfg.paths.clap_install_dir) { [string]$cfg.paths.clap_install_dir } else { $clapDefault }
 
     $plugins = Resolve-ApcPath -PathValue $pluginsRel -RepoRoot $RepoRoot
     $build = Resolve-ApcPath -PathValue $buildRel -RepoRoot $RepoRoot
     $release = Resolve-ApcPath -PathValue $releaseRel -RepoRoot $RepoRoot
     $vst3Install = Resolve-ApcPath -PathValue $vst3Rel -RepoRoot $RepoRoot
+    $clapInstall = Resolve-ApcPath -PathValue $clapRel -RepoRoot $RepoRoot
 
     return [pscustomobject]@{
         RepoRoot       = $RepoRoot
@@ -112,10 +121,12 @@ function Get-ApcPaths {
         BuildDir       = $build
         ReleaseDir     = $release
         Vst3InstallDir = $vst3Install
+        ClapInstallDir = $clapInstall
         PluginsRel     = $pluginsRel
         BuildRel       = $buildRel
         ReleaseRel     = $releaseRel
         Vst3InstallRel = $vst3Rel
+        ClapInstallRel = $clapRel
         Config         = $cfg
     }
 }

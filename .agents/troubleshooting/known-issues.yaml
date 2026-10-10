@@ -388,3 +388,22 @@ issues:
     attempts_before_resolution: 1
     prevention: "After changing paths.build_dir in apc.config.json, delete the new build dir's _deps folder once so FetchContent regenerates subbuild scripts with correct absolute paths."
     critical_fix: "Remove-Item -Recurse -Force <build_dir>/_deps, then rerun configure. Do NOT copy/move _deps between build dirs."
+
+  - id: clap-001
+    title: "clap-validator state-reproducibility tests fail on every JUCE plugin (upstream)"
+    category: build
+    severity: medium
+    symptoms:
+      - "clap-validator: FAILED state-reproducibility-basic, -binary, -buffered"
+      - "'these parameter values changed without a rescan request' after state load"
+      - "44 tests run: ~28 passed, exactly 3 failed, rest skipped/warnings"
+    error_patterns:
+      - "state-reproducibility"
+      - "without a rescan request"
+    root_cause: "Upstream bug in _tools/clap-juce-extensions (still unfixed at pinned commit 7adee3a, 2026-10-06): ClapJuceWrapper::stateLoad calls AudioProcessor::setStateInformation and returns true WITHOUT calling clap_host_params.rescan(CLAP_PARAM_RESCAN_VALUES). Hosts that cache parameter values then see stale values. Affects every APVTS-based JUCE plugin; not an APC or plugin bug. Upstream fix pending: free-audio/clap-juce-extensions PR #189."
+    resolution_status: workaround
+    resolution_file: resolutions/clap-001-state-reproducibility-rescan.md
+    frequency: 1
+    last_occurred: 2026-10-10
+    prevention: "Non-fatal by design: build-and-install warns and continues. Track upstream PR #189; bump the _tools/clap-juce-extensions pin once it merges."
+    critical_fix: "No local fix needed - plugin works correctly in DAWs (hosts re-read params on load). If a clean validator run is required, apply the 3-line paramsRescan patch from upstream PR #189 inside the submodule, or filter: clap-validator validate --test-filter 'state-reproducibility.*' --invert-filter plugin.clap"

@@ -78,6 +78,12 @@ if ($StandalonePath) {
     Write-Host "  Standalone: $($StandalonePath.FullName)" -ForegroundColor Gray
 }
 
+# Check for CLAP artifact (opt-in format - only present when the plugin enabled it)
+$ClapPath = Get-ChildItem -Path $BuildDir -Recurse -Filter "$PluginName.clap" -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($ClapPath) {
+    Write-Host "  CLAP: $($ClapPath.FullName)" -ForegroundColor Gray
+}
+
 # Check for icon file
 $IconPath = Join-Path $PluginDir "Assets\icon.ico"
 if (-not (Test-Path $IconPath)) {
@@ -178,6 +184,15 @@ if (Test-Path $IconPath) {
     $SetupIconLine = "SetupIconFile=$IconAbsolutePath"
 }
 
+# CLAP component/files lines are injected only when a .clap artifact exists,
+# so non-CLAP plugins don't get a dead "CLAP Plugin" checkbox in the installer.
+$ClapComponent = "; CLAP: no .clap artifact found - component omitted"
+$ClapFiles = "; CLAP: no .clap artifact found - files omitted"
+if ($ClapPath) {
+    $ClapComponent = 'Name: "clap"; Description: "CLAP Plugin"; Types: full custom'
+    $ClapFiles = "Source: `"$($ClapPath.FullName.Replace('\','/'))`"; DestDir: `"{commoncf}\CLAP`"; Components: clap; Flags: ignoreversion"
+}
+
 # Replace placeholders (order matters: longer tokens before shorter ones)
 $IssContent = $Template
 $IssContent = $IssContent.Replace('{#SetupIconLine}', $SetupIconLine)
@@ -190,6 +205,8 @@ $IssContent = $IssContent.Replace('{#ReleaseDir}', $ReleaseDirIss)
 $IssContent = $IssContent.Replace('{#BuildDir}', $BuildDirIss)
 $IssContent = $IssContent.Replace('{#PluginsDir}', $PluginsDirIss)
 $IssContent = $IssContent.Replace('{#RepoRoot}', $RepoRootIss)
+$IssContent = $IssContent.Replace('{#ClapComponent}', $ClapComponent)
+$IssContent = $IssContent.Replace('{#ClapFiles}', $ClapFiles)
 
 # Create build directory for installer
 $InstallerBuildDir = Join-Path $BuildDir "installer"

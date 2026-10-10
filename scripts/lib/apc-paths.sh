@@ -79,16 +79,24 @@ apc_read_config_field() {
 }
 
 apc_load_paths() {
-    # Sets: APC_REPO_ROOT APC_PLUGINS_DIR APC_BUILD_DIR APC_RELEASE_DIR
+    # Sets: APC_REPO_ROOT APC_PLUGINS_DIR APC_BUILD_DIR APC_RELEASE_DIR APC_CLAP_INSTALL_DIR
     APC_REPO_ROOT="$(apc_repo_root)"
-    local plugins_rel build_rel release_rel
+    local plugins_rel build_rel release_rel clap_rel clap_default
     plugins_rel="$(apc_read_config_field "$APC_REPO_ROOT" ".paths.plugins_dir" "plugins")"
     build_rel="$(apc_read_config_field "$APC_REPO_ROOT" ".paths.build_dir" "build")"
     release_rel="$(apc_read_config_field "$APC_REPO_ROOT" ".paths.release_dir" "release")"
+    # CLAP spec per-user dirs: macOS ~/Library/Audio/Plug-Ins/CLAP, Linux ~/.clap
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        clap_default="$HOME/Library/Audio/Plug-Ins/CLAP"
+    else
+        clap_default="$HOME/.clap"
+    fi
+    clap_rel="$(apc_read_config_field "$APC_REPO_ROOT" ".paths.clap_install_dir" "$clap_default")"
     APC_PLUGINS_DIR="$(apc_resolve_path "$plugins_rel" "$APC_REPO_ROOT")"
     APC_BUILD_DIR="$(apc_resolve_path "$build_rel" "$APC_REPO_ROOT")"
     APC_RELEASE_DIR="$(apc_resolve_path "$release_rel" "$APC_REPO_ROOT")"
-    export APC_REPO_ROOT APC_PLUGINS_DIR APC_BUILD_DIR APC_RELEASE_DIR
+    APC_CLAP_INSTALL_DIR="$(apc_resolve_path "$clap_rel" "$APC_REPO_ROOT")"
+    export APC_REPO_ROOT APC_PLUGINS_DIR APC_BUILD_DIR APC_RELEASE_DIR APC_CLAP_INSTALL_DIR
 }
 
 apc_plugin_path() {

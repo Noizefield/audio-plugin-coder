@@ -9,6 +9,24 @@ juce_add_plugin({{PLUGIN_NAME_LOWER}}
     PRODUCT_NAME "{{PLUGIN_DISPLAY_NAME}}"
 )
 
+# ============================================
+# CLAP FORMAT (opt-in)
+# ============================================
+# Emitted only when the plugin opted into CLAP during /apc-plan
+# (recorded in status.json -> formats.clap). Requires the
+# _tools/clap-juce-extensions submodule (root option APC_ENABLE_CLAP);
+# the COMMAND guard keeps configure working if the submodule is absent.
+#
+# CLAP_ID: {clap.id_prefix from apc.config.json}.{plugin-slug}
+# CLAP_FEATURES: effect -> audio-effect | synth -> instrument synthesizer |
+#                note/MIDI fx -> note-effect | analyzer -> analyzer
+option({{PLUGIN_NAME_LOWER}}_ENABLE_CLAP "Build {{PLUGIN_DISPLAY_NAME}} in CLAP format" {{CLAP_ENABLED}})
+if({{PLUGIN_NAME_LOWER}}_ENABLE_CLAP AND COMMAND clap_juce_extensions_plugin)
+    clap_juce_extensions_plugin(TARGET {{PLUGIN_NAME_LOWER}}
+        CLAP_ID "{{CLAP_ID}}"
+        CLAP_FEATURES {{CLAP_FEATURES}})
+endif()
+
 # Binary assets (fonts)
 juce_add_binary_data({{PLUGIN_NAME_LOWER}}_Assets
     SOURCES

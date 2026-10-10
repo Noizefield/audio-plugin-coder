@@ -35,12 +35,24 @@ if ($state.ui_framework -eq "webview") {
 }
 ```
 
+**CLAP Gate (only when `formats.clap` opt-in is set):**
+```powershell
+if ($state.formats -and $state.formats.clap -eq $true) {
+    # clap-validator runs automatically inside build-and-install (.ps1/.sh)
+    # and writes status.json -> validation.clap_validator_results.
+    # Manual check if needed:
+    #   clap-validator validate --only-failed <build>/<Name>_artefacts/Release/CLAP/<Name>.clap
+    #   Install binary: Install-ClapValidator (or: cargo install clap-validator)
+}
+```
+
 **Tests Run:**
-- Build verification
+- Build verification (incl. `<Name>_CLAP` target when opted in)
 - Parameter functionality
 - UI rendering (contract gate above + visual check at min/mid/max scale)
 - DAW compatibility
 - Memory leaks
+- clap-validator (CLAP opt-ins only; pluginval does NOT read .clap)
 
 **Completion:**
 ```

@@ -221,8 +221,9 @@ The AI recommends a framework during planning based on your plugin's complexity.
 | Standalone | ✅ | ✅ | ✅ |
 | AU | ❌ | ✅ | ❌ |
 | LV2 | ❌ | ❌ | ✅ |
+| CLAP | ✅* | ✅* | ✅* |
 
-*CLAP support is planned.*
+*\* Opt-in per plugin (chosen during `/apc-plan`, via `clap-juce-extensions`).*
 
 ## Technology Stack
 
@@ -238,7 +239,7 @@ Docs live in [`docs/`](docs/): [Getting Started](docs/README.md), [Plugin Develo
 - [x] GitHub Actions CI/CD, docs-as-truth, `apc` CLI, APC Hub
 - [x] Visage + WebView UIs, FFGL + Max/MSP bridge templates
 - [x] Codex, Cursor and OpenCode support
-- [ ] CLAP format support
+- [x] CLAP format support (opt-in per plugin)
 - [ ] Preset management, plugin marketplace, real-time collaboration
 
 ## Contributing & Community

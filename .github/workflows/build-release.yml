@@ -82,17 +82,29 @@ jobs:
       - name: Configure CMake
         run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
 
+      - name: Check CLAP opt-in
+        id: clap
+        shell: bash
+        run: |
+          enabled=$(jq -r '.formats.clap // false' "plugins/${{ matrix.plugin }}/status.json" 2>/dev/null || echo false)
+          echo "enabled=$enabled" >> "$GITHUB_OUTPUT"
+
       - name: Build VST3
         run: cmake --build build --config Release --target "${{ matrix.plugin }}_VST3"
 
       - name: Build Standalone
         run: cmake --build build --config Release --target "${{ matrix.plugin }}_Standalone"
 
+      - name: Build CLAP (opt-in)
+        if: steps.clap.outputs.enabled == 'true'
+        run: cmake --build build --config Release --target "${{ matrix.plugin }}_CLAP"
+
       - name: Collect artifacts
         shell: bash
         run: |
           mkdir -p release
           find build -name "*.vst3" -exec cp -R {} release/ \;
+          find build -name "*.clap" -exec cp -R {} release/ \;
           find build -name "*.exe" -not -path "*/CMakeFiles/*" -exec cp {} release/ \;
           echo "Collected:" && ls release/
 
@@ -142,11 +154,22 @@ jobs:
         if: inputs.macos_standalone
         run: cmake --build build --config Release --target "${{ matrix.plugin }}_Standalone"
 
+      - name: Check CLAP opt-in
+        id: clap
+        run: |
+          enabled=$(jq -r '.formats.clap // false' "plugins/${{ matrix.plugin }}/status.json" 2>/dev/null || echo false)
+          echo "enabled=$enabled" >> "$GITHUB_OUTPUT"
+
+      - name: Build CLAP (opt-in)
+        if: steps.clap.outputs.enabled == 'true'
+        run: cmake --build build --config Release --target "${{ matrix.plugin }}_CLAP"
+
       - name: Collect artifacts
         run: |
           mkdir -p release
           find build -name "*.vst3" -exec cp -R {} release/ \;
           find build -name "*.component" -exec cp -R {} release/ \;
+          find build -name "*.clap" -exec cp -R {} release/ \;
           find build -name "*.app" -not -path "*/CMakeFiles/*" -exec cp -R {} release/ \;
           echo "Collected:" && ls release/
 
@@ -206,11 +229,22 @@ jobs:
       - name: Build Standalone
         run: xvfb-run cmake --build build --target "${{ matrix.plugin }}_Standalone"
 
+      - name: Check CLAP opt-in
+        id: clap
+        run: |
+          enabled=$(jq -r '.formats.clap // false' "plugins/${{ matrix.plugin }}/status.json" 2>/dev/null || echo false)
+          echo "enabled=$enabled" >> "$GITHUB_OUTPUT"
+
+      - name: Build CLAP (opt-in)
+        if: steps.clap.outputs.enabled == 'true'
+        run: xvfb-run cmake --build build --target "${{ matrix.plugin }}_CLAP"
+
       - name: Collect artifacts
         run: |
           mkdir -p release
           find build -name "*.vst3" -exec cp -R {} release/ \;
           find build -name "*.lv2" -exec cp -R {} release/ \;
+          find build -name "*.clap" -exec cp -R {} release/ \;
           find build -name "${{ matrix.plugin }}" -type f -exec cp {} release/ \;
           echo "Collected:" && ls release/
 
