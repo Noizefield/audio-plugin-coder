@@ -12,6 +12,12 @@
 
 ## What's new
 
+### v1.8.0
+
+**CLAP plugin format (beta).** New plugins can now opt into a CLAP build during `/apc-plan` — [clap-juce-extensions](https://github.com/free-audio/clap-juce-extensions) wraps the same JUCE `AudioProcessor` and editor, so no plugin-code changes are needed: it emits a `<Name>_CLAP` target producing `Name.clap` alongside VST3/Standalone. Builds, per-user install (no admin on Windows), `clap-validator` runs, Inno installer component and macOS DMG folder are all wired end-to-end; `plugins/ClapSmokeTest` is the canonical opt-in example and `clap.id_prefix` in `apc.config.json` controls plugin IDs.
+
+> **Beta disclaimer:** CLAP support is new and **could not be fully tested yet** — a basic plugin configures, builds, validates and loads, but it has not been battle-tested across DAWs. Known limitation: `clap-validator`'s `state-reproducibility-*` tests fail on all JUCE/APVTS plugins due to an upstream wrapper bug (tracked as `clap-001`, fix pending in [clap-juce-extensions#189](https://github.com/free-audio/clap-juce-extensions/pull/189); harmless in real hosts). Please report anything odd.
+
 ### v1.7.0
 
 **Your AI assistant can now split big jobs across a team of subagents.**
@@ -239,7 +245,7 @@ The AI recommends a framework during planning based on your plugin's complexity.
 | LV2 | ❌ | ❌ | ✅ |
 | CLAP | ✅* | ✅* | ✅* |
 
-*\* Opt-in per plugin (chosen during `/apc-plan`, via `clap-juce-extensions`).*
+*\* Opt-in per plugin (chosen during `/apc-plan`, via `clap-juce-extensions`). **Beta — not yet battle-tested across DAWs** (see What's new).*
 
 ## Technology Stack
 
