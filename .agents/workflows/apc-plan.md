@@ -28,9 +28,18 @@ Load and follow `.agents/skills/plan/SKILL.md` exactly.
   apc.config.json + plugin slug) and `formats.clap_features` in status.json.
 - See `.agents/skills/plan/SKILL.md` step 3.1b for the feature mapping.
 
+**Guided configuration (product standards):**
+- The locked standards (`apc-standards/1.0`) split into global defaults (set in
+  `/apc-setup`) and plugin options that are asked ONCE here.
+- Get the unanswered questions with `apc standards plan --plugin <Name>`.
+- Record each answer with `apc standards set <id> <value> --plugin <Name>`.
+- Required answers: `preset.hierarchy`, `preset.data_root`, `license.mode`.
+- Validate with `apc standards validate --plugin <Name>` before completing.
+
 **Success Criteria:**
 - `status.json` updated with `ui_framework` = "visage" or "webview"
 - `status.json` updated with `formats.clap` (opt-in decision recorded)
+- `status.json` updated with `standards` (plugin-scope answers)
 - Architecture document created
 - Framework selection rationale documented
 

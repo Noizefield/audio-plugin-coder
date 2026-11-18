@@ -24,6 +24,7 @@
     "rationale": "",
     "implementation_strategy": "pending"
   },
+  "standards": {},
   "formats": {
     "clap": false,
     "clap_id": null,

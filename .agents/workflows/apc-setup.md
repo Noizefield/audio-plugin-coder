@@ -17,6 +17,8 @@ Load and execute `.agents/skills/apc-setup/SKILL.md`
 - `setup.completed` is true
 - System-check reports critical tools OK (or user accepted warnings)
 - Path helpers resolve plugins/build/release
+- Product standards block present: `apc standards validate` reports no issues
+  (global defaults are set in the Advanced Setup step, step 5b)
 
 **Completion:**
 Stop and inform user:

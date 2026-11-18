@@ -28,6 +28,7 @@
  *   apc evolve <Plugin> [--codename "Name"] [--json]
  *   apc freeze <Plugin> [--tag TAG] [--json]
  *   apc status [--plugin N] [--json]
+ *   apc standards list|set|validate|plan [...]
  *   apc help
  *
  * Exit codes: 0 ok · 1 backend failed · 2 usage/platform error.
@@ -223,19 +224,34 @@ function doctorFix(platform) {
   }
   const juceCmake = path.join(ROOT, '_tools', 'JUCE', 'CMakeLists.txt');
   if (!fs.existsSync(juceCmake)) {
-    if (commandExists('git') && fs.existsSync(path.join(ROOT, '.git'))) {
+    const haveGit = commandExists('git');
+    if (haveGit && fs.existsSync(path.join(ROOT, '.git'))) {
       console.log('JUCE submodule missing - running: git submodule update --init --recursive');
       try {
         childProcess.execFileSync('git', ['submodule', 'update', '--init', '--recursive'], { stdio: 'inherit', cwd: ROOT });
-        console.log(fs.existsSync(juceCmake) ? ok('JUCE submodule initialized') : err('submodule update ran but JUCE still missing'));
       } catch {
-        console.log(err('git submodule update failed - check network access and retry'));
+        console.log(err('git submodule update failed - trying the shallow pinned-tag fetch'));
       }
-    } else {
-      console.log(warn('JUCE missing and git unavailable - clone with: git clone --recurse-submodules <repo>'));
     }
+    if (!fs.existsSync(juceCmake)) {
+      if (haveGit) {
+        console.log('JUCE still missing - shallow-fetching the pinned tag (apc.config.json juce.pin)');
+        const lib = path.join(ROOT, 'scripts', 'lib');
+        const [file, fileArgs] = process.platform === 'win32'
+          ? ['powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(lib, 'juce-shallow-clone.ps1')]]
+          : ['bash', [path.join(lib, 'juce-shallow-clone.sh')]];
+        try {
+          childProcess.execFileSync(file, fileArgs, { stdio: 'inherit', cwd: ROOT });
+        } catch {
+          console.log(err('shallow JUCE fetch failed - check network access and juce.pin'));
+        }
+      } else {
+        console.log(warn('JUCE missing and git unavailable - install git, then re-run: apc doctor --fix'));
+      }
+    }
+    console.log(fs.existsSync(juceCmake) ? ok('JUCE ready') : err('JUCE still missing'));
   } else {
-    console.log(dim('JUCE submodule present'));
+    console.log(dim('JUCE present'));
   }
   console.log('');
   console.log('Remaining toolchain gaps (not auto-installed) - copy-paste per OS:');
@@ -545,11 +561,35 @@ function validateOnePluginStatus(pluginDir, pluginName) {
   return r;
 }
 
+// scripts/validators/<kind>.js exports validate(pluginDir, opts) ->
+// { checks: [{check, status: pass|fail|warn|info, message}] }. Drop a file in, get `apc validate <kind>`.
+function loadExternalValidator(kind) {
+  if (!kind || !/^[a-z0-9-]+$/.test(kind)) return null;
+  const file = path.join(__dirname, '..', 'scripts', 'validators', `${kind}.js`);
+  return fs.existsSync(file) ? require(file) : null;
+}
+
+function runExternalValidator(kind, mod, plugin, asJson, args) {
+  if (!plugin) { console.error(err(`'${kind}' requires --plugin <Name>.`)); process.exit(2); }
+  const dir = pluginPath(plugin);
+  if (!fs.existsSync(dir)) { console.error(err(`Plugin '${plugin}' not found at ${dir}`)); process.exit(1); }
+  const r = newReport();
+  for (const c of mod.validate(dir, { args, root: findRepoRoot() }).checks) {
+    if (c.status === 'fail') vFail(r, c.check, c.message);
+    else if (c.status === 'warn') vWarn(r, c.check, c.message);
+    else if (c.status === 'info') vInfo(r, c.check, c.message);
+    else vPass(r, c.check, c.message);
+  }
+  process.exit(printReport(kind, plugin, r, asJson));
+}
+
 function cmdValidate(args) {
   const kind = args.find((a) => !a.startsWith('--'));
   const asJson = args.includes('--json');
   const pi = args.indexOf('--plugin');
   const plugin = pi !== -1 ? args[pi + 1] : undefined;
+  const ext = loadExternalValidator(kind);
+  if (ext) return runExternalValidator(kind, ext, plugin, asJson, args);
   const spec = VALIDATORS[kind];
   if (!spec) {
     console.error(err(`Usage: apc validate <${Object.keys(VALIDATORS).join('|')}> [--plugin <Name>] [--json]`));
@@ -984,6 +1024,173 @@ function cmdStatusCmd(args) {
   }
 }
 
+// ─── Product standards (apc-standards/1.0) ──────────────────────────────────
+// The locked Plugin Product Standards (2026-10-24) are machine-readable in
+// schemas/apc-standards.json. Global defaults live in apc.config.json under
+// "standards"; per-plugin answers live in the plugin's status.json under
+// "standards". See .agents/rules/product-standards.md.
+function writeConfig(cfg) {
+  const p = path.join(ROOT, 'apc.config.json');
+  fs.writeFileSync(p, JSON.stringify(cfg, null, 2) + '\n');
+  return p;
+}
+
+function cmdStandards(args) {
+  const std = require('../scripts/apc-standards.js');
+  const sub = (args[0] && !args[0].startsWith('--')) ? args[0] : 'list';
+  const rest = (args[0] && !args[0].startsWith('--')) ? args.slice(1) : args;
+  const asJson = rest.includes('--json');
+  const pi = rest.indexOf('--plugin');
+  const plugin = pi !== -1 ? rest[pi + 1] : undefined;
+  const gi = rest.indexOf('--group');
+  const group = gi !== -1 ? rest[gi + 1] : undefined;
+  const si = rest.indexOf('--scope');
+  const scope = si !== -1 ? rest[si + 1] : null;
+
+  let registry;
+  try { registry = std.loadRegistry(ROOT); }
+  catch (e) { console.error(err(e.message)); process.exit(1); }
+
+  const configPath = path.join(ROOT, 'apc.config.json');
+  const readGlobalBlock = () => {
+    if (!fs.existsSync(configPath)) return {};
+    const cfg = readJson(configPath);
+    return (cfg && cfg.standards && typeof cfg.standards === 'object') ? cfg.standards : {};
+  };
+
+  if (sub === 'list') {
+    const filter = (o) => (!scope || o.scope === scope) && (!group || o.group === group);
+    const global = readGlobalBlock();
+    const groups = std.groupedOptions(registry, filter);
+    if (asJson) {
+      console.log(JSON.stringify({ schema: registry.schema, version: registry.version, groups }, null, 2));
+      return;
+    }
+    console.log(`apc standards ${registry.version} (${registry.schema}, locked ${registry.locked})`);
+    for (const g of groups) {
+      console.log('');
+      console.log(paint(c.cyan, g.title));
+      for (const o of g.options) {
+        const isSet = Object.prototype.hasOwnProperty.call(global, o.id);
+        const current = std.formatValue(o, isSet ? global[o.id] : o.default);
+        const src = isSet ? 'global' : 'default';
+        console.log(`  ${o.id.padEnd(30)} ${String(o.decision).padEnd(6)} ${o.scope.padEnd(7)} ${current}  ${dim(`(${src})`)}`);
+      }
+    }
+    return;
+  }
+
+  if (sub === 'set') {
+    const valueFlags = new Set(['--plugin', '--group', '--scope']);
+    const positional = [];
+    for (let i = 0; i < rest.length; i++) {
+      const a = rest[i];
+      if (a.startsWith('--')) { if (valueFlags.has(a)) i++; continue; }
+      positional.push(a);
+    }
+    const [id, rawValue] = positional;
+    if (!id || rawValue === undefined) {
+      console.error(err('Usage: apc standards set <option-id> <value> [--global | --plugin <Name>]'));
+      process.exit(2);
+    }
+    const option = std.optionById(registry, id);
+    if (!option) {
+      console.error(err(`unknown standard option "${id}". Run: apc standards list`));
+      process.exit(2);
+    }
+    const globalSet = rest.includes('--global');
+    if (!globalSet && !plugin) {
+      console.error(err('specify --global (framework default) or --plugin <Name> (per-plugin answer).'));
+      process.exit(2);
+    }
+    const res = std.coerceValue(option, rawValue);
+    if (!res.ok) {
+      console.error(err(`"${id}": ${res.error}`));
+      process.exit(2);
+    }
+    if (globalSet) {
+      if (option.scope !== 'global') {
+        console.error(err(`"${id}" is a plugin-scope option (${option.decision}). Set it per plugin during /apc-plan, not globally.`));
+        process.exit(2);
+      }
+      if (!fs.existsSync(configPath)) {
+        console.error(err('apc.config.json not found — run /apc-setup first.'));
+        process.exit(1);
+      }
+      const cfg = readJson(configPath);
+      if (!cfg.standards || typeof cfg.standards !== 'object') cfg.standards = {};
+      cfg.standards[id] = res.value;
+      const p = writeConfig(cfg);
+      console.log(ok(`set ${std.optionLabel(option)} = ${std.formatValue(option, res.value)} (${path.relative(ROOT, p)})`));
+      return;
+    }
+    const { dir, status } = loadPluginStatus(plugin);
+    if (!status.standards || typeof status.standards !== 'object') status.standards = {};
+    status.standards[id] = res.value;
+    writeStatus(dir, status);
+    console.log(ok(`set ${std.optionLabel(option)} = ${std.formatValue(option, res.value)} (${plugin}/status.json)`));
+    return;
+  }
+
+  if (sub === 'validate') {
+    const globalBlock = readGlobalBlock();
+    const globalRes = std.validateBlock(registry, globalBlock, { scope: 'global', warnOpen: true });
+    const out = { global: { issues: globalRes.issues, warnings: globalRes.warnings }, plugin: null };
+    if (plugin) {
+      const { status } = loadPluginStatus(plugin);
+      const pluginBlock = (status.standards && typeof status.standards === 'object') ? status.standards : {};
+      const pluginRes = std.validateBlock(registry, pluginBlock, { scope: 'plugin', requireRequired: true, warnOpen: true });
+      out.plugin = {
+        name: plugin,
+        issues: pluginRes.issues,
+        warnings: pluginRes.warnings,
+        effective: std.resolveEffective(registry, globalBlock, pluginBlock),
+      };
+    }
+    if (asJson) {
+      console.log(JSON.stringify(out, null, 2));
+    } else {
+      const report = (label, res) => {
+        console.log(label);
+        for (const i of res.issues) console.log(`  ${err(i.message)}`);
+        for (const w of res.warnings) console.log(`  ${warn(w.message)}`);
+        if (res.issues.length === 0 && res.warnings.length === 0) console.log(`  ${ok('no issues')}`);
+      };
+      report('global standards (apc.config.json)', globalRes);
+      if (out.plugin) report(`plugin standards (${plugin}/status.json)`, out.plugin);
+    }
+    const issues = globalRes.issues.length + (out.plugin ? out.plugin.issues.length : 0);
+    process.exit(issues > 0 ? 1 : 0);
+  }
+
+  if (sub === 'plan') {
+    let pluginBlock = {};
+    if (plugin) {
+      const { status } = loadPluginStatus(plugin);
+      pluginBlock = (status.standards && typeof status.standards === 'object') ? status.standards : {};
+    }
+    const questions = std.planQuestions(registry, pluginBlock);
+    if (asJson) {
+      console.log(JSON.stringify({ plugin: plugin || null, questions }, null, 2));
+      return;
+    }
+    if (!plugin) console.log(dim('no --plugin given: showing every plugin-scope question'));
+    console.log('');
+    for (const q of questions) {
+      const hint = q.values ? q.values.join(' | ') : q.type;
+      console.log(`  ${q.id.padEnd(30)} ${String(q.decision).padEnd(6)} ${q.question}`);
+      console.log(`  ${''.padEnd(30)} ${dim(`(${hint}; default ${q.default === null ? 'unset' : q.default}${q.required ? '; required' : ''})`)}`);
+    }
+    console.log('');
+    console.log(dim(`${questions.length} question(s). Answer with: apc standards set <id> <value> --plugin ${plugin || '<Name>'}`));
+    return;
+  }
+
+  console.error(err(`Unknown subcommand: standards ${sub}`));
+  console.error(err('Usage: apc standards [list|set|validate|plan] [...]'));
+  process.exit(2);
+}
+
 // ─── Help ──────────────────────────────────────────────────────────────────
 function help() {
   const { version } = readPackageVersion();
@@ -996,7 +1203,7 @@ function help() {
   console.log('  paths [--json] [--plugin N]   resolved plugins/build/release dirs');
   console.log('  doctor [--fix]                version header + system-check (fix: safe auto-fixes only)');
   console.log('  build <Plugin> [--no-install] [--skip-tests] [--strict]');
-  console.log('  validate <kind> [--plugin N] [--json]  webview|webview-order|visage|ui|plugin|state');
+  console.log('  validate <kind> [--plugin N] [--json]  webview|webview-order|visage|ui|plugin|state|rt|a11y');
   console.log('    webview|webview-order|visage|ui|plugin run natively (cross-platform);');
   console.log('  ui-compose <Plugin>           render Design preview from ui-map.json + vendor apc-ui kit');
   console.log('    state tests the PowerShell module itself and stays shell-bound.');
@@ -1006,9 +1213,46 @@ function help() {
   console.log('  evolve <Plugin> [--codename N] [--json]  open a feature generation on a shipped plugin');
   console.log('  freeze <Plugin> [--tag T] [--json]  freeze the open generation (called by ship flow)');
   console.log('  status [--plugin N] [--json]      generation timeline');
+  console.log('  standards list [--scope S] [--group G] [--json]   locked product standards registry');
+  console.log('  standards set <id> <value> [--global | --plugin N]  set a standard option');
+  console.log('  standards validate [--plugin N] [--json]   check config + plugin standards blocks');
+  console.log('  standards plan [--plugin N] [--json]      guided questions for /apc-plan');
+  for (const [name, m] of Object.entries(MODULE_COMMANDS)) console.log(`  ${m.summary.startsWith(name) ? m.summary : name + ' ' + m.summary}`);
   console.log('  help                          this text');
   console.log('');
   console.log(`Canonical version source: package.json. Hub reads hub/version.js.`);
+}
+
+// ─── Pluggable command modules ─────────────────────────────────────────────
+// Each module lives in scripts/<file>.js and exports run(args, ctx) -> exit code
+// (number or Promise<number>). ctx = { root, resolvePaths, pluginPath, readConfig, cmd }.
+// Keeps bin/apc.js a thin router: new workstreams land as files, not as edits here.
+const MODULE_COMMANDS = {
+  presets:    { file: 'apc-presets',  summary: 'presets validate|index|promote|init|paths|check-manifest   apc-preset/1.0 tooling' },
+  release:    { file: 'apc-release',  summary: 'release keygen|manifest|sign|verify    signed update manifest' },
+  sbom:       { file: 'apc-sbom',     summary: 'sbom <Plugin>                          CycloneDX SBOM + provenance' },
+  audio:      { file: 'apc-audio',    summary: 'audio <Plugin> [--gate G]              audio validation gates' },
+  eval:       { file: 'apc-eval',     summary: 'eval list|run|score|record|leaderboard|promote|selftest   AI eval harness' },
+  watch:      { file: 'apc-preview',  summary: 'watch <Plugin>                         WebView hot-reload watcher' },
+  screenshot: { file: 'apc-preview',  summary: 'screenshot <Plugin>                    headless UI screenshot' },
+  license:    { file: 'apc-license', summary: 'license keygen|issue|verify|inspect|serve   license issuing (signed-file + online-activation reference issuer)' },
+  kit:        { file: 'apc-kit-test', summary: 'kit test [--json]                       run the WebView UI kit self-tests (headless browser)' },
+  docs:       { file: 'apc-docs',     summary: 'docs check [--strict]                  link + snippet + stale-string check' },
+};
+
+function runModuleCommand(cmd, args) {
+  const spec = MODULE_COMMANDS[cmd];
+  const file = path.join(__dirname, '..', 'scripts', `${spec.file}.js`);
+  if (!fs.existsSync(file)) {
+    console.error(err(`'apc ${cmd}' is not installed (missing scripts/${spec.file}.js).`));
+    process.exit(2);
+  }
+  const mod = require(file);
+  const ctx = { root: findRepoRoot(), resolvePaths, pluginPath, readConfig, cmd };
+  Promise.resolve(mod.run(args, ctx)).then(
+    (code) => process.exit(Number.isInteger(code) ? code : 0),
+    (e) => { console.error(err(e && e.message ? e.message : String(e))); process.exit(1); },
+  );
 }
 
 // ─── Main ──────────────────────────────────────────────────────────────────
@@ -1031,7 +1275,9 @@ function main() {
     case 'evolve': return cmdOpenGeneration('evolve', rest);
     case 'freeze': return cmdFreeze(rest);
     case 'status': return cmdStatusCmd(rest);
+    case 'standards': return cmdStandards(rest);
     default:
+      if (MODULE_COMMANDS[cmd]) return runModuleCommand(cmd, rest);
       console.error(err(`Unknown command: ${cmd}`));
       help();
       process.exit(2);

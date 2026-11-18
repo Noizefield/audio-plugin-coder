@@ -1,0 +1,57 @@
+{
+  "schema": "apc-preset/1.0",
+  "kind": "sound",
+  "id": "snd_00000000-0000-4000-8000-000000000010",
+  "name": "Sub Distort",
+  "author": "Fixture Author",
+  "created": "2026-11-01T10:00:00Z",
+  "app_version": "1.0.0",
+  "meta": {
+    "category": "bass",
+    "subcategory": "sub",
+    "articulation": "sustained",
+    "axes": {
+      "bri": "brilliant",
+      "war": "warm",
+      "agg": "hard",
+      "wid": "mono",
+      "dep": "sub-heavy",
+      "mov": "breathing"
+    },
+    "temporal": {
+      "attack": "instant",
+      "sustain": "sustained",
+      "evolution": "evolving",
+      "release": "short",
+      "rhythm": "none"
+    },
+    "moods": [
+      "warm",
+      "cold"
+    ],
+    "tags": [
+      "dark"
+    ],
+    "desc": "Fixture sub bass with grit."
+  },
+  "params": {
+    "osc1_wave": "saw",
+    "osc1_tune_st": 0,
+    "filter_cutoff_hz": 95.5,
+    "filter_res": 0.35,
+    "drive_amount": 0.62,
+    "amp_env_attack_s": 0.002,
+    "amp_env_release_s": 0.12
+  },
+  "modulation": [
+    {
+      "src": "lfo1",
+      "dst": "filter_cutoff_hz",
+      "amount": 0.45,
+      "polarity": "bipolar",
+      "min": 200,
+      "max": 4000
+    }
+  ],
+  "sample_ref": null
+}

@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apc.audio/schemas/apc-update-manifest.schema.json",
+  "title": "APC update manifest",
+  "description": "Signed update manifest (framework standard apc-update/1.0, decisions U-16, X-07, L-09). Produced by `apc release manifest` / `apc release sign`, fetched by the plugin's ApcUpdateFlow. The signature is Ed25519 over the canonical JSON (apc-canon/1: keys sorted by UTF-8 bytes, no whitespace, integers only, see common/apc/ApcCanonicalJson.h) of this document WITHOUT the \"signature\" member. The signing key is the dedicated UPDATE key - never the license key; the plugin embeds only its public key. Authenticode / notarization of the installer itself are OS-level and additional. All numbers in this document MUST be integers (floats are rejected by the verifiers).",
+  "type": "object",
+  "required": ["schema", "product", "version", "published_at", "artifacts", "signature"],
+  "properties": {
+    "schema": { "const": "apc-update/1.0" },
+    "product": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Must equal the product identifier compiled into the plugin; a manifest for another product is ignored."
+    },
+    "version": {
+      "type": "string",
+      "description": "Latest released version, semver 2.0.0 (no leading 'v').",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "min_supported": {
+      "type": "string",
+      "description": "Oldest version still supported. Informational: older plugins keep working and are only told to update.",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "published_at": {
+      "type": "string",
+      "description": "UTC, exactly YYYY-MM-DDTHH:MM:SSZ.",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 16384,
+      "description": "Plain-text release notes shown to the user (max 16 KiB)."
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Full installers (not patches), at most one per platform+kind.",
+      "items": {
+        "type": "object",
+        "required": ["platform", "kind", "url", "sha256", "size"],
+        "properties": {
+          "platform": {
+            "type": "string",
+            "pattern": "^(windows|macos|linux)-(x64|arm64|universal)$"
+          },
+          "kind": {
+            "enum": ["installer", "archive"],
+            "description": "The updater only offers kind=installer. 'archive' (zip/tar.gz) is for manual download pages."
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "https:// URL, or a bare file name resolved next to the manifest URL. No whitespace or control characters."
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "Lowercase hex SHA-256 of the artifact file."
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "description": "Artifact size in bytes."
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9+/]{86}==$",
+      "description": "Base64 (standard alphabet, padded) of the 64-byte Ed25519 signature."
+    }
+  },
+  "additionalProperties": true
+}

@@ -85,6 +85,40 @@ Relative paths are resolved from the APC repo root. Absolute paths are also supp
 
 Ask preferred default for new plugins: `webview` (recommended) or `visage`. Store in `defaults.ui_framework_preference`.
 
+### 5b. Advanced Setup — product standards (X-06)
+
+The locked **Plugin Product Standards** (`apc-standards/1.0`, registry:
+`schemas/apc-standards.json`) define every standard option. Options split in two:
+
+- **global scope** — once-and-forever defaults for all products. Edited here and
+  on the APC Hub settings page. Stored in `apc.config.json` → `standards`.
+- **plugin scope** — asked once per plugin during `/apc-plan`. Stored in the
+  plugin's `status.json` → `standards`.
+
+Ask the user about the **global** options only (one pass, no per-plugin
+questions here):
+
+```bash
+apc standards list --scope global
+```
+
+Present each with its one-line explanation and the recommended default, then
+write the answers:
+
+```bash
+apc standards set ux.theme night --global
+```
+
+Rules:
+
+- Never ask a plugin-scope question here — `/apc-plan` asks those per plugin.
+- Never skip an option: an unanswered global option keeps its registry default.
+- After writing, run `apc standards validate` and report the result.
+- Record in `status.json` of the framework config that Advanced Setup ran
+  (`setup.standards_completed_at`).
+
+See `.agents/rules/product-standards.md`.
+
 ### 6. AI model routing (global)
 
 Offer presets, then allow per-phase overrides:

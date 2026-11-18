@@ -39,6 +39,19 @@ function Get-ApcDefaultConfig {
             enable_visage = $false
             enable_clap = $false
         }
+        # Global defaults for the locked Plugin Product Standards (apc-standards/1.0).
+        # Edit via: apc standards set <id> <value> --global
+        standards = @{
+            "ux.theme" = "follow-os"
+            "ux.double_click" = "reset"
+            "ux.preset_load" = "confirm-if-dirty"
+            "ux.tooltips" = $true
+            "ux.tooltip_delay_ms" = 400
+            "ux.wheel_target" = "control"
+            "ux.reset_animation" = "glide"
+            "ux.scaling_step_pct" = 100
+            "ux.aspect_lock" = $true
+        }
         clap = @{
             id_prefix = "com.noizefield"
         }

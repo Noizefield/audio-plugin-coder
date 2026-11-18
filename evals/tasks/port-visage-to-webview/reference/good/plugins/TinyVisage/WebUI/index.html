@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>TinyVisage</title>
+<style>
+  body { margin: 0; background: #14161a; color: #e6e6e6; font-family: sans-serif; }
+  .row { display: flex; gap: 24px; padding: 24px; }
+  label { display: block; font-size: 12px; opacity: .7; }
+</style>
+</head>
+<body>
+<div class="row">
+  <div><label>Gain</label><input id="gain" type="range" min="0" max="1" step="0.001"></div>
+  <div><label>Mix</label><input id="mix" type="range" min="0" max="1" step="0.001"></div>
+</div>
+<script>
+  // Inlined bootstrap (ES modules and external scripts fail in JUCE WebView).
+  window.addEventListener('load', function () { /* wire sliders to the JUCE relays here */ });
+</script>
+</body>
+</html>

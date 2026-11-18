@@ -211,6 +211,58 @@ If the plugin opts in, record it in `status.json` via `Complete-Phase`/`Update-P
 - The impl phase emits the `clap_juce_extensions_plugin(...)` block in the
   plugin CMakeLists with `<Name>_ENABLE_CLAP ON`. Build target: `<Name>_CLAP`.
 
+### 3.1c Guided Configuration — product standards (X-06)
+
+The locked **Plugin Product Standards** (`apc-standards/1.0`) split into a global
+part (already decided in `/apc-setup`) and a **plugin part that is asked exactly
+once, here**. Get the question list from the registry — never invent options:
+
+```bash
+apc standards plan --plugin <PluginName>
+```
+
+It prints only the **plugin-scope** options that have no answer yet (each with
+its decision id, allowed values and default). Ask the user for those, in the
+grouped order (presets → UX → modules → licensing → updates). Then record every
+answer:
+
+```bash
+apc standards set preset.hierarchy typed --plugin <PluginName>
+apc standards set preset.sound_ext .snd --plugin <PluginName>
+apc standards set license.mode demo --plugin <PluginName>
+```
+
+Rules:
+
+- **Never re-ask** a question that already has an answer — `apc standards plan`
+  only lists unanswered ones.
+- **Required** options (`preset.hierarchy`, `preset.data_root`, `license.mode`)
+  must be answered before the plan phase is complete.
+- Never set a plugin-scope option globally — `apc standards set --global`
+  refuses it. Global options are edited in `/apc-setup` / the Hub settings page.
+- **Selling the plugin?** Ask `license.mode` first. If it is not `free`, walk the
+  newcomer through licensing in this order (details: `.agents/guides/licensing-methods.md`):
+  1. `license.method` — **A `signed-file`** (default: you sign license files, no
+     server, works offline, seats not enforceable) or **B `online-activation`**
+     (key + activation server with a seat limit, plus offline request-code/file
+     exchange via the developer's website). iLok/dongles and third-party SDKs
+     are pointers only (mention, do not build).
+  2. `license.seats` (default 3; enforced only by method B) and, if wanted,
+     `license.trial_days` (built-in trial, default 40).
+  3. `license.protection` — `minimal` (default; say plainly that any client-side
+     scheme can be defeated and a license file can be copied — it only stops
+     casual sharing). `hardened` is a pointer to external wrappers.
+  Never let the user believe this is DRM. Decisions L-06/L-07 are closed; only
+  update pricing (L-09) stays a per-product release decision.
+- Validate before closing the phase:
+
+```bash
+apc standards validate --plugin <PluginName>
+```
+
+The answers live in `status.json` → `standards`. See
+`.agents/rules/product-standards.md`.
+
 ### 3.2 Update Project State
 Use the state management system to update project state:
 

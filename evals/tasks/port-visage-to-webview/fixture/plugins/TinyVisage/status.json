@@ -1,0 +1,29 @@
+{
+  "plugin_name": "TinyVisage",
+  "version": "v0.1.0",
+  "current_phase": "code_complete",
+  "ui_framework": "visage",
+  "complexity_score": 1,
+  "created_at": "2026-01-01T00:00:00Z",
+  "last_modified": "2026-01-01T00:00:00Z",
+  "phase_history": [],
+  "current_generation": null,
+  "generations": [],
+  "validation": {
+    "creative_brief_exists": false,
+    "parameter_spec_exists": false,
+    "architecture_defined": false,
+    "ui_framework_selected": true,
+    "design_complete": true,
+    "code_complete": true,
+    "tests_passed": false,
+    "ship_ready": false
+  },
+  "framework_selection": {
+    "decision": "visage",
+    "rationale": "eval fixture",
+    "implementation_strategy": "minimal"
+  },
+  "formats": { "clap": false, "clap_id": null, "clap_features": [] },
+  "error_recovery": { "last_backup": null, "rollback_available": false, "error_log": [] }
+}

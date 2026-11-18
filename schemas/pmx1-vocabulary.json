@@ -1,0 +1,144 @@
+{
+  "schema": "apc-vocabulary/1.0",
+  "taxonomy": "PMX/1",
+  "version": "1.1.0",
+  "frozen": "2026-10-24",
+  "summary": "Machine-readable PMX/1 vocabulary (decision P-10). Files store the lowercase SLUG, never the display label and never an index (P-04). Arrays are ordered and APPEND-ONLY: entries may be added at the end (with a later 'since'), never renamed, removed or reordered. 'label' is display-only and may be re-worded; 'aliases' are accepted on read (the linter warns) and normalised to the slug on write.",
+  "rules": {
+    "store": "slug",
+    "slug_pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+    "append_only": true,
+    "order_is_value_for_axes": true,
+    "mandatory_axes_for_factory": ["bri", "war", "agg", "wid", "dep", "mov"],
+    "moods": { "min": 1, "max": 2 },
+    "tags": { "max": 8, "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "unknown_values": "Closed lists (category, axes, articulation, temporal, moods) reject unknown slugs in factory content. Genres, subcategories and tags may be extended per product; unknown ones are linted as warnings."
+  },
+
+  "categories": [
+    { "slug": "pad",        "label": "Pad",        "code": "PD", "group": "instrument", "since": "1.0.0", "subcategories": ["analog", "strings", "choir", "shimmer", "dark", "noise-bed", "crystal", "evolving", "air"] },
+    { "slug": "bass",       "label": "Bass",       "code": "BA", "group": "instrument", "since": "1.0.0", "subcategories": ["sub", "growl", "reese", "analog", "plucked", "driven", "wobble", "mono"] },
+    { "slug": "lead",       "label": "Lead",       "code": "LD", "group": "instrument", "since": "1.0.0", "subcategories": ["solo", "brassy", "vocal", "aggressive", "soft", "sync", "glide"] },
+    { "slug": "keys",       "label": "Keys",       "code": "KY", "group": "instrument", "since": "1.0.0", "subcategories": ["e-piano", "organ", "clav", "synth-keys", "glass-keys", "hollow"] },
+    { "slug": "bells",      "label": "Bells",      "code": "BE", "group": "instrument", "since": "1.0.0", "subcategories": ["bell", "mallet", "chime", "carillon", "kalimba", "glass", "crystal"] },
+    { "slug": "pluck",      "label": "Pluck",      "code": "PL", "group": "instrument", "since": "1.0.0", "subcategories": ["pluck", "harp", "pizzicato", "synth-pluck", "short"] },
+    { "slug": "impact",     "label": "Impact",     "code": "IM", "group": "instrument", "since": "1.0.0", "subcategories": ["braam", "hit", "boom", "sub-drop", "slam", "stinger"] },
+    { "slug": "percussion", "label": "Percussion", "code": "DR", "group": "instrument", "since": "1.0.0", "subcategories": ["drum", "tom", "kick", "snare", "hihat", "tribal", "metallic", "noise-perc"] },
+    { "slug": "drone",      "label": "Drone",      "code": "DN", "group": "instrument", "since": "1.0.0", "subcategories": ["sub-drone", "dark-ambient", "industrial", "organic", "machine", "ritual", "horror"] },
+    { "slug": "sfx",        "label": "SFX",        "code": "SC", "group": "instrument", "since": "1.0.0", "subcategories": ["riser", "downlifter", "whoosh", "texture", "sweep", "reverse", "transition"] },
+    { "slug": "voice",      "label": "Voice",      "code": "VC", "group": "instrument", "since": "1.0.0", "subcategories": ["choir", "vocal", "whisper", "formant"] },
+
+    { "slug": "reverb",      "label": "Reverb",        "code": "RV", "group": "effect", "since": "1.1.0", "appended": true, "subcategories": ["plate", "hall", "room", "spring", "shimmer", "ambience", "gated", "reverse"] },
+    { "slug": "delay",       "label": "Delay",         "code": "DL", "group": "effect", "since": "1.1.0", "appended": true, "subcategories": ["tape", "digital", "ping-pong", "analog", "multi-tap", "slapback", "ducking"] },
+    { "slug": "modulation",  "label": "Modulation",    "code": "MD", "group": "effect", "since": "1.1.0", "appended": true, "subcategories": ["chorus", "flanger", "phaser", "tremolo", "vibrato", "rotary", "ring-mod"] },
+    { "slug": "dynamics",    "label": "Dynamics",      "code": "DY", "group": "effect", "since": "1.1.0", "appended": true, "subcategories": ["compressor", "limiter", "gate", "expander", "transient", "de-esser", "multiband"] },
+    { "slug": "eq-filter",   "label": "EQ / Filter",   "code": "EQ", "group": "effect", "since": "1.1.0", "appended": true, "subcategories": ["eq", "filter", "low-cut", "high-cut", "formant", "resonator", "tilt"] },
+    { "slug": "distortion",  "label": "Distortion",    "code": "DS", "group": "effect", "since": "1.1.0", "appended": true, "subcategories": ["saturation", "overdrive", "fuzz", "bitcrush", "waveshaper", "tape-sat", "amp"] },
+    { "slug": "pitch",       "label": "Pitch",         "code": "PI", "group": "effect", "since": "1.1.0", "appended": true, "subcategories": ["pitch-shift", "harmonizer", "detune", "octaver", "vocoder", "formant-shift"] },
+    { "slug": "utility",     "label": "Utility",       "code": "UT", "group": "effect", "since": "1.1.0", "appended": true, "subcategories": ["gain", "stereo-width", "mid-side", "pan", "mono-maker"] },
+    { "slug": "creative-fx", "label": "Creative FX",   "code": "CF", "group": "effect", "since": "1.1.0", "appended": true, "subcategories": ["granular", "glitch", "stutter", "spectral", "freeze", "multi-fx"] }
+  ],
+
+  "axes": [
+    { "key": "bri", "label": "Brightness", "meaning": "spectral tilt",          "mandatory": true,  "since": "1.0.0", "words": ["dark", "muted", "neutral", "bright", "brilliant"] },
+    { "key": "war", "label": "Warmth",     "meaning": "low-mid richness",       "mandatory": true,  "since": "1.0.0", "words": ["cold", "cool", "neutral", "warm", "hot"] },
+    { "key": "agg", "label": "Aggression", "meaning": "drive / bite",           "mandatory": true,  "since": "1.0.0", "words": ["gentle", "firm", "hard", "brutal"] },
+    { "key": "wid", "label": "Width",      "meaning": "stereo image",           "mandatory": true,  "since": "1.0.0", "words": ["mono", "narrow", "wide", "ultra"] },
+    { "key": "dep", "label": "Depth",      "meaning": "sub weight",             "mandatory": true,  "since": "1.0.0", "words": ["thin", "mid", "deep", "sub-heavy"] },
+    { "key": "mov", "label": "Movement",   "meaning": "modulation activity",    "mandatory": true,  "since": "1.0.0", "words": ["static", "breathing", "evolving", "chaotic"] },
+    { "key": "rou", "label": "Roughness",  "meaning": "harmonic grit",          "mandatory": false, "since": "1.0.0", "words": ["smooth", "textured", "gritty", "destroyed"] },
+    { "key": "spa", "label": "Space",      "meaning": "wetness",                "mandatory": false, "since": "1.0.0", "words": ["dry", "room", "hall", "infinite"] },
+    { "key": "met", "label": "Metallic",   "meaning": "inharmonicity",          "mandatory": false, "since": "1.0.0", "words": ["harmonic", "inharmonic", "atonal"] },
+    { "key": "den", "label": "Density",    "meaning": "layering",               "mandatory": false, "since": "1.0.0", "words": ["sparse", "layered", "massive"] }
+  ],
+
+  "articulations": [
+    { "slug": "sustained",   "label": "Sustained",   "since": "1.0.0" },
+    { "slug": "gated",       "label": "Gated",       "since": "1.0.0" },
+    { "slug": "sequenced",   "label": "Sequenced",   "since": "1.0.0" },
+    { "slug": "arpeggiated", "label": "Arpeggiated", "since": "1.0.0" },
+    { "slug": "generative",  "label": "Generative",  "since": "1.0.0" },
+    { "slug": "struck",      "label": "Struck",      "since": "1.0.0" }
+  ],
+
+  "temporal": {
+    "attack":    { "since": "1.0.0", "words": ["instant", "short", "medium", "long", "swell"] },
+    "sustain":   { "since": "1.0.0", "words": ["percussive", "plucked", "decaying", "sustained", "infinite"] },
+    "evolution": { "since": "1.0.0", "words": ["static", "breathing", "evolving", "rhythmic", "generative"] },
+    "release":   { "since": "1.0.0", "words": ["instant", "short", "medium", "long", "infinite"] },
+    "rhythm":    { "since": "1.0.0", "words": ["none", "tempo-synced", "free"] }
+  },
+
+  "moods": [
+    { "slug": "dark",        "label": "Dark",        "since": "1.0.0" },
+    { "slug": "ominous",     "label": "Ominous",     "since": "1.0.0" },
+    { "slug": "tense",       "label": "Tense",       "since": "1.0.0" },
+    { "slug": "suspenseful", "label": "Suspenseful", "since": "1.0.0" },
+    { "slug": "epic",        "label": "Epic",        "since": "1.0.0" },
+    { "slug": "triumphant",  "label": "Triumphant",  "since": "1.0.0" },
+    { "slug": "aggressive",  "label": "Aggressive",  "since": "1.0.0" },
+    { "slug": "dystopian",   "label": "Dystopian",   "since": "1.0.0" },
+    { "slug": "cold",        "label": "Cold",        "since": "1.0.0" },
+    { "slug": "mysterious",  "label": "Mysterious",  "since": "1.0.0" },
+    { "slug": "melancholic", "label": "Melancholic", "since": "1.0.0" },
+    { "slug": "warm",        "label": "Warm",        "since": "1.0.0" },
+    { "slug": "nostalgic",   "label": "Nostalgic",   "since": "1.0.0" },
+    { "slug": "serene",      "label": "Serene",      "since": "1.0.0" },
+    { "slug": "dreamy",      "label": "Dreamy",      "since": "1.0.0" },
+    { "slug": "ethereal",    "label": "Ethereal",    "since": "1.0.0" },
+    { "slug": "hopeful",     "label": "Hopeful",     "since": "1.0.0" },
+    { "slug": "futuristic",  "label": "Futuristic",  "since": "1.0.0" }
+  ],
+
+  "genres": [
+    { "slug": "ambient",         "label": "Ambient",       "aliases": [],                                          "since": "1.0.0" },
+    { "slug": "cinematic",       "label": "Cinematic",     "aliases": [],                                          "since": "1.0.0" },
+    { "slug": "cyberpunk",       "label": "Cyberpunk",     "aliases": [],                                          "since": "1.0.0" },
+    { "slug": "drum-and-bass",   "label": "Drum & Bass",   "aliases": ["drum&bass", "drum & bass", "dnb", "d&b"],  "since": "1.0.0" },
+    { "slug": "dubstep",         "label": "Dubstep",       "aliases": [],                                          "since": "1.0.0" },
+    { "slug": "edm",             "label": "EDM",           "aliases": [],                                          "since": "1.0.0" },
+    { "slug": "electro",         "label": "Electro",       "aliases": [],                                          "since": "1.0.0" },
+    { "slug": "house",           "label": "House",         "aliases": [],                                          "since": "1.0.0" },
+    { "slug": "industrial",      "label": "Industrial",    "aliases": [],                                          "since": "1.0.0" },
+    { "slug": "lo-fi",           "label": "Lo-Fi",         "aliases": ["lofi"],                                    "since": "1.0.0" },
+    { "slug": "synthwave",       "label": "Synthwave",     "aliases": [],                                          "since": "1.0.0" },
+    { "slug": "techno",          "label": "Techno",        "aliases": [],                                          "since": "1.0.0" },
+    { "slug": "trance",          "label": "Trance",        "aliases": [],                                          "since": "1.0.0" },
+    { "slug": "trap",            "label": "Trap",          "aliases": [],                                          "since": "1.0.0" },
+    { "slug": "world-tribal",    "label": "World / Tribal","aliases": ["world / tribal", "world/tribal"],          "since": "1.0.0" }
+  ],
+
+  "kit_types":   ["acoustic", "electronic", "hybrid", "glitch", "cinematic"],
+  "kit_tiers":   ["live", "layered", "processed"],
+  "feels":       ["straight", "swing", "halftime", "triplet", "polyrhythmic"],
+  "groove_tags": ["sparse", "gated", "rolling", "fill", "break"],
+  "length_bars": [1, 2, 4, 8],
+  "swing_pct":   { "min": 50, "max": 75 },
+
+  "contradictions": {
+    "axis": [
+      { "axis": "bri", "words": ["dark", "brilliant"] },
+      { "axis": "bri", "words": ["dark", "bright"] },
+      { "axis": "bri", "words": ["muted", "brilliant"] },
+      { "axis": "war", "words": ["cold", "hot"] },
+      { "axis": "war", "words": ["cold", "warm"] },
+      { "axis": "war", "words": ["cool", "hot"] },
+      { "axis": "agg", "words": ["gentle", "brutal"] },
+      { "axis": "wid", "words": ["mono", "ultra"] },
+      { "axis": "wid", "words": ["mono", "wide"] },
+      { "axis": "dep", "words": ["thin", "sub-heavy"] },
+      { "axis": "mov", "words": ["static", "chaotic"] },
+      { "axis": "rou", "words": ["smooth", "destroyed"] },
+      { "axis": "spa", "words": ["dry", "infinite"] },
+      { "axis": "met", "words": ["harmonic", "atonal"] },
+      { "axis": "den", "words": ["sparse", "massive"] }
+    ],
+    "mood": [
+      ["warm", "cold"],
+      ["serene", "aggressive"],
+      ["serene", "tense"],
+      ["hopeful", "dystopian"],
+      ["triumphant", "melancholic"]
+    ]
+  }
+}

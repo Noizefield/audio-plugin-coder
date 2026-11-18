@@ -1,39 +1,163 @@
 /* =============================================================================
-   apc-components.css — APC UI catalog, starter set.
+   apc-components.css — APC UI catalog: re-skinned starter set + kit-A / kit-B sections.
+   Flat, square, token-only ("APC Minimal"): no gradients, no shadows, no glow, no bevel.
    Components are positioned by the composer via `.apc-cell` absolute rem cells.
-   They scale with rem (1 rem = 1 grid cell); no px sizing outside hairlines.
-   Add new components here only — ad-hoc styled divs are lint defects.
+   They scale with rem (1 rem = 1 grid cell); no px sizing outside hairlines (--stroke) and
+   legibility floors (--t-* tokens). The widgets added later live in apc-widgets.css.
+   Add new components there only — ad-hoc styled divs are lint defects.
    ============================================================================= */
+
+/* ==== design conformance (APC Minimal) =============================================================
+   No element of the kit may render with the OS / browser look. This block is the safety net behind the
+   component classes above and in apc-widgets.css: every selector is :where() (specificity 0) and this block sits
+   BEFORE all component rules, so any component class (even a :where() one) overrides it, but a NEW element (a bare <input type="range">, a <select>, a <details>,
+   a scroll box, ...) still comes out flat, square and token-coloured. Guarded by tests/kit-conformance.html
+   (it walks every overlay in night + day and fails on a UA look). Tokens only; no gradients, no shadows. */
+:root { accent-color: var(--accent); }   /* inherits: every form control */
+/* scrollbars: flat, arrowless, token coloured. ::-webkit-scrollbar (Chromium / WebView2, WebKit) gives the full look; engines
+   without it (Firefox) get scrollbar-color / scrollbar-width. Never set scrollbar-color in Chromium: it would switch the custom bar off. */
+::-webkit-scrollbar { width: max(8px, .5rem); height: max(8px, .5rem); background: var(--inset); }
+::-webkit-scrollbar-track { background: var(--inset); }
+::-webkit-scrollbar-thumb { background: var(--rule); border-radius: var(--r-control, 0); }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-2); }
+::-webkit-scrollbar-corner { background: var(--inset); }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+@supports not selector(::-webkit-scrollbar) {
+  :root { scrollbar-color: var(--rule) var(--inset); }
+  :where(*) { scrollbar-width: thin; }
+}
+::selection { background: var(--accent); color: var(--accent-ink); }
+
+/* buttons */
+:where(button) {
+  -webkit-appearance: none; appearance: none; font: inherit; color: var(--ink); background: var(--plate-2);
+  border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control, 0);
+}
+/* text-like fields, textarea, select */
+:where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"], [type="color"]), textarea) {
+  -webkit-appearance: none; appearance: none; font: inherit; color: var(--ink); background: var(--inset);
+  border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control, 0);
+}
+:where(textarea) { resize: none; }
+:where(input, textarea)::placeholder { color: var(--ink-2); opacity: 1; font-family: inherit; }
+:where(input[type="number"]) { -moz-appearance: textfield; appearance: textfield; }
+:where(input[type="number"])::-webkit-inner-spin-button, :where(input[type="number"])::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
+:where(input[type="search"])::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
+:where(input[type="search"])::-webkit-search-cancel-button {   /* the clear "x": a token-coloured square cross instead of the OS button */
+  -webkit-appearance: none; appearance: none; width: .75rem; height: .75rem; margin: 0 0 0 .25rem; cursor: pointer; background: var(--ink-2);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1 2L2 1L5 4L8 1L9 2L6 5L9 8L8 9L5 6L2 9L1 8L4 5Z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1 2L2 1L5 4L8 1L9 2L6 5L9 8L8 9L5 6L2 9L1 8L4 5Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+:where(input[type="search"])::-webkit-search-cancel-button:hover { background: var(--accent-text); }
+:where(input)::-ms-clear, :where(input)::-ms-reveal { display: none; }
+:where(input):-webkit-autofill { -webkit-text-fill-color: var(--ink); caret-color: var(--ink); transition: background-color 600000s 0s; }
+:where(select) {
+  -webkit-appearance: menulist-button; appearance: menulist-button; font: inherit; color: var(--ink); background-color: var(--inset);
+  border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control, 0);   /* the OS caret is drawn in `color` */
+}
+:where(option, optgroup) { background-color: var(--inset); color: var(--ink); font-family: var(--font-ui); }
+:where(button, input, select, textarea):disabled { opacity: var(--disabled-opacity, .4); cursor: default; }
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: var(--stroke-2, 2px) solid var(--apc-focus, var(--accent)); outline-offset: 2px; }
+
+/* checkbox / radio: a square box in --check; the tick and the dot are drawn with borders / fills (no OS glyph) */
+:where(input[type="checkbox"], input[type="radio"]) {
+  -webkit-appearance: none; appearance: none; box-sizing: border-box; position: relative; flex: none; margin: 0; padding: 0; vertical-align: middle;
+  width: var(--check, 1rem); height: var(--check, 1rem); font: inherit; color: var(--ink); cursor: pointer;
+  background: var(--inset); border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control, 0);
+}
+:where(input[type="radio"]) { border-radius: var(--r-radio, var(--r-control, 0)); }
+:where(input[type="checkbox"]:hover, input[type="radio"]:hover) { border-color: var(--accent); }
+:where(input[type="checkbox"]:checked, input[type="checkbox"]:indeterminate) { background: var(--accent); }
+:where(input[type="radio"]:checked) { border-color: var(--accent); }
+:where(input[type="checkbox"], input[type="radio"])::after { content: ""; display: none; position: absolute; box-sizing: border-box; }
+:where(input[type="checkbox"]:checked)::after { display: block; left: 50%; top: 46%; width: 28%; height: 56%; border: solid var(--accent-ink, var(--plate)); border-width: 0 var(--stroke-2, 2px) var(--stroke-2, 2px) 0; transform: translate(-50%, -50%) rotate(45deg); }
+:where(input[type="checkbox"]:indeterminate)::after { display: block; left: 50%; top: 50%; width: 60%; height: 0; border: solid var(--accent-ink, var(--plate)); border-width: var(--stroke-2, 2px) 0 0 0; transform: translate(-50%, -50%); }
+:where(input[type="radio"]:checked)::after { display: block; inset: 25%; background: var(--accent); border-radius: inherit; }
+
+/* range slider: the kit's flat slider look - 1px --rule track in --inset, square --accent thumb of --thumb,
+   fill drawn by .apc-range__fill (a wrapper span; see apc-context.js) because WebKit has no track-progress part */
+:where(input[type="range"]) {
+  -webkit-appearance: none; appearance: none; box-sizing: border-box; display: block; width: 100%; height: 1.25rem; margin: 0; padding: 0;
+  font: inherit; color: var(--ink); background: transparent; border: 0; border-radius: var(--r-control, 0); cursor: ew-resize;
+}
+:where(input[type="range"])::-webkit-slider-runnable-track {
+  box-sizing: border-box; height: var(--track-w, .25rem); background: var(--inset);
+  border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control, 0);
+}
+:where(input[type="range"])::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; box-sizing: border-box; width: var(--thumb, .75rem); height: 1.25rem;
+  margin-top: calc((var(--track-w, .25rem) - 2 * var(--stroke, 1px) - 1.25rem) / 2);
+  background: var(--accent); border: var(--stroke, 1px) solid var(--accent); border-radius: var(--r-control, 0);
+}
+:where(input[type="range"])::-moz-range-track { box-sizing: border-box; height: var(--track-w, .25rem); background: var(--inset); border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control, 0); }
+:where(input[type="range"])::-moz-range-progress { background: var(--accent); height: calc(var(--track-w, .25rem) - 2 * var(--stroke, 1px)); }
+:where(input[type="range"])::-moz-range-thumb { box-sizing: border-box; width: var(--thumb, .75rem); height: 1.25rem; background: var(--accent); border: var(--stroke, 1px) solid var(--accent); border-radius: var(--r-control, 0); }
+:where(input[type="range"]:hover)::-webkit-slider-thumb { border-color: var(--ink); }
+:where(input[type="range"]:hover)::-moz-range-thumb { border-color: var(--ink); }
+:where(input[type="range"]:active)::-webkit-slider-thumb { background: var(--ink); border-color: var(--ink); }
+:where(input[type="range"]:active)::-moz-range-thumb { background: var(--ink); border-color: var(--ink); }
+.apc-range { position: relative; display: block; flex: 1; min-width: 4rem; height: 1.25rem; }
+.apc-range::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; box-sizing: border-box; height: var(--track-w, .25rem); margin-top: calc(var(--track-w, .25rem) / -2); background: var(--inset); border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control, 0); }
+.apc-range__fill {
+  position: absolute; top: 50%; pointer-events: none; background: var(--accent);
+  height: calc(var(--track-w, .25rem) - 2 * var(--stroke, 1px)); margin-top: calc((var(--track-w, .25rem) - 2 * var(--stroke, 1px)) / -2);
+  left: calc(var(--thumb, .75rem) / 2 + (100% - var(--thumb, .75rem)) * var(--lo, 0)); width: calc((100% - var(--thumb, .75rem)) * var(--span, 0));
+}
+.apc-range > input[type="range"] { position: relative; }
+.apc-range > input[type="range"]::-webkit-slider-runnable-track { background: transparent; border-color: transparent; }
+.apc-range > input[type="range"]::-moz-range-track { background: transparent; border-color: transparent; }
+.apc-range > input[type="range"]::-moz-range-progress { background: transparent; }
+
+/* progress / meter (native elements, should anyone use them) */
+:where(progress, meter) { -webkit-appearance: none; appearance: none; box-sizing: border-box; height: var(--track-w, .25rem); color: var(--ink); background: var(--inset); border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control, 0); }
+:where(progress)::-webkit-progress-bar { background: var(--inset); }
+:where(progress)::-webkit-progress-value { background: var(--accent); }
+:where(progress)::-moz-progress-bar { background: var(--accent); }
+
+/* disclosure, rules, links, code */
+:where(summary) { list-style: none; cursor: pointer; }
+:where(summary)::-webkit-details-marker { display: none; }
+:where(summary)::before { content: "\25B8"; display: inline-block; width: 1.1em; color: var(--ink-2); }
+:where(details[open] > summary)::before { content: "\25BE"; }
+:where(hr) { height: 0; margin: .25rem 0; border: 0; border-top: var(--stroke, 1px) solid var(--rule-2); }
+:where(a) { color: var(--accent-text); }
+:where(pre, code, kbd, samp) { font-family: var(--font-ui); }
+:where(ul) { list-style-type: square; }   /* square bullets: the design has no round shapes */
+:where(li)::marker { color: var(--ink-2); }
 
 /* ---- knob (rotary) ----------------------------------------------------------
    <div class="apc-cell apc-knob" data-param="cutoff">
      <div class="apc-knob-dial"><div class="apc-knob-pointer"></div></div>
      <div class="apc-knob-label">CUTOFF</div>
-   </div>                                                                        */
+   </div>
+   flat: hairline dial, thin track ring + value arc in --accent + a pointer line  */
 .apc-knob { display: flex; flex-direction: column; align-items: center; gap: .25rem; }
 .apc-knob-dial {
   position: relative;
   flex: 1;
   aspect-ratio: 1;
+  box-sizing: border-box;
   border-radius: 50%;
-  background:
-    radial-gradient(circle at 35% 30%, var(--plate-2), var(--inset) 75%);
-  border: 1px solid var(--rule);
-  box-shadow: var(--sh-raised);
+  background: linear-gradient(145deg, var(--plate-2), var(--knob));
+  border: var(--stroke, 1px) solid var(--rule);
+  box-shadow: var(--sh-knob);
 }
 .apc-knob-pointer {
   position: absolute;
-  left: 50%; top: 8%;
-  width: max(1px, .09rem);
-  height: 30%;
-  background: var(--accent);
-  transform-origin: 50% 140%;
+  left: 50%; top: 27%;
+  width: var(--stroke-2, 2px);
+  height: 23%;
+  background: var(--ink);
+  border-radius: 1px;
+  transform-origin: 50% 100%;
   transform: translateX(-50%) rotate(-135deg);
 }
+.apc-knob > .apc-knob-label { order: -1; }   /* name above the dial, value below (the plate's order) */
 .apc-knob-label, .apc-ctl-label {
-  font-size: var(--t-label, .5rem);
+  font-family: var(--font-ui);
+  font-size: var(--t-label, max(10px, .625rem));
   font-weight: 600;
-  letter-spacing: .12em;
+  letter-spacing: var(--label-spacing, .12em);
   text-transform: uppercase;
   color: var(--ink-2);
   white-space: nowrap;
@@ -42,12 +166,12 @@
 /* section frame tag — tiny documentation caption in the section corner */
 .apc-sec-tag {
   position: absolute; left: .375rem; top: .1875rem;
-  font-size: .4rem; font-weight: 600; letter-spacing: .12em;
+  font-size: var(--t-micro, max(9px, .5rem)); font-weight: 600; letter-spacing: var(--label-spacing, .12em);
   text-transform: uppercase; color: var(--ink-2); opacity: .55;
   white-space: nowrap; pointer-events: none;
 }
 
-/* ---- detent flip (multiposition toggle) -------------------------------------
+/* ---- detent flip (multiposition selector) -----------------------------------
    <div class="apc-cell apc-flip" data-param="std"><button class="apc-flip-cap">
      <span class="apc-flip-value">VU</span></button>
      <div class="apc-ctl-label">STD</div></div>                                   */
@@ -56,70 +180,94 @@
   position: relative;
   flex: 1;
   width: 100%;
-  min-height: 1.25rem;
-  border: 1px solid var(--rule);
-  border-radius: var(--r-control);
+  min-height: var(--w-h, var(--ctl-h, 1.5rem));
+  box-sizing: border-box;
+  margin: 0; padding: 0 .5rem;
+  border: var(--stroke, 1px) solid var(--rule);
+  border-radius: var(--r-control, 0);
   background: var(--plate-2);
   color: var(--ink);
   font-family: var(--font-ui);
-  font-size: var(--t-value, .625rem);
+  font-size: var(--t-value, max(11px, .6875rem));
   font-weight: 600;
-  letter-spacing: .1em;
+  letter-spacing: .06em;
   cursor: pointer;
-  box-shadow: var(--sh-raised);
 }
-.apc-flip-cap::after {
-  content: ""; position: absolute; inset: 0;
-  border-radius: inherit; pointer-events: none;
-  box-shadow: var(--sh-recess); opacity: .4;
-}
-.apc-flip-cap:active { filter: brightness(1.15); }
+.apc-flip-cap:hover { border-color: var(--accent); }
+.apc-flip-cap:active { background: var(--accent); color: var(--accent-ink, var(--plate)); border-color: var(--accent); }
 
 /* ---- panel switch (binary toggle) -------------------------------------------
    <button class="apc-cell apc-psw" data-param="bypass" aria-checked="false">
-     <span class="led"></span><span>BYPASS</span></button>                        */
+     <span class="led"></span><span>BYPASS</span></button>
+   flat switch: a square track with a sliding thumb; data-variant="button" = boxed with a square LED */
 .apc-psw {
   display: flex; align-items: center; justify-content: center;
-  gap: .375rem;
-  border: 1px solid var(--rule);
-  border-radius: var(--r-control);
-  background: var(--plate-2);
+  gap: .5rem;
+  border: 0;
+  background: transparent;
   color: var(--ink-2);
   font-family: var(--font-ui);
-  font-size: var(--t-label, .5rem);
+  font-size: var(--t-label, max(10px, .625rem));
   font-weight: 600;
-  letter-spacing: .14em;
+  letter-spacing: var(--label-spacing, .12em);
   cursor: pointer;
-  box-shadow: var(--sh-raised);
 }
+.apc-psw:hover { color: var(--ink); }
 .apc-psw .led {
-  width: .5rem; height: .5rem; border-radius: 50%;
-  background: var(--ink-2); opacity: .35;
+  position: relative; flex: none;
+  box-sizing: border-box;
+  width: 2rem; height: 1rem;
+  border: var(--stroke, 1px) solid var(--rule);
+  border-radius: var(--r-control, 0);
+  background: var(--inset);
 }
+.apc-psw .led::after {
+  content: ""; position: absolute;
+  top: .125rem; bottom: .125rem; left: .125rem; width: calc(50% - .125rem);
+  border-radius: inherit;
+  background: var(--ink-2);
+}
+.apc-psw:hover .led { border-color: var(--accent); }
 .apc-psw[aria-checked="true"] { color: var(--ink); }
-.apc-psw[aria-checked="true"] .led {
-  background: var(--accent); opacity: 1;
-  box-shadow: 0 0 .5rem var(--accent);
+.apc-psw[aria-checked="true"] .led { border-color: var(--accent); }
+.apc-psw[aria-checked="true"] .led::after { left: 50%; background: var(--accent); }
+.apc-psw--button {
+  min-height: var(--w-h, var(--ctl-h, 1.5rem)); padding: 0 .75rem;
+  border: var(--stroke, 1px) solid var(--rule);
+  border-radius: var(--r-control, 0);
+  background: var(--plate-2);
 }
+.apc-psw--button:hover { border-color: var(--accent); }
+.apc-psw--button .led { width: .5rem; height: .5rem; border: 0; background: var(--led-off, var(--rule-2)); }
+.apc-psw--button .led::after { display: none; }
+.apc-psw--button:hover .led { border: 0; }
+.apc-psw--button[aria-checked="true"] { border-color: var(--accent); }
+.apc-psw--button[aria-checked="true"] .led { background: var(--led-on, var(--accent)); border: 0; }
 
 /* ---- fader (linear) ----------------------------------------------------------
    <div class="apc-cell apc-fader" data-param="gain">
      <div class="apc-fader-track"><div class="apc-fader-cap"></div></div>
      <div class="apc-ctl-label">GAIN</div></div>                                 */
 .apc-fader { display: flex; flex-direction: column; align-items: center; gap: .25rem; }
+.apc-fader:not(.apc-fader--h) > .apc-fader-track { margin: calc(var(--thumb, .75rem) / 2) 0; }
 .apc-fader-track {
-  position: relative; flex: 1; width: .375rem;
-  background: var(--inset); border-radius: 2px;
-  box-shadow: var(--sh-recess);
+  position: relative; flex: 1; width: var(--track-w, .25rem);
+  background: var(--inset);
+  outline: var(--stroke, 1px) solid var(--rule); outline-offset: calc(-1 * var(--stroke, 1px));
 }
 .apc-fader-cap {
   position: absolute; left: 50%; top: 20%;
-  width: 1.5rem; height: .625rem;
+  width: 1.25rem; height: var(--thumb, .75rem);
   transform: translate(-50%, -50%);
   background: var(--plate-2);
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  box-shadow: var(--sh-raised);
+  border: var(--stroke, 1px) solid var(--ink-2);
+  border-radius: var(--r-control, 0);
+  box-sizing: border-box;
+}
+.apc-fader-cap::after {
+  content: ""; position: absolute; left: .25rem; right: .25rem; top: 50%;
+  height: var(--stroke, 1px); margin-top: calc(var(--stroke, 1px) / -2);
+  background: var(--ink-2);
 }
 
 /* ---- LED screen (readout) ----------------------------------------------------
@@ -127,10 +275,11 @@
 .apc-screen {
   display: flex; align-items: center; justify-content: center;
   background: var(--inset);
-  border-radius: 3px;
-  box-shadow: var(--sh-recess);
-  color: var(--accent);
-  font-size: var(--t-readout, .6875rem);
+  border: var(--stroke, 1px) solid var(--rule);
+  border-radius: var(--r-control, 0);
+  color: var(--ink);                 /* text colour: --accent is a graphics colour (3:1) on light surfaces */
+  font-family: var(--font-ui);
+  font-size: var(--t-readout, max(11px, .75rem));
   font-weight: 600;
   letter-spacing: .08em;
   font-variant-numeric: tabular-nums;
@@ -141,12 +290,8 @@
 .apc-well {
   position: relative; overflow: hidden;
   background: var(--inset);
-  border-radius: var(--r-control);
-}
-.apc-well::after {
-  content: ""; position: absolute; inset: 0;
-  border-radius: inherit; box-shadow: var(--sh-recess);
-  pointer-events: none; z-index: 2;
+  border: var(--stroke, 1px) solid var(--rule-2);
+  border-radius: var(--r-control, 0);
 }
 .apc-well canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 
@@ -154,14 +299,753 @@
    <button class="apc-cell apc-chip">SET</button>                                 */
 .apc-chip {
   display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--rule-2);
-  border-radius: 2px;
+  border: var(--stroke, 1px) solid var(--rule);
+  border-radius: var(--r-control, 0);
   background: var(--plate-2);
   color: var(--ink-2);
   font-family: var(--font-ui);
-  font-size: var(--t-micro, .4375rem);
+  font-size: var(--t-micro, max(9px, .5rem));
   font-weight: 600;
-  letter-spacing: .1em;
+  letter-spacing: var(--label-spacing, .12em);
   cursor: pointer;
 }
-.apc-chip:hover { border-color: var(--accent); color: var(--accent); }
+.apc-chip:hover { border-color: var(--accent); color: var(--accent-text); }
+
+/* ==== kit-A begin ==============================================================
+   Controls, context panel, help, window chrome. Token-only: every colour comes
+   from the theme tokens (--plate, --ink, --accent, --rule ...). No token fallbacks
+   live here any more: apc-core.css :root carries the night defaults (equal to
+   design_library/apc-minimal/tokens.css) and apc-widgets.css mirrors the day block.
+   kit-B appends its own marked sections to this file; never edit across markers.
+   ============================================================================== */
+
+/* ==== kit-A: shared bits (buttons, hidden fix, focus) ==== */
+:where(.apc-btn) {
+  font: inherit; font-family: var(--font-ui); font-size: var(--t-label, max(10px, .625rem)); font-weight: 600;
+  letter-spacing: var(--label-spacing, .12em); text-transform: uppercase; color: var(--ink); background: var(--plate-2);
+  border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control, 0);
+  padding: .15rem .5rem; min-height: max(22px, 1.1rem); cursor: pointer;
+}
+:where(.apc-btn):hover { border-color: var(--accent); }
+:where(.apc-btn):active { background: var(--accent); color: var(--accent-ink, var(--plate)); border-color: var(--accent); }
+:where(.apc-btn)[disabled], :where(.apc-btn)[aria-disabled="true"] { opacity: var(--disabled-opacity, .4); cursor: default; }
+:where(.apc-btn)[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink, var(--plate)); border-color: var(--accent); }
+:where(.apc-btn--primary) { background: var(--accent); color: var(--accent-ink, var(--plate)); border-color: var(--accent); }
+.apc-btn:focus-visible, .apc-brand__link:focus-visible, .apc-badge:focus-visible, .apc-update-note:focus-visible,
+.apc-readout:focus-visible, .apc-ctl-more:focus-visible, .apc-toast__x:focus-visible, .apc-menu__item:focus-visible,
+.apc-ctx__select:focus-visible, .apc-route input:focus-visible, .apc-grip:focus-visible, .apc-entry:focus-visible,
+.apc-sel-step:focus-visible {
+  outline: var(--stroke-2, 2px) solid var(--apc-focus, var(--accent)); outline-offset: 2px;
+}
+.apc-ctl-more[hidden], .apc-mod-dot[hidden], .apc-readout[hidden], .apc-tooltip[hidden], .apc-grip__badge[hidden],
+.apc-badge[hidden], .apc-update-note[hidden], .apc-theme-switch[hidden], .apc-help-btn[hidden] { display: none !important; }
+
+/* ==== kit-A: controls (knob, slider, selector, toggle) ==== */
+.apc-ctl { -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-user-select: none; user-select: none; }
+.apc-ctl:not(.apc-cell) { position: relative; }
+.apc-ctl--knob, .apc-ctl--slider { cursor: ns-resize; }
+.apc-ctl--slider.apc-fader--h { cursor: ew-resize; }
+.apc-ctl--toggle, .apc-ctl--selector { cursor: pointer; }
+.apc-ctl:focus-visible { outline: var(--stroke-2, 2px) solid var(--apc-focus, var(--accent)); outline-offset: 2px; border-radius: var(--r-control, 0); }
+.apc-ctl[aria-disabled="true"] { opacity: var(--disabled-opacity, .4); }
+.apc-ctl.is-disabled { pointer-events: none; cursor: default; }
+.apc-ctl[aria-invalid="true"] .apc-knob-label, .apc-ctl[aria-invalid="true"] .apc-ctl-label { color: var(--apc-danger-text, var(--apc-danger)); }
+.apc-ctl[aria-invalid="true"] .apc-knob-dial, .apc-ctl[aria-invalid="true"] .apc-flip-cap, .apc-ctl[aria-invalid="true"] .led { border-color: var(--apc-danger); }
+.apc-ctl[data-readout-pos="above"] > .apc-readout { order: -1; }
+
+/* knob: ring (ticks, track, value arc, modulation arcs, live marker) around the dial.
+   Track and value arc use a non-scaling stroke so the token widths (--stroke, --knob-arc) are screen sizes. */
+.apc-knob-wrap { position: relative; flex: 1 1 0; min-height: 0; aspect-ratio: 1; }
+.apc-knob-wrap > .apc-knob-dial { position: absolute; inset: 12%; flex: none; aspect-ratio: auto; }
+.apc-ctl--knob:not(.apc-cell) { display: inline-flex; }
+.apc-ctl--knob:not(.apc-cell) .apc-knob-wrap, .apc-ctl--knob[data-size] .apc-knob-wrap { flex: none; width: var(--knob-size, 3rem); height: var(--knob-size, 3rem); }
+.apc-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.apc-ring__track { fill: none; stroke: var(--rule); stroke-width: var(--knob-arc, .1875rem); vector-effect: non-scaling-stroke; }
+.apc-ring__value { fill: none; stroke: var(--accent); stroke-width: var(--knob-arc, .1875rem); stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.apc-ring__route { fill: none; stroke-width: 2.4; stroke-linecap: butt; }
+.apc-ring__route.is-bypassed { opacity: .35; }
+.apc-ring__sum { stroke: var(--ink); }   /* ONE band = summed reach of all active modulation routes */
+.apc-ring__marker { fill: var(--ink); stroke: var(--plate); stroke-width: 1; }
+.apc-ring__tick { stroke: var(--ink-2); stroke-width: var(--stroke, 1px); vector-effect: non-scaling-stroke; }
+.apc-ctl--knob:hover .apc-knob-dial { border-color: var(--ink-2); }
+.apc-ctl--knob:active .apc-knob-dial { border-color: var(--accent); }
+.apc-glide .apc-knob-pointer { transition: transform .15s ease-out; }
+.apc-glide .apc-fader-cap { transition: top .15s ease-out, left .15s ease-out; }
+
+/* value readout + inline entry */
+.apc-readout {
+  font: inherit; font-family: var(--font-num); font-size: var(--t-value, max(11px, .6875rem)); font-weight: 600;
+  font-variant-numeric: tabular-nums; color: var(--ink); background: transparent;
+  border: var(--stroke, 1px) solid transparent; border-radius: var(--r-control, 0); padding: 0 .25rem; min-width: 3.5em;
+  text-align: center; cursor: text; white-space: nowrap;
+}
+.apc-readout:hover { border-color: var(--rule); background: var(--inset); }
+.apc-readout__u { color: var(--ink-2); font-weight: 400; }
+.apc-entry {
+  box-sizing: border-box; font: inherit; font-family: var(--font-num); font-size: var(--t-value, max(11px, .6875rem)); font-weight: 600;
+  width: 100%; min-width: 4.5rem; text-align: center; color: var(--ink); background: var(--inset);
+  border: var(--stroke, 1px) solid var(--accent); border-radius: var(--r-control, 0); padding: 0 .25rem;
+}
+.apc-entry--float { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5; width: auto; }
+.apc-entry.apc-invalid, .apc-route__lim.apc-invalid { border-color: var(--apc-danger); outline: var(--stroke-2, 2px) solid var(--apc-danger); outline-offset: 0; animation: apc-flash .5s ease-out; }
+@keyframes apc-flash { from { outline-offset: .3rem; } to { outline-offset: 0; } }
+.apc-hint {
+  position: absolute; left: 50%; top: 100%; transform: translateX(-50%); z-index: 6; white-space: nowrap; pointer-events: none;
+  background: var(--plate-2); color: var(--ink); border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control, 0);
+  padding: .1rem .35rem; font-family: var(--font-ui); font-size: var(--t-label, max(10px, .625rem));
+}
+
+/* modulation indicator dot by the label, "⋯" options affordance (visible on hover/focus, touch-friendly) */
+.apc-mod-dot { display: inline-block; width: .4em; height: .4em; margin-left: .4em; border-radius: var(--r-led, var(--r-control, 0)); vertical-align: middle; }
+.apc-ctl-more {
+  position: absolute; top: 0; right: 0; z-index: 4; box-sizing: border-box; padding: 0; line-height: 1;
+  width: max(16px, .9rem); height: max(16px, .9rem); font: inherit; font-size: var(--t-label, max(10px, .625rem));
+  color: var(--ink-2); background: var(--plate-2); border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control, 0);
+  cursor: pointer; opacity: 0; pointer-events: none;
+}
+.apc-ctl:hover > .apc-ctl-more, .apc-ctl:focus-within > .apc-ctl-more { opacity: 1; pointer-events: auto; }
+.apc-ctl-more:hover { color: var(--accent-text); border-color: var(--accent); }
+
+/* slider (fader): fill, modulation bands, ticks, horizontal variant */
+.apc-fader-fill { position: absolute; left: 0; right: 0; bottom: 0; background: var(--accent); pointer-events: none; }
+.apc-fader-mod { position: absolute; inset: 0; pointer-events: none; }
+.apc-fader-route { position: absolute; left: -.15rem; right: -.15rem; }
+.apc-fader-route.is-bypassed { opacity: .2 !important; }
+.apc-fader-sum { background: var(--ink); opacity: .55; }
+.apc-fader-ticks { position: absolute; inset: 0; pointer-events: none; }
+.apc-fader-tick { position: absolute; left: 100%; width: .25rem; height: var(--stroke, 1px); margin-left: .25rem; background: var(--ink-2); }
+.apc-fader--h { justify-content: center; }
+.apc-fader--h .apc-fader-track { flex: none; width: calc(100% - var(--thumb, .75rem)); height: var(--track-w, .25rem); margin: .5rem 0; }
+.apc-fader--h .apc-fader-fill { top: 0; bottom: 0; height: auto; right: auto; }
+.apc-fader--h .apc-fader-cap { top: 50%; width: var(--thumb, .75rem); height: 1.25rem; }
+.apc-fader--h .apc-fader-cap::after { left: 50%; right: auto; top: .25rem; bottom: .25rem; width: var(--stroke, 1px); height: auto; margin: 0 0 0 calc(var(--stroke, 1px) / -2); }
+.apc-fader--h .apc-fader-route { left: auto; right: auto; top: -.15rem; bottom: -.15rem; }
+.apc-fader--h .apc-fader-tick { left: auto; top: 100%; width: var(--stroke, 1px); height: .25rem; margin: .25rem 0 0; }
+.apc-ctl--slider:not(.apc-cell) { display: inline-flex; }
+.apc-ctl--slider:not(.apc-cell):not(.apc-fader--h) .apc-fader-track { flex: none; height: var(--slider-len, 6rem); }
+.apc-ctl--slider.apc-fader--h:not(.apc-cell) { width: var(--slider-len, 6rem); }
+.apc-ctl--slider:hover .apc-fader-cap { border-color: var(--accent); }
+.apc-ctl--slider:active .apc-fader-cap { background: var(--accent); border-color: var(--accent); }
+.apc-ctl--slider:active .apc-fader-cap::after { background: var(--accent-ink, var(--plate)); }
+
+/* selector (stepper: prev / value / next) + menu */
+.apc-sel-row { display: flex; align-items: stretch; flex: 1; width: 100%; min-height: var(--w-h, var(--ctl-h, 1.5rem)); }
+.apc-sel-row > .apc-flip-cap { margin: 0 calc(-1 * var(--stroke, 1px)); min-width: 0; }
+.apc-sel-step {
+  flex: none; box-sizing: border-box; width: var(--w-h, var(--ctl-h, 1.5rem)); margin: 0; padding: 0;
+  font-family: var(--font-ui); font-size: var(--t-readout, max(11px, .75rem)); line-height: 1; color: var(--ink);
+  background: var(--plate-2); border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control, 0); cursor: pointer;
+}
+.apc-sel-step:hover { border-color: var(--accent); position: relative; z-index: 1; }
+.apc-sel-step:active { background: var(--accent); color: var(--accent-ink, var(--plate)); border-color: var(--accent); }
+.apc-sel-step:disabled { opacity: var(--disabled-opacity, .4); cursor: default; pointer-events: none; }
+.apc-sel-cap .apc-flip-value::after { content: " ▾"; color: var(--ink-2); }
+.apc-menu {
+  position: fixed; z-index: 1000; box-sizing: border-box; max-height: 60vh; overflow: auto; padding: .125rem 0;
+  background: var(--plate-2); color: var(--ink); border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-panel, 0);
+  box-shadow: var(--apc-shadow-pop, none); font-family: var(--font-ui); font-size: var(--t-value, max(11px, .6875rem));
+}
+.apc-menu__item { padding: .2rem .5rem .2rem 1.25rem; border-radius: var(--r-control, 0); cursor: pointer; white-space: nowrap; position: relative; }
+.apc-menu__item[aria-selected="true"] { font-weight: 700; }
+.apc-menu__item[aria-selected="true"]::before { content: ""; position: absolute; left: .5rem; top: 50%; width: .3125rem; height: .3125rem; margin-top: -.15625rem; background: var(--accent); }
+.apc-menu__item[aria-selected="true"]:hover::before, .apc-menu__item[aria-selected="true"]:focus::before { background: currentColor; }
+.apc-menu__item:hover, .apc-menu__item:focus { background: var(--accent); color: var(--accent-ink, var(--plate)); outline: none; }
+
+/* toggle */
+.apc-psw[aria-checked="true"] { color: var(--ink); }
+
+/* ==== kit-A: context panel ==== */
+.apc-ctx {
+  position: fixed; z-index: 1000; box-sizing: border-box; min-width: 16rem; max-width: min(30rem, 96vw); max-height: calc(100vh - 12px); overflow: auto;
+  background: var(--plate-2); color: var(--ink); border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-panel, 0);
+  box-shadow: var(--apc-shadow-pop, none); padding: .375rem;
+  font-family: var(--font-ui); font-size: var(--t-value, max(11px, .6875rem)); -webkit-user-select: none; user-select: none;
+}
+.apc-ctx:focus { outline: none; }
+.apc-ctx .apc-btn, .apc-manual .apc-btn { font-size: var(--t-label, max(10px, .625rem)); }
+.apc-ctx__head { font-weight: 600; padding: .125rem .25rem .375rem; border-bottom: var(--stroke, 1px) solid var(--rule-2); }
+.apc-ctx__sec { padding: .375rem .25rem; border-bottom: var(--stroke, 1px) solid var(--rule-2); }
+.apc-ctx__sec:last-child { border-bottom: 0; }
+.apc-ctx__h { margin: 0 0 .25rem; font-size: var(--t-micro, max(9px, .5rem)); font-weight: 600; letter-spacing: var(--label-spacing, .12em); color: var(--ink-2); }
+.apc-ctx__row { display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; }
+.apc-ctx__note { color: var(--ink-2); padding: .125rem .25rem; }
+.apc-ctx__cc { margin-left: auto; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.apc-ctx__select { font: inherit; font-family: var(--font-ui); color: var(--ink); background: var(--inset); border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control, 0); padding: .15rem .25rem; min-height: max(22px, 1.1rem); }
+.apc-ctx__help { margin-top: .25rem; padding: .375rem; background: var(--inset); border-radius: var(--r-control, 0); font-family: var(--font-text); }
+.apc-ctx__help p { margin: 0 0 .25rem; }
+.apc-route { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .5rem; padding: .25rem 0; border-bottom: var(--stroke, 1px) dotted var(--rule-2); }
+.apc-route.is-bypassed .apc-route__name { opacity: .55; text-decoration: line-through; }
+.apc-route__src { flex: 1 0 6rem; display: flex; align-items: center; min-width: 0; }
+.apc-route__src .apc-route__name { min-width: 0; flex: 1; }
+.apc-route__amount { flex: 2 1 9rem; display: flex; align-items: center; gap: .35rem; }
+.apc-route__amount .apc-range { flex: 1; min-width: 4rem; }
+.apc-route__amt { min-width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; }
+.apc-route__range { display: inline-flex; align-items: center; gap: .2rem; }
+.apc-route__lim { width: 4.8rem; box-sizing: border-box; font: inherit; font-family: var(--font-ui); color: var(--ink); background: var(--inset); border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control, 0); padding: .1rem .25rem; }
+.apc-swatch { display: inline-block; width: .8em; height: .8em; margin-right: .45em; border-radius: var(--r-control, 0); flex: none; }
+/* the dash patterns below are a colour-blind aid (source identity), not decoration */
+.apc-swatch--dash1 { background-image: repeating-linear-gradient(45deg, transparent 0 2px, var(--plate-2) 2px 3px); }
+.apc-swatch--dash2 { background-image: radial-gradient(var(--plate-2) 30%, transparent 32%); background-size: 4px 4px; }
+
+/* ==== kit-A: help (tooltip, info bar, help mode, manual overlay) ==== */
+.apc-tooltip {
+  position: fixed; z-index: 1100; box-sizing: border-box; max-width: 20rem; padding: .3rem .5rem; pointer-events: none;
+  background: var(--plate-2); color: var(--ink); border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control, 0);
+  box-shadow: var(--apc-shadow-pop, none);
+  font-family: var(--font-ui); font-size: var(--t-value, max(11px, .6875rem)); line-height: 1.35;
+}
+.apc-tooltip__title { display: flex; justify-content: space-between; gap: .75rem; font-weight: 600; }
+.apc-tooltip__val { color: var(--accent-text); font-variant-numeric: tabular-nums; }
+.apc-tooltip__body { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-family: var(--font-text); }
+.apc-tooltip__meta, .apc-tooltip__keys { color: var(--ink-2); font-size: .92em; }
+.apc-infobar { min-width: 0; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--ink-2); font-size: var(--t-label, max(10px, .625rem)); }
+.apc-infobar[data-state="hover"] { color: var(--ink); }
+.apc-infobar[data-state="mode"] { color: var(--accent-text); }
+html.apc-help-mode, html.apc-help-mode * { cursor: help !important; }
+html.apc-help-mode [data-param] { outline: var(--stroke, 1px) dashed var(--accent); outline-offset: 2px; }
+.apc-manual-overlay { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; background: var(--apc-overlay); }
+.apc-manual {
+  box-sizing: border-box; width: min(30rem, 92vw); max-height: 90vh; overflow: auto; padding: .75rem;
+  background: var(--plate-2); color: var(--ink); border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-panel, 0);
+  font-family: var(--font-text); font-size: max(11px, .75rem); line-height: 1.4;
+}
+.apc-manual:focus { outline: none; }
+.apc-manual__title { margin: 0 0 .5rem; font-family: var(--font-ui); font-size: var(--t-title, max(12px, .875rem)); letter-spacing: var(--label-spacing, .12em); text-transform: uppercase; }
+.apc-manual__body p { margin: 0; }
+.apc-man__sec h3 { margin: .6rem 0 .15rem; font-family: var(--font-ui); font-size: var(--t-micro, max(9px, .5rem)); letter-spacing: var(--label-spacing, .12em); text-transform: uppercase; color: var(--ink-2); }
+.apc-man__meta { margin-top: .6rem !important; color: var(--ink-2); }
+.apc-man__keys { margin: 0; padding-left: 1.1rem; }
+.apc-manual__foot { display: flex; justify-content: flex-end; gap: .375rem; margin-top: .75rem; }
+
+/* ==== kit-A: window chrome (header, footer, scale, gripper, theme) ==== */
+.apc-header { display: flex; align-items: center; gap: calc(2 * var(--ctl-gap, .375rem)); padding: 0 var(--pad, .5rem); box-sizing: border-box; color: var(--ink); font-family: var(--font-ui); }
+.apc-brand { display: flex; align-items: center; gap: .5rem; font-weight: 700; letter-spacing: var(--label-spacing, .12em); text-transform: uppercase; font-size: var(--t-value, max(11px, .6875rem)); white-space: nowrap; }
+.apc-brand__link { font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; background: none; border: 0; padding: .1rem .2rem; border-radius: var(--r-control, 0); cursor: pointer; }
+.apc-brand__link:hover { color: var(--accent-text); text-decoration: underline; text-underline-offset: .2em; }
+.apc-brand__logo { display: block; height: 1.5rem; }
+.apc-brand__sep { color: var(--ink-2); font-weight: 400; }
+.apc-header__slot { flex: 1; min-width: 0; display: flex; align-items: center; gap: calc(2 * var(--ctl-gap, .375rem)); }
+.apc-header__tools { display: flex; align-items: center; gap: var(--ctl-gap, .375rem); }
+.apc-header__tools > div, .apc-header__save { display: contents; }
+.apc-gear { font-size: var(--t-readout, max(11px, .75rem)); line-height: 1; }
+/* header control row: every box (A/B, preset chip + steppers + save, menu, help, theme, scale - / value / +, gear) is exactly
+   --ctl-h high with ONE type style and ONE border; boxes inside a group sit --ctl-gap apart, groups 2 x --ctl-gap apart. */
+.apc-header__slot > * { display: flex; align-items: center; }
+.apc-header :is(.apc-btn, .apc-button, .apc-seg, .apc-pc__browse, .apc-pc__step, .apc-pc__save, .apc-scale__val) {
+  box-sizing: border-box; height: var(--ctl-h, 1.5rem); min-height: var(--ctl-h, 1.5rem); margin: 0; padding: 0 .625rem;
+  display: inline-flex; align-items: center; justify-content: center; flex: none; white-space: nowrap;
+  font-family: var(--font-ui); font-size: var(--t-label, max(10px, .625rem)); font-weight: 600; line-height: 1;
+  letter-spacing: var(--label-spacing, .12em); text-transform: uppercase;
+  border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control, 0);
+}
+.apc-header :is(.apc-help-btn, .apc-pc__step, .apc-scale__btn, .apc-gear) { width: var(--ctl-h, 1.5rem); min-width: 0; padding: 0; }
+.apc-header .apc-pc { display: flex; align-items: center; gap: var(--ctl-gap, .375rem); font-size: inherit; }
+.apc-header .apc-pc__browse { justify-content: flex-start; gap: .25rem; min-width: 9rem; color: var(--ink); }
+.apc-header .apc-pc__name { overflow: hidden; text-overflow: ellipsis; }
+.apc-header .apc-theme-switch .apc-btn { min-width: 4.5rem; }
+.apc-header .apc-scale__val { min-width: 2.75rem; padding: 0 .25rem; border-color: var(--rule-2); background: var(--inset); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.apc-header .apc-menu-btn { padding-right: .5rem; }
+.apc-header .apc-menu-btn__caret { margin-left: .25rem; }
+.apc-footer { display: flex; align-items: center; gap: calc(2 * var(--ctl-gap, .375rem)); padding: 0 var(--pad, .5rem); box-sizing: border-box; font-family: var(--font-ui); font-size: var(--t-label, max(10px, .625rem)); color: var(--ink-2); }
+.apc-footer__info, .apc-footer__preset { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.apc-version { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.apc-badge {
+  font: inherit; font-weight: 700; letter-spacing: var(--label-spacing, .12em); color: var(--accent-text); background: transparent;
+  border: var(--stroke, 1px) solid var(--accent); border-radius: var(--r-control, 0); padding: 0 .5rem; cursor: pointer; white-space: nowrap;
+  box-sizing: border-box; height: calc(var(--ctl-h, 1.5rem) - .25rem); line-height: 1; display: inline-flex; align-items: center;
+}
+.apc-badge[data-state="UNVERIFIED"] { color: var(--apc-danger-text, var(--apc-danger)); border-color: var(--apc-danger); }
+.apc-update-note { font: inherit; color: var(--accent-text); background: none; border: 0; padding: 0 .2rem; cursor: pointer; text-decoration: underline; text-underline-offset: .15em; white-space: nowrap; }
+.apc-scale { display: inline-flex; align-items: center; gap: .2rem; }
+.apc-scale__btn { min-width: max(22px, 1.1rem); padding: 0 .3rem; }
+.apc-scale__val { min-width: 3.2em; text-align: center; font-size: var(--t-label, max(10px, .625rem)); font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.apc-grip__badge {
+  position: absolute; right: .25rem; bottom: 100%; z-index: 91; pointer-events: none; white-space: nowrap;
+  background: var(--plate-2); color: var(--ink); border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control, 0);
+  padding: .05rem .35rem; font-size: var(--t-label, max(10px, .625rem)); font-variant-numeric: tabular-nums;
+}
+.apc-grip[data-dragging="true"]::before { opacity: 1; }
+
+/* ==== kit-A: toasts (used by apc-kit.js: .apc-toasts / .apc-toast--info|warn|error) ==== */
+.apc-toasts { position: fixed; right: .75rem; bottom: 2.5rem; z-index: 1300; display: flex; flex-direction: column; gap: .375rem; max-width: min(24rem, 92vw); pointer-events: none; }
+.apc-toast {
+  pointer-events: auto; display: flex; align-items: flex-start; gap: .5rem; box-sizing: border-box; padding: .4rem .5rem .4rem .6rem;
+  background: var(--plate-2); color: var(--ink); border: var(--stroke, 1px) solid var(--rule); border-left-width: .25rem; border-radius: var(--r-control, 0);
+  box-shadow: var(--apc-shadow-pop, none); font-family: var(--font-ui); font-size: var(--t-value, max(11px, .6875rem));
+  animation: apc-toast-in .18s ease-out;
+}
+.apc-toast--info { border-left-color: var(--ink-2); }
+.apc-toast--warn { border-left-color: var(--accent); }
+.apc-toast--error { border-color: var(--apc-danger); }
+.apc-toast__msg { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.apc-toast__x { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; min-width: max(18px, 1rem); padding: 0 .25rem; line-height: 1; }
+@keyframes apc-toast-in { from { opacity: 0; transform: translateY(.4rem); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .apc-glide .apc-knob-pointer, .apc-glide .apc-fader-cap { transition: none !important; }
+  .apc-toast, .apc-entry.apc-invalid, .apc-route__lim.apc-invalid { animation: none !important; }
+  .apc-ctl, .apc-ctl * , .apc-tooltip, .apc-menu { transition: none !important; }
+}
+/* ==== kit-A end ==== */
+
+/* ==== kit-B ==== settings overlay · preset browser · licence / update dialogs.
+   Token-only: colors come from the theme tokens in apc-core.css; hardcoded values appear only as var(--x, fallback). */
+.apc-kb-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.apc-lc[hidden], .apc-lc [hidden], .apc-sx [hidden], .apc-pb [hidden], .apc-up [hidden], .apc-kb-sheet [hidden], .apc-pc [hidden] { display: none !important; }
+
+/* shared: buttons, inputs, fields, notes, badge, sheet */
+.apc-kb-btn {
+  font-family: var(--font-ui); font-size: var(--t-label, max(10px, .625rem)); font-weight: 600; letter-spacing: var(--label-spacing, .12em); text-transform: uppercase;
+  padding: .25rem .6rem; min-height: 1.5rem; box-sizing: border-box;
+  border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control);
+  background: var(--plate-2); color: var(--ink); cursor: pointer;
+}
+.apc-kb-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-text); }
+.apc-kb-btn:focus-visible, .apc-kb-input:focus-visible, .apc-sx__tab:focus-visible, .apc-pb__list:focus-visible,
+.apc-pb__scope:focus-visible, .apc-pb__fg:focus-visible, .apc-pc__browse:focus-visible, .apc-kb-sheet__x:focus-visible,
+.apc-pb__star:focus-visible, .apc-pb__fav:focus-visible, .apc-up__notes:focus-visible, .apc-sx__link:focus-visible {
+  outline: var(--stroke-2, 2px) solid var(--accent); outline-offset: 1px;
+}
+.apc-kb-btn:disabled { opacity: var(--disabled-opacity, .4); cursor: default; }
+.apc-kb-btn--primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink, var(--plate)); }
+.apc-kb-btn--primary:hover:not(:disabled) { color: var(--accent-ink, var(--plate)); border-color: var(--ink); }
+.apc-kb-btn--danger { border-color: var(--apc-danger); color: var(--apc-danger-text, var(--apc-danger)); }
+.apc-kb-input {
+  font-family: var(--font-ui); font-size: var(--t-label, max(10px, .625rem)); width: 100%; box-sizing: border-box; padding: .2rem .4rem;
+  background: var(--inset); color: var(--ink); border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control);
+  -webkit-user-select: text; user-select: text;
+}
+select.apc-kb-input { cursor: pointer; }
+.apc-kb-field { display: flex; flex-direction: column; gap: .15rem; margin: 0 0 .5rem; }
+.apc-kb-field > label, .apc-kb-field > .apc-sx__label { color: var(--ink-2); font-size: var(--t-label, max(10px, .625rem)); letter-spacing: var(--label-spacing, .12em); text-transform: uppercase; }
+.apc-kb-note { color: var(--ink-2); font-size: var(--t-label, max(10px, .625rem)); line-height: 1.35; margin: .2rem 0; }
+.apc-kb-badge {
+  display: inline-block; padding: .1rem .5rem; border: var(--stroke, 1px) solid var(--accent); border-radius: var(--r-control);
+  color: var(--accent-text); font-weight: 700; letter-spacing: var(--label-spacing, .12em); font-size: var(--t-label, max(10px, .625rem));
+}
+.apc-kb-badge[data-state="LICENSED"] { border-color: var(--ok); color: var(--ok-text, var(--ok)); }
+.apc-kb-badge[data-state="UNVERIFIED"] { border-color: var(--apc-danger); color: var(--apc-danger-text, var(--apc-danger)); }
+
+.apc-kb-backdrop { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: var(--apc-overlay); }
+.apc-kb-sheet {
+  display: flex; flex-direction: column; box-sizing: border-box; width: min(34rem, 94vw); max-height: 92vh;
+  background: var(--plate); color: var(--ink); border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-panel);
+  font-family: var(--font-ui); font-size: var(--t-value, max(11px, .6875rem));
+}
+.apc-kb-sheet:focus { outline: none; }
+.apc-kb-sheet--small { width: min(24rem, 92vw); }
+.apc-kb-sheet__head { display: flex; align-items: center; justify-content: space-between; padding: .4rem .6rem; border-bottom: var(--stroke, 1px) solid var(--rule-2); }
+.apc-kb-sheet__title { margin: 0; font-size: var(--t-value, max(11px, .6875rem)); font-weight: 700; letter-spacing: var(--label-spacing, .12em); text-transform: uppercase; color: var(--ink); }
+.apc-kb-sheet__x { background: none; border: 0; color: var(--ink-2); font-size: var(--t-title, max(12px, .875rem)); line-height: 1; cursor: pointer; padding: 0 .3rem; }
+.apc-kb-sheet__x:hover { color: var(--accent-text); }
+.apc-kb-sheet__body { padding: .6rem; overflow: auto; min-height: 0; flex: 1; }
+.apc-kb-sheet__foot { display: flex; justify-content: flex-end; gap: .4rem; padding: .4rem .6rem; border-top: var(--stroke, 1px) solid var(--rule-2); }
+.apc-kb-sheet__foot:empty { display: none; }
+
+/* settings overlay */
+.apc-sx-sheet { width: min(46rem, 96vw); height: min(24rem, 90vh); }
+.apc-sx-sheet .apc-kb-sheet__body { display: flex; overflow: hidden; padding: 0; }
+.apc-sx { display: flex; flex: 1; min-height: 0; width: 100%; }
+.apc-sx__tabs { display: flex; flex-direction: column; gap: 1px; width: 9rem; flex: none; padding: .4rem; border-right: var(--stroke, 1px) solid var(--rule-2); background: var(--plate-2); }
+.apc-sx__tab {
+  text-align: left; font-family: var(--font-ui); font-size: var(--t-label, max(10px, .625rem)); font-weight: 600; letter-spacing: var(--label-spacing, .12em); text-transform: uppercase;
+  padding: .3rem .5rem; border: var(--stroke, 1px) solid transparent; border-radius: var(--r-control); background: none; color: var(--ink-2); cursor: pointer;
+}
+.apc-sx__tab:hover { color: var(--ink); }
+.apc-sx__tab { position: relative; }
+.apc-sx__tab[aria-selected="true"] { color: var(--ink); border-color: var(--rule); background: var(--plate); }
+.apc-sx__tab[aria-selected="true"]::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: .2rem; background: var(--accent); }
+.apc-sx__area { flex: 1; min-width: 0; overflow: auto; padding: .6rem .8rem; }
+.apc-sx__panel:focus { outline: none; }
+.apc-sx__row { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: .5rem; align-items: start; margin-bottom: .5rem; }
+.apc-sx__label { color: var(--ink); font-size: var(--t-label, max(10px, .625rem)); padding-top: .25rem; }
+.apc-sx__ctl { display: flex; flex-direction: column; gap: .15rem; align-items: flex-start; min-width: 0; }
+.apc-sx__ctl select, .apc-sx__ctl input[type="text"], .apc-sx__ctl input[type="number"] { max-width: 20rem; }
+.apc-sx__err { margin: .3rem 0; padding: .3rem .5rem; border: var(--stroke, 1px) solid var(--apc-danger); border-radius: var(--r-control); color: var(--apc-danger-text, var(--apc-danger)); font-size: var(--t-label, max(10px, .625rem)); }
+.apc-sx__foot { margin-top: .8rem; padding-top: .5rem; border-top: var(--stroke, 1px) solid var(--rule-2); }
+.apc-sx__group { margin-top: .8rem; padding-top: .5rem; border-top: var(--stroke, 1px) solid var(--rule-2); }
+.apc-sx__status { margin: .4rem 0; color: var(--ink-2); }
+.apc-sx__dev { margin: .3rem 0; padding: .2rem .4rem; border: var(--stroke, 1px) dashed var(--accent); color: var(--accent-text); }
+.apc-sx__scroll { max-height: 11rem; overflow: auto; border: var(--stroke, 1px) solid var(--rule-2); border-radius: var(--r-control); }
+.apc-sx__table { width: 100%; border-collapse: collapse; font-size: var(--t-label, max(10px, .625rem)); }
+.apc-sx__table th, .apc-sx__table td { padding: .15rem .3rem; border-bottom: var(--stroke, 1px) solid var(--rule-2); text-align: left; font-weight: 400; }
+.apc-sx__table thead th { color: var(--ink-2); position: sticky; top: 0; background: var(--plate-2); }
+.apc-sx__num { width: 4.5rem; }
+.apc-sx__acts { white-space: nowrap; }
+.apc-sx__acts .apc-kb-btn { min-height: 1.2rem; padding: .1rem .35rem; margin-right: .2rem; }
+.apc-sx__product { margin: 0 0 .4rem; font-size: var(--t-title, max(12px, .875rem)); letter-spacing: var(--label-spacing, .12em); }
+.apc-sx__h { margin: .8rem 0 .3rem; color: var(--ink-2); font-size: var(--t-label, max(10px, .625rem)); letter-spacing: var(--label-spacing, .12em); text-transform: uppercase; }
+.apc-sx__facts { display: grid; grid-template-columns: 8rem 1fr; gap: .15rem .5rem; margin: 0 0 .5rem; }
+.apc-sx__facts dt { color: var(--ink-2); }
+.apc-sx__facts dd { margin: 0; -webkit-user-select: text; user-select: text; }
+.apc-sx__links { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .3rem 1rem; }
+.apc-sx__link { color: var(--accent-text); text-decoration: underline; cursor: pointer; }
+
+/* licence / update */
+.apc-lc { font-family: var(--font-ui); color: var(--ink); font-size: var(--t-value, max(11px, .6875rem)); }
+.apc-lc__lead { margin: 0 0 .5rem; padding: .3rem .5rem; border: var(--stroke, 1px) solid var(--accent); border-radius: var(--r-control); }
+.apc-lc__status { display: flex; flex-direction: column; align-items: flex-start; gap: .2rem; margin-bottom: .4rem; }
+.apc-lc__why, .apc-lc__next { margin: .1rem 0; }
+.apc-lc__row { display: flex; flex-wrap: wrap; gap: .4rem; margin: .3rem 0; align-items: center; }
+.apc-lc__row--end { justify-content: flex-end; }
+.apc-lc__msg { margin: .3rem 0; padding: .25rem .5rem; border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control); }
+.apc-lc__msg--err { border-color: var(--apc-danger); color: var(--apc-danger-text, var(--apc-danger)); }
+.apc-lc__msg--ok { border-color: var(--ok); color: var(--ok-text, var(--ok)); }
+.apc-lc__drop { display: flex; align-items: center; gap: .4rem; margin: .3rem 0; padding: .4rem; border: var(--stroke, 1px) dashed var(--rule); border-radius: var(--r-control); }
+.apc-lc__drop.is-drop { border-color: var(--accent); background: var(--plate-2); }
+.apc-lc__more { margin: .4rem 0; }
+.apc-lc__more > summary { cursor: pointer; color: var(--ink-2); padding: .15rem 0; }
+.apc-lc__more > summary:focus-visible { outline: var(--stroke-2, 2px) solid var(--accent); outline-offset: 1px; }
+.apc-lc__text { font-size: var(--t-label, max(10px, .625rem)); }
+.apc-lc__steps { margin: .2rem 0 .3rem 1rem; padding: 0; }
+.apc-up { font-family: var(--font-ui); color: var(--ink); font-size: var(--t-value, max(11px, .6875rem)); }
+.apc-up__title { margin: 0 0 .4rem; font-weight: 700; }
+.apc-up__title--err, .apc-up__error { color: var(--apc-danger-text, var(--apc-danger)); }
+.apc-up__instruction { margin: .2rem 0; font-weight: 700; color: var(--accent-text); }
+.apc-up__path { margin: .2rem 0; word-break: break-all; color: var(--ink-2); -webkit-user-select: text; user-select: text; }
+.apc-up__bar { height: .5rem; margin: .3rem 0; background: var(--inset); border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control); overflow: hidden; }
+.apc-up__fill { display: block; height: 100%; background: var(--accent); }
+.apc-up__bar--busy .apc-up__fill { width: 35%; }
+@media (prefers-reduced-motion: no-preference) {
+  .apc-up__fill { transition: width .15s linear; }
+  .apc-up__bar--busy .apc-up__fill { animation: apc-up-busy 1.1s ease-in-out infinite alternate; }
+  @keyframes apc-up-busy { from { transform: translateX(0); } to { transform: translateX(185%); } }
+}
+.apc-up__notes { white-space: pre-wrap; max-height: 8rem; overflow: auto; margin: .3rem 0; padding: .4rem; background: var(--inset); border: var(--stroke, 1px) solid var(--rule-2); border-radius: var(--r-control); font-family: var(--font-ui); -webkit-user-select: text; user-select: text; }
+
+/* preset browser */
+.apc-pb { position: relative; display: flex; flex-direction: column; gap: .35rem; height: 100%; min-height: 0; font-family: var(--font-ui); color: var(--ink); font-size: var(--t-label, max(10px, .625rem)); }
+.apc-pb-sheet { width: min(40rem, 96vw); }
+.apc-pb-sheet--wide { width: min(46rem, 96vw); height: min(25rem, 92vh); }
+.apc-pb-sheet--wide .apc-kb-sheet__body { display: flex; }
+.apc-pb-sheet--wide .apc-pb { flex: 1; }
+.apc-pb__top { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
+.apc-pb__scopes { display: flex; flex-wrap: wrap; gap: 1px; }
+.apc-pb__scope {
+  font-family: var(--font-ui); font-size: var(--t-label, max(10px, .625rem)); font-weight: 600; letter-spacing: var(--label-spacing, .12em); text-transform: uppercase; padding: .15rem .45rem;
+  border: var(--stroke, 1px) solid var(--rule); background: var(--plate-2); color: var(--ink-2); cursor: pointer;
+}
+.apc-pb__scope[aria-checked="true"] { color: var(--ink); border-color: var(--accent); }
+.apc-pb__search { flex: 1; min-width: 8rem; width: auto; }
+.apc-pb__sort { width: auto; }
+.apc-pb__actions { display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; }
+.apc-pb__actions .apc-kb-btn { min-height: 1.3rem; padding: .15rem .45rem; font-size: var(--t-label, max(10px, .625rem)); }
+.apc-pb__cur { flex: 1 1 8rem; min-width: 6rem; font-weight: 700; display: flex; gap: .3rem; align-items: baseline; flex-wrap: wrap; }
+.apc-pb__dirty { color: var(--accent-text); font-weight: 700; }
+.apc-pb__missing { color: var(--apc-danger-text, var(--apc-danger)); font-weight: 600; }
+.apc-pb__filters { display: flex; flex-wrap: wrap; gap: .2rem; max-height: 3.6rem; overflow-y: auto; }
+.apc-pb__fg {
+  font-family: var(--font-ui); font-size: var(--t-micro, max(9px, .5rem)); letter-spacing: var(--label-spacing, .12em); text-transform: uppercase; padding: .1rem .4rem; max-width: 10rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control); background: var(--plate-2); color: var(--ink-2); cursor: pointer;
+}
+.apc-pb__fg.is-active { border-color: var(--accent); color: var(--accent-text); }
+.apc-pb__fg:hover { color: var(--ink); }
+.apc-pb__clear { font-size: var(--t-micro, max(9px, .5rem)); min-height: 0; padding: .1rem .4rem; }
+.apc-pb__pop {
+  position: absolute; z-index: 20; min-width: 11rem; max-height: 12rem; overflow: auto; padding: .35rem .5rem;
+  background: var(--plate-2); border: var(--stroke, 1px) solid var(--accent); border-radius: var(--r-control);
+}
+.apc-pb__opts { display: flex; flex-direction: column; gap: .1rem; }
+.apc-pb__opt { display: flex; gap: .3rem; align-items: center; cursor: pointer; padding: .05rem 0; }
+.apc-pb__opt--any { font-weight: 700; border-bottom: var(--stroke, 1px) solid var(--rule-2); margin-bottom: .15rem; padding-bottom: .15rem; }
+.apc-pb__ops { display: flex; flex-direction: column; margin-bottom: .2rem; padding-bottom: .2rem; border-bottom: var(--stroke, 1px) solid var(--rule-2); }
+.apc-pb__list { position: relative; flex: 1; min-height: 5rem; overflow-y: auto; background: var(--inset); border: var(--stroke, 1px) solid var(--rule-2); border-radius: var(--r-control); }
+.apc-pb__sizer { position: relative; width: 100%; }
+.apc-pb__row {
+  position: absolute; left: 0; right: 0; box-sizing: border-box; height: 1.5rem;
+  display: grid; grid-template-columns: 2rem minmax(0, 1fr) minmax(0, 9rem) 5.5rem 1.4rem; gap: .35rem; align-items: center;
+  padding: 0 .35rem; border-bottom: var(--stroke, 1px) solid var(--rule-2); cursor: pointer; white-space: nowrap;
+}
+.apc-pb__row--probe { position: relative; height: 1.5rem; }
+.apc-pb__row:hover { background: var(--plate-2); }
+.apc-pb__row.is-current { background: var(--plate-2); }
+.apc-pb__row.is-current::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: .15rem; background: var(--accent); }
+.apc-pb__row.is-cursor { outline: var(--stroke, 1px) solid var(--rule); outline-offset: -1px; }
+.apc-pb__list:focus-visible .apc-pb__row.is-cursor { outline: var(--stroke-2, 2px) solid var(--accent); }
+.apc-pb__code { text-align: center; font-size: var(--t-micro, max(9px, .5rem)); font-weight: 700; color: var(--ink-2); border: var(--stroke, 1px) solid var(--rule-2); border-radius: var(--r-control); padding: .05rem 0; }
+.apc-pb__name { overflow: hidden; text-overflow: ellipsis; }
+.apc-pb__sub { overflow: hidden; text-overflow: ellipsis; color: var(--ink-2); font-size: var(--t-micro, max(9px, .5rem)); }
+.apc-pb__stars { display: flex; }
+.apc-pb__star, .apc-pb__fav { background: none; border: 0; padding: 0; margin: 0; cursor: pointer; color: var(--ink-2); font-size: var(--t-label, max(10px, .625rem)); line-height: 1; }
+.apc-pb__star.is-on, .apc-pb__fav.is-on { color: var(--accent-text); }
+.apc-pb__star:hover, .apc-pb__fav:hover { color: var(--accent-text); }
+.apc-pb__empty { padding: .6rem; color: var(--ink-2); }
+.apc-pb__foot { display: flex; justify-content: space-between; gap: .6rem; color: var(--ink-2); font-size: var(--t-micro, max(9px, .5rem)); min-height: 1em; }
+.apc-pb__desc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.apc-pb__moods { display: flex; flex-wrap: wrap; gap: .1rem .6rem; }
+.apc-pb__mood { white-space: nowrap; }
+.apc-pc { display: inline-flex; align-items: center; gap: .15rem; font-family: var(--font-ui); font-size: var(--t-label, max(10px, .625rem)); color: var(--ink); }
+.apc-pc__browse { display: inline-flex; gap: .2rem; align-items: baseline; min-width: 8rem; padding: .2rem .5rem; border: var(--stroke, 1px) solid var(--rule); border-radius: var(--r-control); background: var(--inset); color: var(--ink); font: inherit; cursor: pointer; }
+.apc-pc__browse:hover { border-color: var(--accent); }
+.apc-pc__step, .apc-pc__save { min-height: 1.4rem; padding: .1rem .45rem; }
+
+
+/* =============================================================================
+   DESIGN PASS - Zeichnung 2030: containers and text
+   ============================================================================= */
+
+/* well: the canvas / readout field. No border, rounded, deepest surface. */
+.apc-well {
+  background: var(--inset);
+  border: 0;
+  border-radius: var(--r-well);
+}
+
+/* panel: plate-2 body, one rule edge, a caption ruled off underneath */
+.apc-w--panel,
+.apc-panel {
+  background: var(--plate-2);
+  border: var(--stroke, 1px) solid var(--rule-2);
+  border-radius: var(--r-panel);
+}
+.apc-panel__head {
+  border-bottom: var(--stroke, 1px) solid var(--rule-2);
+  padding: 0 .9rem 0 1.1rem;
+}
+.apc-panel__title {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+/* divider: a hairline with an inline label */
+.apc-divider__line { background: var(--rule-2); }
+.apc-divider__text {
+  background: var(--plate-2);
+  padding: 0 .6rem;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* text roles */
+.apc-text--label,
+.apc-ctl-label,
+.apc-w__label {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.apc-text--value,
+.apc-readout,
+.apc-rd__value {
+  font-family: var(--font-num);
+  color: var(--ink);
+}
+.apc-readout__u { color: var(--ink-3); }
+
+/* number and text fields: the plate's field = rule edge, plate-2 body */
+.apc-nf,
+.apc-input {
+  border: var(--stroke, 1px) solid var(--rule);
+  background: var(--plate-2);
+  border-radius: var(--r-control);
+}
+.apc-nf:hover,
+.apc-input:hover { border-color: var(--ink-3); }
+.apc-nf__input,
+.apc-input { font-family: var(--font-num); color: var(--ink); }
+/* =============================================================================
+   DESIGN PASS - Zeichnung 2030: the right-click sheet and its popups
+   (approved plate: hub/_design/apc_filter_f30_mockup_v006.html, section 12 POPUPS)
+   ============================================================================= */
+.apc-ctx {
+  min-width: 15rem;
+  max-width: min(26rem, 96vw);
+  padding: .3rem 0;
+  background: var(--plate-2);
+  border: var(--stroke, 1px) solid var(--rule);
+  border-radius: var(--r-panel);
+  box-shadow: var(--apc-shadow-sheet, 0 .7rem 1.8rem rgba(4, 12, 17, .34));
+  font-family: var(--font-ui);
+  font-size: var(--t-value);
+}
+.apc-ctx__head {
+  padding: .4rem .9rem .5rem;
+  border-bottom: var(--stroke, 1px) solid var(--rule-2);
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: 500;
+  letter-spacing: var(--label-spacing);
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.apc-ctx__sec {
+  padding: .42rem .9rem .5rem;
+  border-bottom: var(--stroke, 1px) solid var(--rule-2);
+}
+.apc-ctx__sec:last-child { border-bottom: 0; }
+.apc-ctx__h {
+  margin: 0 0 .4rem;
+  font-size: var(--t-micro);
+  font-weight: 500;
+  letter-spacing: var(--label-spacing);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.apc-ctx__row { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.apc-ctx__note { padding: .1rem 0; color: var(--ink-3); }
+.apc-ctx__cc { margin-left: auto; font-family: var(--font-num); color: var(--ink-2); }
+.apc-ctx__select {
+  min-height: 1.6rem;
+  padding: .15rem .35rem;
+  background: var(--inset);
+  border: var(--stroke, 1px) solid var(--rule);
+  border-radius: var(--r-control);
+  font-family: var(--font-num);
+  color: var(--ink);
+}
+.apc-ctx .apc-btn { font-size: var(--t-micro); letter-spacing: .12em; text-transform: uppercase; }
+
+/* menus and listboxes: the same sheet, items on plate-2, shortcut on the right */
+.apc-menu,
+.apc-pop,
+.apc-menu2 {
+  background: var(--plate-2);
+  border: var(--stroke, 1px) solid var(--rule);
+  border-radius: var(--r-panel);
+  box-shadow: var(--apc-shadow-sheet, 0 .7rem 1.8rem rgba(4, 12, 17, .34));
+  padding: .3rem 0;
+}
+.apc-menu__item,
+.apc-pop__list button,
+.apc-mi {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  padding: .42rem .9rem;
+  text-align: left;
+  font-size: var(--t-label);
+  color: var(--ink-2);
+}
+.apc-menu__item:hover,
+.apc-pop__list button:hover,
+.apc-mi:hover { background: var(--plate); color: var(--ink); }
+.apc-mi__key,
+.apc-menu__item kbd {
+  margin-left: auto;
+  font-family: var(--font-num);
+  font-size: var(--t-micro);
+  color: var(--ink-3);
+}
+.apc-mi__check { width: .45rem; height: .45rem; background: var(--accent); }
+/* ---- knob: the ring and the disc must live in ONE square -------------------
+   The wrap was flexed in height (flex:1 1 0) with aspect-ratio:1, so its box was taller
+   than wide and the SVG ring drew offset from the dial. Sizing the wrap by WIDTH makes
+   the two share one centre line at every size. */
+.apc-knob-wrap {
+  position: relative;
+  flex: 0 0 auto;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  max-height: 100%;
+}
+.apc-knob-wrap > .apc-knob-dial { inset: 12%; }
+
+/* =============================================================================
+   DESIGN PASS - Zeichnung 2030: toggle (the plate miniature switch, 15.8)
+   A pill with a round cam was the kit first look. The plate: a 2px-radius track in
+   --plate-2 with a --rule edge, a SQUARE cam (1px radius) in --ink-3, and when it is
+   on the whole track fills with the signal colour while the cam goes dark (--on-sig =
+   #1A0A08 in the plate, i.e. the plate colour).
+   ============================================================================= */
+.apc-psw-track {
+  position: relative; flex: none;
+  box-sizing: border-box;
+  width: 1.75rem; height: .875rem;
+  border: var(--stroke, 1px) solid var(--rule);
+  border-radius: var(--r-control, 2px);
+  background: var(--plate-2);
+  box-shadow: none;
+  transition: background-color .14s ease, border-color .14s ease;
+}
+.apc-psw-cap {
+  position: absolute; top: 50%; left: .125rem;
+  width: .625rem; height: .625rem; margin-top: -.3125rem;
+  border-radius: 1px;
+  background: var(--ink-3);
+  box-shadow: none;
+  transition: transform .14s ease, background-color .14s ease;
+}
+.apc-psw:hover .apc-psw-track { border-color: var(--ink-2); }
+.apc-psw[aria-checked="true"] .apc-psw-track { border-color: var(--accent); background: var(--accent); }
+.apc-psw[aria-checked="true"] .apc-psw-cap { transform: translateX(.875rem); background: var(--plate); }
+.apc-psw.is-disabled .apc-psw-track { opacity: .45; }
+
+/* =============================================================================
+   DESIGN PASS - Zeichnung 2030: knob and fader (the plate v006 recipe)
+   The kit still carried its first flat styling: a 3 px ring with a tick ring, and a
+   4 px outlined fader track with a dark cap. The plate is a machined disc - one 2 px
+   accent arc, one pointer, no tick ring - and a 2 px rail with a thin tall cap.
+   Token names are the kit's own: --plate-2 is the plate's --panel, --sh-knob already
+   carries the drop shadow plus the inner top highlight, --stroke is its --hair.
+   ============================================================================= */
+
+/* knob ---------------------------------------------------------------- */
+/* The track is a quiet guide, not a drawn circle: the plate paints it in a dark slate
+   (rgb(42,74,87)) so only the accent arc reads. --rule (#5A8492) is the *border* colour
+   and made the ring shout - --rule-2 is the quiet divider and matches the plate. */
+.apc-ring__track { stroke: var(--rule-2); stroke-width: 2; stroke-linecap: round; }
+.apc-ring__value { stroke: var(--accent); stroke-width: 2; stroke-linecap: round; }
+.apc-ring__tick { display: none; }                 /* the plate says: no tick ring */
+.apc-ring__marker { fill: var(--memory); stroke: var(--plate); stroke-width: 1; }   /* modulated value: warm, not white */
+
+/* modulation: a thin warm band OUTSIDE the track. It used to be a 2.4 px --ink band
+   at r=49, which read as "white stuff" on a dark plate and, because its sweep crosses
+   the bottom, closed the ring that is meant to stay open there. Warm, thin, rounded. */
+.apc-ring__route { stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.apc-ring__sum { stroke: var(--memory); stroke-width: 1.5; stroke-linecap: round; opacity: .9; }
+
+/* face: gradient disc + soft shadow. The edge is a QUIET line (--rule-2): a --rule circle
+   read as a second ring and closed the 90 degree gap the arc leaves at the bottom. */
+.apc-knob-dial {
+  background: linear-gradient(145deg, var(--plate-2), var(--knob));
+  border: var(--stroke, 1px) solid var(--rule-2);
+  box-shadow: var(--sh-knob);
+}
+
+/* pointer: a bar at the rim, turning about the dial centre. The element fills the
+   dial and is rotated as a whole, so its centre cannot drift the way a
+   half-anchored bar can (that is what put v006 10 px off). */
+.apc-knob-pointer {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  background: none; border-radius: 0;
+  transform-origin: 50% 50%;
+  transform: rotate(-135deg);
+}
+.apc-knob-pointer::before {
+  content: "";
+  position: absolute;
+  left: calc(50% - 1.25px);
+  top: 10%;
+  width: 2.5px;
+  height: 19%;
+  background: var(--ink);
+  border-radius: 1px;
+}
+
+/* fader --------------------------------------------------------------- */
+.apc-fader { --track-w: 2px; }                     /* :root says .25rem = 4 px */
+.apc-fader > .apc-ctl-label { order: -1; }         /* name above the value, like the knob and the plate */
+.apc-fader-track { background: var(--rule-2); outline: 0; border-radius: 1px; }
+.apc-fader-fill { background: var(--accent); border-radius: 1px; }
+.apc-fader-cap {
+  width: .7rem; height: 1.35rem;
+  background: var(--plate-2);
+  border: var(--stroke, 1px) solid var(--rule);
+  border-radius: 1px;
+  box-shadow: var(--sh-knob);
+}
+.apc-fader-cap::after { display: none; }
+.apc-fader-ticks { display: none; }
+.apc-fader:hover .apc-fader-cap { border-color: var(--ink-2); }

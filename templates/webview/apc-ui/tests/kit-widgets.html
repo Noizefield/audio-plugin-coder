@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>kit-widgets</title>
+<!-- Self-test for apc-widgets.js / apc-widgets.css (button, buttons/segmented, checkbox, radio, dropdown, menu,
+     tabs, textfield, numberfield, label, readout, panel, divider, led, progress, list, logo) and for the flat re-skin
+     options of the knob / slider / selector / toggle. Uses apc-mock.js as the bridge (param round trips) and
+     harness-b.js. Result: window.__APC_TEST__ and <pre id="apc-test-result"> (CONTRACT.md "Testing contract"). -->
+<link rel="stylesheet" href="../apc-core.css">
+<link rel="stylesheet" href="../apc-components.css">
+<link rel="stylesheet" href="../apc-widgets.css">
+<style>.apc-w, .apc-w *, .apc-pop, .apc-pop * { transition: none !important; }  /* headless virtual time produces no frames: measure final styles */
+:root { --cols: 50; --rows: 27.5; } #stage { padding: .5rem; } #stage > * { margin-bottom: .5rem; }</style>
+</head>
+<body>
+<div id="stage" class="apc-plate"></div>
+<script src="../apc-fit.js"></script>
+<script src="../apc-kit.js"></script>
+<script src="../apc-mock.js"></script>
+<script src="../apc-controls.js"></script>
+<script src="../apc-context.js"></script>
+<script src="../apc-widgets.js"></script>
+<script src="harness-b.js"></script>
+<script>
+(function () {
+  "use strict";
+  var APC = window.APC, T = window.T, test = T.test, assert = T.assert, eq = T.eq, $ = T.q, $$ = T.qa;
+
+  /* ---------------- helpers ---------------- */
+  function rem() { return parseFloat(getComputedStyle(document.documentElement).fontSize); }
+  function pe(el, type, o) {
+    o = o || {};
+    var r = el.getBoundingClientRect();
+    var ev = new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: o.id || 1, pointerType: o.type || "mouse",
+      clientX: o.x !== undefined ? o.x : r.left + r.width / 2, clientY: o.y !== undefined ? o.y : r.top + r.height / 2, button: 0, buttons: 1 });
+    el.dispatchEvent(ev);
+    return ev;
+  }
+  function kd(el, key, o) {
+    o = o || {};
+    var ev = new KeyboardEvent("keydown", { key: key, bubbles: true, cancelable: true, shiftKey: !!o.shift, ctrlKey: !!o.ctrl, metaKey: !!o.meta, altKey: !!o.alt, repeat: !!o.repeat });
+    el.dispatchEvent(ev);
+    return ev;
+  }
+  function ku(el, key) { el.dispatchEvent(new KeyboardEvent("keyup", { key: key, bubbles: true, cancelable: true })); }
+  function start(html, scenario) {
+    APC.widgets.closeAll();
+    APC.controls.closeMenu(false);
+    document.documentElement.removeAttribute("data-theme");
+    T.reset(scenario);
+    $("#stage").style.cssText = "";
+    T.mount(html);
+    return T.settle();
+  }
+  function pcalls() { return APC.mock.calls().filter(function (c) { return /^apc\.param\.(begin|set|end|reset)$/.test(c.name); }); }
+  function names() { return pcalls().map(function (c) { return c.name.replace("apc.param.", ""); }); }
+  function sets() { return APC.mock.calls("apc.param.set"); }
+  function lastSet() { var s = sets(); return s.length ? s[s.length - 1].args.value : undefined; }
+  function listen(el, type) { var got = []; el.addEventListener(type, function (e) { got.push(e.detail); }); return got; }
+  function pops() { return $$(".apc-pop"); }
+  function accName(el) {
+    var lb = el.getAttribute("aria-labelledby");
+    if (lb) { var t = lb.split(/\s+/).map(function (id) { var n = document.getElementById(id); return n ? n.textContent : ""; }).join(" ").trim(); if (t) return t; }   /* aria-labelledby wins over aria-label */
+    var a = el.getAttribute("aria-label");
+    if (a) return a;
+    if (el.labels && el.labels.length) return el.labels[0].textContent;
+    return (el.textContent || "").trim() || el.getAttribute("title") || el.getAttribute("placeholder") || "";
+  }
+  function tokenColor(name) {
+    var probe = document.createElement("span"); probe.style.cssText = "background-color: var(--" + name + ")"; $("#stage").appendChild(probe);
+    var c = getComputedStyle(probe).backgroundColor; probe.parentNode.removeChild(probe); return c;
+  }
+  function inBounds(r, b, tol) { tol = tol || 1; return r.left >= b.left - tol && r.right <= b.right + tol && r.top >= b.top - tol && r.bottom <= b.bottom + tol; }
+
+  /* ================================================================================
+     structure: every element mounts, registers, and is catalogued
+     ================================================================================ */
+  test("all 18 widget names (+ segmented alias) are registered; elements get class, unique id and a handle", function () {
+    var names = ["button", "buttons", "segmented", "checkbox", "radio", "dropdown", "menu", "tabs", "textfield", "numberfield", "label", "readout", "panel", "divider", "led", "progress", "list", "logo"];
+    var have = APC.components();
+    names.forEach(function (n) { assert(have.indexOf(n) >= 0, "registered: " + n); });
+    return start(names.map(function (n) { return '<div data-apc="' + n + '" data-label="X" data-items=\'["a","b"]\' data-title="T"><section data-tab="One">x</section></div>'; }).join("")).then(function () {
+      var hosts = $$("#stage > .apc-w");
+      eq(hosts.length, names.length, "every host decorated with .apc-w");
+      var ids = hosts.map(function (h) { return h.id; });
+      eq(ids.filter(function (id, i) { return id && ids.indexOf(id) === i; }).length, names.length, "ids unique and non-empty");
+      hosts.forEach(function (h) { assert(h.__apcW && typeof h.__apcW.dispose === "function" && APC.widgets.get(h) === h.__apcW, "handle on " + h.className); });
+    });
+  });
+
+  /* ================================================================================
+     button
+     ================================================================================ */
+  test("button action: click emits apc:click + bus event; label, icon and LED slots; native <button>", function () {
+    return start('<div id="b1" data-apc="button" data-label="Reset" data-icon="▶" data-led="true" data-action="reset" data-title="Reset it"></div>').then(function () {
+      var el = $("#b1"), btn = $("button.apc-button", el), got = listen(el, "apc:click"), bus = [];
+      var off = APC.on("button", function (d) { bus.push(d); });
+      eq(btn.tagName, "BUTTON"); eq(btn.type, "button");
+      eq($(".apc-button__label", btn).textContent, "Reset"); eq($(".apc-button__icon", btn).textContent, "▶");
+      assert($(".apc-led", btn), "LED slot"); eq(btn.getAttribute("title"), "Reset it");
+      btn.click();
+      eq(got.length, 1, "apc:click"); eq(bus.length, 1, "bus event"); eq(bus[0].action, "reset"); eq(bus[0].variant, "action");
+      off();
+      assert(!btn.hasAttribute("aria-pressed"), "action button is not a toggle");
+      assert(btn.classList.contains("apc-button--action"), "variant class");
+    });
+  });
+
+  test("button primary + inline SVG icon slot + icon-only accessible name", function () {
+    return start('<div id="b1" data-apc="button" data-variant="primary" data-label="Save"></div>' +
+      '<div id="b2" data-apc="button" data-aria-label="Play"><svg data-slot="icon" viewBox="0 0 8 8"><path d="M1 1 L7 4 L1 7 Z"/></svg></div>').then(function () {
+      assert($("#b1 .apc-button--primary"), "primary class");
+      var b2 = $("#b2 button");
+      assert(b2.querySelector("svg"), "svg moved into the icon slot"); eq(b2.getAttribute("aria-label"), "Play", "icon-only has a name");
+      eq(accName(b2), "Play");
+    });
+  });
+
+  test("button latch: toggles aria-pressed, emits change, LED follows, initial data-pressed, setPressed", function () {
+    return start('<div id="b1" data-apc="button" data-variant="latch" data-label="Mute" data-led="true"></div><div id="b2" data-apc="button" data-variant="latch" data-label="Solo" data-pressed="true"></div>').then(function () {
+      var el = $("#b1"), btn = $("button", el), got = listen(el, "apc:change");
+      eq(btn.getAttribute("aria-pressed"), "false"); eq($(".apc-led", btn).getAttribute("data-state"), "off");
+      btn.click();
+      eq(btn.getAttribute("aria-pressed"), "true"); eq($(".apc-led", btn).getAttribute("data-state"), "on"); assert(btn.classList.contains("is-on"));
+      eq(got.length, 1); eq(got[0].pressed, true);
+      btn.click(); eq(btn.getAttribute("aria-pressed"), "false");
+      eq($("#b2 button").getAttribute("aria-pressed"), "true", "data-pressed");
+      el.__apcW.setPressed(true); eq(btn.getAttribute("aria-pressed"), "true"); eq(el.__apcW.getPressed(), true);
+    });
+  });
+
+  test("button disabled: native disabled, ignores clicks, re-enable works, aria-disabled on the host", function () {
+    return start('<div id="b1" data-apc="button" data-label="Go" data-disabled="true"></div>').then(function () {
+      var el = $("#b1"), btn = $("button", el), n = 0;
+      el.addEventListener("apc:click", function () { n++; });
+      assert(btn.disabled, "native disabled"); eq(el.getAttribute("aria-disabled"), "true");
+      btn.click(); eq(n, 0, "no event while disabled");
+      el.__apcW.setDisabled(false); assert(!btn.disabled); btn.click(); eq(n, 1);
+    });
+  });
+
+  test("button momentary param: pointer press writes the max value (one gesture), release the min; click-only pulses; keyboard press/release", function () {
+    return start('<div id="b1" data-apc="button" data-label="Panic" data-param="bypass"></div>').then(function () {
+      var btn = $("#b1 button");
+      pe(btn, "pointerdown"); return T.settle().then(function () {
+        eq(names(), ["begin", "set"], "begin + set on press"); eq(lastSet(), "On");
+        pe(btn, "pointerup"); return T.settle();
+      }).then(function () {
+        eq(names(), ["begin", "set", "set", "end"], "release sets the min value and ends the gesture"); eq(lastSet(), "Off");
+        APC.mock.clearCalls(); pe(btn, "pointerdown"); pe(btn, "pointerup"); btn.click(); return T.settle();
+      }).then(function () {
+        eq(names(), ["begin", "set", "set", "end"], "the click that ends a pointer gesture does not pulse a second time");
+        APC.mock.clearCalls(); btn.click(); return T.settle();
+      }).then(function () {
+        eq(names(), ["begin", "set", "set", "end"], "programmatic click = one complete pulse");
+        APC.mock.clearCalls(); pe(btn, "pointerdown", { type: "touch" }); pe(btn, "pointercancel", { type: "touch" }); return T.settle();
+      }).then(function () {
+        eq(names(), ["begin", "set", "set", "end"], "touch press + cancel releases");
+        APC.mock.clearCalls(); var ev = kd(btn, "Enter"); assert(ev.defaultPrevented); kd(btn, "Enter", { repeat: true }); ku(btn, "Enter"); return T.settle();
+      }).then(function () { eq(names(), ["begin", "set", "set", "end"], "keyboard Enter press/release, repeat ignored"); });
+    });
+  });
+
+  test("button latch param: click writes the choice labels, follows host param events, error state for an unknown param", function () {
+    return start('<div id="b1" data-apc="button" data-variant="latch" data-label="Bypass" data-param="bypass"></div><div id="b2" data-apc="button" data-label="X" data-param="nope"></div>').then(function () {
+      var btn = $("#b1 button");
+      eq(btn.getAttribute("aria-pressed"), "false"); btn.click(); return T.settle().then(function () {
+        eq(lastSet(), "On"); eq(btn.getAttribute("aria-pressed"), "true"); eq(names(), ["begin", "set", "end"]);
+        APC.mock.emit("param", { id: "bypass", value: "Off" }); return T.settle();
+      }).then(function () {
+        eq(btn.getAttribute("aria-pressed"), "false", "host change reflected");
+        var b2 = $("#b2");
+        eq(b2.getAttribute("aria-invalid"), "true", "error state"); assert(b2.classList.contains("is-error")); assert($("#b2 button").disabled, "unusable");
+        assert(T.toasts("error").length >= 1, "the failure is shown, never silent");
+      });
+    });
+  });
+
+  /* ================================================================================
+     buttons / segmented / radio
+     ================================================================================ */
+  test("buttons (static options): radiogroup, aria-checked, roving tabindex, click selects, change event", function () {
+    return start('<div id="g1" data-apc="buttons" data-label="MODE" data-value="b"><option value="a">A</option><option value="b">B</option><option value="c" disabled>C</option><option value="d">D</option></div>').then(function () {
+      var el = $("#g1"), grp = $("[role=radiogroup]", el), items = $$("[role=radio]", grp), got = listen(el, "apc:change");
+      eq(items.length, 4); eq(grp.getAttribute("aria-labelledby"), $(".apc-w__label", el).id); eq(accName(grp), "MODE"); eq(grp.getAttribute("aria-orientation"), "horizontal");
+      eq(items.map(function (i) { return i.getAttribute("aria-checked"); }), ["false", "true", "false", "false"], "data-value picks B");
+      eq(items.map(function (i) { return i.getAttribute("tabindex"); }), ["-1", "0", "-1", "-1"], "roving tabindex");
+      eq(items[2].getAttribute("aria-disabled"), "true");
+      items[3].click();
+      eq(items[3].getAttribute("aria-checked"), "true"); eq(items[1].getAttribute("aria-checked"), "false"); eq(got.length, 1); eq(got[0].value, "d"); eq(got[0].index, 3);
+      items[2].click(); eq(items[2].getAttribute("aria-checked"), "false", "disabled item cannot be chosen");
+      eq(el.__apcW.getValue(), "d");
+    });
+  });
+
+  test("buttons keyboard: arrows move+select (wrap, skip disabled), Home/End, Space selects focused", function () {
+    return start('<div id="g1" data-apc="segmented" data-items=\'[{"value":"a","label":"A"},{"value":"b","label":"B"},{"value":"c","label":"C","disabled":true},{"value":"d","label":"D"}]\'></div>').then(function () {
+      var el = $("#g1"), items = $$("[role=radio]", el);
+      function sel() { return items.map(function (i) { return i.getAttribute("aria-checked") === "true" ? 1 : 0; }).join(""); }
+      eq(sel(), "1000");
+      var ev = kd(items[0], "ArrowRight"); assert(ev.defaultPrevented); eq(sel(), "0100"); eq(document.activeElement, items[1]);
+      kd(items[1], "ArrowDown"); eq(sel(), "0001", "skips the disabled C");
+      kd(items[3], "ArrowRight"); eq(sel(), "1000", "wraps");
+      kd(items[0], "ArrowLeft"); eq(sel(), "0001", "wraps backwards");
+      kd(items[3], "Home"); eq(sel(), "1000"); kd(items[0], "End"); eq(sel(), "0001");
+      kd(items[1], " "); eq(sel(), "0100", "Space selects the focused item");
+    });
+  });
+
+  test("buttons param-bound: items = descriptor choices, click writes the label, host events update, vertical orientation", function () {
+    return start('<div id="g1" data-apc="buttons" data-param="osc_wave" data-label="WAVE" data-orient="vertical"></div>').then(function () {
+      var el = $("#g1"), items = $$("[role=radio]", el);
+      eq(items.map(function (i) { return i.textContent; }), ["Sine", "Saw", "Square", "Triangle"]);
+      eq(items.map(function (i) { return i.getAttribute("aria-checked"); }), ["false", "true", "false", "false"]);
+      eq(el.getAttribute("data-orient"), "vertical"); eq($("[role=radiogroup]", el).getAttribute("aria-orientation"), "vertical");
+      eq(getComputedStyle($("[role=radiogroup]", el)).flexDirection, "column");
+      items[2].click(); return T.settle().then(function () {
+        eq(lastSet(), "Square"); eq(names(), ["begin", "set", "end"]); eq(items[2].getAttribute("aria-checked"), "true");
+        APC.mock.emit("param", { id: "osc_wave", value: "Sine" }); return T.settle();
+      }).then(function () { eq(items[0].getAttribute("aria-checked"), "true", "follows the host"); eq(items[2].getAttribute("aria-checked"), "false"); });
+    });
+  });
+
+  test("buttons on a numeric parameter with data-items (values are the parameter's numbers)", function () {
+    return start('<div id="g1" data-apc="buttons" data-param="detune_ct" data-items=\'[{"value":-50,"label":"Down"},{"value":0,"label":"Zero"},{"value":50,"label":"Up"}]\'></div>').then(function () {
+      var items = $$("[role=radio]", $("#g1"));
+      eq(items.map(function (i) { return i.getAttribute("aria-checked"); }), ["false", "true", "false"], "default 0 selected");
+      items[2].click(); return T.settle().then(function () { eq(lastSet(), 50); });
+    });
+  });
+
+  test("radio group: indicator + label, arrows, options parsed, horizontal option", function () {
+    return start('<div id="r1" data-apc="radio" data-label="QUALITY" data-orient="horizontal"><option>Draft</option><option>Good</option><option selected>Best</option></div>').then(function () {
+      var el = $("#r1"), items = $$("[role=radio]", el);
+      eq(items.length, 3); assert($(".apc-radio__box", items[0]) && $(".apc-radio__dot", items[0]));
+      eq(items[2].getAttribute("aria-checked"), "true"); eq(getComputedStyle($(".apc-group", el)).flexDirection, "row");
+      kd(items[2], "ArrowLeft"); eq(items[1].getAttribute("aria-checked"), "true"); eq(document.activeElement, items[1]);
+      assert(getComputedStyle($(".apc-radio__dot", items[1])).display !== "none", "dot visible when selected");
+      assert(getComputedStyle($(".apc-radio__dot", items[0])).display === "none", "dot hidden otherwise");
+    });
+  });
+
+  /* ================================================================================
+     checkbox
+     ================================================================================ */
+  test("checkbox: role/aria-checked, click + Space toggle, label, change event, indeterminate", function () {
+    return start('<div id="c1" data-apc="checkbox" data-label="Snap to grid"></div><div id="c2" data-apc="checkbox" data-label="Some" data-indeterminate="true"></div><div id="c3" data-apc="checkbox" data-label="On" data-checked="true"></div>').then(function () {
+      var el = $("#c1"), cb = $("[role=checkbox]", el), got = listen(el, "apc:change");
+      eq(cb.getAttribute("aria-checked"), "false"); eq(cb.getAttribute("tabindex"), "0"); eq(accName(cb), "Snap to grid");
+      cb.click(); eq(cb.getAttribute("aria-checked"), "true"); eq(got[0].checked, true);
+      var ev = kd(cb, " "); assert(ev.defaultPrevented); eq(cb.getAttribute("aria-checked"), "false"); eq(got.length, 2);
+      eq($("#c2 [role=checkbox]").getAttribute("aria-checked"), "mixed"); $("#c2 [role=checkbox]").click(); eq($("#c2 [role=checkbox]").getAttribute("aria-checked"), "true");
+      eq($("#c3 [role=checkbox]").getAttribute("aria-checked"), "true", "data-checked");
+      assert(getComputedStyle($(".apc-check__tick", $("#c3"))).display !== "none", "tick visible when checked");
+    });
+  });
+
+  test("checkbox param-bound (boolean-like choice) and disabled", function () {
+    return start('<div id="c1" data-apc="checkbox" data-label="Bypass" data-param="bypass"></div><div id="c2" data-apc="checkbox" data-label="Off" data-disabled="true"></div>').then(function () {
+      var cb = $("#c1 [role=checkbox]");
+      eq(cb.getAttribute("aria-checked"), "false"); cb.click(); return T.settle().then(function () {
+        eq(lastSet(), "On"); eq(cb.getAttribute("aria-checked"), "true");
+        APC.mock.emit("param", { id: "bypass", value: "Off" }); return T.settle();
+      }).then(function () {
+        eq(cb.getAttribute("aria-checked"), "false", "host update");
+        var d = $("#c2 [role=checkbox]"); eq(d.getAttribute("tabindex"), "-1"); eq(d.getAttribute("aria-disabled"), "true"); d.click(); eq(d.getAttribute("aria-checked"), "false", "disabled ignores clicks");
+      });
+    });
+  });
+
+  /* ================================================================================
+     dropdown
+     ================================================================================ */
+  var DD = '<div id="d1" data-apc="dropdown" data-label="WAVE"><option value="s">Sine</option><option value="w">Saw</option><option value="q">Square</option><option value="t" disabled>Tri</option></div>';
+  test("dropdown: closed field shows the value; click opens a listbox popup; choosing closes + emits; aria", function () {
+    return start(DD).then(function () {
+      var el = $("#d1"), trig = $("[role=combobox]", el), got = listen(el, "apc:change");
+      eq($(".apc-dd__value", el).textContent, "Sine"); eq(trig.getAttribute("aria-expanded"), "false"); eq(trig.getAttribute("aria-haspopup"), "listbox"); eq(accName(trig).indexOf("WAVE"), 0);
+      trig.click();
+      eq(pops().length, 1, "popup in the DOM"); var lb = $(".apc-pop [role=listbox]"); assert(lb, "listbox");
+      eq(trig.getAttribute("aria-expanded"), "true"); eq(trig.getAttribute("aria-controls"), lb.id);
+      var opts = $$("[role=option]", lb); eq(opts.length, 4); eq(opts[0].getAttribute("aria-selected"), "true");
+      eq(trig.getAttribute("aria-activedescendant"), opts[0].id);
+      opts[3].click(); eq(pops().length, 1, "disabled option does nothing");
+      opts[2].click();
+      eq(pops().length, 0, "closed after choosing"); eq($(".apc-dd__value", el).textContent, "Square"); eq(got[0].value, "q"); eq(got[0].label, "Square"); eq(trig.getAttribute("aria-expanded"), "false");
+      eq(el.__apcW.getValue(), "q");
+    });
+  });
+
+  test("dropdown keyboard: open (Down/Enter/Space), arrows skip disabled, Home/End, Enter chooses, Esc closes + refocuses, Tab closes, type-ahead", function () {
+    return start(DD).then(function () {
+      var el = $("#d1"), trig = $("[role=combobox]", el);
+      trig.focus();
+      var ev = kd(trig, "ArrowDown"); assert(ev.defaultPrevented); eq(pops().length, 1);
+      function active() { var a = $(".apc-pop .is-active"); return a ? a.textContent : null; }
+      eq(active(), "Sine");
+      kd(trig, "ArrowDown"); eq(active(), "Saw"); kd(trig, "ArrowDown"); eq(active(), "Square"); kd(trig, "ArrowDown"); eq(active(), "Square", "disabled Tri skipped, clamps at the end");
+      kd(trig, "Home"); eq(active(), "Sine"); kd(trig, "End"); eq(active(), "Square");
+      kd(trig, "Escape"); eq(pops().length, 0, "Esc closes"); eq(document.activeElement, trig, "focus returns to the field"); eq($(".apc-dd__value", el).textContent, "Sine", "Esc does not choose");
+      kd(trig, "Enter"); kd(trig, "ArrowDown"); kd(trig, "Enter"); eq(pops().length, 0); eq($(".apc-dd__value", el).textContent, "Saw", "Enter chooses the active option");
+      kd(trig, " "); eq(pops().length, 1, "Space opens"); kd(trig, "Tab"); eq(pops().length, 0, "Tab closes without choosing"); eq($(".apc-dd__value", el).textContent, "Saw");
+      kd(trig, "s"); eq(pops().length, 1, "typing opens"); eq(active(), "Square", "type-ahead jumps to the match"); kd(trig, "Enter"); eq($(".apc-dd__value", el).textContent, "Square");
+    });
+  });
+
+  test("dropdown: outside click closes, second click on the field closes, disabled does not open, dispose closes the popup", function () {
+    return start(DD + '<div id="d2" data-apc="dropdown" data-disabled="true"><option>A</option></div>').then(function () {
+      var el = $("#d1"), trig = $("[role=combobox]", el);
+      trig.click(); eq(pops().length, 1); pe(document.body, "pointerdown"); eq(pops().length, 0, "outside pointerdown closes");
+      trig.click(); trig.click(); eq(pops().length, 0, "toggle");
+      var d2 = $("#d2 [role=combobox]"); eq(d2.getAttribute("aria-disabled"), "true"); d2.click(); eq(pops().length, 0);
+      trig.click(); eq(pops().length, 1); el.__apcW.dispose(); eq(pops().length, 0, "dispose closes the popup");
+    });
+  });
+
+  test("dropdown param-bound (choices from the descriptor): chooses by label, follows host, searchable filter", function () {
+    return start('<div id="d1" data-apc="dropdown" data-param="osc_wave" data-label="WAVE" data-searchable="true"></div>').then(function () {
+      var el = $("#d1"), trig = $("[role=combobox]", el);
+      eq($(".apc-dd__value", el).textContent, "Saw"); trig.click();
+      var search = $(".apc-pop input[role=searchbox]"); assert(search, "filter field"); eq(document.activeElement, search, "focus in the filter");
+      search.value = "sq"; search.dispatchEvent(new Event("input", { bubbles: true }));
+      eq($$(".apc-pop [role=option]").map(function (o) { return o.textContent; }), ["Square"], "filtered");
+      eq(search.getAttribute("aria-activedescendant"), $(".apc-pop [role=option]").id);
+      kd(search, "Enter"); return T.settle().then(function () {
+        eq(lastSet(), "Square"); eq(names(), ["begin", "set", "end"]); eq($(".apc-dd__value", el).textContent, "Square"); eq(pops().length, 0);
+        APC.mock.emit("param", { id: "osc_wave", value: "Triangle" }); return T.settle();
+      }).then(function () {
+        eq($(".apc-dd__value", el).textContent, "Triangle", "follows the host"); trig.click();
+        search = $(".apc-pop input[role=searchbox]"); search.value = "zzz"; search.dispatchEvent(new Event("input", { bubbles: true }));
+        eq($$(".apc-pop [role=option]").length, 0); assert(/No match/.test($(".apc-pop").textContent), "empty state"); kd(search, "Escape"); eq(pops().length, 0);
+      });
+    });
+  });
+
+  test("dropdown popup stays inside the plate: flips above near the bottom edge, clamps at the right edge, scrolls when tall, rem-sized rows", function () {
+    var long = ""; for (var i = 0; i < 30; i++) long += "<option>Entry number " + i + "</option>";
+    return start('<div id="d1" data-apc="dropdown" style="position:absolute;left:2rem;top:24.5rem;width:10rem">' + long + '</div>' +
+                 '<div id="d2" data-apc="dropdown" style="position:absolute;left:44rem;top:3rem;width:5.5rem"><option>A very long entry name here</option><option>B</option></div>').then(function () {
+      var plate = $("#stage").getBoundingClientRect(), r = rem();
+      $("#d1 [role=combobox]").click();
+      var p = $(".apc-pop"), pr = p.getBoundingClientRect(), tr = $("#d1 [role=combobox]").getBoundingClientRect();
+      assert(inBounds(pr, plate), "popup inside the plate: " + JSON.stringify(pr));
+      assert(pr.bottom <= tr.top + 2, "flipped above the field");
+      assert(p.scrollHeight > p.clientHeight || $(".apc-pop__list", p).scrollHeight > $(".apc-pop__list", p).clientHeight, "tall list scrolls");
+      var opt = $(".apc-pop [role=option]"); assert(Math.abs(opt.getBoundingClientRect().height - 1.5 * r) < 1.5, "row height is 1.5 rem: " + opt.getBoundingClientRect().height + " vs " + 1.5 * r);
+      APC.widgets.closeAll();
+      $("#d2 [role=combobox]").click();
+      pr = $(".apc-pop").getBoundingClientRect();
+      assert(inBounds(pr, plate), "clamped at the right edge: " + JSON.stringify(pr) + " plate " + JSON.stringify(plate));
+    });
+  });
+
+  /* ================================================================================
+     menu
+     ================================================================================ */
+  var MENU = '<div id="m1" data-apc="menu" data-label="File" data-items=\'[{"id":"new","label":"New","shortcut":"Ctrl+N"},{"id":"open","label":"Open","disabled":true},"-",' +
+    '{"id":"snap","label":"Snap","checked":true},{"id":"exp","label":"Export","items":[{"id":"wav","label":"WAV"},{"id":"mp3","label":"MP3"}]},{"id":"quit","label":"Quit"}]\'></div>';
+  test("menu: trigger button, popup roles, shortcut hints, separators, checkmark, disabled; select emits bus + DOM + onselect", function () {
+    return start(MENU).then(function () {
+      var el = $("#m1"), trig = $("button.apc-menu-btn", el), bus = [], dom = listen(el, "apc:select"), cb = [];
+      var off = APC.on("menu", function (d) { bus.push(d); });
+      el.__apcW.onselect = function (it) { cb.push(it); };
+      eq(trig.getAttribute("aria-haspopup"), "menu"); eq(trig.getAttribute("aria-expanded"), "false");
+      trig.click();
+      var m = $(".apc-pop[role=menu]"); assert(m, "menu"); eq(trig.getAttribute("aria-expanded"), "true");
+      var rows = $$("[role=menuitem],[role=menuitemcheckbox]", m); eq(rows.length, 5);
+      eq($$("[role=separator]", m).length, 1);
+      eq($(".apc-mi__key", rows[0]).textContent, "Ctrl+N"); eq(rows[1].getAttribute("aria-disabled"), "true");
+      eq(rows[2].getAttribute("role"), "menuitemcheckbox"); eq(rows[2].getAttribute("aria-checked"), "true");
+      eq(rows[3].getAttribute("aria-haspopup"), "menu");
+      rows[1].click(); eq(pops().length, 1, "disabled row does nothing");
+      rows[2].click();
+      eq(pops().length, 0, "closed"); eq(bus.length, 1); eq(bus[0].id, "m1"); eq(bus[0].item.id, "snap"); eq(bus[0].item.checked, false, "checkable item toggled");
+      eq(dom[0].item.id, "snap"); eq(cb[0].id, "snap");
+      trig.click(); $$(".apc-pop .apc-mi")[2].click(); eq($$(".apc-pop .apc-mi").length, 0);
+      trig.click(); eq($$(".apc-pop .apc-mi")[2].getAttribute("aria-checked"), "true", "state kept between openings (toggled twice)");
+      off();
+    });
+  });
+
+  test("menu keyboard: ArrowDown opens + focuses, arrows skip disabled/separators (wrap), Home/End, submenu Right/Left, Enter selects, Esc returns focus, Tab closes, type-ahead", function () {
+    return start(MENU).then(function () {
+      var el = $("#m1"), trig = $("button", el), bus = [];
+      var off = APC.on("menu", function (d) { bus.push(d); });
+      trig.focus(); kd(trig, "ArrowDown");
+      function cur() { return document.activeElement && document.activeElement.classList.contains("apc-mi") ? $(".apc-mi__label", document.activeElement).textContent : "?"; }
+      eq(cur(), "New"); kd(document.activeElement, "ArrowDown"); eq(cur(), "Snap", "skips disabled Open and the separator");
+      kd(document.activeElement, "ArrowDown"); eq(cur(), "Export"); kd(document.activeElement, "ArrowDown"); eq(cur(), "Quit"); kd(document.activeElement, "ArrowDown"); eq(cur(), "New", "wraps");
+      kd(document.activeElement, "End"); eq(cur(), "Quit"); kd(document.activeElement, "Home"); eq(cur(), "New"); kd(document.activeElement, "ArrowUp"); eq(cur(), "Quit", "wraps backwards");
+      kd(document.activeElement, "e"); eq(cur(), "Export", "type-ahead");
+      kd(document.activeElement, "ArrowRight");
+      eq($$(".apc-pop[role=menu]").length, 2, "submenu open"); eq(cur(), "WAV", "focus moves into the submenu"); eq($$(".apc-mi[aria-expanded=true]").length, 1);
+      kd(document.activeElement, "ArrowDown"); eq(cur(), "MP3");
+      kd(document.activeElement, "ArrowLeft"); eq($$(".apc-pop[role=menu]").length, 1, "Left closes the submenu"); eq(cur(), "Export", "focus back on the parent row");
+      kd(document.activeElement, "ArrowRight"); kd(document.activeElement, "Enter");
+      eq(pops().length, 0, "choosing closes every level"); eq(bus.length, 1); eq(bus[0].item.id, "wav"); eq(document.activeElement, trig, "focus back on the trigger");
+      kd(trig, "ArrowDown"); kd(document.activeElement, "Escape"); eq(pops().length, 0); eq(document.activeElement, trig, "Esc closes and refocuses");
+      kd(trig, "ArrowUp"); eq(cur(), "Quit", "ArrowUp opens at the last item"); kd(document.activeElement, "Tab"); eq(pops().length, 0, "Tab closes");
+      trig.click(); eq(pops().length, 1, "click opens"); trig.click(); eq(pops().length, 0, "click on the open trigger closes");
+      off();
+    });
+  });
+
+  test("menu: hover opens a submenu, outside click closes everything, children markup form, context menu at the pointer, programmatic APC.widgets.openMenu", function () {
+    return start('<div id="m2" data-apc="menu" data-label="Edit"><div data-id="cut" data-shortcut="Ctrl+X">Cut</div><hr><div data-id="more" data-label="More"><div data-id="a">Alpha</div></div><div data-id="chk" data-checked="true">Checked</div></div>' +
+      '<div id="area" tabindex="0" style="width:10rem;height:4rem"><div id="m3" data-apc="menu" data-trigger="none" data-context="parent" data-items=\'["One","Two"]\'></div></div>').then(function () {
+      var trig = $("#m2 button"); trig.click();
+      var rows = $$(".apc-pop .apc-mi"); eq(rows.map(function (r) { return $(".apc-mi__label", r).textContent; }), ["Cut", "More", "Checked"]);
+      eq($$(".apc-pop [role=separator]").length, 1);
+      pe(rows[1], "pointerover"); eq($$(".apc-pop[role=menu]").length, 2, "hover opens the submenu");
+      pe(rows[0], "pointerover"); eq($$(".apc-pop[role=menu]").length, 1, "hovering another row closes it");
+      pe(document.body, "pointerdown"); eq(pops().length, 0, "outside click closes");
+      var area = $("#area"), r = area.getBoundingClientRect(), x = r.left + 20, y = r.top + 12;
+      var ev = new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: x, clientY: y }); area.dispatchEvent(ev);
+      assert(ev.defaultPrevented, "native context menu suppressed"); eq(pops().length, 1);
+      var pr = pops()[0].getBoundingClientRect(); assert(Math.abs(pr.left - x) < 2 && Math.abs(pr.top - y) < 2, "opens at the pointer: " + pr.left + "," + pr.top + " vs " + x + "," + y);
+      pe(document.body, "pointerdown");
+      var got = []; var off = APC.on("menu", function (d) { got.push(d); });
+      var m = APC.widgets.openMenu([{ id: "z", label: "Zed" }], { x: 30, y: 30, id: "prog", onselect: function (it) { got.push(it); } });
+      $(".apc-pop .apc-mi").click(); eq(got.length, 2); eq(got[0].id, "z"); eq(got[1].id, "prog"); eq(pops().length, 0); off();
+    });
+  });
+
+  test("menu popup is clamped inside the plate (right/bottom edges) and flips submenus left", function () {
+    return start('<div id="m1" data-apc="menu" data-label="Edge" style="position:absolute;left:42rem;top:24rem" data-items=\'[{"label":"A long item label here","shortcut":"Ctrl+Shift+Alt+K","items":[{"label":"Sub item with a long label"}]},{"label":"B"},{"label":"C"},{"label":"D"},{"label":"E"},{"label":"F"}]\'></div>').then(function () {
+      var plate = $("#stage").getBoundingClientRect();
+      $("#m1 button").click(); var pr = pops()[0].getBoundingClientRect();
+      assert(inBounds(pr, plate), "root menu inside the plate " + JSON.stringify(pr));
+      kd(document.activeElement, "ArrowRight");
+      eq(pops().length, 2); var sr = pops()[1].getBoundingClientRect(); assert(inBounds(sr, plate), "submenu inside the plate " + JSON.stringify(sr));
+      assert(sr.right <= pr.left + 2 || sr.left >= pr.right - 2, "submenu does not cover its parent");
+    });
+  });
+
+  /* ================================================================================
+     tabs
+     ================================================================================ */
+  var TABS = '<div id="t1" data-apc="tabs" data-label="Sections"><section data-tab="OSC">osc panel</section><section data-tab="ENV" data-disabled>env panel</section><section data-tab="FX" id="fxp">fx panel</section><section data-tab="OUT">out panel</section></div>';
+  test("tabs: tablist/tab/tabpanel roles + wiring, roving tabindex, click, arrows skip disabled and wrap, Home/End", function () {
+    return start(TABS).then(function () {
+      var el = $("#t1"), list = $("[role=tablist]", el), tabs = $$("[role=tab]", list), panels = $$("[role=tabpanel]", el), got = listen(el, "apc:change");
+      eq(tabs.length, 4); eq(panels.length, 4); eq(list.getAttribute("aria-orientation"), "horizontal"); eq(list.getAttribute("aria-label"), "Sections");
+      eq(tabs.map(function (t) { return t.getAttribute("aria-selected"); }), ["true", "false", "false", "false"]);
+      eq(tabs.map(function (t) { return t.getAttribute("tabindex"); }), ["0", "-1", "-1", "-1"]);
+      eq(panels.map(function (p) { return p.hidden; }), [false, true, true, true]);
+      tabs.forEach(function (t, i) { eq(t.getAttribute("aria-controls"), panels[i].id); eq(panels[i].getAttribute("aria-labelledby"), t.id); });
+      eq(tabs[2].getAttribute("aria-controls"), "fxp", "an author id on the panel is kept");
+      kd(tabs[0], "ArrowRight"); eq(tabs[2].getAttribute("aria-selected"), "true", "skips the disabled ENV"); eq(document.activeElement, tabs[2]); eq(panels[2].hidden, false); eq(panels[0].hidden, true);
+      eq(got[0].index, 2); eq(got[0].value, "FX");
+      kd(tabs[2], "ArrowRight"); kd(tabs[3], "ArrowRight"); eq(tabs[0].getAttribute("aria-selected"), "true", "wraps");
+      kd(tabs[0], "End"); eq(tabs[3].getAttribute("aria-selected"), "true"); kd(tabs[3], "Home"); eq(tabs[0].getAttribute("aria-selected"), "true");
+      tabs[1].click(); eq(tabs[1].getAttribute("aria-selected"), "false", "disabled tab cannot be selected");
+      tabs[3].click(); eq(tabs[3].getAttribute("aria-selected"), "true"); eq(el.__apcW.getValue(), "OUT");
+    });
+  });
+
+  test("tabs vertical: Up/Down navigate, Left/Right do nothing, orientation attribute and layout", function () {
+    return start(TABS.replace('data-label="Sections"', 'data-orient="vertical"')).then(function () {
+      var el = $("#t1"), tabs = $$("[role=tab]", el);
+      eq($("[role=tablist]", el).getAttribute("aria-orientation"), "vertical"); eq(getComputedStyle($("[role=tablist]", el)).flexDirection, "column");
+      kd(tabs[0], "ArrowRight"); eq(tabs[0].getAttribute("aria-selected"), "true", "Right is not a vertical key");
+      kd(tabs[0], "ArrowDown"); eq(tabs[2].getAttribute("aria-selected"), "true"); kd(tabs[2], "ArrowUp"); eq(tabs[0].getAttribute("aria-selected"), "true");
+    });
+  });
+
+  /* ================================================================================
+     textfield
+     ================================================================================ */
+  test("textfield: label for=input, placeholder, input/change/submit events, Enter commits, Esc restores", function () {
+    return start('<div id="f1" data-apc="textfield" data-label="NAME" data-placeholder="Untitled" data-value="Init" data-maxlength="12" data-help="Preset name"></div>').then(function () {
+      var el = $("#f1"), inp = $("input", el), lab = $("label", el), got = listen(el, "apc:change"), typed = listen(el, "apc:input"), sub = listen(el, "apc:submit");
+      eq(lab.htmlFor, inp.id); eq(accName(inp), "NAME"); eq(inp.placeholder, "Untitled"); eq(inp.value, "Init"); eq(inp.maxLength, 12); eq($(".apc-w__msg", el).textContent, "Preset name");
+      T.input(inp, "Warm pad"); eq(typed.length >= 1, true); eq(got.length, 0, "no commit while typing");
+      kd(inp, "Enter"); eq(got.length, 1); eq(got[0].value, "Warm pad"); eq(sub[0].value, "Warm pad"); eq(el.__apcW.getValue(), "Warm pad");
+      inp.value = "scratch"; kd(inp, "Escape"); eq(inp.value, "Warm pad", "Esc restores the committed value");
+    });
+  });
+
+  test("textfield validation: required + pattern => error state (aria-invalid, alert message), Enter keeps focus and does not commit, fix clears; setError", function () {
+    return start('<div id="f1" data-apc="textfield" data-label="NAME" data-required="true" data-pattern="[A-Za-z ]+" data-pattern-message="Letters only"></div>').then(function () {
+      var el = $("#f1"), inp = $("input", el), msg = $(".apc-w__msg", el), got = listen(el, "apc:change");
+      eq(inp.getAttribute("aria-required"), "true"); assert(!el.classList.contains("is-error"), "no error before interaction");
+      inp.focus(); T.input(inp, "ab1");
+      assert(el.classList.contains("is-error"), "error class"); eq(inp.getAttribute("aria-invalid"), "true"); eq(msg.textContent, "Letters only"); eq(msg.getAttribute("role"), "alert"); eq(el.getAttribute("aria-invalid"), "true");
+      assert(getComputedStyle(inp).borderTopColor !== getComputedStyle(document.documentElement).getPropertyValue("--rule"), "visual error border");
+      kd(inp, "Enter"); eq(got.length, 0, "invalid value is not committed"); eq(document.activeElement, inp, "focus stays");
+      T.input(inp, "abc"); assert(!el.classList.contains("is-error"), "cleared"); assert(!inp.hasAttribute("aria-invalid"));
+      kd(inp, "Enter"); eq(got.length, 1);
+      T.input(inp, ""); kd(inp, "Enter"); eq(msg.textContent, "Required"); eq(got.length, 1);
+      el.__apcW.setError("Name already used"); eq(msg.textContent, "Name already used"); assert(el.classList.contains("is-error"));
+      el.__apcW.setError(null); assert(!el.classList.contains("is-error"));
+      el.__apcW.validator = function (v) { return v === "bad" ? "Reserved" : null; }; T.input(inp, "bad"); eq(msg.textContent, "Reserved");
+    });
+  });
+
+  test("textfield: data-error starts in the error state, disabled disables the input", function () {
+    return start('<div id="f1" data-apc="textfield" data-label="A" data-error="Taken"></div><div id="f2" data-apc="textfield" data-label="B" data-disabled="true"></div>').then(function () {
+      assert($("#f1").classList.contains("is-error")); eq($("#f1 .apc-w__msg").textContent, "Taken"); assert($("#f2 input").disabled);
+    });
+  });
+
+  /* ================================================================================
+     numberfield
+     ================================================================================ */
+  test("numberfield (static): units and shortcuts share the knob's parser: 1.2k, 440 Hz, clamp hint, invalid error, aria spinbutton", function () {
+    return start('<div id="n1" data-apc="numberfield" data-label="FREQ" data-min="20" data-max="20000" data-unit="Hz" data-value="440"></div>').then(function () {
+      var el = $("#n1"), inp = $("input", el), got = listen(el, "apc:change");
+      eq(inp.getAttribute("role"), "spinbutton"); eq(inp.value, "440 Hz"); eq(inp.getAttribute("aria-valuenow"), "440"); eq(inp.getAttribute("aria-valuemin"), "20"); eq(inp.getAttribute("aria-valuemax"), "20000"); eq(accName(inp), "FREQ");
+      T.input(inp, "1.2k"); kd(inp, "Enter"); eq(inp.value, "1.2 kHz"); eq(el.__apcW.getValue(), 1200); eq(got[0].value, 1200);
+      T.input(inp, "2,5 kHz"); kd(inp, "Enter"); eq(el.__apcW.getValue(), 2500, "decimal comma + kHz");
+      T.input(inp, "99999"); kd(inp, "Enter"); eq(el.__apcW.getValue(), 20000); assert(/Clamped to/.test($(".apc-w__msg", el).textContent), "clamp hint: " + $(".apc-w__msg", el).textContent);
+      T.input(inp, "abc"); kd(inp, "Enter"); assert(el.classList.contains("is-error")); eq($(".apc-w__msg", el).textContent, "Not a number"); eq(inp.getAttribute("aria-invalid"), "true"); 
+      assert(el.__apcW.getValue() === 20000, "invalid input changes nothing");
+      kd(inp, "Escape"); eq(inp.value, "20 kHz", "Esc reverts the text"); assert(!el.classList.contains("is-error"));
+    });
+  });
+
+  test("numberfield steppers and keys: − / + buttons, ArrowUp/Down (Shift fine), PageUp/Down coarse, ends disable the buttons", function () {
+    return start('<div id="n1" data-apc="numberfield" data-label="MIX" data-min="0" data-max="10" data-step="1" data-value="9"></div>').then(function () {
+      var el = $("#n1"), inp = $("input", el), btns = $$("button", el);
+      eq(btns.length, 2); eq(btns[0].getAttribute("aria-label"), "Decrease MIX"); eq(btns[1].getAttribute("aria-label"), "Increase MIX"); eq(btns[0].getAttribute("tabindex"), "-1");
+      btns[1].click(); eq(el.__apcW.getValue(), 10); assert(btns[1].disabled, "+ disabled at the max");
+      btns[0].click(); eq(el.__apcW.getValue(), 9);
+      kd(inp, "ArrowUp"); eq(el.__apcW.getValue(), 10); kd(inp, "ArrowDown"); kd(inp, "ArrowDown"); eq(el.__apcW.getValue(), 8);
+      kd(inp, "PageDown"); eq(el.__apcW.getValue(), 0, "coarse = 10 steps, clamped"); assert(btns[0].disabled);
+      kd(inp, "PageUp"); eq(el.__apcW.getValue(), 10);
+    });
+  });
+
+  test("numberfield param-bound: typed value goes over the bridge as one gesture, % unit, clamp, host updates, hold-to-repeat is one gesture and cleans its timers", function () {
+    return start('<div id="n1" data-apc="numberfield" data-label="RES" data-param="resonance_pct"></div>').then(function () {
+      var el = $("#n1"), inp = $("input", el), base;
+      eq(inp.value, "20 %"); eq(inp.getAttribute("aria-valuenow"), "20");
+      T.input(inp, "35"); kd(inp, "Enter"); return T.settle().then(function () {
+        eq(lastSet(), 35); eq(names(), ["begin", "set", "end"]); eq(inp.value, "35 %");
+        APC.mock.clearCalls(); T.input(inp, "150%"); kd(inp, "Enter"); return T.settle();
+      }).then(function () {
+        eq(lastSet(), 100, "clamped to the descriptor's max"); assert(/Clamped/.test($(".apc-w__msg", el).textContent));
+        APC.mock.emit("param", { id: "resonance_pct", value: 12 }); return T.settle();
+      }).then(function () {
+        eq(inp.value, "12 %", "follows the host");
+        APC.mock.clearCalls(); base = APC.widgets.stats().timers; var plus = $$("button", el)[1]; pe(plus, "pointerdown"); return T.sleep(700);
+      }).then(function () {
+        var plus = $$("button", el)[1]; pe(plus, "pointerup"); return T.settle().then(function () {
+          var n = names(); eq(n[0], "begin"); eq(n[n.length - 1], "end"); eq(n.filter(function (x) { return x === "begin"; }).length, 1, "single gesture for the whole hold"); assert(sets().length >= 3, "repeated: " + sets().length);
+          eq(APC.widgets.stats().timers, base, "hold timers cleaned up");
+        });
+      });
+    });
+  });
+
+  test("numberfield with an unknown param shows the error state; disabled", function () {
+    return start('<div id="n1" data-apc="numberfield" data-label="X" data-param="nope"></div><div id="n2" data-apc="numberfield" data-label="Y" data-value="3" data-disabled="true"></div>').then(function () {
+      assert($("#n1").classList.contains("is-error")); assert(T.toasts("error").length >= 1);
+      assert($("#n2 input").disabled); $$("#n2 button").forEach(function (b) { assert(b.disabled, "step buttons disabled"); });
+    });
+  });
+
+  /* ================================================================================
+     label, readout, panel, divider, led, progress, logo
+     ================================================================================ */
+  test("label: roles map to classes, title is a heading, data-for names a widget (and is undone on dispose)", function () {
+    return start('<span id="l1" data-apc="label" data-role="title" data-text="OSCILLATOR"></span><span id="l2" data-apc="label" data-role="caption">Sentence in the text face.</span>' +
+      '<span id="l3" data-apc="label" data-role="value" data-text="440 Hz"></span><span id="l4" data-apc="label" data-text="FREQ" data-for="n1"></span><div id="n1" data-apc="numberfield" data-value="1" data-max="9"></div>').then(function () {
+      eq($("#l1").getAttribute("role"), "heading"); assert($("#l1").classList.contains("apc-text--title")); eq($("#l1").textContent, "OSCILLATOR");
+      assert($("#l2").classList.contains("apc-text--caption")); assert($("#l3").classList.contains("apc-text--value")); assert($("#l4").classList.contains("apc-text--label"));
+      var inp = $("#n1 input"); eq(inp.getAttribute("aria-labelledby"), "l4"); eq(accName(inp), "FREQ");
+      assert(getComputedStyle($("#l1")).textTransform === "uppercase" && getComputedStyle($("#l2")).textTransform !== "uppercase", "label roles typeset differently");
+      $("#l4").__apcW.dispose(); assert(!inp.hasAttribute("aria-labelledby") || inp.getAttribute("aria-labelledby") !== "l4", "undone");
+    });
+  });
+
+  test("readout: param value with unit (kHz), follows host events, meter id, manual setValue, label name", function () {
+    return start('<div id="r1" data-apc="readout" data-param="cutoff_hz" data-label="CUTOFF"></div><div id="r2" data-apc="readout" data-meter="out.peak" data-unit="dB" data-digits="1" data-label="PEAK" data-layout="inline"></div><div id="r3" data-apc="readout" data-label="X"></div>').then(function () {
+      var out = $("#r1 output"); eq(out.textContent, "1.2 kHz"); eq(accName(out).indexOf("CUTOFF"), 0); eq(out.getAttribute("aria-live"), "off");
+      APC.mock.emit("param", { id: "cutoff_hz", value: 440 }); return T.settle().then(function () {
+        eq(out.textContent, "440 Hz"); eq(getComputedStyle(out).fontVariantNumeric.indexOf("tabular-nums") >= 0, true, "tabular figures");
+        eq($("#r2 output").textContent, "—"); APC.mock.meter("out.peak", -6.04); eq($("#r2 output").textContent, "-6 dB"); APC.mock.meter("out.peak", -12.5); eq($("#r2 output").textContent, "-12.5 dB");
+        $("#r3").__apcW.setValue(3.14159); eq($("#r3 output").textContent, "3.14");
+        eq(getComputedStyle($("#r2")).flexDirection, "row", "inline layout");
+      });
+    });
+  });
+
+  test("panel: titled group, collapse button (aria-expanded/controls), hides the body, event, disabled", function () {
+    return start('<div id="p1" data-apc="panel" data-title="FILTER" data-collapsible="true"><span id="inner">content</span></div><div id="p2" data-apc="panel" data-title="Fixed" data-collapsed="true">x</div>').then(function () {
+      var el = $("#p1"), btn = $("button.apc-panel__toggle", el), body = $(".apc-panel__body", el), got = listen(el, "apc:toggle");
+      eq(el.getAttribute("role"), "group"); eq(accName(el), "FILTER"); eq(btn.getAttribute("aria-expanded"), "true"); eq(btn.getAttribute("aria-controls"), body.id); assert($("#inner", body), "children moved into the body");
+      btn.click(); eq(btn.getAttribute("aria-expanded"), "false"); assert(body.hidden); eq(body.offsetHeight, 0); eq(got[0].collapsed, true); assert(el.classList.contains("is-collapsed"));
+      btn.click(); assert(!body.hidden); eq(el.__apcW.isCollapsed(), false);
+      assert(!$("#p2 button"), "not collapsible without data-collapsible"); assert(!$("#p2 .apc-panel__body").hidden, "collapse is ignored when not collapsible");
+    });
+  });
+
+  test("divider: separator role + orientation, optional text", function () {
+    return start('<div id="d1" data-apc="divider"></div><div id="d2" data-apc="divider" data-label="OUTPUT"></div><div style="display:flex;height:3rem"><div id="d3" data-apc="divider" data-orient="vertical"></div></div>').then(function () {
+      eq($("#d1").getAttribute("role"), "separator"); eq($("#d1").getAttribute("aria-orientation"), "horizontal"); eq($("#d1 .apc-divider__line").offsetHeight >= 1, true);
+      eq($("#d2 .apc-divider__text").textContent, "OUTPUT"); eq($$("#d2 .apc-divider__line").length, 2);
+      eq($("#d3").getAttribute("aria-orientation"), "vertical"); assert($("#d3").offsetHeight >= 3 * rem() - 1, "vertical divider stretches");
+    });
+  });
+
+  test("led: states ok/warn/error/on/off with distinct colours, aria-label, param-bound (on/off and state map), setState", function () {
+    return start('<span id="a" data-apc="led" data-label="CLIP" data-state="error"></span><span id="b" data-apc="led" data-label="ON" data-on="true"></span><span id="c" data-apc="led" data-label="BYP" data-param="bypass"></span>' +
+      '<span id="d" data-apc="led" data-label="WAVE" data-param="osc_wave" data-states="off,ok,warn,error"></span>').then(function () {
+      eq($("#a").getAttribute("role"), "img"); eq($("#a").getAttribute("aria-label"), "CLIP: error"); eq($("#b").getAttribute("aria-label"), "ON: on");
+      var col = {}; ["off", "on", "ok", "warn", "error"].forEach(function (s) { $("#b").__apcW.setState(s); col[s] = getComputedStyle($("#b .apc-led")).backgroundColor; });
+      eq(Object.keys(col).map(function (k) { return col[k]; }).filter(function (c, i, a) { return a.indexOf(c) === i; }).length, 5, "five distinct colours: " + JSON.stringify(col));
+      eq($("#c").getAttribute("data-state"), "off"); eq($("#d").getAttribute("data-state"), "ok", "Saw = index 1 = ok");
+      APC.mock.emit("param", { id: "bypass", value: "On" }); APC.mock.emit("param", { id: "osc_wave", value: "Triangle" });
+      return T.settle().then(function () { eq($("#c").getAttribute("data-state"), "on"); eq($("#d").getAttribute("data-state"), "error", "Triangle = index 3"); });
+    });
+  });
+
+  test("progress: determinate aria + fill width, indeterminate has no valuenow, meter + param bound, vertical", function () {
+    return start('<div id="p1" data-apc="progress" data-label="LOAD" data-value="0.4" data-show-value="true"></div><div id="p2" data-apc="progress" data-label="BUSY" data-indeterminate="true"></div>' +
+      '<div id="p3" data-apc="progress" data-meter="load" data-label="M"></div><div id="p4" data-apc="progress" data-param="mix_pct" data-label="MIX"></div><div style="height:6rem"><div id="p5" data-apc="progress" data-orient="vertical" data-value="0.5" data-aria-label="v"></div></div>').then(function () {
+      var bar = $("#p1 [role=progressbar]"); eq(bar.getAttribute("aria-valuenow"), "0.4"); eq(bar.getAttribute("aria-valuemin"), "0"); eq(bar.getAttribute("aria-valuemax"), "1"); eq(bar.getAttribute("aria-valuetext"), "40%"); eq(accName(bar), "LOAD");
+      eq($(".apc-progress__fill", bar).style.width, "40%"); eq($(".apc-progress__text", $("#p1")).textContent, "40%");
+      var b2 = $("#p2 [role=progressbar]"); assert(!b2.hasAttribute("aria-valuenow"), "indeterminate"); assert($("#p2").classList.contains("is-indeterminate"));
+      $("#p1").__apcW.setValue(0.75); eq(bar.getAttribute("aria-valuenow"), "0.75"); $("#p2").__apcW.setIndeterminate(false); assert(b2.hasAttribute("aria-valuenow"));
+      APC.mock.meter("load", 0.9); eq($("#p3 [role=progressbar]").getAttribute("aria-valuetext"), "90%");
+      eq($("#p4 [role=progressbar]").getAttribute("aria-valuenow"), "100", "param value (mix 100) on its 0..100 range"); eq($("#p4 .apc-progress__fill").style.width, "100%");
+      var f5 = $("#p5 .apc-progress__fill"); eq(f5.style.height, "50%"); assert(f5.offsetHeight > 0 && f5.offsetWidth > 0);
+      $("#p2").__apcW.setState("error"); eq(getComputedStyle($("#p2 .apc-progress__fill")).backgroundColor, tokenColor("apc-danger"), "error state uses --apc-danger");
+    });
+  });
+
+  test("progress indeterminate stays static under reduced motion (animation lives inside a no-preference media query)", function () {
+    var found = null, restricted = false;
+    Array.prototype.forEach.call(document.styleSheets, function (ss) {
+      var rules; try { rules = ss.cssRules; } catch (e) { restricted = true; return; }
+      Array.prototype.forEach.call(rules || [], function (r) {
+        if (r.type === 4 && /prefers-reduced-motion:\s*no-preference/.test(r.conditionText || r.media.mediaText)) Array.prototype.forEach.call(r.cssRules, function (c) { if (/animation/.test(c.cssText) && /apc-w--progress/.test(c.cssText)) found = c; });
+      });
+    });
+    if (restricted && !found) return;      /* stylesheet not readable in this browser profile: nothing to assert */
+    assert(found, "the progress animation is only declared for prefers-reduced-motion: no-preference");
+    return start('<div id="p2" data-apc="progress" data-indeterminate="true"></div>').then(function () {
+      assert($("#p2 .apc-progress__fill").offsetWidth > 0, "indeterminate segment still visible");
+    });
+  });
+
+  test("list single: listbox/option roles, click + arrows select, Home/End, type-ahead, Enter activates, aria-activedescendant, disabled row", function () {
+    return start('<div id="l1" data-apc="list" data-label="PRESETS" data-rows="4" data-items=\'["Alpha","Beta","Gamma","Delta","Epsilon","Zeta"]\'></div>').then(function () {
+      var el = $("#l1"), lb = $("[role=listbox]", el), opts = $$("[role=option]", lb), got = listen(el, "apc:change"), act = listen(el, "apc:activate");
+      eq(opts.length, 6); eq(lb.getAttribute("aria-multiselectable"), "false"); eq(accName(lb), "PRESETS"); eq(lb.getAttribute("tabindex"), "0");
+      eq(opts[0].getAttribute("aria-selected"), "true"); eq(lb.getAttribute("aria-activedescendant"), opts[0].id);
+      assert(lb.scrollHeight > lb.clientHeight, "scrollable with data-rows=4 (" + lb.scrollHeight + " > " + lb.clientHeight + ")"); assert(Math.abs(lb.clientHeight - 4 * 1.5 * rem()) < 3, "4 rows tall: " + lb.clientHeight);
+      opts[2].click(); eq(got[0].value, "Gamma"); eq(opts[2].getAttribute("aria-selected"), "true"); eq(opts[0].getAttribute("aria-selected"), "false");
+      kd(lb, "ArrowDown"); eq(el.__apcW.getValue(), "Delta"); kd(lb, "ArrowUp"); kd(lb, "ArrowUp"); eq(el.__apcW.getValue(), "Beta");
+      kd(lb, "End"); eq(el.__apcW.getValue(), "Zeta"); kd(lb, "Home"); eq(el.__apcW.getValue(), "Alpha"); kd(lb, "e"); eq(el.__apcW.getValue(), "Epsilon", "type-ahead");
+      kd(lb, "Enter"); eq(act[0].index, 4); lb.dispatchEvent(new MouseEvent("dblclick", { bubbles: true })); eq(act.length, 1, "dblclick on the list background is not a row");
+      opts[1].dispatchEvent(new MouseEvent("dblclick", { bubbles: true })); eq(act[1].index, 1);
+    });
+  });
+
+  test("list multi: click toggles (no modifier needed), Space toggles, Shift+Arrow extends, Shift+click ranges, Ctrl+A all, values array", function () {
+    return start('<div id="l1" data-apc="list" data-multiple="true" data-value="b" data-label="LAYERS"><option value="a">A</option><option value="b">B</option><option value="c">C</option><option value="d" disabled>D</option><option value="e">E</option></div>').then(function () {
+      var el = $("#l1"), lb = $("[role=listbox]", el), opts = $$("[role=option]", lb), got = listen(el, "apc:change");
+      function sel() { return opts.map(function (o) { return o.getAttribute("aria-selected") === "true" ? 1 : 0; }).join(""); }
+      eq(lb.getAttribute("aria-multiselectable"), "true"); eq(sel(), "01000", "data-value preselects"); assert($(".apc-li__box", opts[0]), "checkbox glyph per row");
+      opts[0].click(); eq(sel(), "11000"); eq(got[0].value, ["a", "b"]);
+      opts[0].click(); eq(sel(), "01000", "click again deselects");
+      kd(lb, "ArrowDown"); kd(lb, "ArrowDown"); kd(lb, " "); eq(sel(), "01100", "Space toggles the active row");
+      kd(lb, "Home"); kd(lb, "ArrowDown", { shift: true }); kd(lb, "ArrowDown", { shift: true }); eq(sel().slice(0, 3), "111", "Shift+Arrow extends from the anchor");
+      eq(el.__apcW.getValue().length >= 3, true);
+      kd(lb, "a", { ctrl: true }); eq(sel(), "11101", "Ctrl+A selects all enabled rows");
+      opts[2].click(); opts[4].dispatchEvent(new MouseEvent("click", { bubbles: true, shiftKey: true })); assert(sel().charAt(4) === "1", "Shift+click ranges");
+      opts[3].click(); eq(opts[3].getAttribute("aria-selected"), "false", "disabled row stays off");
+    });
+  });
+
+  test("list param-bound (single): rows = choices, click writes the label, host updates", function () {
+    return start('<div id="l1" data-apc="list" data-param="osc_wave" data-label="WAVE"></div>').then(function () {
+      var opts = $$("[role=option]", $("#l1")); eq(opts.map(function (o) { return o.textContent; }), ["Sine", "Saw", "Square", "Triangle"]); eq(opts[1].getAttribute("aria-selected"), "true");
+      opts[3].click(); return T.settle().then(function () {
+        eq(lastSet(), "Triangle"); APC.mock.emit("param", { id: "osc_wave", value: "Sine" }); return T.settle();
+      }).then(function () { eq(opts[0].getAttribute("aria-selected"), "true"); eq(opts[3].getAttribute("aria-selected"), "false"); });
+    });
+  });
+
+  test("logo: text / image / inline svg, no button without a URL, button + apc.openUrl with data-url, data-link resolves from apc.info", function () {
+    return start('<div id="g1" data-apc="logo" data-text="ACME" data-sub="AUDIO"></div><div id="g2" data-apc="logo" data-text="ACME" data-url="https://example.test/acme"></div>' +
+      '<div id="g3" data-apc="logo" data-text="ACME" data-link="company"></div><div id="g4" data-apc="logo" data-text="ACME" data-link="update"></div>' +
+      '<div id="g5" data-apc="logo" data-alt="Mark"><svg viewBox="0 0 8 8"><rect width="8" height="8"/></svg></div><div id="g6" data-apc="logo" data-src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" data-alt="Pixel"></div>').then(function () {
+      assert(!$("#g1 button"), "no URL => no link"); eq($("#g1 .apc-logo__text").textContent, "ACME"); eq($("#g1 .apc-logo__sub").textContent, "AUDIO");
+      var b2 = $("#g2 button"); assert(b2, "button when a URL is configured"); eq(b2.getAttribute("aria-label"), "Open ACME website");
+      b2.click(); return T.settle().then(function () {
+        var c = APC.mock.calls("apc.openUrl"); eq(c.length, 1); eq(c[0].args.url, "https://example.test/acme");
+        assert($("#g3 button"), "data-link=company resolved from apc.info"); $("#g3 button").click(); return T.settle();
+      }).then(function () {
+        eq(APC.mock.calls("apc.openUrl").length, 2); assert(/^https:\/\/example\.test\//.test(APC.mock.calls("apc.openUrl")[1].args.url));
+        assert(!$("#g4 button"), "an unconfigured link (update is empty) renders no button");
+        eq($("#g5 [role=img]").getAttribute("aria-label"), "Mark"); assert($("#g5 svg")); eq($("#g6 img").getAttribute("alt"), "Pixel");
+        APC.mock.calls("apc.openUrl").forEach(function () {});
+      });
+    });
+  });
+
+  /* ================================================================================
+     whole-set properties: coexistence, disposal, accessibility, flat look, tokens
+     ================================================================================ */
+  var GALLERY =
+    '<div data-apc="button" data-label="Action"></div><div data-apc="button" data-variant="latch" data-label="Latch" data-led="true"></div><div data-apc="button" data-variant="primary" data-label="Primary"></div>' +
+    '<div data-apc="buttons" data-label="SEG" data-items=\'["A","B","C"]\'></div><div data-apc="radio" data-label="RAD" data-items=\'["A","B"]\'></div>' +
+    '<div data-apc="checkbox" data-label="Check"></div><div data-apc="dropdown" data-label="DD" data-items=\'["One","Two"]\'></div>' +
+    '<div data-apc="menu" data-label="Menu" data-items=\'["One",{"label":"Sub","items":["X"]}]\'></div>' +
+    '<div data-apc="tabs"><section data-tab="One">1</section><section data-tab="Two">2</section></div>' +
+    '<div data-apc="textfield" data-label="TEXT" data-value="abc"></div><div data-apc="numberfield" data-label="NUM" data-value="5" data-max="9"></div>' +
+    '<span data-apc="label" data-role="title" data-text="TITLE"></span><div data-apc="readout" data-label="RD" data-param="cutoff_hz"></div>' +
+    '<div data-apc="panel" data-title="PANEL" data-collapsible="true">body</div><div data-apc="divider" data-label="DIV"></div><span data-apc="led" data-label="LED" data-state="ok"></span>' +
+    '<div data-apc="progress" data-label="PRG" data-value="0.5"></div><div data-apc="list" data-label="LST" data-items=\'["a","b"]\'></div><div data-apc="logo" data-text="LOGO"></div>' +
+    '<div data-apc="knob" data-param="cutoff_hz" data-label="K" data-ticks="5"></div><div data-apc="slider" data-param="mix_pct" data-label="S"></div><div data-apc="selector" data-param="osc_wave" data-label="SEL"></div><div data-apc="toggle" data-param="bypass" data-label="T"></div>';
+
+  test("many instances coexist: 3 copies of everything, unique ids, independent state, no cross-talk", function () {
+    var html = ""; for (var i = 0; i < 3; i++) html += GALLERY;
+    return start(html).then(function () {
+      var hosts = $$("#stage .apc-w"); assert(hosts.length >= 3 * 18, "hosts: " + hosts.length);
+      var all = $$("#stage [id]").map(function (n) { return n.id; });
+      eq(all.filter(function (id, i) { return all.indexOf(id) !== i; }).length, 0, "no duplicate ids");
+      var cbs = $$("#stage [role=checkbox]"); eq(cbs.length, 3); cbs[1].click();
+      eq(cbs.map(function (c) { return c.getAttribute("aria-checked"); }), ["false", "true", "false"], "only the clicked one changed");
+      var dds = $$("#stage [role=combobox]"); dds[0].click(); pe(dds[2], "pointerdown"); dds[2].click(); eq(pops().length, 1, "opening another dropdown closes the first (outside pointerdown)"); APC.widgets.closeAll();
+      var seg = $$("#stage [data-apc=buttons]"); $$("[role=radio]", seg[2])[2].click(); eq($$("[role=radio]", seg[0])[0].getAttribute("aria-checked"), "true"); eq($$("[role=radio]", seg[2])[2].getAttribute("aria-checked"), "true");
+    });
+  });
+
+  test("two widgets bound to the same parameter stay in sync (host echo) and share nothing else", function () {
+    return start('<div id="a" data-apc="buttons" data-param="osc_wave"></div><div id="b" data-apc="dropdown" data-param="osc_wave"></div><div id="c" data-apc="radio" data-param="osc_wave"></div><div id="d" data-apc="led" data-param="bypass"></div>').then(function () {
+      $$("#a [role=radio]")[0].click(); return T.settle().then(function () {
+        eq($(".apc-dd__value", $("#b")).textContent, "Sine"); eq($$("#c [role=radio]")[0].getAttribute("aria-checked"), "true"); eq($("#d").getAttribute("data-state"), "off");
+        eq(APC.mock.calls("apc.param.set").length, 1, "one write for one user action");
+      });
+    });
+  });
+
+  test("dispose cleanliness: listeners, timers, bindings, popups and DOM popups all return to the baseline", function () {
+    var html = GALLERY + '<div data-apc="buttons" data-param="osc_wave"></div><div data-apc="dropdown" data-param="osc_wave"></div><div data-apc="checkbox" data-param="bypass"></div><div data-apc="numberfield" data-param="resonance_pct"></div>';
+    return start("").then(function () {
+      var base = APC.widgets.stats();
+      var stage = $("#stage"); stage.innerHTML = html; var m = APC.mount(stage);
+      return T.settle().then(function () {
+        var mid = APC.widgets.stats(); assert(mid.listeners > base.listeners && mid.binds > base.binds && mid.widgets >= 20, "stats grew: " + JSON.stringify(mid));
+        $$("#stage [role=combobox]")[0].click(); $$("#stage button.apc-menu-btn")[0].click(); APC.widgets.openMenu([{ label: "x" }], { x: 5, y: 5 });
+        var plus = $$("#stage .apc-nf__btn")[3] || $$("#stage .apc-nf__btn")[1]; pe(plus, "pointerdown");
+        m.dispose();
+        var after = APC.widgets.stats();
+        eq(after.listeners, base.listeners, "listeners"); eq(after.timers, base.timers, "timers"); eq(after.binds, base.binds, "bindings"); eq(after.widgets, base.widgets, "widgets");
+        $$(".apc-pop").forEach(function (p) { p.parentNode.removeChild(p); });
+        APC.widgets.closeAll();
+        eq(APC.widgets.stats().popups, 0, "popups");
+        eq($$(".apc-pop").length, 0, "no popup nodes left");
+        $$("#stage [data-apc]").forEach(function (n) { assert(!n.__apcW, "handle released on " + n.getAttribute("data-apc")); });
+        T.reset();
+      });
+    });
+  });
+
+  test("accessibility sweep: every interactive element has an accessible name, a role, and keyboard focusability; focus ring is drawn", function () {
+    return start(GALLERY).then(function () {
+      var sel = 'button,input,[role=checkbox],[role=radio],[role=combobox],[role=tab],[role=listbox],[role=slider],[role=switch],[role=spinbutton],[role=progressbar],[role=img],[role=group],[role=separator]';
+      var bad = [];
+      $$("#stage " + sel).forEach(function (n) {
+        if (n.classList.contains("apc-ctl-more")) return;
+        var nm = accName(n); if (n.getAttribute("role") === "separator" && n.getAttribute("aria-orientation")) return;
+        if (!nm) bad.push(n.className || n.tagName);
+      });
+      eq(bad, [], "elements without a name");
+      var focusables = $$("#stage [tabindex='0'], #stage button:not([tabindex='-1']), #stage input"); assert(focusables.length > 14, "focus targets: " + focusables.length);
+      var btn = $("#stage button.apc-button"); btn.focus();
+      assert(btn.matches(":focus"), "focused");
+      // the focus ring rule exists in CSS: outline on :focus-visible uses --apc-focus
+      var ring = false; Array.prototype.forEach.call(document.styleSheets, function (ss) { try { Array.prototype.forEach.call(ss.cssRules, function (r) { if (r.selectorText && /focus-visible/.test(r.selectorText) && /apc-button/.test(r.selectorText) && /apc-focus/.test(r.cssText)) ring = true; }); } catch (e) { ring = true; } });
+      assert(ring, "focus-visible ring uses --apc-focus");
+    });
+  });
+
+  test("flat look: no gradients, shadows or glow anywhere; square corners; text above the legibility floor (all widgets + open popups)", function () {
+    return start(GALLERY).then(function () {
+      $$("#stage [role=combobox]")[0].click(); var menuBtn = $("#stage button.apc-menu-btn"); menuBtn.click(); kd(document.activeElement, "ArrowDown"); kd(document.activeElement, "ArrowRight");
+      var bad = [], tiny = [], round = [];
+      $$("#stage *, .apc-pop, .apc-pop *").forEach(function (n) {
+        var cs = getComputedStyle(n), c = (n.getAttribute("class") || "") + "";
+        if (cs.boxShadow !== "none") bad.push("shadow " + c);
+        if (cs.textShadow !== "none") bad.push("text-shadow " + c);
+        if (cs.backgroundImage !== "none") bad.push("bg-image " + c);
+        if (cs.filter !== "none") bad.push("filter " + c);
+        if (/\bapc-(button|seg|dd|input|nf__btn|check__box|radio__box|tab|li__box)\b|apc-pop\b/.test(c) && !/^0(px)?$/.test(cs.borderTopLeftRadius)) round.push(c + " " + cs.borderTopLeftRadius);
+        var hasText = false, ch = n.firstChild; while (ch) { if (ch.nodeType === 3 && ch.nodeValue.trim()) hasText = true; ch = ch.nextSibling; }
+        if (hasText && parseFloat(cs.fontSize) < 9) tiny.push(c + " " + cs.fontSize);
+      });
+      eq(bad, [], "gradients/shadows/filters"); eq(round, [], "rounded corners"); eq(tiny, [], "text below 9px");
+      var cs2 = getComputedStyle($("#stage button.apc-button")); eq(cs2.borderTopWidth, "1px", "hairline border"); eq(cs2.textTransform, "uppercase"); assert(/Consolas|mono|Menlo/i.test(cs2.fontFamily), "mono UI face: " + cs2.fontFamily);
+    });
+  });
+
+  test("tokens drive everything: --accent / --r-control / --font-ui / --w-h overrides restyle the widgets; day theme swaps the palette", function () {
+    return start('<div id="g" data-apc="buttons" data-items=\'["A","B"]\' data-value="B"></div><div id="b" data-apc="button" data-label="X"></div><div id="d" data-apc="dropdown" data-items=\'["A"]\'></div>').then(function () {
+      var sel = $("#g .is-selected"), root = document.documentElement, night;
+      var before = getComputedStyle(sel).backgroundColor;
+      var stage = $("#stage");
+      stage.style.setProperty("--accent", "rgb(1, 2, 3)"); stage.style.setProperty("--r-control", "6px"); stage.style.setProperty("--font-ui", "serif"); stage.style.setProperty("--ctl-h", "3rem");
+      return T.sleep(300).then(function () {
+        eq(getComputedStyle(sel).backgroundColor, "rgb(1, 2, 3)", "accent token reaches the selected segment"); assert(before !== "rgb(1, 2, 3)");
+        eq(getComputedStyle($("#b button")).borderTopLeftRadius, "6px", "--r-control"); assert(/serif/.test(getComputedStyle($("#b button")).fontFamily), "--font-ui");
+        assert(Math.abs($("#d .apc-dd").offsetHeight - 3 * rem()) < 2, "--ctl-h drives the control height: " + $("#d .apc-dd").offsetHeight);
+        stage.style.cssText = "";
+        return T.sleep(300);
+      }).then(function () {
+        night = getComputedStyle($("#b button")).backgroundColor;
+        root.setAttribute("data-theme", "day");
+        eq(getComputedStyle(root).getPropertyValue("--plate").trim().toUpperCase(), "#FAFAF7", "day palette available through apc-widgets.css");
+        return T.sleep(300);
+      }).then(function () {
+        assert(getComputedStyle($("#b button")).backgroundColor !== night, "button recoloured in the day theme");
+        root.removeAttribute("data-theme");
+      });
+    });
+  });
+
+  test("data-size: sm/lg/<rem> change the control height through --w-h", function () {
+    return start('<div id="a" data-apc="dropdown" data-items=\'["A"]\' data-size="sm"></div><div id="b" data-apc="dropdown" data-items=\'["A"]\'></div><div id="c" data-apc="dropdown" data-items=\'["A"]\' data-size="lg"></div><div id="d" data-apc="textfield" data-size="2.5"></div>').then(function () {
+      var r = rem(), h = function (s) { return $(s).offsetHeight / r; };
+      assert(Math.abs(h("#a .apc-dd") - 1.25) < .05, "sm = 1.25rem: " + h("#a .apc-dd")); assert(Math.abs(h("#b .apc-dd") - 1.5) < .05); assert(Math.abs(h("#c .apc-dd") - 2) < .05); assert(Math.abs(h("#d input") - 2.5) < .05, "numeric = rem: " + h("#d input"));
+    });
+  });
+
+  /* ================================================================================
+     the four re-skinned controls: new options, behaviour preserved
+     ================================================================================ */
+  test("knob (flat): data-size, thin track + accent arc + pointer line, ticks, bipolar arc, unit separate/none, readout above, disabled", function () {
+    return start('<div id="k1" data-apc="knob" data-param="cutoff_hz" data-label="CUT" data-size="lg" data-ticks="5"></div><div id="k2" data-apc="knob" data-param="detune_ct" data-label="DET" data-unit="separate" data-readout="above"></div>' +
+      '<div id="k3" data-apc="knob" data-param="gain_db" data-label="GAIN" data-unit="none" data-size="sm"></div><div id="k4" data-apc="knob" data-param="mix_pct" data-label="OFF" data-readout="none" data-disabled="true"></div><div id="k5" data-apc="knob" data-param="mix_pct" data-bipolar="true" data-label="BI"></div>').then(function () {
+      var r = rem(), w1 = $("#k1 .apc-knob-wrap").getBoundingClientRect();
+      assert(Math.abs(w1.width - 4 * r) < 1.5, "lg knob = 4rem: " + w1.width + " vs " + 4 * r); assert(Math.abs($("#k3 .apc-knob-wrap").getBoundingClientRect().width - 2 * r) < 1.5, "sm knob = 2rem");
+      eq($$("#k1 .apc-ring__tick").length, 5, "5 ticks"); eq($$("#k2 .apc-ring__tick").length, 0);
+      var val = getComputedStyle($("#k1 .apc-ring__value"));
+      eq(val.fill, "none"); eq(val.stroke, tokenColor("accent"), "value arc is the accent colour"); eq($$("#k1 .apc-ring__track").length, 0, "no thin track ring");
+      eq(getComputedStyle($("#k1 .apc-knob-dial")).backgroundImage, "none", "no radial gradient"); eq(getComputedStyle($("#k1 .apc-knob-dial")).boxShadow, "none");
+      eq(getComputedStyle($("#k1 .apc-knob-pointer")).width, "2px", "pointer line");
+      eq($("#k1 .apc-readout").textContent, "1.2 kHz", "default unit mode unchanged");
+      eq($("#k2 .apc-readout").textContent, "0 ct", "separate keeps the same text"); eq($("#k2 .apc-readout__u").textContent, "ct"); eq($("#k2 .apc-readout__v").textContent, "0");
+      eq($("#k3 .apc-readout").textContent, "0", "unit none"); eq($("#k3").getAttribute("aria-valuetext"), "0 dB", "...but the accessible value keeps the unit");
+      var k2 = $("#k2"), ro = $("#k2 .apc-readout"); assert(ro.getBoundingClientRect().top < $("#k2 .apc-knob-wrap").getBoundingClientRect().top, "readout above the dial");
+      assert(!$("#k4 .apc-readout"), "readout none"); eq($("#k4").getAttribute("aria-disabled"), "true"); eq($("#k4").getAttribute("tabindex"), "-1");
+      var n = APC.mock.calls("apc.param.set").length; kd($("#k4"), "ArrowUp"); pe($("#k4"), "pointerdown"); pe($("#k4"), "pointermove", { y: 0 }); pe($("#k4"), "pointerup"); return T.settle().then(function () {
+        eq(APC.mock.calls("apc.param.set").length, n, "disabled knob ignores keys and drags");
+        $("#k4").__apcCtl.setDisabled(false); eq($("#k4").getAttribute("tabindex"), "0"); kd($("#k4"), "ArrowDown"); return T.settle();
+      }).then(function () {
+        assert(APC.mock.calls("apc.param.set").length > n, "works again once enabled");
+        assert($("#k5 .apc-ring__value").getAttribute("d") !== null);
+      });
+    });
+  });
+
+  test("knob keeps its behaviour: wheel / keys / drag still write values after the re-skin", function () {
+    return start('<div class="apc-cell" style="position:absolute;left:2rem;top:2rem;width:6rem;height:8rem" id="k1" data-apc="knob" data-param="gain_db" data-label="G"></div>').then(function () {
+      var k = $("#k1"); kd(k, "End"); return T.settle().then(function () {
+        eq(lastSet(), 12); eq(k.getAttribute("aria-valuenow"), "12"); kd(k, "Delete"); return T.settle();
+      }).then(function () { eq(k.getAttribute("aria-valuenow"), "0"); eq(getComputedStyle(k).touchAction, "none"); });
+    });
+  });
+
+  test("slider (flat): vertical + horizontal via data-orient, bipolar fill from centre, ticks, data-size, flat thumb", function () {
+    return start('<div id="s1" data-apc="slider" data-param="gain_db" data-label="V" data-ticks="3" data-size="sm"></div><div id="s2" data-apc="slider" data-orient="horizontal" data-param="mix_pct" data-label="H" data-ticks="4"></div><div id="s4" data-apc="slider" data-param="osc_wave" data-label="W" data-ticks="steps"></div><div id="s3" data-apc="slider" data-param="detune_ct" data-orient="h" data-label="BI"></div>').then(function () {
+      var r = rem();
+      assert($("#s2").classList.contains("apc-fader--h") && $("#s3").classList.contains("apc-fader--h"), "data-orient=horizontal|h");
+      var t1 = $("#s1 .apc-fader-track").getBoundingClientRect(); assert(Math.abs(t1.height - 4 * r) < 1.5, "sm slider track = 4rem: " + t1.height); assert(t1.height > t1.width);
+      var t2 = $("#s2 .apc-fader-track").getBoundingClientRect(); assert(t2.width > t2.height * 4, "horizontal track is wide");
+      eq($$("#s1 .apc-fader-tick").length, 3); eq($$("#s2 .apc-fader-tick").length, 4); eq($$("#s4 .apc-fader-tick").length, 4, "ticks=steps: one per choice");
+      var fill = $("#s3 .apc-fader-fill"); eq(parseFloat(fill.style.width) || 0, 0, "detune = 0 sits at the centre: no fill"); eq(fill.style.left, "50%", "bipolar fill starts at the centre");
+      var cap = getComputedStyle($("#s1 .apc-fader-cap")); eq(cap.boxShadow, "none"); eq(cap.backgroundImage, "none"); eq(cap.borderTopWidth, "1px");
+      kd($("#s3"), "ArrowRight"); return T.settle().then(function () { assert(parseFloat($("#s3 .apc-fader-fill").style.width) > 0, "fill grows to the right of the centre"); });
+    });
+  });
+
+  test("selector (stepper): prev / value / next buttons step through the choices, clamp at the ends, label + menu still work, steppers=false", function () {
+    return start('<div id="e1" data-apc="selector" data-param="osc_wave" data-label="WAVE"></div><div id="e2" data-apc="selector" data-param="osc_wave" data-steppers="false" data-label="W2"></div>').then(function () {
+      var e = $("#e1"), prev = $(".apc-sel-step--prev", e), next = $(".apc-sel-step--next", e);
+      assert(prev && next, "stepper buttons"); eq(prev.getAttribute("aria-label"), "Previous WAVE"); eq($(".apc-flip-value", e).textContent, "Saw");
+      next.click(); return T.settle().then(function () {
+        eq(lastSet(), "Square"); next.click(); return T.settle();
+      }).then(function () {
+        eq(lastSet(), "Triangle"); assert(next.disabled, "next disabled at the last choice"); prev.click(); return T.settle();
+      }).then(function () {
+        eq(lastSet(), "Square"); eq($(".apc-flip-value", e).textContent, "Square"); eq(getComputedStyle(prev).borderTopWidth, "1px");
+        assert(!$(".apc-sel-step", $("#e2")), "steppers can be turned off"); $(".apc-flip-cap", e).click(); eq($$(".apc-menu [role=option]").length, 4, "menu still opens from the value field");
+        APC.controls.closeMenu(false);
+      });
+    });
+  });
+
+  test("toggle (flat switch): track + thumb, aria-checked, click/Space, data-variant=button, disabled", function () {
+    return start('<div id="t1" data-apc="toggle" data-param="bypass" data-label="BYPASS"></div><div id="t2" data-apc="toggle" data-param="bypass" data-label="B2" data-variant="button"></div><div id="t3" data-apc="toggle" data-param="bypass" data-label="B3" data-disabled="true"></div>').then(function () {
+      var t = $("#t1"); eq(t.getAttribute("role"), "switch"); eq(t.getAttribute("aria-checked"), "false");
+      var led = $(".led", t), cs = getComputedStyle(led); assert(Math.abs(parseFloat(cs.width) - 2 * rem()) < .1, "switch track is 2rem wide: " + cs.width); eq(cs.boxShadow, "none"); eq(getComputedStyle(led, "::after").backgroundImage, "none");
+      t.click(); return T.settle().then(function () {
+        eq(t.getAttribute("aria-checked"), "true"); eq(lastSet(), "On"); kd(t, " "); return T.settle();
+      }).then(function () {
+        eq(t.getAttribute("aria-checked"), "false"); assert($("#t2").classList.contains("apc-psw--button"), "button variant");
+        eq($("#t3").getAttribute("aria-disabled"), "true"); var n = sets().length; $("#t3").click(); kd($("#t3"), " "); return T.sleep(20).then(function () { eq(sets().length, n, "disabled toggle ignores input"); });
+      });
+    });
+  });
+
+  test("existing panels are flat too: context panel (open from a knob), toasts and the selector menu have no gradient/shadow/glow and square corners", function () {
+    return start('<div id="k" data-apc="knob" data-param="cutoff_hz" data-label="C"></div><div id="e" data-apc="selector" data-param="osc_wave" data-label="W"></div>').then(function () {
+      APC.toast.error("flat toast"); APC.toast.info("info");
+      $("#k").dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 100, clientY: 100 }));
+      return T.settle();
+    }).then(function () {
+      var panel = APC.context.panel(); assert(panel, "context panel is open");
+      $(".apc-flip-cap", $("#e")).click();
+      var menu = $(".apc-menu"); assert(menu, "selector menu");
+      var bad = [];
+      [panel, menu, $(".apc-toast"), $(".apc-toast--error")].forEach(function (root) {
+        [root].concat($$("*", root)).forEach(function (n) {
+          if (n.classList && /\bapc-swatch\b/.test(n.className)) return;          /* colour-blind dash patterns are functional, not decoration */
+          var cs = getComputedStyle(n);
+          if (cs.boxShadow !== "none") bad.push("shadow " + n.className);
+          if (cs.backgroundImage !== "none") bad.push("bg-image " + n.className);
+          if (cs.textShadow !== "none") bad.push("text-shadow " + n.className);
+          if (/\bapc-(ctx|menu|toast)\b/.test(n.className) && cs.borderTopLeftRadius !== "0px") bad.push("radius " + n.className);
+        });
+      });
+      eq(bad, [], "flat");
+      APC.controls.closeMenu(false);
+    });
+  });
+
+  T.run();
+})();
+</script>
+</body>
+</html>

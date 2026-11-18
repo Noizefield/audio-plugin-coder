@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>kit-conformance</title>
+<!-- DESIGN-CONFORMANCE GUARD for the one shipped design (APC Minimal: flat, square, token-driven).
+     It opens every element and every overlay of the kit on the mock backend (controls, widgets, viz parts, chrome,
+     context panel, value entry, menus, dropdown popups, tooltip, toasts, help mode + manual, settings overlay with all
+     tabs, preset browser with filters / save / import / confirm dialogs, licence and update dialogs), in NIGHT and DAY,
+     walks the DOM (no per-component selectors) and runs one table of checks (CHECKS below) on every visible element and
+     on its ::before / ::after:
+        appearance   form controls are appearance:none (select: menulist-button; number/search: textfield) - never the OS widget
+        font         text and controls use --font-ui or --font-text, never the UA font
+        floor        text >= 9px (the smallest legibility token), also with a tiny rem
+        radius       border-radius is one of --r-control / --r-panel / --r-radio / --r-led (0 in APC Minimal)
+        shadow       box-shadow / text-shadow is none or one of --sh-recess / --sh-raised / --apc-shadow-pop
+        gradient     no gradient background (allow-list below documents the deliberate hairline hatches)
+        filter       no filter / backdrop-filter
+        colour       every colour (text, background, borders, outline, svg paint, scrollbar) equals a colour token of the
+                     current mode (or is transparent): no raw colours, no UA colours (buttontext, link blue, ...)
+        scrollbar    every box that really scrolls shows the flat token scrollbar (thickness measured), never the OS bar
+        pseudo-form  ::placeholder, slider thumb/track are token styled; number inputs are appearance:textfield (no spin buttons)
+        marker       <summary> has no UA disclosure triangle; textarea has no UA resize handle
+        accent       form controls carry accent-color (safety net behind appearance:none)
+        option       <option> / <optgroup> are token coloured with the token font (themed native popup)
+        native-title [title] attributes are shown by the kit tooltip (apc-help.js moves them aside while hovered)
+        focus        a :focus-visible element draws a token-coloured outline (never the UA auto ring)
+     New elements are covered automatically: the walker is generic. Add a check by adding a row to CHECKS.
+     Self-test: a deliberately offending fixture must trip every check (so the walker cannot silently pass).
+     Report mode:  kit-conformance.html?report=1  writes <pre id="apc-conformance-report"> with every violation.
+     Screenshot mode: kit-conformance.html?scene=<name>&theme=day|night  opens one scene and leaves it open.
+     Result: window.__APC_TEST__ and <pre id="apc-test-result"> (CONTRACT.md "Testing contract"). -->
+<link rel="stylesheet" href="../apc-core.css">
+<link rel="stylesheet" href="../apc-components.css">
+<link rel="stylesheet" href="../apc-widgets.css">
+<link rel="stylesheet" href="../apc-viz.css">
+<style>
+/* headless virtual time produces no frames: measure final styles, not mid-transition ones */
+*, *::before, *::after { transition: none !important; animation: none !important; }
+:root { --cols: 64; --rows: 40; }
+#stage { padding: .5rem; box-sizing: border-box; overflow: visible; }
+.cf-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: flex-start; margin-bottom: .5rem; }
+.cf-row > * { flex: none; }
+</style>
+</head>
+<body>
+<div id="stage" class="apc-plate"></div>
+<script src="../apc-fit.js"></script>
+<script src="../apc-kit.js"></script>
+<script src="../apc-mock.js"></script>
+<script src="../apc-controls.js"></script>
+<script src="../apc-widgets.js"></script>
+<script src="../apc-viz.js"></script>
+<script src="../apc-context.js"></script>
+<script src="../apc-help.js"></script>
+<script src="../apc-chrome.js"></script>
+<script src="../apc-presets.js"></script>
+<script src="../apc-settings.js"></script>
+<script src="../apc-license-ui.js"></script>
+<script src="../apc-update-ui.js"></script>
+<script src="harness-b.js"></script>
+<script>
+(function () {
+  "use strict";
+  var APC = window.APC, T = window.T;
+  var Q = new URLSearchParams(location.search);
+
+  /* ============================== the token model ============================== */
+  /* Every colour token of tokens.css (night + day share the names). Values are RESOLVED at audit time, per mode. */
+  var COLOR_TOKENS = ["--apc-letterbox", "--surface", "--plate", "--plate-2", "--inset", "--rule", "--rule-2", "--grip-ink",
+    "--ink", "--ink-2", "--accent", "--accent-ink", "--accent-text", "--ok", "--apc-danger", "--apc-focus", "--apc-overlay",
+    "--viz-line", "--viz-accent", "--viz-fill", "--viz-grid", "--viz-axis", "--viz-1", "--viz-2", "--viz-3", "--viz-4",
+    "--meter-ok", "--meter-warn", "--meter-clip", "--led-on", "--led-off", "--step-off", "--step-on", "--step-accent", "--step-playhead",
+    "--apc-mod-1", "--apc-mod-2", "--apc-mod-3", "--apc-mod-4", "--apc-mod-5", "--apc-mod-6", "--apc-mod-7", "--apc-mod-8"];
+  var RADIUS_TOKENS = ["--r-control", "--r-panel", "--r-radio", "--r-led"];
+  var SHADOW_TOKENS = ["--sh-recess", "--sh-raised", "--apc-shadow-pop"];
+  var FONT_TOKENS = ["--font-ui", "--font-text"];
+  var FLOOR_PX = 9;   /* --t-micro: max(9px, .5rem) is the smallest text token */
+
+  /* deliberate, documented exceptions (selector -> reason). Keep this list SHORT. */
+  var ALLOW_RADIUS = [
+    { sel: ".apc-knob-dial", why: "the knob body is round by design (design-system.json elements.knob.parts.dial.radius = 50%)" }
+  ];
+  var ALLOW_GRADIENT = [
+    { sel: ".apc-swatch--dash1, .apc-swatch--dash2", why: "colour-blind aid: dash pattern identifies the modulation source" },
+    { sel: ".apc-grip", why: "resize gripper hatch: 1px hairlines (repeating hard-stop stripes), not a shading gradient" }
+  ];
+
+  var TOK = null;   /* resolved for the current mode by resolveTokens() */
+  function parseColor(s) {
+    var m = /^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,\s/]+([\d.%]+))?\s*\)$/.exec(String(s).trim());
+    if (!m) return null;
+    var a = m[4] === undefined ? 1 : (/%$/.test(m[4]) ? parseFloat(m[4]) / 100 : parseFloat(m[4]));
+    return { r: Math.round(+m[1]), g: Math.round(+m[2]), b: Math.round(+m[3]), a: a };
+  }
+  function probe(prop, value) {
+    var p = document.createElement("div");
+    p.style.cssText = "position:absolute;visibility:hidden;pointer-events:none;" + prop + ":" + value;
+    document.body.appendChild(p);
+    var v = getComputedStyle(p)[toCamel(prop)];
+    document.body.removeChild(p);
+    return v;
+  }
+  function toCamel(s) { return s.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); }); }
+  function resolveTokens() {
+    var t = { colors: {}, colorKeys: {}, radius: {}, shadow: {}, font: {}, names: {} };
+    COLOR_TOKENS.forEach(function (n) {
+      var c = probe("color", "var(" + n + ")"), p = parseColor(c);
+      t.names[n] = c;
+      if (p) t.colorKeys[p.r + "," + p.g + "," + p.b] = n;
+    });
+    RADIUS_TOKENS.forEach(function (n) { t.radius[probe("border-top-left-radius", "var(" + n + ")")] = n; });
+    SHADOW_TOKENS.forEach(function (n) { t.shadow[probe("box-shadow", "var(" + n + ")")] = n; });
+    FONT_TOKENS.forEach(function (n) { t.font[probe("font-family", "var(" + n + ")")] = n; });
+    t.shadow.none = "none";
+    return t;
+  }
+  function isTokenColor(str) {
+    var p = parseColor(str);
+    if (!p) return false;
+    if (p.a === 0) return true;
+    return !!TOK.colorKeys[p.r + "," + p.g + "," + p.b];
+  }
+
+  /* ============================== describing elements ============================== */
+  function describe(el, pseudo) {
+    var s = el.nodeName.toLowerCase();
+    if (el.classList && el.classList.length) s += "." + Array.prototype.slice.call(el.classList, 0, 3).join(".");
+    if (el.getAttribute) {
+      var t = el.getAttribute("type"); if (t) s += "[type=" + t + "]";
+      var k = el.getAttribute("data-k") || el.getAttribute("data-apc"); if (k) s += "[" + (el.hasAttribute("data-k") ? "data-k" : "data-apc") + "=" + k + "]";
+      else { var r = el.getAttribute("role"); if (r) s += "[role=" + r + "]"; }
+    }
+    var up = el.parentElement, hops = 0;
+    while (up && hops < 6 && !(up.className && /\bapc-(ctx|kb-sheet|sx|pb|lc|up|menu|pop|toast|manual|tooltip|w)\b/.test(String(up.className)))) { up = up.parentElement; hops++; }
+    if (up && up !== el.parentElement && up.className) s += " in ." + String(up.className).split(/\s+/)[0];
+    return s + (pseudo ? pseudo : "");
+  }
+
+  /* ============================== the check table ============================== */
+  function isFormCtl(el) {
+    var n = el.nodeName;
+    if (n === "SELECT" || n === "TEXTAREA" || n === "BUTTON" || n === "PROGRESS" || n === "METER") return true;
+    return n === "INPUT" && el.type !== "hidden";
+  }
+  function hasOwnText(el) {
+    for (var c = el.firstChild; c; c = c.nextSibling) if (c.nodeType === 3 && /\S/.test(c.nodeValue)) return true;
+    return false;
+  }
+  function px(v) { return parseFloat(v) || 0; }
+  function pseudoText(cs) { return /^".+"$|^counter|^attr/.test(cs.content); }
+  function matchesAny(el, list) { return list.some(function (a) { try { return el.matches(a.sel) || (el.closest && el.closest(a.sel)); } catch (e) { return false; } }); }
+  function colorProps(cx) {
+    /* [label, value, applies] */
+    var cs = cx.cs, out = [], el = cx.el;
+    var svg = el instanceof SVGElement;
+    if (svg) {
+      if (cs.fill && cs.fill !== "none") out.push(["fill", cs.fill]);
+      if (cs.stroke && cs.stroke !== "none") out.push(["stroke", cs.stroke]);
+      return out;
+    }
+    if (cx.pseudo ? pseudoText(cs) : (hasOwnText(el) || isFormCtl(el))) out.push(["color", cs.color]);
+    out.push(["background-color", cs.backgroundColor]);
+    ["Top", "Right", "Bottom", "Left"].forEach(function (s) {
+      if (cs["border" + s + "Style"] !== "none" && px(cs["border" + s + "Width"]) > 0) out.push(["border-" + s.toLowerCase() + "-color", cs["border" + s + "Color"]]);
+    });
+    if (cs.outlineStyle !== "none" && px(cs.outlineWidth) > 0) out.push(["outline-color", cs.outlineColor]);
+    if (cs.textDecorationLine !== "none") out.push(["text-decoration-color", cs.textDecorationColor]);
+    return out;
+  }
+
+  /* each row: id, what (documentation), run(cx) -> string | null  (cx = {el, cs, pseudo, small}) */
+  var CHECKS = [
+    { id: "appearance", what: "form controls are not the OS widget", run: function (cx) {
+      if (cx.pseudo || !isFormCtl(cx.el)) return null;
+      var el = cx.el, a = cx.cs.appearance || cx.cs.webkitAppearance, ok = ["none"];
+      if (el.nodeName === "SELECT") ok = ["none", "menulist-button", "base-select"];
+      if (el.nodeName === "INPUT" && (el.type === "number" || el.type === "search" || el.type === "text" || el.type === "email")) ok = ["none", "textfield"];
+      return ok.indexOf(a) < 0 ? "appearance:" + a + " (want " + ok.join("|") + ")" : null;
+    } },
+    { id: "accent", what: "form controls carry accent-color from the tokens", run: function (cx) {
+      if (cx.pseudo || !isFormCtl(cx.el)) return null;
+      return cx.cs.accentColor === "auto" ? "accent-color:auto" : null;
+    } },
+    { id: "font", what: "token font family on text and controls", run: function (cx) {
+      var el = cx.el;
+      if (el instanceof SVGElement && el.nodeName.toLowerCase() !== "text" && el.nodeName.toLowerCase() !== "tspan") return null;
+      if (!(cx.pseudo ? pseudoText(cx.cs) : (hasOwnText(el) || isFormCtl(el)))) return null;
+      return TOK.font[cx.cs.fontFamily] ? null : "font-family: " + cx.cs.fontFamily.slice(0, 60);
+    } },
+    { id: "floor", what: "text >= " + FLOOR_PX + "px", run: function (cx) {
+      var el = cx.el;
+      if (!(cx.pseudo ? pseudoText(cx.cs) : (hasOwnText(el) || (isFormCtl(el) && el.nodeName !== "PROGRESS")))) return null;
+      return px(cx.cs.fontSize) < FLOOR_PX - 0.01 ? "font-size " + cx.cs.fontSize + (cx.small ? " (rem 8px)" : "") : null;
+    } },
+    { id: "radius", what: "border-radius from the shape tokens", run: function (cx) {
+      if (cx.el instanceof SVGElement || matchesAny(cx.el, ALLOW_RADIUS)) return null;
+      var cs = cx.cs, bad = [];
+      ["TopLeft", "TopRight", "BottomRight", "BottomLeft"].forEach(function (c) { var v = cs["border" + c + "Radius"]; if (v !== "0px" && !TOK.radius[v]) bad.push(v); });
+      return bad.length ? "border-radius " + bad[0] : null;
+    } },
+    { id: "shadow", what: "box-shadow / text-shadow none or a shadow token", run: function (cx) {
+      var cs = cx.cs;
+      if (cs.boxShadow !== "none" && !TOK.shadow[cs.boxShadow]) return "box-shadow " + cs.boxShadow.slice(0, 50);
+      if (cs.textShadow !== "none") return "text-shadow " + cs.textShadow.slice(0, 50);
+      return null;
+    } },
+    { id: "gradient", what: "no gradient fills", run: function (cx) {
+      if (matchesAny(cx.el, ALLOW_GRADIENT)) return null;
+      var bi = cx.cs.backgroundImage, bo = cx.cs.borderImageSource;
+      if (/gradient\(/.test(bi)) return "background-image " + bi.slice(0, 50);
+      if (/gradient\(/.test(bo)) return "border-image " + bo.slice(0, 50);
+      return null;
+    } },
+    { id: "filter", what: "no filter / backdrop-filter", run: function (cx) {
+      var f = cx.cs.filter, b = cx.cs.backdropFilter;
+      if (f && f !== "none") return "filter " + f;
+      if (b && b !== "none") return "backdrop-filter " + b;
+      return null;
+    } },
+    { id: "colour", what: "every colour is a token of the current mode", run: function (cx) {
+      var bad = [];
+      colorProps(cx).forEach(function (p) { if (!isTokenColor(p[1])) bad.push(p[0] + ":" + p[1]); });
+      var sc = cx.cs.scrollbarColor;
+      if (!cx.pseudo && sc && sc !== "auto") sc.match(/rgba?\([^)]*\)/g).forEach(function (c) { if (!isTokenColor(c)) bad.push("scrollbar-color:" + c); });
+      return bad.length ? "non-token colour " + bad.join(", ") : null;
+    } },
+    { id: "scrollbar", what: "scroll boxes use the flat token scrollbar (not the OS bar)", run: function (cx) {
+      if (cx.pseudo) return null;
+      var cs = cx.cs, el = cx.el;
+      if (el === document.documentElement || el === document.body) return null;
+      var y = /auto|scroll/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 1, x = /auto|scroll/.test(cs.overflowX) && el.scrollWidth > el.clientWidth + 1;
+      if (!x && !y) return null;                       /* only boxes that really scroll have a bar to measure */
+      if (cs.scrollbarColor !== "auto" || cs.scrollbarWidth !== "auto") return null;   /* standards styling (Firefox path) */
+      var rem = parseFloat(getComputedStyle(document.documentElement).fontSize), max = Math.max(8, 0.5 * rem) + 1;
+      var bar = getComputedStyle(el, "::-webkit-scrollbar");   /* the styled bar thickness (the same whether or not the browser hides bars) */
+      var w = px(bar.width), hgt = px(bar.height);
+      if (y && !(w > 0 && w <= max)) return "vertical scrollbar is the UA bar (::-webkit-scrollbar width " + bar.width + "; the token bar is max(8px, .5rem))";
+      if (x && !(hgt > 0 && hgt <= max)) return "horizontal scrollbar is the UA bar (::-webkit-scrollbar height " + bar.height + ")";
+      return null;
+    } },
+    { id: "pseudo-form", what: "placeholder, slider parts, spinners, search clear are token styled", run: function (cx) {
+      var el = cx.el, cs, bad = [];
+      if (cx.pseudo || el.nodeName !== "INPUT" && el.nodeName !== "TEXTAREA") return null;
+      if (el.getAttribute("placeholder")) {
+        cs = getComputedStyle(el, "::placeholder");
+        if (!isTokenColor(cs.color)) bad.push("::placeholder color " + cs.color);
+        if (!TOK.font[cs.fontFamily]) bad.push("::placeholder font " + cs.fontFamily.slice(0, 30));
+      }
+      if (el.type === "number" && cx.cs.appearance !== "textfield") bad.push("number input shows the UA spin buttons (appearance " + cx.cs.appearance + ", want textfield)");
+      if (el.type === "range") {
+        ["::-webkit-slider-thumb", "::-webkit-slider-runnable-track"].forEach(function (ps) {
+          var c = getComputedStyle(el, ps);
+          if (!c || !c.backgroundColor) { bad.push(ps + " not inspectable"); return; }
+          if (!isTokenColor(c.backgroundColor)) bad.push(ps + " background " + c.backgroundColor);
+          if (px(c.borderTopLeftRadius) > 0 && !TOK.radius[c.borderTopLeftRadius]) bad.push(ps + " radius " + c.borderTopLeftRadius);
+          if (c.boxShadow !== "none" && !TOK.shadow[c.boxShadow]) bad.push(ps + " shadow");
+          if (/gradient\(/.test(c.backgroundImage)) bad.push(ps + " gradient");
+          if (c.webkitAppearance !== "none" && c.appearance !== "none") bad.push(ps + " appearance " + c.webkitAppearance);
+          ["Top", "Right", "Bottom", "Left"].forEach(function (s) { if (c["border" + s + "Style"] !== "none" && px(c["border" + s + "Width"]) > 0 && !isTokenColor(c["border" + s + "Color"])) bad.push(ps + " border colour"); });
+        });
+      }
+      return bad.length ? bad.join("; ") : null;
+    } },
+    { id: "marker", what: "no UA disclosure triangle / resize handle", run: function (cx) {
+      var el = cx.el;
+      if (cx.pseudo) return null;
+      if (el.nodeName === "SUMMARY" && cx.cs.listStyleType !== "none") return "summary list-style-type:" + cx.cs.listStyleType + " (UA triangle)";
+      if (el.nodeName === "TEXTAREA" && cx.cs.resize !== "none") return "textarea resize:" + cx.cs.resize + " (UA grip)";
+      return null;
+    } },
+    { id: "option", what: "native option popup is token themed", run: function (cx) {
+      var el = cx.el, bad = [];
+      if (cx.pseudo || el.nodeName !== "SELECT") return null;
+      Array.prototype.slice.call(el.querySelectorAll("option,optgroup"), 0, 3).forEach(function (o) {
+        var c = getComputedStyle(o);
+        if (!isTokenColor(c.color)) bad.push("option color " + c.color);
+        if (!isTokenColor(c.backgroundColor) || parseColor(c.backgroundColor).a === 0) bad.push("option background " + c.backgroundColor);
+        if (!TOK.font[c.fontFamily]) bad.push("option font " + c.fontFamily.slice(0, 30));
+      });
+      return bad.length ? bad[0] : null;
+    } },
+    { id: "native-title", what: "title attributes are shown by the kit tooltip, never as the OS bubble", run: function (cx) {
+      if (cx.pseudo || !cx.el.hasAttribute || !cx.el.hasAttribute("title")) return null;
+      return APC.help && APC.help.titleTooltips ? null : "title=\"" + cx.el.getAttribute("title").slice(0, 30) + "\" would show the OS tooltip";
+    } },
+    { id: "native-ui", what: "no visible OS-only inputs (file, colour, date...)", run: function (cx) {
+      var el = cx.el;
+      if (cx.pseudo || el.nodeName !== "INPUT") return null;
+      return /^(file|color|date|datetime-local|month|time|week)$/.test(el.type) ? "visible input[type=" + el.type + "]" : null;
+    } }
+  ];
+
+  /* ============================== the walker ============================== */
+  function shown(el, cs) {
+    if (cs.display === "none" || cs.visibility === "hidden") return false;
+    if (cs.display === "contents") return true;
+    return el.getClientRects().length > 0;
+  }
+  var SKIP = /^(SCRIPT|STYLE|LINK|META|TITLE|HEAD|NOSCRIPT|TEMPLATE|CANVAS|BR|COL|COLGROUP)$/;
+  function audit(root, opts) {
+    opts = opts || {};
+    var out = [], els = [root].concat(Array.prototype.slice.call(root.querySelectorAll("*"))), n = 0;
+    els.forEach(function (el) {
+      if (SKIP.test(el.nodeName) || el.id === "apc-test-result" || el.id === "apc-conformance-report") return;
+      if (el.closest && el.closest("#apc-conformance-report,#apc-test-result")) return;
+      var cs = getComputedStyle(el);
+      if (!shown(el, cs)) return;
+      n++;
+      CHECKS.forEach(function (ck) {
+        var d = null;
+        try { d = ck.run({ el: el, cs: cs, pseudo: "", small: opts.small }); } catch (e) { d = "check threw: " + e.message; }
+        if (d) out.push({ check: ck.id, who: describe(el), detail: d });
+      });
+      if (el instanceof SVGElement) return;
+      ["::before", "::after"].forEach(function (ps) {
+        var pcs = getComputedStyle(el, ps);
+        if (!pcs || pcs.content === "none" || pcs.content === "normal" || pcs.display === "none") return;
+        CHECKS.forEach(function (ck) {
+          var d = null;
+          try { d = ck.run({ el: el, cs: pcs, pseudo: ps, small: opts.small }); } catch (e) { d = "check threw: " + e.message; }
+          if (d) out.push({ check: ck.id, who: describe(el, ps), detail: d });
+        });
+      });
+    });
+    out.count = n;
+    return out;
+  }
+
+  /* focus ring check: every focusable element, when :focus-visible matches, draws a token outline (not the UA "auto" ring) */
+  function focusAudit(root) {
+    var out = [], sel = "a[href],button,input:not([type=hidden]),select,textarea,summary,[tabindex]", seen = 0, tested = 0;
+    Array.prototype.slice.call(root.querySelectorAll(sel)).forEach(function (el) {
+      var cs = getComputedStyle(el);
+      if (!shown(el, cs) || el.disabled || el.tabIndex < 0 && el.nodeName !== "INPUT") return;
+      seen++;
+      try { el.focus({ preventScroll: true }); } catch (e) { return; }
+      if (document.activeElement !== el || !el.matches(":focus-visible")) return;
+      tested++;
+      var c = getComputedStyle(el), bad = null;
+      if (c.outlineStyle === "none" || px(c.outlineWidth) === 0) {
+        /* a visible alternative: the border colour must change to a token highlight - accept accent/focus border */
+        var accent = parseColor(TOK.names["--apc-focus"]), bc = parseColor(c.borderTopColor);
+        if (!(bc && accent && bc.r === accent.r && bc.g === accent.g && bc.b === accent.b)) bad = "no focus ring (outline none)";
+      } else if (c.outlineStyle === "auto") bad = "UA focus ring (outline-style:auto)";
+      else if (!isTokenColor(c.outlineColor)) bad = "focus ring colour " + c.outlineColor;
+      if (bad) out.push({ check: "focus", who: describe(el), detail: bad });
+      el.blur();
+    });
+    out.count = tested; out.seen = seen;
+    return out;
+  }
+
+  /* ============================== scenes ============================== */
+  var STAGE_ROW = function (h) { return '<div class="cf-row">' + h + "</div>"; };
+  var CONTROLS = STAGE_ROW(
+    '<div data-apc="knob" data-param="cutoff_hz" data-label="CUTOFF" data-size="lg" data-more="show"></div>' +
+    '<div data-apc="knob" data-param="drive_db" data-label="DRIVE"></div>' +
+    '<div data-apc="knob" data-param="gain_db" data-label="GAIN" data-unit="separate" data-readout="above" data-ticks="5"></div>' +
+    '<div data-apc="slider" data-param="gain_db" data-label="LEVEL" data-ticks="3"></div>' +
+    '<div data-apc="slider" data-orient="horizontal" data-param="mix_pct" data-label="MIX" data-ticks="4"></div>' +
+    '<div data-apc="selector" data-param="osc_wave" data-label="WAVE"></div>' +
+    '<div data-apc="toggle" data-param="bypass" data-label="BYPASS"></div>' +
+    '<div data-apc="toggle" data-param="bypass" data-label="B2" data-variant="button"></div>');
+  var WIDGETS =
+    STAGE_ROW(
+      '<div data-apc="button" data-label="Reset" data-icon="▶" data-led="true" data-title="Reset it"></div>' +
+      '<div data-apc="button" data-variant="primary" data-label="Save"></div>' +
+      '<div data-apc="button" data-variant="latch" data-label="Mute" data-pressed="true"></div>' +
+      '<div data-apc="button" data-label="Go" data-disabled="true"></div>' +
+      '<div data-apc="buttons" data-label="MODE" data-value="b"><option value="a">A</option><option value="b">B</option><option value="c" disabled>C</option></div>' +
+      '<div data-apc="segmented" data-items=\'["One","Two","Three"]\' data-value="Two"></div>' +
+      '<div data-apc="checkbox" data-label="Snap to grid"></div><div data-apc="checkbox" data-label="Some" data-indeterminate="true"></div>' +
+      '<div data-apc="checkbox" data-label="On" data-checked="true"></div><div data-apc="checkbox" data-label="Off" data-disabled="true"></div>' +
+      '<div data-apc="radio" data-label="QUALITY" data-orient="horizontal"><option>Draft</option><option>Good</option><option selected>Best</option></div>') +
+    STAGE_ROW(
+      '<div data-apc="dropdown" data-label="WAVE" data-searchable="true" data-items=\'["Sine","Saw","Square","Triangle"]\' data-value="Saw" id="cf-dd"></div>' +
+      '<div data-apc="menu" data-label="File" id="cf-menu" data-items=\'[{"id":"new","label":"New","shortcut":"Ctrl+N"},{"id":"open","label":"Open","disabled":true},"-",{"id":"chk","label":"Checked","checked":true},{"label":"More","items":[{"id":"a","label":"Alpha"},{"id":"b","label":"Beta"}]}]\'></div>' +
+      '<div data-apc="tabs" data-label="Sections"><section data-tab="OSC">osc panel</section><section data-tab="ENV" data-disabled>env panel</section><section data-tab="FX">fx panel</section></div>' +
+      '<div data-apc="textfield" data-label="NAME" data-placeholder="Untitled" data-value="Init" data-help="Preset name"></div>' +
+      '<div data-apc="textfield" data-label="BAD" data-error="Taken"></div>' +
+      '<div data-apc="numberfield" data-label="FREQ" data-min="20" data-max="20000" data-unit="Hz" data-value="440"></div>' +
+      '<div data-apc="readout" data-param="cutoff_hz" data-label="CUTOFF"></div>') +
+    STAGE_ROW(
+      '<div data-apc="panel" data-title="FILTER" data-collapsible="true"><span>content</span></div>' +
+      '<div data-apc="divider" data-label="OUTPUT" style="width:8rem"></div>' +
+      '<div data-apc="led" data-param="bypass" data-label="ON"></div>' +
+      '<div data-apc="progress" data-label="LOAD" data-value="0.4" data-show-value="true" style="width:8rem"></div>' +
+      '<div data-apc="progress" data-label="BUSY" data-indeterminate="true" style="width:8rem"></div>' +
+      '<div data-apc="list" data-label="PRESETS" data-rows="4" data-items=\'["Alpha","Beta","Gamma","Delta","Epsilon","Zeta"]\' data-value="Beta" style="width:10rem"></div>' +
+      '<div data-apc="logo" data-text="ACME" data-sub="AUDIO"></div>');
+  var VIZ = STAGE_ROW(
+    '<div data-apc="meter" data-meter="cf-m" data-channels="2" data-label="Level" style="width:3rem;height:8rem"></div>' +
+    '<div data-apc="stepseq" data-viz="cf-seq" data-label="Gate" data-count="8" style="width:16rem;height:3rem"></div>' +
+    '<div data-apc="xypad" data-x="cutoff_hz" data-y="resonance_pct" data-xlabel="Cutoff" data-ylabel="Reso" data-label="Pad" style="width:8rem;height:8rem"></div>' +
+    '<div data-apc="graph" data-label="Response" data-xscale="log" data-xmin="20" data-xmax="20000" data-ymin="-24" data-ymax="24" style="width:14rem;height:8rem"></div>');
+  var CHROME =
+    '<header data-apc="header" data-save="true" data-product="CONFORMANCE" style="position:relative;width:60rem;height:2rem"><div data-apc="preset-chip"></div></header>' +
+    STAGE_ROW('<div data-apc="infobar" style="width:30rem"></div><div data-apc="help-button" class="apc-header__help"></div><div data-apc="scale"></div><div data-apc="theme-switch"></div>') +
+    '<footer data-apc="footer" data-version="1.2.3" style="position:relative;width:60rem;height:1.5rem"></footer>';
+
+  function mount(html) { T.reset(); T.mount(html); return T.settle(); }
+  function closeAll() {
+    try { APC.widgets.closeAll(); } catch (e) {}
+    try { APC.controls.closeMenu(false); } catch (e) {}
+    try { if (APC.context && APC.context.close) APC.context.close(false); } catch (e) {}
+    try { APC.help.mode(false); APC.help.closeManual(); APC.help.hideTooltip(); } catch (e) {}
+    try { APC.__kb.closeAll(); } catch (e) {}
+    T.qa(".apc-toasts").forEach(function (n) { n.innerHTML = ""; });
+  }
+  function rightClick(el) {
+    var r = el.getBoundingClientRect();
+    el.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, button: 2 }));
+  }
+  function sheet(name) { return T.wait(function () { return T.q("[data-apc-sheet=" + name + "]"); }, name + " sheet"); }
+  function openSettingsTab(tab) {
+    APC.emit("settings:open", { tab: tab });
+    return sheet("settings").then(function () {
+      var b = T.q("[data-apc-sheet=settings] [data-tab=" + tab + "]");
+      if (b && b.getAttribute("aria-selected") !== "true") b.click();
+      return T.wait(function () { var p = T.q("[data-apc-sheet=settings] [data-panel=" + tab + "]"); return p && !p.hidden && p.children.length; }, "tab " + tab);
+    }).then(function () {
+      T.qa("[data-apc-sheet=settings] details").forEach(function (d) { d.open = true; });
+      return T.settle();
+    });
+  }
+  function openPresets() {
+    return mount('<div data-apc="preset-chip"></div>').then(function () {
+      T.click(T.q("[data-k=chip-browse]"));
+      return sheet("presets");
+    }).then(function () { return T.wait(function () { return T.q(".apc-pb__row"); }, "preset rows"); }).then(T.settle);
+  }
+  function setUpdate(state, extra) {
+    APC.mock.scenario("update-available");
+    return T.settle();
+  }
+
+  var SCENES = [
+    { name: "controls", open: function () { return mount(CONTROLS); } },
+    { name: "widgets", open: function () { return mount(WIDGETS); } },
+    { name: "viz", open: function () { return mount(VIZ); } },
+    { name: "chrome", open: function () { return mount(CHROME); } },
+    { name: "context", open: function () {
+      return mount(CONTROLS).then(function () { rightClick(T.q("[data-param=cutoff_hz]")); return T.wait(function () { return T.q(".apc-ctx [data-k=amt0]"); }, "context panel"); })
+        .then(function () { T.qa(".apc-ctx details").forEach(function (d) { d.open = true; }); return T.settle(); });
+    } },
+    { name: "context-choice", open: function () {
+      return mount(CONTROLS).then(function () { rightClick(T.q("[data-param=osc_wave]")); return T.wait(function () { return T.q(".apc-ctx"); }, "context panel"); }).then(T.settle);
+    } },
+    { name: "value-entry", open: function () {
+      return mount(CONTROLS).then(function () { var r = T.q("[data-param=cutoff_hz] .apc-readout"); r.click(); return T.wait(function () { return T.q(".apc-entry"); }, "value entry"); });
+    } },
+    { name: "selector-menu", open: function () {
+      return mount(CONTROLS).then(function () { T.click(T.q("[data-apc=selector] .apc-flip-cap, [data-apc=selector] .apc-sel-cap")); return T.wait(function () { return T.q(".apc-menu"); }, "selector menu"); });
+    } },
+    { name: "tooltip", open: function () {
+      return mount(CONTROLS).then(function () { APC.help.showTooltip(T.q("[data-param=cutoff_hz]")); return T.wait(function () { return T.q(".apc-tooltip:not([hidden])"); }, "tooltip"); });
+    } },
+    { name: "toasts", open: function () {
+      return mount(CONTROLS).then(function () { APC.toast.info("Info toast", 60000); APC.toast.warn("Warning toast", 60000); APC.toast.error("Error toast", 60000); return T.settle(); });
+    } },
+    { name: "help", open: function () {
+      return mount(CONTROLS + CHROME).then(function () { APC.help.mode(true); APC.help.openManual("cutoff_hz"); return T.wait(function () { return T.q(".apc-manual"); }, "manual"); });
+    } },
+    { name: "dropdown-popup", open: function () {
+      return mount(WIDGETS).then(function () { T.click(T.q("#cf-dd button, #cf-dd [role=combobox], #cf-dd .apc-dd__btn")); return T.wait(function () { return T.q(".apc-pop"); }, "dropdown popup"); });
+    } },
+    { name: "menu-popup", open: function () {
+      return mount(WIDGETS).then(function () { T.click(T.q("#cf-menu button")); return T.wait(function () { return T.q(".apc-pop"); }, "menu popup"); })
+        .then(function () { var sub = T.qa(".apc-pop [aria-haspopup]")[0]; if (sub) { sub.click(); } return T.settle(); });
+    } },
+    { name: "settings-global", open: function () { return mount(CONTROLS).then(function () { return openSettingsTab("global"); }); } },
+    { name: "settings-engine", open: function () { return mount(CONTROLS).then(function () { return openSettingsTab("engine"); }); } },
+    { name: "settings-midi", open: function () { return mount(CONTROLS).then(function () { return openSettingsTab("midi"); }); } },
+    { name: "settings-presets", open: function () { return mount(CONTROLS).then(function () { return openSettingsTab("presets"); }); } },
+    { name: "settings-license", open: function () { return mount(CONTROLS).then(function () { return openSettingsTab("license"); }); } },
+    { name: "settings-about", open: function () { return mount(CONTROLS).then(function () { return openSettingsTab("about"); }); } },
+    { name: "presets", open: function () { return openPresets(); } },
+    { name: "presets-filter", open: function () {
+      return openPresets().then(function () { var g = T.q("[data-group]"); g.click(); return T.wait(function () { return T.q(".apc-pb__pop"); }, "filter popup"); });
+    } },
+    { name: "presets-filter-axes", open: function () {
+      return openPresets().then(function () { var g = T.q("[data-group=axes], [data-group=mood], [data-group=tag]") || T.qa("[data-group]")[3]; g.click(); return T.wait(function () { return T.q(".apc-pb__pop"); }, "filter popup 2"); });
+    } },
+    { name: "presets-save-as", open: function () {
+      return openPresets().then(function () { T.click(T.q("[data-k=save-as]")); return T.wait(function () { return T.q("[data-k=sa-name]"); }, "save-as sheet"); }).then(T.settle);
+    } },
+    { name: "presets-import", open: function () {
+      return openPresets().then(function () { T.click(T.q("[data-k=import]")); return T.wait(function () { return T.q("[data-k=import-path]"); }, "import sheet"); }).then(T.settle);
+    } },
+    { name: "presets-search", open: function () {
+      return openPresets().then(function () { var s = T.q("[data-k=search]"); s.value = "pad"; s.dispatchEvent(new Event("input", { bubbles: true })); return T.settle(); });
+    } },
+    { name: "license", open: function () {
+      return mount(CONTROLS).then(function () { APC.mock.scenario("demo"); APC.emit("license:open", {}); return sheet("license"); }).then(function () { T.qa("[data-apc-sheet=license] details").forEach(function (d) { d.open = true; }); return T.settle(); });
+    } },
+    { name: "license-licensed", open: function () {
+      return mount(CONTROLS).then(function () { APC.mock.scenario("licensed"); APC.emit("license:open", {}); return sheet("license"); }).then(T.settle);
+    } },
+    { name: "update", open: function () {
+      return mount(CONTROLS).then(function () { APC.mock.scenario("update-available"); APC.emit("update:open"); return sheet("update"); }).then(T.settle);
+    } },
+    { name: "update-downloading", open: function () {
+      return mount(CONTROLS).then(function () {
+        APC.mock.scenario("update-available"); APC.mock.config({ tickMs: 600000 }); APC.emit("update:open"); return sheet("update");
+      }).then(function () { var b = T.q("[data-apc-sheet=update] [data-k=download]"); if (b) b.click(); return T.settle(); });
+    } },
+    { name: "update-failed", open: function () {
+      return mount(CONTROLS).then(function () {
+        APC.mock.scenario("update-failed"); APC.emit("update:open"); return sheet("update");
+      }).then(function () { var b = T.q("[data-apc-sheet=update] [data-k=download]"); if (b) b.click(); return T.settle(); }).then(function () { return T.sleep(200); });
+    } },
+    { name: "inline-components", open: function () {
+      return mount('<div data-apc="license" style="width:30rem"></div><div data-apc="update" style="width:30rem"></div><div data-apc="presets" style="width:44rem;height:18rem"></div>')
+        .then(function () { return T.sleep(100); });
+    } }
+  ];
+
+  /* ============================== running ============================== */
+  var REPORT = [];
+  function setTheme(theme) {
+    if (theme === "day") document.documentElement.setAttribute("data-theme", "day"); else document.documentElement.removeAttribute("data-theme");
+    TOK = resolveTokens();
+  }
+  function runScene(sc, theme, small) {
+    setTheme(theme);
+    document.documentElement.style.fontSize = small ? "8px" : "";
+    return Promise.resolve().then(function () { closeAll(); return sc.open(); }).then(function () {
+      var v = audit(document.body, { small: small }), n = v.count;
+      var f = small ? [] : focusAudit(document.body);
+      v = v.concat(f);
+      v.forEach(function (x) { x.scene = sc.name; x.theme = theme + (small ? "+small" : ""); });
+      REPORT = REPORT.concat(v);
+      return { v: v, n: n, focus: f.count };
+    }).then(function (r) { closeAll(); document.documentElement.style.fontSize = ""; return r; },
+            function (e) { closeAll(); document.documentElement.style.fontSize = ""; throw e; });
+  }
+  function dedupe(list) {
+    var seen = {}, out = [];
+    list.forEach(function (x) { var k = x.check + "|" + x.who + "|" + x.detail; if (!seen[k]) { seen[k] = true; out.push(x); } });
+    return out;
+  }
+  function fmt(v) { return "[" + v.check + "] " + v.who + ": " + v.detail; }
+
+  /* ------------ screenshot mode: open one scene and keep it ------------ */
+  if (Q.get("scene")) {
+    var want = Q.get("scene"), sc = SCENES.filter(function (s) { return s.name === want; })[0];
+    setTheme(Q.get("theme") === "day" ? "day" : "night");
+    /* a screenshot run resizes the window, which closes popups: swallow resize events so the scene stays open */
+    window.addEventListener("resize", function (e) { e.stopImmediatePropagation(); }, true);
+    if (Q.get("small")) document.documentElement.style.fontSize = "8px";
+    T.test("screenshot scene " + want, function () { return sc.open(); });
+    T.run();
+    return;
+  }
+
+  /* ------------ walker self-test: a deliberately offending fixture must trip every check ------------ */
+  T.test("self-test: the walker flags a deliberately non-conforming fixture (it cannot silently pass)", function () {
+    setTheme("night");
+    T.reset();
+    var st = document.getElementById("stage");
+    st.innerHTML =
+      '<input type="range" style="-webkit-appearance:auto;appearance:auto;accent-color:auto">' +
+      '<select style="-webkit-appearance:auto;appearance:auto;accent-color:auto;font-family:Arial;color:rgb(1,2,3)"><option>a</option></select>' +
+      '<div id="bad" style="border-radius:6px;box-shadow:0 0 3px rgb(255,0,0);background-image:linear-gradient(red,blue);color:rgb(1,2,3);font-family:Arial;font-size:6px;filter:blur(1px);width:20px">x</div>' +
+      '<style>.cf-sb::-webkit-scrollbar { width: 30px; height: 30px; }</style><div class="cf-sb" style="overflow:auto;width:80px;height:50px"><i style="display:block;height:300px;width:200px"></i></div>' +
+      '<details open><summary style="list-style:revert">s</summary>t</details>' +
+      '<textarea style="resize:vertical"></textarea><input type="file" style="display:block">' +
+      '<input type="number" placeholder="p" style="-webkit-appearance:auto;appearance:auto"><button title="native bubble">t</button>';
+    var keep = APC.help.titleTooltips; APC.help.titleTooltips = false;
+    var v = audit(st), got = {};
+    APC.help.titleTooltips = keep;
+    v.forEach(function (x) { got[x.check] = (got[x.check] || 0) + 1; });
+    ["appearance", "accent", "font", "floor", "radius", "shadow", "gradient", "filter", "colour", "scrollbar", "marker", "native-ui", "native-title"].forEach(function (id) {
+      T.assert(got[id], "check '" + id + "' did not fire on the offending fixture (got " + JSON.stringify(got) + ")");
+    });
+    T.assert(v.count > 8, "walker visited the fixture");
+    st.innerHTML = "";
+  });
+
+  T.test("title attributes: the kit tooltip shows them and the OS bubble is suppressed while hovering", function () {
+    setTheme("night");
+    return mount('<div data-apc="button" data-label="Reset" data-title="Reset it"></div>').then(function () {
+      var b = T.q("#stage button"), tip;
+      T.assert(b.getAttribute("title") === "Reset it", "the button carries title (" + b.getAttribute("title") + ")");
+      b.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" }));
+      T.assert(!b.hasAttribute("title") && b.getAttribute("data-apc-title") === "Reset it", "title moved aside so the OS shows nothing");
+      return T.wait(function () { tip = T.q(".apc-tooltip:not([hidden])"); return tip; }, "kit tooltip for the title").then(function () {
+        T.assert(/Reset it/.test(tip.textContent), "tooltip text: " + tip.textContent);
+        b.dispatchEvent(new PointerEvent("pointerout", { bubbles: true, pointerType: "mouse", relatedTarget: null }));
+        T.assert(b.getAttribute("title") === "Reset it" && !b.hasAttribute("data-apc-title"), "title restored when the pointer leaves");
+        T.assert(T.q(".apc-tooltip").hidden, "tooltip hidden again");
+      });
+    });
+  });
+
+  T.test("token model: colour tokens resolve in both modes and day differs from night", function () {
+    setTheme("night"); var n = JSON.stringify(TOK.names); var nk = Object.keys(TOK.colorKeys).length;
+    setTheme("day"); var d = JSON.stringify(TOK.names);
+    T.assert(nk >= 12, "night resolves many distinct colours (" + nk + ")");
+    T.assert(n !== d, "day tokens differ from night");
+    T.assert(Object.keys(TOK.names).every(function (k) { return parseColor(TOK.names[k]); }), "every colour token parses: " + Object.keys(TOK.names).filter(function (k) { return !parseColor(TOK.names[k]); }));
+    T.assert(TOK.radius["0px"] === "--r-control" || Object.keys(TOK.radius).length > 0, "radius tokens resolve");
+    T.assert(Object.keys(TOK.font).length >= 1, "font tokens resolve");
+    setTheme("night");
+  });
+
+  /* the parts getComputedStyle cannot inspect (UA pseudo-elements) are asserted on the style sheets instead */
+  function sheetText() {
+    var out = "", i, j, rules;
+    for (i = 0; i < document.styleSheets.length; i++) {
+      try { rules = document.styleSheets[i].cssRules; } catch (e) { out += " /*unreadable " + document.styleSheets[i].href + "*/ "; continue; }
+      for (j = 0; j < rules.length; j++) out += rules[j].cssText + " ";
+    }
+    return out;
+  }
+  T.test("global rules: accent-color, scrollbars, ::selection, spin buttons, search clear, slider parts, summary marker are token styled", function () {
+    setTheme("night");
+    var cs = getComputedStyle(document.documentElement);
+    T.assert(cs.accentColor !== "auto", "root accent-color is set (" + cs.accentColor + ")");
+    var txt = sheetText();
+    T.assert(txt.indexOf("unreadable") < 0, "style sheets readable for the static checks: " + (txt.match(/unreadable [^ ]+/g) || []));
+    ["::selection", "::-webkit-inner-spin-button", "::-webkit-search-cancel-button", "::-webkit-slider-thumb", "::-webkit-slider-runnable-track",
+     "::-webkit-scrollbar", "::-webkit-scrollbar-thumb", "::placeholder", "::-webkit-details-marker"].forEach(function (p) {
+      T.assert(txt.indexOf(p) >= 0, "a style rule for " + p + " exists");
+    });
+    var sel = getComputedStyle(T.q("#stage"), "::selection");
+    T.assert(isTokenColor(sel.backgroundColor) && parseColor(sel.backgroundColor).a > 0, "::selection background is a token colour: " + sel.backgroundColor);
+    T.assert(isTokenColor(sel.color), "::selection colour is a token colour: " + sel.color);
+  });
+
+  ["night", "day"].forEach(function (theme) {
+    SCENES.forEach(function (sc) {
+      T.test(theme + " / " + sc.name + ": every visible element conforms to the design", function () {
+        return runScene(sc, theme, false).then(function (r) {
+          var v = dedupe(r.v);
+          T.assert(r.n > 3, "walker saw " + r.n + " elements");
+          if (v.length) throw new Error(v.length + " violation(s): " + v.slice(0, 8).map(fmt).join(" | ") + (v.length > 8 ? " | ... +" + (v.length - 8) + " more (run with ?report=1)" : ""));
+        });
+      });
+    });
+  });
+
+  /* tiny rem: text must still respect the legibility floors (rem-only font sizes shrink below them) */
+  T.test("night / all scenes with rem = 8px: text stays >= " + FLOOR_PX + "px", function () {
+    var list = [];
+    return SCENES.reduce(function (p, sc) {
+      return p.then(function () { return runScene(sc, "night", true).then(function (r) { list = list.concat(r.v.filter(function (x) { return x.check === "floor"; })); }); });
+    }, Promise.resolve()).then(function () {
+      var v = dedupe(list);
+      if (v.length) throw new Error(v.length + " violation(s): " + v.slice(0, 8).map(fmt).join(" | ") + (v.length > 8 ? " | ... +" + (v.length - 8) + " more" : ""));
+    });
+  });
+
+  T.test("report", function () {
+    if (Q.get("report")) {
+      var pre = document.createElement("pre"); pre.id = "apc-conformance-report";
+      pre.textContent = JSON.stringify(dedupe(REPORT).map(function (x) { return x.scene + " " + x.theme + " " + fmt(x); }));
+      document.body.appendChild(pre);
+    }
+  });
+
+  T.run();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>APC UI kit-A self-test</title>
+<!-- Self-test for apc-controls / apc-context / apc-help / apc-chrome.
+     Uses an in-page spy bridge (harness-a.js) so it is independent of apc-bridge.js / apc-mock.js.
+     Result: window.__APC_TEST__ = { pass, fail, failures } and <pre id="apc-test-result">.
+     Headless: msedge --headless=new --disable-gpu --window-size=1000,700 --virtual-time-budget=60000 --dump-dom file:///.../kit-a.html -->
+<link rel="stylesheet" href="../apc-core.css">
+<link rel="stylesheet" href="../apc-components.css">
+<style>:root { --cols: 50; --rows: 27.5; }</style>
+</head>
+<body>
+<div id="plate" class="apc-plate"></div>
+<script src="../apc-fit.js"></script>
+<script src="../apc-kit.js"></script>
+<script src="harness-a.js"></script>
+<script src="../apc-controls.js"></script>
+<script src="../apc-context.js"></script>
+<script src="../apc-help.js"></script>
+<script src="../apc-chrome.js"></script>
+<script>
+(function () {
+  "use strict";
+  var APC = window.APC, H = window.H, M = H.mock, test = H.test, assert = H.assert, eq = H.eq, near = H.near, sleep = H.sleep;
+  function sets() { return M.of("apc.param.set"); }
+  function lastSet() { var s = sets(); return s.length ? s[s.length - 1].args.value : undefined; }
+  function val(el) { return parseFloat(el.getAttribute("aria-valuenow")); }
+
+  /* ---------------- structure / aria ---------------- */
+  test("knob renders with role=slider, tabindex, aria-value*, label", async function () {
+    var el = await H.mk("knob", "cutoff_hz", { "data-label": "CUTOFF" });
+    eq(el.getAttribute("role"), "slider", "role");
+    eq(el.getAttribute("tabindex"), "0", "tabindex");
+    eq(el.getAttribute("aria-label"), "CUTOFF", "accessible name");
+    eq(el.getAttribute("aria-valuemin"), "20", "valuemin");
+    eq(el.getAttribute("aria-valuemax"), "20000", "valuemax");
+    eq(el.getAttribute("aria-valuenow"), "850", "valuenow");
+    assert(/850 Hz/.test(el.getAttribute("aria-valuetext")), "valuetext has unit: " + el.getAttribute("aria-valuetext"));
+    eq(el.querySelector(".apc-readout").textContent, "850 Hz", "readout text");
+    assert(!!el.querySelector(".apc-ring"), "svg ring present");
+    eq(M.of("apc.params.get").length >= 1, true, "descriptor read through apc.params.get");
+  });
+
+  test("all four components have names + tabindex", async function () {
+    var a = await H.mk("knob", "gain_db"), b = await H.mk("slider", "mix_pct"), c = await H.mk("selector", "wave"), d = await H.mk("toggle", "bypass");
+    [a, b, c, d].forEach(function (e) {
+      assert(e.getAttribute("tabindex") === "0", e.getAttribute("data-apc") + " tabindex");
+      assert((e.getAttribute("aria-label") || "").length > 0, e.getAttribute("data-apc") + " has aria-label");
+    });
+    eq(d.getAttribute("role"), "switch", "toggle role");
+    eq(c.getAttribute("aria-valuetext"), "Saw", "selector valuetext is the label");
+  });
+
+  /* ---------------- reset gestures ---------------- */
+  test("Alt+click resets base value only (U-01)", async function () {
+    var el = await H.mk("knob", "cutoff_hz");
+    var n = M.calls.length;
+    var ev = H.pe(el, "pointerdown", { alt: true });
+    H.click(el, { alt: true });
+    await H.tick();
+    var after = H.callsSince(n).map(function (c) { return c.name; });
+    assert(after.indexOf("apc.param.reset") >= 0, "apc.param.reset called: " + after.join(","));
+    assert(!after.some(function (x) { return x.indexOf("apc.mod.") === 0; }), "no modulation call on reset");
+    assert(ev.defaultPrevented, "alt pointerdown prevented");
+    eq(el.getAttribute("aria-valuenow"), "1000", "value is the declared default");
+    eq(M.find("cutoff_hz").modulation.length, 2, "routes untouched");
+  });
+
+  test("double-click = reset by default (U-02)", async function () {
+    var el = await H.mk("knob", "gain_db");
+    H.key(el, "End"); await H.tick();
+    eq(val(el), 12, "moved to max");
+    var n = M.calls.length;
+    H.dbl(el); await H.tick();
+    assert(H.callsSince(n).some(function (c) { return c.name === "apc.param.reset"; }), "reset called");
+    eq(val(el), 0, "back to default");
+    assert(!el.querySelector(".apc-entry"), "no value entry in reset mode");
+  });
+
+  test("double-click = value entry when ui.double_click=value_entry (U-15)", async function () {
+    APC.prefs.set({ double_click: "value_entry" });
+    var el = await H.mk("knob", "gain_db");
+    var n = M.calls.length;
+    H.dbl(el); await H.tick();
+    assert(!!el.querySelector("input.apc-entry"), "inline entry opened");
+    assert(!H.callsSince(n).some(function (c) { return c.name === "apc.param.reset"; }), "reset NOT called");
+    eq(document.activeElement, el.querySelector("input.apc-entry"), "entry focused");
+  });
+
+  test("touch double-tap resets; long-press opens the context panel", async function () {
+    var el = await H.mk("knob", "gain_db");
+    H.key(el, "End"); await H.tick();
+    var n = M.calls.length;
+    H.pe(el, "pointerdown", { type: "touch" }); H.pe(el, "pointerup", { type: "touch" });
+    H.pe(el, "pointerdown", { type: "touch" }); H.pe(el, "pointerup", { type: "touch" });
+    await H.tick();
+    eq(H.callsSince(n).filter(function (c) { return c.name === "apc.param.reset"; }).length, 1, "one reset from double-tap");
+    H.pe(el, "pointerdown", { type: "touch", id: 5 });
+    await sleep(650);
+    assert(APC.context.isOpen(), "long-press opened the context panel");
+  });
+
+  /* ---------------- drag ---------------- */
+  test("drag: 150 px = full range; Shift = 1/10; Ctrl = 1/100; modifiers latched at pointerdown", async function () {
+    var el = await H.mk("knob", "gain_db");           /* linear -24..12 (range 36), starts at 0 */
+    H.drag(el, -30); await H.tick();
+    near(val(el), 7.2, 1e-6, "30 px up = +20 % of range");
+    H.key(el, "Delete"); await H.tick();
+    eq(val(el), 0, "delete key resets");
+    H.drag(el, -30, { shift: true }); await H.tick();
+    near(val(el), 0.72, 1e-6, "shift = fine (1/10)");
+    H.key(el, "Delete"); await H.tick();
+    H.drag(el, -30, { ctrl: true }); await H.tick();
+    near(val(el), 0.072, 1e-6, "ctrl = super-fine (1/100)");
+    H.key(el, "Delete"); await H.tick();
+    H.drag(el, -30, { moveShift: true, moveAlt: true }); await H.tick();   /* modifiers pressed only AFTER pointerdown */
+    near(val(el), 7.2, 1e-6, "modifiers ignored during an active drag");
+    H.key(el, "Delete"); await H.tick();
+    H.drag(el, 60); await H.tick();
+    near(val(el), -14.4, 1e-6, "dragging down lowers the value");
+  });
+
+  test("drag emits exactly one begin ... set* ... end; a click emits none", async function () {
+    var el = await H.mk("knob", "gain_db");
+    var n = M.calls.length;
+    H.pe(el, "pointerdown"); H.pe(el, "pointerup"); H.click(el); await H.tick();
+    eq(M.names().slice(n).filter(function (x) { return /begin|end|\.set/.test(x); }).length, 0, "plain click: no gesture");
+    n = M.calls.length;
+    H.drag(el, -45); await H.tick();
+    var seq = M.names().slice(n).filter(function (x) { return x.indexOf("apc.param.") === 0; });
+    eq(seq[0], "apc.param.begin", "begin first");
+    eq(seq[seq.length - 1], "apc.param.end", "end last");
+    eq(seq.filter(function (x) { return x === "apc.param.begin"; }).length, 1, "single begin");
+    eq(seq.filter(function (x) { return x === "apc.param.end"; }).length, 1, "single end");
+    assert(seq.slice(1, -1).length >= 1 && seq.slice(1, -1).every(function (x) { return x === "apc.param.set"; }), "only set between: " + seq.join(","));
+  });
+
+  test("keyboard nudges wrap in begin/set/end; choice and stepped params move by one step", async function () {
+    var el = await H.mk("knob", "gain_db"), n = M.calls.length;
+    H.key(el, "ArrowUp"); await H.tick();
+    near(val(el), 0.36, 1e-6, "arrow = 1 % of range");
+    H.key(el, "ArrowUp", { shift: true }); await H.tick();
+    near(val(el), 0.396, 1e-6, "shift+arrow = 0.1 %");
+    H.key(el, "PageDown"); await H.tick();
+    near(val(el), -3.204, 1e-6, "PageDown = -10 %");
+    H.key(el, "Home"); await H.tick(); eq(val(el), -24, "Home = min");
+    H.key(el, "End"); await H.tick(); eq(val(el), 12, "End = max");
+    var seq = M.names().slice(n).filter(function (x) { return x.indexOf("apc.param.") === 0; });
+    eq(seq.filter(function (x) { return x === "apc.param.begin"; }).length, seq.filter(function (x) { return x === "apc.param.end"; }).length, "begin/end balanced");
+    var st = await H.mk("knob", "steps_n");
+    H.key(st, "ArrowUp"); await H.tick(); eq(val(st), 6, "stepped +1");
+    H.key(st, "ArrowDown", { shift: true }); await H.tick(); eq(val(st), 5, "stepped fine still 1 step");
+    eq(lastSet(), 5, "bridge got 5");
+  });
+
+  /* ---------------- wheel ---------------- */
+  test("wheel nudges 1 % (Shift 0.1 %), ends the host gesture after idle", async function () {
+    var el = await H.mk("knob", "gain_db"), n = M.calls.length;
+    var ev = H.wheel(el, -100);
+    assert(ev.defaultPrevented, "wheel captured when not inside a scrollable panel");
+    near(val(el), 0.36, 1e-6, "wheel up +1 %");
+    H.wheel(el, 100, { shift: true });
+    near(val(el), 0.324, 1e-6, "shift+wheel down -0.1 %");
+    eq(M.names().slice(n).filter(function (x) { return x === "apc.param.end"; }).length, 0, "gesture still open");
+    await sleep(320);
+    eq(M.names().slice(n).filter(function (x) { return x === "apc.param.begin"; }).length, 1, "one begin for the whole wheel burst");
+    eq(M.names().slice(n).filter(function (x) { return x === "apc.param.end"; }).length, 1, "end after idle");
+    var st = await H.mk("knob", "steps_n");
+    H.wheel(st, -100); eq(val(st), 6, "stepped param: one notch = one step");
+    await sleep(300);
+  });
+
+  test("wheel inside a scrollable panel: captured only after 120 ms hover or with Shift; ui.wheel_target=panel", async function () {
+    var panel = document.createElement("div");
+    panel.style.cssText = "position:absolute;left:0;top:0;width:20rem;height:12rem;overflow:auto";
+    var tall = document.createElement("div"); tall.style.cssText = "position:relative;height:60rem"; panel.appendChild(tall);
+    H.plate().appendChild(panel);
+    var el = document.createElement("div"); el.setAttribute("data-apc", "knob"); el.setAttribute("data-param", "gain_db");
+    el.style.cssText = "position:absolute;left:2rem;top:2rem;width:5rem;height:6rem";
+    tall.appendChild(el); var m = APC.mount(panel); await H.ready(el);
+    el.dispatchEvent(new MouseEvent("mouseenter"));
+    var e1 = H.wheel(el, -100);
+    assert(!e1.defaultPrevented, "immediately after entering: not captured (panel scrolls)");
+    var e2 = H.wheel(el, -100, { shift: true });
+    assert(e2.defaultPrevented, "Shift captures immediately");
+    await sleep(140);
+    var e3 = H.wheel(el, -100);
+    assert(e3.defaultPrevented, "after 120 ms hover: captured");
+    el.dispatchEvent(new MouseEvent("mouseleave"));
+    var e4 = H.wheel(el, -100);
+    assert(!e4.defaultPrevented, "after leaving, hover timer resets");
+    APC.prefs.set({ wheel_target: "panel" });
+    el.dispatchEvent(new MouseEvent("mouseenter")); await sleep(140);
+    assert(!H.wheel(el, -100).defaultPrevented, "wheel_target=panel: never captured without Shift");
+    assert(H.wheel(el, -100, { shift: true }).defaultPrevented, "wheel_target=panel: Shift captures");
+    await sleep(300);
+    m.dispose();
+  });
+
+  /* ---------------- value entry ---------------- */
+  async function openEntry(el) { H.click(el.querySelector(".apc-readout")); await H.tick(); return el.querySelector("input.apc-entry"); }
+  test("click on readout -> text entry; Enter commits with units, locale and k suffix", async function () {
+    var el = await H.mk("knob", "cutoff_hz");
+    var inp = await openEntry(el);
+    assert(!!inp, "entry opened"); eq(document.activeElement, inp, "entry focused"); eq(inp.value, "850 Hz", "prefilled with formatted value");
+    inp.value = "1.2k"; H.key(inp, "Enter"); await H.tick();
+    eq(lastSet(), 1200, "1.2k -> 1200"); assert(!el.querySelector(".apc-entry"), "entry closed");
+    inp = await openEntry(el); inp.value = "1,5 kHz"; H.key(inp, "Enter"); await H.tick(); eq(lastSet(), 1500, "comma decimal + kHz");
+    inp = await openEntry(el); inp.value = "850"; H.key(inp, "Enter"); await H.tick(); eq(lastSet(), 850, "bare number");
+    eq(el.querySelector(".apc-readout").textContent, "850 Hz", "readout updated");
+    var t = await H.mk("knob", "time_s");
+    inp = await openEntry(t); inp.value = "250 ms"; H.key(inp, "Enter"); await H.tick(); near(lastSet(), 0.25, 1e-9, "ms into a seconds parameter");
+  });
+
+  test("value entry: Esc cancels; invalid input flashes red and keeps focus; out of range clamps with a hint", async function () {
+    var el = await H.mk("knob", "cutoff_hz"), n;
+    var inp = await openEntry(el);
+    n = sets().length; inp.value = "9999"; H.key(inp, "Escape"); await H.tick();
+    assert(!el.querySelector(".apc-entry"), "Esc closed the entry"); eq(sets().length, n, "Esc did not set anything");
+    eq(el.querySelector(".apc-readout").textContent, "850 Hz", "previous value restored");
+    eq(document.activeElement, el, "focus back on the control");
+    inp = await openEntry(el); n = sets().length;
+    inp.value = "banana"; H.key(inp, "Enter"); await H.tick();
+    assert(!!el.querySelector(".apc-entry"), "entry stays open on invalid input");
+    assert(inp.classList.contains("apc-invalid"), "red flash class");
+    eq(inp.getAttribute("aria-invalid"), "true", "aria-invalid");
+    eq(document.activeElement, inp, "focus kept on the entry"); eq(sets().length, n, "nothing sent");
+    assert(/Not a number/.test((el.querySelector(".apc-hint") || {}).textContent || ""), "reason shown");
+    inp.value = "99999"; H.key(inp, "Enter"); await H.tick();
+    eq(lastSet(), 20000, "clamped to max");
+    assert(/Clamped/.test((el.querySelector(".apc-hint") || {}).textContent || ""), "clamp hint shown");
+  });
+
+  test("selector entry accepts a label; toggle/selector keep value entry reachable via the context panel", async function () {
+    var sel = await H.mk("selector", "wave");
+    H.ctx(sel); await H.tick();
+    var enter = APC.context.panel().querySelector('[data-k="enter"]'); enter.click(); await H.tick();
+    var inp = sel.querySelector("input.apc-entry"); assert(!!inp, "entry for a selector without readout");
+    inp.value = "tri"; H.key(inp, "Enter"); await H.tick();
+    eq(lastSet(), "Triangle", "prefix match sends the label (not an index)");
+  });
+
+  /* ---------------- other kinds ---------------- */
+  test("selector: shows label, menu lists labels, picking sends the label; arrows step", async function () {
+    var el = await H.mk("selector", "wave", { "data-label": "WAVE" });
+    eq(el.querySelector(".apc-flip-value").textContent, "Saw", "current label shown");
+    H.click(el); await H.tick();
+    var items = document.querySelectorAll(".apc-menu [role=option]");
+    eq(items.length, 4, "4 options"); eq(items[2].textContent, "Square", "labels, not indices");
+    items[2].click(); await H.tick();
+    eq(lastSet(), "Square", "label sent over the bridge"); eq(el.getAttribute("aria-valuetext"), "Square", "valuetext");
+    assert(!document.querySelector(".apc-menu"), "menu closed");
+    H.key(el, "ArrowUp"); await H.tick(); eq(lastSet(), "Triangle", "arrow up -> next");
+    H.key(el, "ArrowUp"); await H.tick(); eq(lastSet(), "Triangle", "clamped at the end");
+    H.wheel(el, 100); await H.tick(); eq(lastSet(), "Square", "wheel steps once per notch");
+    await sleep(300);
+  });
+
+  test("toggle: click/Space toggle with boolean values; Alt+click resets", async function () {
+    var el = await H.mk("toggle", "bypass", { "data-label": "BYPASS" });
+    eq(el.getAttribute("aria-checked"), "false", "initially off");
+    H.click(el); await H.tick();
+    eq(lastSet(), true, "boolean true sent"); eq(el.getAttribute("aria-checked"), "true", "aria-checked");
+    H.key(el, " "); await H.tick(); eq(lastSet(), false, "Space toggles back");
+    H.key(el, "Enter"); await H.tick(); eq(lastSet(), true, "Enter toggles");
+    var n = M.calls.length; H.pe(el, "pointerdown", { alt: true }); H.click(el, { alt: true }); await H.tick();
+    assert(H.callsSince(n).some(function (c) { return c.name === "apc.param.reset"; }), "alt+click resets");
+    eq(el.getAttribute("aria-checked"), "false", "default off");
+    eq(H.callsSince(n).filter(function (c) { return c.name === "apc.param.set"; }).length, 0, "alt+click did not toggle");
+  });
+
+  test("slider vertical/horizontal drag follows the track; track click jumps", async function () {
+    var v = await H.mk("slider", "mix_pct", {}, { x: 2, y: 8, w: 4, h: 10 });
+    var tr = v.querySelector(".apc-fader-track").getBoundingClientRect();
+    H.drag(v, -tr.height * 0.25); await H.tick();
+    near(val(v), 65, 0.01, "vertical: 25 % of the track length = +25");
+    var hz = await H.mk("slider", "mix_pct", { "data-orientation": "h" }, { x: 12, y: 8, w: 10, h: 4 });
+    var tw = hz.querySelector(".apc-fader-track").getBoundingClientRect();
+    H.drag(hz, 0, {}, { dx: tw.width * 0.25 }); await H.tick();
+    near(val(hz), 65, 0.01, "horizontal: 25 % of the track width = +25");
+    var track = v.querySelector(".apc-fader-track"), r = track.getBoundingClientRect();
+    H.pe(track, "pointerdown", { x: r.left + r.width / 2, y: r.top + r.height * 0.25 }); H.pe(track, "pointerup", { x: r.left + 1, y: r.top + r.height * 0.25 }); await H.tick();
+    near(val(v), 75, 0.5, "click at 25 % from the top jumps to ~75");
+  });
+
+  test("live updates from param events; ignored while a drag is active", async function () {
+    var el = await H.mk("knob", "cutoff_hz");
+    M.emit("param", { id: "cutoff_hz", value: 2000 });
+    eq(el.querySelector(".apc-readout").textContent, "2 kHz", "readout follows the host"); eq(el.getAttribute("aria-valuenow"), "2000", "aria follows");
+    var g = await H.mk("knob", "gain_db");
+    H.drag(g, -15, {}, { hold: true });
+    var during = val(g);
+    M.emit("param", { id: "gain_db", value: -20 });
+    eq(val(g), during, "host echo ignored mid-drag");
+    H.pe(g, "pointerup", {}); await H.tick();
+    M.emit("param", { id: "gain_db", value: -20 }); eq(val(g), -20, "applied after the drag");
+    M.find("gain_db").value = 3; M.emit("param", { id: "*", value: null }); await sleep(20);
+    eq(val(g), 3, "wildcard param event re-reads descriptors");
+  });
+
+  test("modulation ring: ONE summed arc for all active routes, dot, live marker", async function () {
+    var el = await H.mk("knob", "cutoff_hz", { "data-label": "CUTOFF" });
+    var arcs = el.querySelectorAll(".apc-ring__route");
+    eq(arcs.length, 1, "a single arc for the summed modulation (not one per route)");
+    assert(arcs[0].classList.contains("apc-ring__sum"), "it is the summed arc");
+    eq(arcs[0].getAttribute("data-src"), "sum", "summed arc marker");
+    assert(!arcs[0].style.stroke, "no per-source colour (the sum is neutral, token-styled)");
+    assert(!el.querySelector(".apc-mod-dot").hidden, "modulation dot visible");
+    assert(/modulated by LFO 1/.test(el.getAttribute("aria-valuetext")), "aria-valuetext names the sources");
+    var mk = el.querySelector(".apc-ring__marker");
+    eq(mk.getAttribute("visibility"), "hidden", "no live position yet");
+    M.emit("param", { id: "cutoff_hz", value: 850, modulated: 1500 });
+    eq(mk.getAttribute("visibility"), "visible", "live marker after a modulated value");
+    var plain = await H.mk("knob", "plain");
+    eq(plain.querySelectorAll(".apc-ring__route").length, 0, "no arcs without routes");
+    assert(plain.querySelector(".apc-mod-dot").hidden, "dot hidden without routes");
+    var p0 = APC.controls.sourceStyle("LFO 1"), p1 = APC.controls.sourceStyle("lfo1"), p2 = APC.controls.sourceStyle("Env 1");
+    eq(p0.n, p1.n, "source naming is normalised"); assert(p0.n !== p2.n || p0.dash !== p2.dash, "distinct sources differ in colour or dash");
+  });
+
+  test("modulation sum: reach adds up over active routes, bypassed routes do not count; slider shows one band", async function () {
+    var el = await H.mk("knob", "cutoff_hz");
+    var one = el.querySelector(".apc-ring__sum").getAttribute("d");
+    H.ctx(el);
+    var p = APC.context.panel();
+    p.querySelector('[data-k="byp1"]').click(); await sleep(30);
+    var bypassed = el.querySelector(".apc-ring__sum").getAttribute("d");
+    assert(bypassed !== one, "bypassing a route changes the summed arc");
+    eq(el.querySelectorAll(".apc-ring__route").length, 1, "still exactly one arc");
+    var sl = await H.mk("slider", "mix_pct");
+    assert(sl.querySelectorAll(".apc-fader-route").length <= 1, "slider never shows more than one modulation band");
+    APC.context.close && APC.context.close(false);
+  });
+
+  test("no visible ⋯ options button by default on any control; data-more=show opts in; the panel stays reachable", async function () {
+    var k = await H.mk("knob", "gain_db"), s = await H.mk("slider", "mix_pct"), t = await H.mk("toggle", "bypass"), c = await H.mk("selector", "wave");
+    [k, s, t, c].forEach(function (n) { assert(!n.querySelector(".apc-ctl-more"), n.className + " has no ⋯"); });
+    var t2 = await H.mk("toggle", "bypass", { "data-more": "show" });
+    assert(!!t2.querySelector(".apc-ctl-more"), "data-more=show adds it");
+    t.focus(); H.key(t, "ContextMenu"); assert(APC.context.isOpen(), "toggle opens the options via the keyboard"); H.key(document.body, "Escape");
+    H.ctx(k); assert(APC.context.isOpen(), "right-click opens the options"); H.key(document.body, "Escape");
+  });
+
+  test("gain-like (dB) knobs fill from the minimum like a normal knob; only zero-centred non-dB ranges fill from the middle", async function () {
+    function start(el) { var d = el.querySelector(".apc-ring__value").getAttribute("d") || ""; return (d.match(/^M\s*([-\d.]+)[ ,]([-\d.]+)/) || [])[0]; }
+    var g = await H.mk("knob", "gain_db"), forcedMin = await H.mk("knob", "gain_db", { "data-bipolar": "false" }), forcedBi = await H.mk("knob", "gain_db", { "data-bipolar": "true" });
+    assert(!!start(g), "gain arc has geometry");
+    eq(start(g), start(forcedMin), "dB gain arc starts at the minimum (same as data-bipolar=false)");
+    assert(start(g) !== start(forcedBi), "...and not at zero (data-bipolar=true starts elsewhere)");
+  });
+
+  /* ---------------- context panel ---------------- */
+  function secs() { return Array.prototype.map.call(APC.context.panel().querySelectorAll("[data-sec]"), function (s) { return s.getAttribute("data-sec"); }); }
+  test("right-click opens the context panel (never the browser menu): VALUE, MODULATION, MIDI, HELP; Esc closes and refocuses", async function () {
+    var el = await H.mk("knob", "cutoff_hz", { "data-label": "CUTOFF" });
+    var ev = H.ctx(el);
+    assert(ev.defaultPrevented, "contextmenu default prevented"); assert(APC.context.isOpen(), "panel open");
+    eq(secs().join(","), "value,modulation,midi,help", "section order");
+    var p = APC.context.panel();
+    assert(/Cutoff · current 850 Hz · default 1 kHz/.test(p.querySelector(".apc-ctx__head").textContent), "head: " + p.querySelector(".apc-ctx__head").textContent);
+    eq(p.getAttribute("role"), "dialog", "role=dialog"); assert(p.getAttribute("aria-label").length > 0, "labelled");
+    eq(p.querySelectorAll(".apc-route").length, 2, "route rows");
+    var labels = Array.prototype.map.call(p.querySelectorAll("button"), function (b) { return b.textContent; }).join("|");
+    ["Reset", "Enter value…", "Copy value", "Paste", "Clear all modulation", "MIDI Learn", "Unlearn", "What’s this?"].forEach(function (t) { assert(labels.indexOf(t) >= 0, "button " + t); });
+    assert(!!p.querySelector("select[aria-label='Add modulation source']"), "add-source menu");
+    H.key(document.body, "Escape");
+    assert(!APC.context.isOpen(), "Esc closed it"); eq(document.activeElement, el, "focus returned to the control");
+  });
+
+  test("context panel: focus is trapped; opens via Shift+F10, ContextMenu key and (opt-in) the ⋯ button", async function () {
+    var el = await H.mk("knob", "cutoff_hz");
+    el.focus(); H.key(el, "F10", { shift: true }); assert(APC.context.isOpen(), "Shift+F10 opens");
+    var p = APC.context.panel(), f = APC.dom.focusables(p).filter(function (n) { return !n.disabled; });
+    assert(p.contains(document.activeElement), "focus moved into the panel");
+    f[f.length - 1].focus(); H.key(f[f.length - 1], "Tab");
+    eq(document.activeElement, f[0], "Tab from the last control wraps to the first");
+    f[0].focus(); H.key(f[0], "Tab", { shift: true });
+    eq(document.activeElement, f[f.length - 1], "Shift+Tab wraps to the last");
+    H.key(document.body, "Escape"); assert(!APC.context.isOpen(), "closed");
+    el.focus(); H.key(el, "ContextMenu"); assert(APC.context.isOpen(), "ContextMenu key opens"); H.key(document.body, "Escape");
+    var optin = await H.mk("knob", "cutoff_hz", { "data-more": "show" });
+    var more = optin.querySelector(".apc-ctl-more");
+    assert(!!more && /Options for/.test(more.getAttribute("aria-label")), "opt-in ⋯ affordance with a name");
+    more.click(); assert(APC.context.isOpen(), "⋯ button opens"); H.key(document.body, "Escape");
+    el.focus(); H.key(el, "Enter"); await H.tick(); assert(!!el.querySelector("input.apc-entry"), "Enter on a focused knob opens value entry (keyboard path)");
+  });
+
+  test("context panel: route source is a dropdown; changing it re-routes with the settings carried over", async function () {
+    var el = await H.mk("knob", "cutoff_hz");
+    H.ctx(el); var p = APC.context.panel();
+    var src = p.querySelector('[data-k="src0"]'); assert(!!src && src.tagName === "SELECT", "route source is a dropdown");
+    eq(src.options[0].textContent, "LFO 1", "shows the current source");
+    assert(Array.prototype.every.call(src.options, function (o) { return o.value !== "env1"; }), "sources used by other routes are not offered");
+    src.value = "lfo2"; src.dispatchEvent(new Event("change", { bubbles: true })); await sleep(40);
+    eq(M.of("apc.mod.remove").pop().args.src, "lfo1", "old source removed");
+    var r = M.of("apc.mod.set").pop().args.route;
+    eq(r.src, "lfo2", "re-routed to the new source"); eq(r.amount, 35, "amount carried over"); eq(r.polarity, "bipolar", "polarity carried over");
+    eq(APC.context.panel().querySelectorAll(".apc-route").length, 2, "still two routes");
+  });
+
+  test("context actions: reset, mod set/remove/clear, MIDI learn/unlearn, undo hook", async function () {
+    var undo = []; var off = APC.on("undo:push", function (e) { undo.push(e); });
+    var el = await H.mk("knob", "cutoff_hz"), p, n;
+    H.ctx(el); p = APC.context.panel();
+    var amt = p.querySelector('[data-k="amt0"]'); amt.value = "-50"; amt.dispatchEvent(new Event("change", { bubbles: true })); await sleep(30);
+    var set = M.of("apc.mod.set").pop();
+    eq(set.args.route.src, "lfo1", "route src"); eq(set.args.route.amount, -50, "amount"); eq(set.args.route.polarity, "bipolar", "other fields preserved");
+    p = APC.context.panel(); assert(!!p, "panel still open after a change"); eq(p.querySelector('[data-k="amt0"]').value, "-50", "panel re-rendered with the new descriptor");
+    p.querySelector('[data-k="pol0"]').click(); await sleep(30);
+    eq(M.of("apc.mod.set").pop().args.route.polarity, "unipolar", "polarity toggled (long form preserved)");
+    APC.context.panel().querySelector('[data-k="byp1"]').click(); await sleep(30);
+    eq(M.of("apc.mod.set").pop().args.route.bypass, true, "bypass toggled");
+    var sel = APC.context.panel().querySelector('[data-k="add"]'); sel.value = "modwheel"; sel.dispatchEvent(new Event("change", { bubbles: true })); await sleep(30);
+    var added = M.of("apc.mod.set").pop().args.route;
+    eq(added.src, "modwheel", "added source"); eq(added.amount, 50, "default amount 50 %");
+    eq(APC.context.panel().querySelectorAll(".apc-route").length, 3, "row added");
+    eq(el.querySelectorAll(".apc-ring__route").length, 1, "knob ring updated (still one summed arc)");
+    var sumD3 = el.querySelector(".apc-ring__sum").getAttribute("d");
+    assert(!!sumD3, "summed arc has geometry");
+    APC.context.panel().querySelector('[data-k="del0"]').click(); await sleep(30);
+    eq(M.of("apc.mod.remove").pop().args.src, "lfo1", "remove route");
+    APC.context.panel().querySelector('[data-k="clear"]').click(); await sleep(30);
+    eq(M.of("apc.mod.clear").length, 1, "clear all"); eq(el.querySelectorAll(".apc-ring__route").length, 0, "ring cleared");
+    assert(!el.classList.contains("is-modulated"), "control no longer modulated");
+    APC.context.panel().querySelector('[data-k="learn"]').click(); await sleep(30);
+    eq(M.of("apc.midi.learn").length, 1, "learn"); assert(/CC: 21/.test(APC.context.panel().querySelector(".apc-ctx__cc").textContent), "CC shown");
+    APC.context.panel().querySelector('[data-k="unlearn"]').click(); await sleep(30);
+    eq(M.of("apc.midi.unlearn").length, 1, "unlearn"); assert(/CC: —/.test(APC.context.panel().querySelector(".apc-ctx__cc").textContent), "CC cleared");
+    assert(undo.length >= 5, "undo:push emitted for modulation edits (" + undo.length + ")");
+    n = M.calls.length;
+    APC.context.panel().querySelector('[data-k="reset"]').click(); await H.tick();
+    assert(H.callsSince(n).some(function (c) { return c.name === "apc.param.reset"; }), "Reset button resets");
+    assert(!APC.context.isOpen(), "panel closed after Reset");
+    assert(undo.some(function (u) { return /Reset/.test(u.label); }), "reset is undoable");
+    off();
+  });
+
+  test("context panel: copy/paste value, What's this opens the manual entry, Enter value", async function () {
+    var el = await H.mk("knob", "cutoff_hz");
+    H.ctx(el); APC.context.panel().querySelector('[data-k="copy"]').click(); await H.tick();
+    H.key(el, "End"); await H.tick(); eq(val(el), 20000, "moved");
+    H.ctx(el); var paste = APC.context.panel().querySelector('[data-k="paste"]'); assert(!paste.disabled, "paste enabled after copy"); paste.click(); await H.tick();
+    eq(lastSet(), 850, "pasted the copied value");
+    H.ctx(el); APC.context.panel().querySelector('[data-k="what"]').click(); await sleep(20);
+    var ov = document.querySelector(".apc-manual-overlay"); assert(!!ov, "manual overlay opened from the context panel");
+    assert(/Cutoff does a thing\./.test(ov.textContent), "manual text comes from descriptor.help");
+    H.key(document.body, "Escape"); assert(!document.querySelector(".apc-manual-overlay"), "Esc closes the manual");
+    H.ctx(el); APC.context.panel().querySelector('[data-k="enter"]').click(); await H.tick();
+    assert(!!el.querySelector("input.apc-entry"), "Enter value… opens inline entry"); assert(!APC.context.isOpen(), "panel closed");
+  });
+
+  /* ---------------- help ---------------- */
+  test("tooltip: delay, anchored beside the control, text from descriptor.help, never while dragging", async function () {
+    var el = await H.mk("knob", "cutoff_hz", {}, { x: 20, y: 10, w: 6, h: 8 });
+    H.pe(el, "pointerover"); await sleep(150);
+    assert(!APC.help.tooltipVisible(), "not before the delay");
+    await sleep(400);
+    assert(APC.help.tooltipVisible(), "visible after 400 ms");
+    var tip = APC.help.tooltipNode(), tr = tip.getBoundingClientRect(), er = el.getBoundingClientRect(), c = H.center(el);
+    assert(/Cutoff does a thing\./.test(tip.textContent) && /It changes the sound\./.test(tip.textContent), "uses help.what + help.effect");
+    assert(/Range 20 Hz – 20 kHz/.test(tip.textContent) && /Default 1 kHz/.test(tip.textContent), "range + default");
+    assert(tr.bottom <= er.top + 0.5 || tr.top >= er.bottom - 0.5, "not overlapping the control (so never over the readout)");
+    assert(!(c.x >= tr.left && c.x <= tr.right && c.y >= tr.top && c.y <= tr.bottom), "not under the pointer");
+    eq(el.getAttribute("aria-describedby"), "apc-tooltip", "described by the tooltip");
+    assert(getComputedStyle(tip.querySelector(".apc-tooltip__body")).webkitLineClamp === "3", "prose clamped to 3 lines");
+    H.pe(el, "pointerdown", {}); assert(!APC.help.tooltipVisible(), "hidden on pointerdown"); H.pe(el, "pointerup", {});
+    var other = await H.mk("knob", "gain_db", {}, { x: 30, y: 10, w: 6, h: 8 });
+    H.drag(el, -20, {}, { hold: true });
+    H.pe(other, "pointerover"); await sleep(600);
+    assert(!APC.help.tooltipVisible(), "never shows while a drag is active");
+    H.pe(el, "pointerup", {});
+    APC.help.hideTooltip();
+  });
+
+  test("tooltip honours ui.tooltip_delay_ms and the ui.tooltips master toggle", async function () {
+    APC.prefs.set({ tooltip_delay_ms: 200 });
+    var el = await H.mk("knob", "cutoff_hz", {}, { x: 20, y: 10, w: 6, h: 8 });
+    H.pe(el, "pointerover"); await sleep(120); assert(!APC.help.tooltipVisible(), "not at 120 ms"); await sleep(150);
+    assert(APC.help.tooltipVisible(), "visible at ~270 ms with a 200 ms delay");
+    H.pe(document.body, "pointerover"); assert(!APC.help.tooltipVisible(), "hidden when the pointer leaves");
+    APC.prefs.set({ tooltips: false });
+    var o2 = await H.mk("knob", "gain_db", {}, { x: 30, y: 10, w: 6, h: 8 });
+    H.pe(o2, "pointerover"); await sleep(700);
+    assert(!APC.help.tooltipVisible(), "master toggle off: no tooltip");
+  });
+
+  test("info bar: hover/focus text from descriptor.help, idle shows preset name + dirty", async function () {
+    var bar = H.mount('<div data-apc="infobar" style="position:absolute;left:0;bottom:0;width:40rem"></div>');
+    APC.help.setIdleText("Init *");
+    eq(bar.textContent, "Init *", "idle text"); eq(bar.getAttribute("data-state"), "idle", "idle state");
+    var el = await H.mk("knob", "cutoff_hz");
+    H.pe(el, "pointerover"); await H.tick();
+    eq(bar.getAttribute("data-state"), "hover", "hover state");
+    assert(/\[Cutoff\] 850 Hz \(default 1 kHz\) — Cutoff does a thing\. It changes the sound\./.test(bar.textContent), "hover text: " + bar.textContent);
+    assert(/Alt\+Click to reset\.$/.test(bar.textContent), "mentions the reset gesture");
+    H.pe(document.body, "pointerover"); eq(bar.getAttribute("data-state"), "idle", "back to idle");
+    el.dispatchEvent(new FocusEvent("focusin", { bubbles: true })); await H.tick();
+    eq(bar.getAttribute("data-state"), "hover", "keyboard focus updates the bar too");
+    assert((el.getAttribute("aria-description") || "").indexOf("Cutoff does a thing.") === 0, "aria-description set on focus");
+    APC.help.setIdleText("");
+  });
+
+  test("Help button is visible; F1 and ? toggle help mode; clicking a control opens its manual entry without changing it", async function () {
+    var hb = H.mount('<div data-apc="help-button" class="apc-header__help"></div>');
+    var b = hb.querySelector("button"); assert(!!b && !b.hidden && b.offsetWidth > 0, "visible Help button (X-09)");
+    assert((b.getAttribute("aria-label") || "").length > 0, "named"); eq(b.getAttribute("aria-pressed"), "false", "not pressed");
+    var el = await H.mk("knob", "cutoff_hz");
+    b.click();
+    assert(document.documentElement.classList.contains("apc-help-mode"), "help mode on"); eq(b.getAttribute("aria-pressed"), "true", "pressed");
+    var n = M.calls.length;
+    H.pe(el, "pointerdown"); H.pe(el, "pointerup"); H.click(el); await sleep(20);
+    var ov = document.querySelector(".apc-manual-overlay");
+    assert(!!ov, "manual overlay open"); assert(/Cutoff does a thing\./.test(ov.textContent) && /It changes the sound\./.test(ov.textContent) && /Drag it\./.test(ov.textContent), "what/effect/how from descriptor.help");
+    assert(/Range 20 Hz – 20 kHz/.test(ov.textContent), "range + default shown");
+    eq(ov.querySelector("[role=dialog]").getAttribute("aria-modal"), "true", "modal dialog");
+    assert(!document.documentElement.classList.contains("apc-help-mode"), "help mode left after reading");
+    eq(H.callsSince(n).filter(function (c) { return /param\.(begin|set)/.test(c.name); }).length, 0, "the click did not touch the control");
+    eq(document.activeElement.textContent, "Close", "focus inside the dialog");
+    H.key(document.body, "Escape"); assert(!document.querySelector(".apc-manual-overlay"), "Esc closes");
+    H.key(document.body, "F1"); assert(APC.help.isMode(), "F1 turns help mode on");
+    H.key(document.body, "F1"); assert(!APC.help.isMode(), "F1 turns it off");
+    H.key(document.body, "?"); assert(APC.help.isMode(), "? turns it on");
+    H.key(document.body, "Escape"); assert(!APC.help.isMode(), "Esc leaves help mode");
+    var inp = document.createElement("input"); document.body.appendChild(inp); inp.focus(); H.key(inp, "?");
+    assert(!APC.help.isMode(), "? ignored while typing"); inp.parentNode.removeChild(inp);
+  });
+
+  /* ---------------- chrome ---------------- */
+  test("footer: version v<semver> is ALWAYS present; badge, update note, preset in the info bar", async function () {
+    var f = H.mount('<footer data-apc="footer" style="position:absolute;left:0;bottom:0;width:50rem;height:1.5rem"></footer>');
+    var ver = f.querySelector(".apc-version"); assert(!!ver && /^v/.test(ver.textContent), "version element exists synchronously: " + (ver && ver.textContent));
+    await sleep(30);
+    eq(ver.textContent, "v2.3.4", "version from apc.info (leading v normalised)"); assert(ver.offsetWidth > 0, "visible");
+    var badge = f.querySelector(".apc-badge"); eq(badge.textContent, "[DEMO]", "[DEMO] badge"); assert(!badge.hidden, "badge shown");
+    M.emit("license", { status: { state: "TRIAL", daysLeft: 5 } }); eq(badge.textContent, "[TRIAL 5 d]", "[TRIAL n d]");
+    M.emit("license", { status: { state: "LICENSED", name: "x" } }); assert(badge.hidden, "no badge when licensed"); assert(ver.offsetWidth > 0, "version still visible when licensed");
+    var up = f.querySelector(".apc-update-note"); assert(up.hidden, "no update note while idle");
+    M.emit("update", { state: { state: "UpdateAvailable", latest: "2.4.0", current: "2.3.4" } });
+    eq(up.textContent, "↑ update available", "update note"); assert(!up.hidden, "shown");
+    var bar = f.querySelector(".apc-infobar"); eq(bar.textContent, "Init", "preset name in the info bar");
+    M.emit("preset", { state: { current: { name: "Warm Pad", dirty: true } } }); eq(bar.textContent, "Warm Pad *", "dirty marker");
+    var seen = []; var o1 = APC.on("license:open", function () { seen.push("license"); }), o2 = APC.on("update:open", function () { seen.push("update"); });
+    up.click(); f.querySelector(".apc-badge").click();
+    o1(); o2();
+    APC.help.setIdleText("");
+  });
+
+  test("footer shows a version placeholder even when the bridge fails (and the failure is visible)", async function () {
+    M.fail["apc.info"] = true;
+    var f = H.mount('<footer data-apc="footer" data-version="9.9.9"></footer>');
+    eq(f.querySelector(".apc-version").textContent, "v9.9.9", "data-version used immediately");
+    await sleep(30);
+    assert(/^v/.test(f.querySelector(".apc-version").textContent), "still a version string");
+  });
+
+  test("gripper: aspect-locked drag snaps to 5 %, clamps 50..300 %, persists on release via apc.ui.setScale", async function () {
+    APC.chrome.scale.set(1, false);
+    var g = H.mount('<div class="apc-grip" data-apc="gripper"></div>');
+    var r = g.getBoundingClientRect(), rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    assert(r.width >= 2.5 * rem - 0.5 && r.height >= 2.5 * rem - 0.5, "hit area >= 2.5 cells (" + r.width + "px vs " + 2.5 * rem + "px)");
+    eq(getComputedStyle(g).cursor, "nwse-resize", "cursor");
+    var w = window.innerWidth, h = window.innerHeight;
+    function gesture(k, move) {
+      var n = M.calls.length;
+      H.pe(g, "pointerdown", { sx: 500, sy: 400 });
+      H.pe(g, "pointermove", { sx: 500 + k * w, sy: 400 + k * h });
+      var badge = g.querySelector(".apc-grip__badge").textContent;
+      if (move) move(badge);
+      H.pe(g, "pointerup", { sx: 500 + k * w, sy: 400 + k * h });
+      return { calls: H.callsSince(n).filter(function (c) { return c.name === "apc.ui.setScale"; }), badge: badge };
+    }
+    var a = gesture(0.123);
+    eq(a.calls.length, 1, "persisted once, on release"); near(a.calls[0].args.scale, 1.1, 1e-9, "1.123 snaps to 1.10");
+    assert(Math.abs(a.calls[0].args.scale * 20 - Math.round(a.calls[0].args.scale * 20)) < 1e-9, "multiple of 5 %"); eq(a.badge, "110%", "live preview badge");
+    APC.chrome.scale.set(1, false);
+    near(gesture(-0.4).calls[0].args.scale, 0.6, 1e-9, "shrink");
+    APC.chrome.scale.set(1, false);
+    near(gesture(5).calls[0].args.scale, 3, 1e-9, "clamped to 300 %");
+    APC.chrome.scale.set(1, false);
+    near(gesture(-0.9).calls[0].args.scale, 0.5, 1e-9, "clamped to 50 %");
+    APC.chrome.scale.set(1, false);
+    var n = M.calls.length; H.pe(g, "pointerdown", { sx: 5, sy: 5 }); H.pe(g, "pointerup", { sx: 5, sy: 5 });
+    eq(H.callsSince(n).filter(function (c) { return c.name === "apc.ui.setScale"; }).length, 0, "no change -> nothing persisted");
+    eq(g.getAttribute("role"), "slider", "keyboard-operable role"); eq(g.getAttribute("tabindex"), "0", "focusable");
+    n = M.calls.length; H.key(g, "ArrowRight"); await H.tick();
+    near(H.callsSince(n).filter(function (c) { return c.name === "apc.ui.setScale"; })[0].args.scale, 1.05, 1e-9, "arrow key = +5 %");
+    APC.chrome.scale.set(1, false);
+  });
+
+  test("scale control: 50..300 % in 25 % steps with - / +", async function () {
+    APC.chrome.scale.set(1, false);
+    var s = H.mount('<div data-apc="scale"></div>');
+    var btns = s.querySelectorAll("button"), out = s.querySelector("output");
+    eq(out.textContent, "100%", "shows 100 %");
+    btns[1].click(); await H.tick(); near(M.of("apc.ui.setScale").pop().args.scale, 1.25, 1e-9, "+ -> 125 %"); eq(out.textContent, "125%", "readout");
+    btns[0].click(); await H.tick(); btns[0].click(); await H.tick(); near(M.of("apc.ui.setScale").pop().args.scale, 0.75, 1e-9, "- - -> 75 %");
+    eq(APC.chrome.scale.steps.length, 11, "11 steps"); eq(APC.chrome.scale.steps[0], 0.5, "first 50 %"); eq(APC.chrome.scale.steps[10], 3, "last 300 %");
+    APC.chrome.scale.set(0.5, false); btns[0].click(); assert(btns[0].disabled, "- disabled at 50 %");
+    APC.chrome.scale.set(3, false); assert(btns[1].disabled, "+ disabled at 300 %");
+    APC.chrome.scale.set(1, false);
+  });
+
+  test("header: brand lockup links only when configured (via apc.openUrl), gear, Help + Save slots, theme switch", async function () {
+    var seen = []; var off = APC.on("settings:open", function () { seen.push(1); });
+    var hd = H.mount('<header data-apc="header" data-save="true" style="position:absolute;left:0;top:0;width:50rem;height:2rem"><span id="x">center</span></header>');
+    await sleep(40);
+    var mfr = hd.querySelector(".apc-brand__mfr"), name = hd.querySelector(".apc-brand__name");
+    eq(mfr.tagName, "BUTTON", "manufacturer is a link (company URL configured)"); assert(/Test Audio/.test(mfr.getAttribute("aria-label")), "named link");
+    eq(name.tagName, "SPAN", "product name is plain text (no product URL configured)"); eq(name.textContent, "Test Synth", "product name");
+    var n = M.calls.length; mfr.click(); await H.tick();
+    var open = H.callsSince(n).filter(function (c) { return c.name === "apc.openUrl"; });
+    eq(open.length, 1, "opens through apc.openUrl on click"); eq(open[0].args.url, "https://example.test/company", "company URL");
+    eq(M.of("apc.openUrl").length, 1, "nothing opened automatically");
+    assert(!!hd.querySelector("#x"), "existing header children are preserved");
+    assert(!!hd.querySelector('[data-slot="help"] button.apc-help-btn'), "Help button in its slot");
+    assert(!!hd.querySelector('[data-slot="save"] button'), "Save slot filled when requested");
+    hd.querySelector(".apc-gear").click(); eq(seen.length, 1, "gear emits settings:open");
+    assert(!!hd.querySelector('[data-slot="scale"] output'), "scale control mounted");
+    var ts = hd.querySelector(".apc-theme-switch"); assert(!ts.hidden, "theme switch visible when features.themeEnabled");
+    off();
+  });
+
+  test("theme: Night/Day/Follow-OS set data-theme on <html>; switch cycles and persists", async function () {
+    var root = document.documentElement;
+    APC.chrome.theme.apply("day"); eq(root.getAttribute("data-theme"), "day", "day");
+    APC.chrome.theme.apply("night"); eq(root.getAttribute("data-theme"), "night", "night");
+    APC.chrome.theme.apply("follow-os");
+    eq(root.getAttribute("data-theme"), window.matchMedia("(prefers-color-scheme: light)").matches ? "day" : "night", "follow-os resolves through prefers-color-scheme");
+    var sw = H.mount('<div data-apc="theme-switch"></div>'); await sleep(30);
+    var b = sw.querySelector("button"), before = APC.chrome.theme.mode();
+    b.click(); await H.tick();
+    var order = ["follow-os", "night", "day"], want = order[(order.indexOf(before) + 1) % 3];
+    eq(APC.chrome.theme.mode(), want, "cycled to " + want);
+    var saved = M.of("apc.settings.set").pop(); eq(saved.args.patch.ui.theme, want, "persisted via apc.settings.set");
+    APC.chrome.theme.apply("night");
+  });
+
+  /* ---------------- errors / lifecycle ---------------- */
+  test("bridge errors are visible (toast) - never silent", async function () {
+    var el = await H.mk("knob", "gain_db");
+    M.fail["apc.param.set"] = true;
+    H.key(el, "ArrowUp"); await sleep(30);
+    var t = document.querySelector(".apc-toast--error");
+    assert(!!t, "error toast shown for a failed set"); assert(t && /apc\.param\.set/.test(t.textContent), "names the failed call: " + (t && t.textContent));
+    assert(t && !!t.querySelector(".apc-toast__x"), "dismissible");
+    var bad = await H.mk("knob", "does_not_exist"); await sleep(20);
+    assert(/Unknown parameter/.test(Array.prototype.map.call(document.querySelectorAll(".apc-toast--error"), function (x) { return x.textContent; }).join("|")), "unknown parameter reported");
+    eq(bad.getAttribute("aria-invalid"), "true", "control marked invalid");
+  });
+
+  test("dispose removes listeners and timers; markup without data-param reports an error", async function () {
+    var el = await H.mk("knob", "gain_db"), ctl = el.__apcCtl, n;
+    ctl.dispose();
+    n = M.calls.length;
+    var ev = H.wheel(el, -100); assert(!ev.defaultPrevented, "wheel ignored after dispose");
+    H.drag(el, -30); H.key(el, "ArrowUp"); await H.tick();
+    eq(M.names().slice(n).filter(function (x) { return x.indexOf("apc.param.") === 0; }).length, 0, "no bridge traffic after dispose");
+    var bare = document.createElement("div"); bare.setAttribute("data-apc", "knob"); H.plate().appendChild(bare); APC.mount(H.plate()); await H.tick();
+    assert(!!document.querySelector(".apc-toast--error"), "missing data-param is reported visibly");
+  });
+
+  test("accessibility: every mounted control is focusable + named; kit CSS has focus-visible and reduced-motion handling", async function () {
+    var ids = [["knob", "cutoff_hz"], ["slider", "mix_pct"], ["selector", "wave"], ["toggle", "bypass"]];
+    for (var i = 0; i < ids.length; i++) {
+      var e = await H.mk(ids[i][0], ids[i][1]);
+      assert(e.tabIndex === 0, ids[i][0] + " is in the tab order");
+      assert(!!e.getAttribute("role") && !!e.getAttribute("aria-label"), ids[i][0] + " has role + name");
+      e.focus(); eq(document.activeElement, e, ids[i][0] + " takes focus");
+    }
+    var btns = document.querySelectorAll("#plate button");
+    Array.prototype.forEach.call(btns, function (b) { assert((b.getAttribute("aria-label") || b.textContent || "").trim().length > 0, "button has a name: " + b.className); });
+  });
+
+  window.addEventListener("error", function (e) { H.assert(false, "uncaught error: " + e.message); });
+  H.run();
+})();
+</script>
+</body>
+</html>

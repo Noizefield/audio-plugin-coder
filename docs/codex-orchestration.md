@@ -123,4 +123,4 @@ Bash ([`scripts/lib/apc-paths.sh`](../scripts/lib/apc-paths.sh)):
 - Prefer objective verification (build/tests) over model self-assessment for escalation.
 - Bound retries per tier (`tiers.*.max_attempts`).
 - Avoid spawning many parallel Codex subagents for APC phases — they multiply allowance use.
-- Full design background: [`plans/codex-plus-model-orchestration.md`](../plans/codex-plus-model-orchestration.md).
+- Full design background: `plans/codex-plus-model-orchestration.md` (maintainer-local design notes, not published).

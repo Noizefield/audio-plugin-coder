@@ -213,6 +213,8 @@ function compose(map) {
 <title>${esc(map.name)} — APC design preview</title>
 <link rel="stylesheet" href="apc-ui/apc-core.css">
 <link rel="stylesheet" href="apc-ui/apc-components.css">
+<link rel="stylesheet" href="apc-ui/apc-widgets.css">
+<link rel="stylesheet" href="apc-ui/apc-viz.css">
 <style>
 ${rootStyle}
 ${fixedCss}
@@ -244,8 +246,21 @@ function vendorKit(repoRoot, destDir) {
   const src = path.join(repoRoot, 'templates', 'webview', 'apc-ui');
   const dst = path.join(destDir, 'apc-ui');
   fs.mkdirSync(dst, { recursive: true });
-  for (const f of fs.readdirSync(src))
-    fs.copyFileSync(path.join(src, f), path.join(dst, f));
+  // Files only: the kit folder also holds tests/ (self-test pages) and docs that never ship in a plugin.
+  for (const e of fs.readdirSync(src, { withFileTypes: true })) {
+    if (!e.isFile() || e.name === 'CONTRACT.md') continue;
+    fs.copyFileSync(path.join(src, e.name), path.join(dst, e.name));
+  }
+  // …except fonts/: apc-core.css declares @font-face url("fonts/…"), so the bundled
+  // families have to travel with it or every plugin would fall back to system fonts.
+  const fontsSrc = path.join(src, 'fonts');
+  if (fs.existsSync(fontsSrc)) {
+    const fontsDst = path.join(dst, 'fonts');
+    fs.mkdirSync(fontsDst, { recursive: true });
+    for (const f of fs.readdirSync(fontsSrc, { withFileTypes: true })) {
+      if (f.isFile()) fs.copyFileSync(path.join(fontsSrc, f.name), path.join(fontsDst, f.name));
+    }
+  }
   return dst;
 }
 

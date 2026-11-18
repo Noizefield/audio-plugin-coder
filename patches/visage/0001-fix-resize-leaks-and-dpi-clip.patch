@@ -1,0 +1,96 @@
+diff --git a/visage_graphics/canvas.cpp b/visage_graphics/canvas.cpp
+index 2efd766..7410ff2 100644
+--- a/visage_graphics/canvas.cpp
++++ b/visage_graphics/canvas.cpp
+@@ -53,6 +53,12 @@ namespace visage {
+   }
+ 
+   void Canvas::setWindowless(int width, int height) {
++    // nothing to reallocate — same-size calls only thrash the framebuffer,
++    // the renderer reset and the read-back texture during resize drags
++    if (width == window_region_.width() && height == window_region_.height()
++        && composite_layer_.isHeadlessRender())
++      return;
++
+     setDimensions(width, height);
+     composite_layer_.setWindowlessRender(width, height);
+     Renderer::instance().initializeWindowless();
+@@ -66,7 +72,8 @@ namespace visage {
+     composite_layer_.setDimensions(width, height);
+     window_region_.setBounds(0, 0, width, height);
+     default_region_.setBounds(0, 0, width, height);
+-    setClampBounds(0, 0, width, height);
++    // canvas width/height are device pixels — clamp must not scale them again
++    setClampBounds(ClampBounds { 0.0f, 0.0f, width * 1.0f, height * 1.0f });
+   }
+ 
+   int Canvas::submit(int submit_pass) {
+diff --git a/visage_graphics/canvas.h b/visage_graphics/canvas.h
+index 69a5c3c..655395b 100644
+--- a/visage_graphics/canvas.h
++++ b/visage_graphics/canvas.h
+@@ -527,7 +527,10 @@ namespace visage {
+       setLogicalPixelScale();
+       state_.brush = nullptr;
+       state_.blend_mode = BlendMode::Alpha;
+-      setClampBounds(0, 0, region->width(), region->height());
++      // region bounds are already device pixels (Frame::setBounds bakes
++      // logical * dpi_scale); multiplying by state_.scale a second time
++      // shrinks the clip to scale^2 whenever the raster runs below 1.0 dpi.
++      setClampBounds({ 0.0f, 0.0f, region->width() * 1.0f, region->height() * 1.0f });
+       state_.current_region = region;
+     }
+ 
+diff --git a/visage_graphics/layer.cpp b/visage_graphics/layer.cpp
+index 7cb1804..2732d7a 100644
+--- a/visage_graphics/layer.cpp
++++ b/visage_graphics/layer.cpp
+@@ -197,6 +197,12 @@ namespace visage {
+       bgfx::destroy(frame_buffer_data_->handle);
+       frame_buffer_data_->handle = BGFX_INVALID_HANDLE;
+     }
++    // the read-back texture is a real bgfx allocation too — leaking it on every
++    // resize exhausts the handle table and VRAM during window drag-resize
++    if (bgfx::isValid(frame_buffer_data_->read_back_handle)) {
++      bgfx::destroy(frame_buffer_data_->read_back_handle);
++      frame_buffer_data_->read_back_handle = BGFX_INVALID_HANDLE;
++    }
+   }
+ 
+   bgfx::FrameBufferHandle& Layer::frameBuffer() const {
+diff --git a/visage_graphics/layer.h b/visage_graphics/layer.h
+index 4728d11..b30d409 100644
+--- a/visage_graphics/layer.h
++++ b/visage_graphics/layer.h
+@@ -123,9 +123,15 @@ namespace visage {
+     }
+ 
+     void setWindowlessRender(int width, int height) {
++      // already headless at this size — leave the FBO + read-back alive
++      if (headless_render_ && width == width_ && height == height_)
++        return;
++
++      const bool mode_change = !headless_render_;
+       headless_render_ = true;
+-      setDimensions(width, height);
+-      destroyFrameBuffer();
++      setDimensions(width, height);       // destroys FBO iff size changed
++      if (mode_change)
++        destroyFrameBuffer();             // recreate so the read-back attaches
+     }
+     bool isHeadlessRender() const { return headless_render_; }
+ 
+diff --git a/visage_ui/frame.h b/visage_ui/frame.h
+index 9bc86d8..1fea7ee 100644
+--- a/visage_ui/frame.h
++++ b/visage_ui/frame.h
+@@ -310,6 +310,9 @@ namespace visage {
+       dpi_scale_ = dpi_scale;
+ 
+       if (changed) {
++        // native_bounds_/region_ were baked with the previous scale — re-derive
++        // them or the region stays sized to the old raster and clips drawing
++        setBounds(bounds_);
+         on_dpi_change_.callback();
+         redraw();
+       }

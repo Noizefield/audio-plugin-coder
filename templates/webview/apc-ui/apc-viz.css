@@ -1,0 +1,274 @@
+/* =============================================================================
+   apc-viz.css - styles for the APC visualisation / display elements (apc-viz.js)
+   graph, envelope, spectrum, waveform/scope, meter, stepseq, xypad, picture.
+   Rules (CONTRACT.md): token-only colours, flat/square (no gradients, shadows, glow),
+   rem sizes (1 rem = 1 grid cell), :where() so a product theme always wins, prefix .apc-viz-*.
+   The canvases themselves read the SAME tokens at draw time (apc-viz.js); this sheet only
+   styles the DOM parts (nodes, tooltip, steps, thumb, clip button, error text).
+   Tokens used: --viz-line --viz-accent --viz-fill --viz-grid --viz-axis --viz-1..4
+   --meter-ok/warn/clip --led-on/off --step-off/on/accent/playhead --inset --plate --plate-2
+   --rule --rule-2 --ink --ink-2 --accent --accent-ink --apc-focus --apc-danger --font-ui
+   --t-micro --t-label --t-value --label-spacing --stroke --stroke-2 --disabled-opacity.
+   Optional (with fallback): --apc-viz-node (node size, .625rem), --apc-viz-w/--apc-viz-h
+   (standalone size, 20rem x 10rem).
+   ============================================================================= */
+
+/* ---- host: fills its .apc-cell; standalone it falls back to a default size ---- */
+:where(.apc-viz) {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  width: var(--apc-viz-w, 20rem);
+  height: var(--apc-viz-h, 10rem);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  color: var(--ink, currentColor);
+  font-family: var(--font-ui, ui-monospace, Consolas, monospace);
+  font-size: var(--t-label, max(10px, .625rem));
+  letter-spacing: var(--label-spacing, .12em);
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+:where(.apc-viz-meter--v) { width: var(--apc-viz-w, 3rem); height: var(--apc-viz-h, 10rem); }
+:where(.apc-viz-meter--h) { width: var(--apc-viz-w, 10rem); height: var(--apc-viz-h, 3rem); }
+:where(.apc-viz-xypad) { width: var(--apc-viz-w, 10rem); height: var(--apc-viz-h, 10rem); }
+:where(.apc-viz-stepseq) { height: var(--apc-viz-h, 6rem); }
+/* an .apc-cell sets its own absolute box (inline style) and wins over these defaults */
+:where(.apc-viz) [hidden] { display: none !important; }
+:where(.apc-viz) > :where(canvas.apc-viz-cv) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+:where(.apc-viz-probe) { position: absolute; left: 0; top: 0; visibility: hidden; pointer-events: none; }
+:where(.apc-viz-sr) {
+  position: absolute !important;
+  width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+
+/* keyboard focus: one ring for every focusable viz part */
+:where(.apc-viz-node, .apc-viz-thumb, .apc-viz-clip, .apc-viz-step):focus-visible {
+  outline: var(--stroke-2, 2px) solid var(--apc-focus, var(--accent, currentColor));
+  outline-offset: 1px;
+}
+:where(.apc-viz-node, .apc-viz-thumb, .apc-viz-clip, .apc-viz-step):focus:not(:focus-visible) { outline: none; }   /* (a plain :focus rule here used to beat the ring above: equal specificity, later wins) */
+
+/* ---- graph / envelope nodes (square, flat; positioned by transform) ---- */
+:where(.apc-viz-node) {
+  position: absolute;
+  left: 0; top: 0;
+  box-sizing: border-box;
+  width: var(--apc-viz-node, .625rem);
+  height: var(--apc-viz-node, .625rem);
+  margin: calc(var(--apc-viz-node, .625rem) / -2) 0 0 calc(var(--apc-viz-node, .625rem) / -2);
+  border: var(--stroke, 1px) solid var(--viz-accent, var(--accent));
+  background: var(--inset);
+  cursor: grab;
+  touch-action: none;
+}
+:where(.apc-viz-node)::before {          /* enlarged invisible hit area */
+  content: "";
+  position: absolute;
+  inset: -.375rem;
+}
+:where(.apc-viz-node)::after {           /* band number, tiny mono label */
+  content: attr(data-label);
+  position: absolute;
+  left: 50%; bottom: 100%;
+  transform: translateX(-50%);
+  padding-bottom: .125rem;
+  color: var(--viz-axis, var(--ink-2));
+  font-size: var(--t-micro, max(9px, .5rem));
+  letter-spacing: var(--label-spacing, .12em);
+  pointer-events: none;
+}
+:where(.apc-viz-node):hover, :where(.apc-viz-node).is-drag { background: var(--viz-accent, var(--accent)); }
+:where(.apc-viz-node).is-drag { cursor: grabbing; }
+:where(.apc-viz-node[data-color="1"]) { border-color: var(--viz-1); }
+:where(.apc-viz-node[data-color="2"]) { border-color: var(--viz-2); }
+:where(.apc-viz-node[data-color="3"]) { border-color: var(--viz-3); }
+:where(.apc-viz-node[data-color="4"]) { border-color: var(--viz-4); }
+:where(.apc-viz-node[data-color="1"]):hover { background: var(--viz-1); }
+:where(.apc-viz-node[data-color="2"]):hover { background: var(--viz-2); }
+:where(.apc-viz-node[data-color="3"]):hover { background: var(--viz-3); }
+:where(.apc-viz-node[data-color="4"]):hover { background: var(--viz-4); }
+
+:where(.apc-viz-tip) {
+  position: absolute;
+  left: 0; top: 0;
+  z-index: 2;
+  box-sizing: border-box;
+  padding: .125rem .375rem;
+  background: var(--plate, var(--inset));
+  border: var(--stroke, 1px) solid var(--rule);
+  color: var(--ink);
+  font-size: var(--t-value, max(11px, .6875rem));
+  letter-spacing: var(--label-spacing, .12em);
+  white-space: pre;
+  pointer-events: none;
+}
+
+/* ---- meter ---- */
+:where(.apc-viz-clip) {
+  position: absolute;
+  margin: 0; padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+
+/* ---- stepseq ---- */
+:where(.apc-viz-stepseq) {
+  background: var(--inset);
+  border: var(--stroke, 1px) solid var(--rule);
+  touch-action: none;
+}
+:where(.apc-viz-steps) {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+:where(.apc-viz-steprow) { display: contents; }
+:where(.apc-viz-stepnum, .apc-viz-rowlabel) {
+  box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 .125rem;
+  color: var(--viz-axis, var(--ink-2));
+  font-size: var(--t-micro, max(9px, .5rem));
+  letter-spacing: var(--label-spacing, .12em);
+  text-transform: uppercase;
+  line-height: 1.6;
+  border-bottom: var(--stroke, 1px) solid var(--rule-2);
+  overflow: hidden;
+}
+:where(.apc-viz-rowlabel) { justify-content: flex-end; padding: 0 .375rem 0 .25rem; border-bottom: 0; border-right: var(--stroke, 1px) solid var(--rule-2); white-space: nowrap; }
+:where(.apc-viz-stepnum).is-group { color: var(--ink); }
+:where(.apc-viz-stepnum).is-play { color: var(--step-playhead); }
+:where(.apc-viz-stepnum).is-off { opacity: var(--disabled-opacity, .4); }
+:where(.apc-viz-step) {
+  position: relative;
+  box-sizing: border-box;
+  min-width: 0; min-height: 0;
+  background: var(--step-off, var(--inset));
+  border-right: var(--stroke, 1px) solid var(--rule-2);
+  border-bottom: var(--stroke, 1px) solid var(--rule-2);
+  cursor: pointer;
+}
+:where(.apc-viz-step).is-group { border-left: var(--stroke, 1px) solid var(--rule); }
+:where(.apc-viz-step)::before {          /* the lit part of a step: inset by one hairline from the cell border */
+  content: "";
+  position: absolute;
+  inset: var(--stroke, 1px);
+  background: transparent;
+}
+:where(.apc-viz-step[data-state="1"])::before { background: var(--step-on, var(--accent)); }
+:where(.apc-viz-step[data-state="2"])::before { background: var(--step-accent, var(--ink)); }
+:where(.apc-viz-step.is-off) { opacity: var(--disabled-opacity, .4); cursor: default; }
+:where(.apc-viz-step.is-play)::after {   /* playhead: a hairline frame in the signal colour */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: var(--stroke, 1px) solid var(--step-playhead, var(--ok));
+  pointer-events: none;
+}
+/* value mode: bar grows from the bottom, the cell itself stays flat */
+:where(.apc-viz-stepseq--value .apc-viz-step)::before { display: none; }
+:where(.apc-viz-bar) {
+  position: absolute;
+  left: var(--stroke, 1px); right: var(--stroke, 1px); bottom: 0;
+  height: 0;
+  background: var(--step-on, var(--accent));
+}
+:where(.apc-viz-step[data-state="2"]) > :where(.apc-viz-bar) { background: var(--step-accent, var(--ink)); }
+
+/* ---- xypad ---- */
+:where(.apc-viz-thumb) {
+  position: absolute;
+  left: 0; top: 0;
+  box-sizing: border-box;
+  width: var(--apc-viz-node, .625rem);
+  height: var(--apc-viz-node, .625rem);
+  margin: calc(var(--apc-viz-node, .625rem) / -2) 0 0 calc(var(--apc-viz-node, .625rem) / -2);
+  border: var(--stroke, 1px) solid var(--viz-accent, var(--accent));
+  background: var(--inset);
+  cursor: grab;
+}
+:where(.apc-viz-thumb).is-drag { background: var(--viz-accent, var(--accent)); cursor: grabbing; }
+:where(.apc-viz-xyread) {
+  position: absolute;
+  left: .375rem;
+  color: var(--viz-axis, var(--ink-2));
+  font-size: var(--t-micro, max(9px, .5rem));
+  letter-spacing: var(--label-spacing, .12em);
+  white-space: nowrap;
+  pointer-events: none;
+}
+:where(.apc-viz-xyread--x) { bottom: .25rem; }
+:where(.apc-viz-xyread--y) { top: .25rem; }
+
+/* ---- picture ---- */
+:where(.apc-viz-picture) {
+  background: var(--inset);
+  border: var(--stroke, 1px) solid var(--rule);
+}
+:where(.apc-viz-img) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  -webkit-user-drag: none;
+}
+:where(.apc-viz-overlay-host), :where(.apc-viz-overlay) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  border: 0;
+  background: transparent;
+}
+:where(.apc-viz-error) {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center;
+  padding: .5rem;
+  text-align: center;
+  color: var(--apc-danger-text, var(--apc-danger));
+  background: var(--inset);
+  border: var(--stroke, 1px) solid var(--apc-danger);
+  font-size: var(--t-value, max(11px, .6875rem));
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.apc-viz) * { transition: none !important; animation: none !important; }
+}
+
+/* =============================================================================
+   DESIGN PASS - Zeichnung 2030: a graph node is a dot in a ring
+   The flat coloured square with a band number floating above it was the kit first
+   look. The plate marks a band with a small ring and a centred dot; the numbers
+   already live in the sequence list, so nothing floats over the plate any more.
+   All rules use :where() (zero specificity), so they win by source order only.
+   ============================================================================= */
+:where(.apc-viz-node) {
+  border-radius: 50%;
+  background: var(--ink);                 /* the dot */
+  border: 2px solid var(--plate);         /* the gap between dot and ring */
+  box-shadow: 0 0 0 1px var(--ink);        /* the ring */
+}
+:where(.apc-viz-node)::after { display: none; }          /* no number over the graph */
+:where(.apc-viz-node[data-color]) { border-color: var(--plate); }   /* keep the gap, not a coloured square */
+:where(.apc-viz-node):hover, :where(.apc-viz-node).is-drag { background: var(--viz-accent, var(--accent)); }

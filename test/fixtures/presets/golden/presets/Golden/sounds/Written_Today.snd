@@ -1,0 +1,45 @@
+{
+  "schema": "apc-preset/1.0",
+  "kind": "sound",
+  "id": "snd_00000000-0000-4000-8000-000000005001",
+  "name": "Written Today",
+  "author": "Fixture Author",
+  "created": "2026-11-07T12:00:00Z",
+  "app_version": "1.0.0",
+  "meta": {
+    "category": "bass",
+    "subcategory": "sub",
+    "articulation": "sustained",
+    "axes": {
+      "bri": "muted",
+      "war": "warm",
+      "agg": "hard",
+      "wid": "mono",
+      "dep": "sub-heavy",
+      "mov": "breathing"
+    },
+    "temporal": {
+      "attack": "instant",
+      "sustain": "sustained",
+      "evolution": "evolving",
+      "release": "short",
+      "rhythm": "none"
+    },
+    "moods": [
+      "dark",
+      "aggressive"
+    ],
+    "tags": [
+      "reese",
+      "saturation"
+    ],
+    "desc": "Golden file written with parameter manifest v1."
+  },
+  "params": {
+    "osc1_wave": "saw",
+    "filter_cutoff_hz": 95.5,
+    "filter_res": 0.35,
+    "drive_amount": 0.62,
+    "legacy_removed_param": 1.5
+  }
+}

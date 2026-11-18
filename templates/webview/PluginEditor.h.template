@@ -12,6 +12,15 @@
 #include "PluginProcessor.h"
 #include "ParameterIDs.hpp"
 
+// -----------------------------------------------------------------------------------------------------------------
+// APC UI KIT (opt-in). Off unless CMake defines APC_UI_KIT=1 (option {{PLUGIN_NAME_LOWER}}_UI_KIT in CMakeLists.txt),
+// so existing WebView plugins stay valid. Needs: PluginProcessor owns `apc::web::ApcBackend apcBackend;` (stores, params,
+// license, update - filled in the processor, see .agents/guides/ui-kit-native.md). Walk-through: templates/webview/README.md.
+// -----------------------------------------------------------------------------------------------------------------
+#if APC_UI_KIT
+ #include "apc/juce/ApcWebBridge.h"
+#endif
+
 //==============================================================================
 /**
 */
@@ -64,6 +73,12 @@ private:
     // Relays are direct member variables - initialized with parameter ID
     juce::WebSliderRelay {{PARAMETER_NAME}}Relay { ParameterIDs::{{PARAMETER_ID}} };
     {{ADDITIONAL_RELAYS}}
+
+#if APC_UI_KIT
+    // 1b. UI KIT BRIDGE (opt-in). After the relays, BEFORE the webView: it is destroyed AFTER the webView whose
+    // native-function lambdas call into it (same rule as the relays). The backend itself lives in the processor.
+    apc::web::ApcBridge apcBridge { audioProcessor.apcBackend };
+#endif
 
     // 2. WEBVIEW SECOND (depends on relays, destroyed middle)
     std::unique_ptr<juce::WebBrowserComponent> webView;

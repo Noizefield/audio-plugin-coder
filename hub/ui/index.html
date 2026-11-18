@@ -11,6 +11,8 @@
 <link rel="stylesheet" href="css/shell.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/docs.css">
+<link rel="stylesheet" href="css/standards.css">
+<link rel="stylesheet" href="css/kit.css">
 </head>
 <body>
 <div class="frame">
@@ -34,7 +36,7 @@
 <aside class="side">
 <p class="siderel mono" id="rel">REL [..]</p>
 <nav class="sidenav" id="nav">
-<a href="#01-overview">01 OVERVIEW</a><a href="#02-projects">02 PROJECTS</a><a href="#03-skills">03 SKILLS</a><a href="#04-commands">04 COMMANDS</a><a href="#05-designs">05 DESIGNS</a><a href="#06-scripts">06 SCRIPTS</a><a href="#07-templates">07 TEMPLATES</a><a href="#08-tools">08 TOOLS</a><a href="#09-settings">09 SETTINGS</a>
+<a href="#01-overview">01 OVERVIEW</a><a href="#02-projects">02 PROJECTS</a><a href="#03-skills">03 SKILLS</a><a href="#04-commands">04 COMMANDS</a><a href="#05-designs">05 DESIGNS</a><a href="#06-scripts">06 SCRIPTS</a><a href="#07-templates">07 TEMPLATES</a><a href="#08-tools">08 TOOLS</a><a href="#09-settings">09 SETTINGS</a><a href="#09b-standards">09b STANDARDS</a><a href="#09c-kit">09c KIT</a>
 <details class="navsub" id="docnav">
 <summary>10 DOCUMENTATION</summary>
 <a href="#10-documentation">INDEX (ALL DOCS)</a>
@@ -42,7 +44,7 @@
 <a href="#11-videos">11 VIDEOS</a><a href="#11-consistency">++ CONSISTENCY</a>
 </nav>
 <p class="theme">THEME:<button id="t-dark" class="on">[*DARK]</button><button id="t-light">[LIGHT]</button></p>
-<p class="sidefoot">read-only · zero deps<br>no images · sysfonts</p>
+<p class="sidefoot">read-only* · zero deps<br>*config writes only<br>no images · sysfonts</p>
 </aside>
 
 <div class="content">
@@ -54,6 +56,8 @@
 
 </div>
 </div>
+<script src="kit.js"></script>
+<script src="kit-theme-plus.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

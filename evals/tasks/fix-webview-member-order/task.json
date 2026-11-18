@@ -1,0 +1,66 @@
+{
+  "schema": "apc-eval-task/1",
+  "id": "fix-webview-member-order",
+  "title": "Fix the WebView member-order crash (known-issue webview-002)",
+  "category": "webview",
+  "tags": ["debug", "webview", "known-issue:webview-002", "static"],
+  "timeout_s": 600,
+  "fixture": "fixture",
+  "prompt": "Hosts crash when TinyWeb's editor is closed (access violation in the WebBrowserComponent destructor, release builds only). Fix the cause in plugins/TinyWeb/Source/PluginEditor.h.\n\nConstraints:\n- Do not delete, rename or add members; only change their declaration order.\n- `apc validate webview-order --plugin TinyWeb` must pass.\n- Do not edit anything else.\n\nBackground: .agents/troubleshooting/known-issues.yaml (webview-002) and .agents/troubleshooting/resolutions/webview-member-order-crash.md.",
+  "setup": [],
+  "checks": [
+    {
+      "id": "order-validator",
+      "description": "apc validate webview-order passes",
+      "type": "apc",
+      "args": ["validate", "webview-order", "--plugin", "TinyWeb"],
+      "expect_exit": 0,
+      "stdout_contains": "All checks passed"
+    },
+    {
+      "id": "order-regex",
+      "description": "within the private section: relays, then webView, then attachments",
+      "type": "file_contains",
+      "path": "plugins/TinyWeb/Source/PluginEditor.h",
+      "pattern": "private:[\\s\\S]*Relay\\s+\\w+\\s*[{;][\\s\\S]*WebBrowserComponent>\\s+webView\\s*;[\\s\\S]*Attachment>\\s+\\w+\\s*;"
+    },
+    {
+      "id": "relays-kept",
+      "description": "both relays still declared (no deleting members to pass)",
+      "type": "file_count",
+      "path": "plugins/TinyWeb/Source/PluginEditor.h",
+      "pattern": "WebSliderRelay\\s+\\w+\\s*\\{",
+      "min": 2
+    },
+    {
+      "id": "attachments-kept",
+      "description": "both attachments still declared",
+      "type": "file_count",
+      "path": "plugins/TinyWeb/Source/PluginEditor.h",
+      "pattern": "WebSliderParameterAttachment>\\s+\\w+\\s*;",
+      "min": 2
+    },
+    {
+      "id": "webview-kept",
+      "description": "the WebView member still exists exactly once",
+      "type": "file_count",
+      "path": "plugins/TinyWeb/Source/PluginEditor.h",
+      "pattern": "WebBrowserComponent>\\s+webView\\s*;",
+      "min": 1,
+      "max": 1
+    },
+    {
+      "id": "cpp-untouched",
+      "description": "PluginEditor.cpp was not edited",
+      "type": "unchanged_from_fixture",
+      "path": "plugins/TinyWeb/Source/PluginEditor.cpp"
+    },
+    {
+      "id": "state-valid",
+      "description": "apc validate plugin still passes",
+      "type": "apc",
+      "args": ["validate", "plugin", "--plugin", "TinyWeb"],
+      "expect_exit": 0
+    }
+  ]
+}

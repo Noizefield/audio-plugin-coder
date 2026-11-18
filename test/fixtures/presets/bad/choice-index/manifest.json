@@ -1,0 +1,57 @@
+{
+  "schema": "apc-param-manifest/1.0",
+  "params": [
+    {
+      "id": "osc1_wave",
+      "type": "choice",
+      "choices": [
+        "saw",
+        "square",
+        "tri"
+      ],
+      "default": "saw"
+    },
+    {
+      "id": "osc1_tune_st",
+      "type": "float",
+      "min": -24,
+      "max": 24,
+      "default": 0
+    },
+    {
+      "id": "filter_cutoff_hz",
+      "type": "float",
+      "min": 20,
+      "max": 20000,
+      "default": 1000
+    },
+    {
+      "id": "filter_res",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.2
+    },
+    {
+      "id": "drive_amount",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0
+    },
+    {
+      "id": "amp_env_attack_s",
+      "type": "float",
+      "min": 0,
+      "max": 10,
+      "default": 0.005
+    },
+    {
+      "id": "amp_env_release_s",
+      "type": "float",
+      "min": 0,
+      "max": 10,
+      "default": 0.2
+    }
+  ]
+}

@@ -147,6 +147,22 @@ If build fails:
 Restore-PluginState -PluginPath $PluginPath
 ```
 
+**Product-standards modules (read `status.json` -> `standards`; resolve with `apc standards plan/validate`):**
+Generate plugin code from the reference headers - do not reinvent them. Backend-only; UI kits are not provided yet.
+
+| Standard enabled | Use | Guide |
+|---|---|---|
+| any DSP | `common/dsp` (`APC::dsp`): smoothing, denormal guard, filters, oversampler, FIFO | `.agents/guides/dsp-kit.md` |
+| presets (`preset.*`) | `common/apc/ApcAtomicFile.h`, `ApcPaths.h`, `ApcDefaultsFirst.h`; `apc presets init` | `.agents/guides/presets.md` |
+| settings / `engine.state_scope` | `common/apc/ApcSettingsStore.h` (lock+merge; engine state in the project chunk by default) | `.agents/guides/settings-store.md` |
+| `update.endpoint` | `ApcUpdateFlow.h` + `ApcSemVer.h` (inject `IHttp`, `ISignatureVerifier`) | `.agents/guides/updater.md` |
+| `license.mode != free` | `ApcLicense.h` + the method chosen in `license.method` (`signed-file` or `online-activation`); never invent another scheme | `.agents/guides/licensing-methods.md`, `.agents/guides/licensing-seam.md` |
+| crash handling | local diagnostics only, no upload | `.agents/guides/crash-diagnostics.md` |
+
+WebView plugins: wire the kit's native side with `common/apc/juce/ApcWebBridge.h` + `ApcPresetStore.h` through the opt-in `APC_UI_KIT` blocks of the WebView templates (guide `.agents/guides/ui-kit-native.md`; keep relays -> bridge -> webView member order; run `apc validate webview-order`).
+
+Rules: version string always visible in the GUI; help and quick-save need visible buttons (F1 / Ctrl+S are host-captured); `processBlock` must pass `apc validate rt`.
+
 **Completion:**
 ```
 Γ£à Implementation phase complete!

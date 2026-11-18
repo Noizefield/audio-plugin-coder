@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="night">
+<head>
+<meta charset="utf-8">
+<title>BadFixture</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="plate">
+  <!-- custom control: no tabindex, no role, no name -->
+  <div class="knob" data-param="gain"></div>
+  <!-- clickable div: not keyboard reachable (has text, so it is named) -->
+  <div class="btn" onclick="go()">Go</div>
+  <!-- native button with no accessible name -->
+  <button class="icon"></button>
+  <!-- information only in title -->
+  <span class="led" title="Clipping"></span>
+  <div class="tip">?</div>
+  <canvas id="meter"></canvas>
+  <p class="hint">Hint text</p>
+</main>
+<script>
+  const METER_HZ = 120;
+  function draw() {}
+  setInterval(draw, 8);
+  function tick() { requestAnimationFrame(tick); }
+  tick();
+</script>
+</body>
+</html>

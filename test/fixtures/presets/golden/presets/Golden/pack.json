@@ -1,0 +1,18 @@
+{
+  "schema": "apc-pack/1.0",
+  "id": "pack_00000000-0000-4000-8000-000000000906",
+  "name": "Golden",
+  "author": "Fixture Author",
+  "version": "1.0.0",
+  "license": "CC-BY",
+  "plugin": "FixturePlugin",
+  "app_version_min": "1.0.0",
+  "layout": "typed",
+  "extensions": {
+    "sound": ".snd",
+    "kit": ".kit",
+    "sequence": ".seq",
+    "patch": ".pat"
+  },
+  "artwork": null
+}

@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en" data-surface="night" data-anatomy="off" data-sheet="off">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>APC FILTER F-30 - ZEICHNUNG 2030 - face 01</title>
+<!--
+  APC FILTER F-30 / ZEICHNUNG 2030 / face 01
+  Reference plate: every element of the APC kit appears at least once (30/30).
+
+  Concept: the instrument as a precision drawing. One plate, two papers
+  (NIGHT / DAY) - the same drawing, re-inked. Chrome is monochrome and one
+  signal colour (orange) marks signal and the state of signal only.
+
+  Material: a floating card (soft shadow, 3-5 px radii), borderless tinted
+  sections, sans micro-labels over mono numerals. Pure CSS hairline drawing:
+  no gradients except data fills, no shadows except the card.
+
+  Layout, signal flow left to right:
+    INPUT (waveform, gain, phase)  ->  RESPONSE (hero readout, graph, spectrum)
+    ->  FILTER controls (one cell from the curve they change)  ->  OUTPUT.
+    Bottom row: SEQUENCE, ENVELOPE, MORPH, PATTERNS - what modifies the filter
+    and what remembers it. Foot: technical stamp.
+
+  Grid: 120 x 70 cells, 1 rem = 1 cell; 2-cell side margins and exactly 1-cell
+  gaps between panels. Scaling is pure CSS (font-size = min(100vw/120,
+  100vh/rows)); nothing is transformed or zoomed, so pointer maths stays exact
+  at every size. Sizes are authored in rem, never px.
+
+  Numbers are computed, not painted: RBJ biquad cascade (magnitude and unwrapped
+  phase), spectrum shaped by the same transfer function, ballistic meters, a
+  real 16th-note clock, an XY pad that drives cutoff and Q.
+
+  Keys: T = paper (night/day), A = specimen index, Space = run/stop,
+        Esc = close popup. Every control is focusable and keyboard driven.
+  URL:  ?surface=day  ?anatomy=1
+
+  No network, no web fonts, no dependencies. ASCII only, except the middle dot
+  (U+00B7) used as a copy separator, as in the reference language.
+-->
+<style>
+/* ============================================================================
+   01  TOKENS
+   ========================================================================= */
+:root{
+  --cols:120; --rows:70; --rows-plate:70;
+  --font-ui:ui-sans-serif,"Inter","Helvetica Neue",Helvetica,Arial,"Segoe UI",sans-serif;
+  --font-num:"JetBrains Mono",ui-monospace,"Cascadia Mono","SF Mono",Menlo,Consolas,monospace;
+  --t-micro:.98rem; --t-cap:1.14rem; --t-val:1.6rem; --t-val-s:1.3rem; --t-title:2.4rem;
+  --tr-label:.14em; --hair:1px;
+  --r-card:3px; --r-block:2px; --r-well:2px; --r-ctl:2px; --r-pill:99rem;
+  --ease:cubic-bezier(.2,.7,.2,1);
+  --dur:120ms;
+}
+html[data-surface="night"]{
+  color-scheme:dark;
+  --void:#0B1A22;
+  --plate:#122935; --panel:#1A3644; --panel-2:#224A5A; --well:#0E222C;
+  --rule:#2A4A57; --rule-ctl:#5A8492; --rule-2:#234250;
+  --ink:#EAF2F3; --ink-2:#9FBDC6; --ink-3:#7A9AA5;
+  --sig:#FB543D; --sig-2:#5BC7D2; --warn:#FB543D; --danger:#FB543D;
+  --soft:#F2B29E; --on-sig:#1A0A08;
+  --track:rgba(234,242,243,.06);
+  --grid:rgba(91,199,210,.10); --halo:rgba(251,84,61,.24);
+  --knob:#20404F; --knob-shadow:rgba(4,12,17,.55);
+  --led-off:#2A4A57;
+  --card-shadow:0 30px 90px -30px rgba(4,12,17,.8), inset 0 1px 0 rgba(255,255,255,.05);
+}
+html[data-surface="day"]{
+  color-scheme:light;
+  --void:#D3DEE1;
+  --plate:#E3EAEC; --panel:#F2F7F8; --panel-2:#E7EFF1; --well:#E9F1F2;
+  --rule:#CBD8DB; --rule-ctl:#6F8A94; --rule-2:#DCE6E8;
+  --ink:#122935; --ink-2:#46626E; --ink-3:#567380;
+  --sig:#D9482F; --sig-2:#2A8F9B; --warn:#FB543D; --danger:#FB543D;
+  --soft:#F2B29E; --on-sig:#FFF7F4;
+  --track:rgba(18,41,53,.06);
+  --grid:rgba(18,41,53,.06); --halo:rgba(217,72,47,.18);
+  --knob:#F7FBFC; --knob-shadow:rgba(18,41,53,.16);
+  --led-off:#C3D2D6;
+  --card-shadow:0 24px 60px -30px rgba(18,41,53,.28), inset 0 1px 0 rgba(255,255,255,.9);
+}
+/* ============================================================================
+   02  BASE / PLATE SCALING
+   ========================================================================= */
+*{box-sizing:border-box;}
+html,body{height:100%;}
+html{font-size:min(calc(100vw / var(--cols)), calc(100vh / var(--rows)));}
+html[data-sheet="on"]{--rows:96;}
+body{
+  margin:0; min-height:100vh; display:grid; place-items:center;
+  background:var(--void); color:var(--ink);
+  font-family:var(--font-ui); font-size:var(--t-cap);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  overflow:hidden;
+}
+::selection{background:var(--sig); color:var(--on-sig);}
+:focus{outline:none;}
+:focus-visible{outline:var(--hair) solid var(--sig); outline-offset:.25rem;}
+button{font:inherit; color:inherit; background:none; border:0; padding:0; margin:0; cursor:pointer;}
+.stage{display:flex; flex-direction:column; align-items:center; width:calc(var(--cols) * 1rem);}
+.plate{
+  position:relative; width:calc(var(--cols) * 1rem); height:calc(var(--rows-plate) * 1rem);
+  background:var(--plate); box-shadow:0 0 0 var(--hair) var(--rule-panel);
+  user-select:none; -webkit-user-select:none;
+}
+/* Cell geometry. The compound selector keeps the authored cell size winning over
+   component defaults such as height:100% (which size the inside of a cell, not
+   the cell itself). */
+div.c, section.c, button.c, span.c, header.c, form.c, a.c{
+  position:absolute;
+  left:calc(var(--x) * 1rem); top:calc(var(--y) * 1rem);
+  width:calc(var(--w) * 1rem); height:calc(var(--h) * 1rem);
+}
+/* rules stay hairlines whatever cell they sit in */
+.divider.c{height:var(--hair);}
+.divider--v.c{width:var(--hair); height:calc(var(--h) * 1rem);}
+
+/* ============================================================================
+   03  TYPE PRIMITIVES
+   ========================================================================= */
+.lbl{font-size:var(--t-micro); letter-spacing:var(--tr-label); text-transform:uppercase;
+     color:var(--ink-2); white-space:nowrap; line-height:1;}
+.lbl--dim{color:var(--ink-3);}
+.lbl--ink{color:var(--ink);}
+.num{font-family:var(--font-num); font-variant-numeric:tabular-nums; letter-spacing:0;}
+.readout{display:flex; align-items:baseline; gap:.5rem; line-height:1; white-space:nowrap;
+  font-family:var(--font-num); font-size:var(--t-val-s); font-variant-numeric:tabular-nums; color:var(--ink);}
+.readout .k{font-family:var(--font-ui); font-size:var(--t-micro); letter-spacing:var(--tr-label);
+  text-transform:uppercase; color:var(--ink-3);}
+.readout .u{font-family:var(--font-ui); font-size:var(--t-micro); letter-spacing:.04em;
+  color:var(--ink-3);}
+.readout--sm{font-size:var(--t-cap);}
+.readout--end{justify-content:flex-end;}
+
+/* ============================================================================
+   04  RAIL (header)
+   ========================================================================= */
+.rail{border-bottom:var(--hair) solid var(--rule-panel);}
+.mark{display:flex; align-items:center; gap:.7rem;}
+.mark .box{width:2.4rem; height:2.4rem; border:var(--hair) solid var(--ink); position:relative; flex:none;}
+.mark .box::after{content:""; position:absolute; left:.75rem; top:.75rem; width:.9rem; height:.9rem;
+  background:var(--sig);}
+.mark .word{font-size:1.6rem; font-weight:600; letter-spacing:.24em; text-transform:uppercase; line-height:1;}
+.title{display:flex; flex-direction:column; justify-content:center; gap:.5rem;}
+.title .t1{font-size:var(--t-title); font-weight:500; letter-spacing:.06em; line-height:.92; text-transform:uppercase;}
+.title .t2{font-size:var(--t-micro); letter-spacing:.2em; text-transform:uppercase; color:var(--ink-3);}
+
+/* ============================================================================
+   05  PANELS
+   ========================================================================= */
+.panel{background:var(--panel); border:var(--hair) solid var(--rule-panel);}
+.panel > .cap{
+  display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  height:2.4rem; padding:0 .9rem 0 1.1rem;
+  border-bottom:var(--hair) solid var(--rule-2);
+}
+.panel > .cap .lbl{color:var(--ink-2);}
+.panel--bare{background:none; border:0;}
+/* divider element: hairline with optional inline text */
+.divider{display:flex; align-items:center; height:1px; background:var(--rule-2);}
+.divider .dl{background:var(--panel); padding:0 .6rem; margin-left:1rem;
+  font-size:var(--t-micro); letter-spacing:var(--tr-label); text-transform:uppercase;
+  color:var(--ink-3); white-space:nowrap; line-height:1.4;}
+.divider .dr{margin-left:auto; background:var(--panel); padding:0 .6rem; margin-right:1rem;
+  font-size:var(--t-micro); letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); white-space:nowrap;}
+.divider--v{width:1px; height:100%; background:var(--rule-2); flex:none;}
+/* ============================================================================
+   06  FIELDS (dropdown / numberfield / textfield / selector)
+   ========================================================================= */
+.field{display:flex; align-items:center; gap:.7rem; height:100%; padding:0 .8rem;
+  border:var(--hair) solid var(--rule); background:var(--panel-2); cursor:pointer;
+  transition:border-color var(--dur) var(--ease);}
+.field:hover{border-color:var(--ink-3);}
+.field .k{font-size:var(--t-micro); letter-spacing:var(--tr-label); text-transform:uppercase;
+  color:var(--ink-3); flex:none;}
+.field .v{flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-family:var(--font-num); font-size:var(--t-cap); color:var(--ink);}
+.field .cv{flex:none; width:0; height:0; border-left:.45rem solid transparent;
+  border-right:.45rem solid transparent; border-top:.6rem solid var(--ink-2); margin-top:.2rem;}
+.field[aria-expanded="true"]{border-color:var(--sig);}
+
+.sel{display:flex; align-items:center; justify-content:center; gap:.5rem; height:100%;
+  border:var(--hair) solid var(--rule); background:var(--panel-2);}
+.sel .arw{width:2rem; height:100%; display:grid; place-items:center; flex:none; color:var(--ink-2);}
+.sel .arw:hover{background:var(--panel); color:var(--ink);}
+.sel .arw i{width:0; height:0; border-top:.42rem solid transparent; border-bottom:.42rem solid transparent;}
+.sel .arw.prev i{border-right:.6rem solid currentColor;}
+.sel .arw.next i{border-left:.6rem solid currentColor;}
+.sel .mid{flex:0 1 auto; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:.15rem; min-width:8rem; padding:0 .4rem; height:100%;}
+.sel .mid .k{font-size:var(--t-micro); letter-spacing:var(--tr-label); text-transform:uppercase;
+  color:var(--ink-3); line-height:1;}
+.sel .mid .v{font-family:var(--font-num); font-size:var(--t-cap); color:var(--ink);
+  letter-spacing:.08em; text-transform:uppercase; line-height:1;}
+
+.nf{display:flex; align-items:center; height:100%; border:var(--hair) solid var(--rule); background:var(--panel-2);}
+.nf .k{font-size:var(--t-micro); letter-spacing:var(--tr-label); text-transform:uppercase;
+  color:var(--ink-3); padding-left:.8rem; flex:none;}
+.nf .v{flex:1 1 auto; text-align:right; padding:0 .6rem;
+  font-family:var(--font-num); font-size:var(--t-cap); font-variant-numeric:tabular-nums; color:var(--ink);}
+.nf .v .u{color:var(--ink-3); font-size:var(--t-micro); margin-left:.35rem;}
+.nf .steps{display:flex; flex-direction:column; align-self:stretch; width:2.1rem;
+  border-left:var(--hair) solid var(--rule-2); flex:none;}
+.nf .steps button{flex:1 1 0; display:grid; place-items:center; color:var(--ink-2);}
+.nf .steps button:hover{background:var(--panel); color:var(--ink);}
+.nf .steps i{width:0; height:0; border-left:.38rem solid transparent; border-right:.38rem solid transparent;}
+.nf .steps .up i{border-bottom:.5rem solid currentColor;}
+.nf .steps .dn i{border-top:.5rem solid currentColor;}
+
+.tf{display:flex; align-items:center; gap:.6rem; height:100%; border:var(--hair) solid var(--rule);
+  background:var(--well); padding:0 .8rem;}
+.tf .k{font-size:var(--t-micro); letter-spacing:var(--tr-label); text-transform:uppercase;
+  color:var(--ink-3); flex:none;}
+.tf input{flex:1 1 auto; min-width:0; width:100%; border:0; background:none; color:var(--ink);
+  font-family:var(--font-num); font-size:var(--t-cap); letter-spacing:.04em; padding:0;}
+.tf input:focus{outline:none;}
+.tf:focus-within{border-color:var(--sig);}
+/* ============================================================================
+   07  BUTTONS / SEGMENTED / TOGGLE / CHECKBOX / RADIO / TABS
+   ========================================================================= */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:.55rem; height:100%;
+  padding:0 .85rem; border:var(--hair) solid var(--rule); background:var(--panel-2);
+  font-size:var(--t-micro); letter-spacing:.12em; text-transform:uppercase; color:var(--ink-2);
+  transition:background var(--dur) var(--ease), color var(--dur) var(--ease),
+             border-color var(--dur) var(--ease);}
+.btn:hover{background:var(--panel); color:var(--ink); border-color:var(--ink-3);}
+.btn:active,.btn[aria-pressed="true"]{background:var(--ink); color:var(--plate); border-color:var(--ink);}
+.btn--icon{padding:0;}
+
+.btnrow{display:flex; height:100%;}
+.btnrow .btn{flex:1 1 0; border-right:0; padding:0 .3rem;}
+.btnrow .btn:last-child{border-right:var(--hair) solid var(--rule);}
+
+.seg{display:flex; height:100%; border:var(--hair) solid var(--rule);}
+.seg button{flex:1 1 0; display:grid; place-items:center; min-width:0; padding:0 .3rem;
+  font-size:var(--t-micro); letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2);
+  border-right:var(--hair) solid var(--rule-2);
+  transition:background var(--dur) var(--ease), color var(--dur) var(--ease);}
+.seg button:last-child{border-right:0;}
+.seg button:hover{color:var(--ink); background:var(--panel-2);}
+.seg button[aria-pressed="true"]{background:var(--ink); color:var(--plate);}
+
+.toggle{display:flex; align-items:center; justify-content:space-between; gap:.8rem; height:100%;}
+.toggle .track{position:relative; flex:none; width:4rem; height:1.9rem;
+  border:var(--hair) solid var(--rule); background:var(--well);}
+.toggle .cam{position:absolute; top:.3rem; left:.3rem; width:1.1rem; height:1.1rem;
+  background:var(--ink-3);
+  transition:left var(--dur) var(--ease), background var(--dur) var(--ease);}
+.toggle[aria-checked="true"] .cam{left:2.35rem; background:var(--sig);}
+.toggle[aria-checked="true"] .track{border-color:var(--sig);}
+
+.chk{display:flex; align-items:center; gap:.7rem; height:100%; cursor:pointer;}
+.chk .box{position:relative; flex:none; width:1.7rem; height:1.7rem;
+  border:var(--hair) solid var(--rule); background:var(--well);}
+.chk[aria-checked="true"] .box::after{content:""; position:absolute; inset:.32rem; background:var(--sig);}
+.chk[aria-checked="mixed"] .box::after{content:""; position:absolute; left:.32rem; right:.32rem;
+  top:50%; height:var(--hair); background:var(--ink);}
+
+.radio{display:flex; flex-direction:column; justify-content:space-around; height:100%;}
+.radio button{display:flex; align-items:center; gap:.7rem; height:1.8rem; text-align:left;}
+.radio .dot{position:relative; flex:none; width:1.4rem; height:1.4rem; border-radius:50%;
+  border:var(--hair) solid var(--rule);}
+.radio button[aria-checked="true"] .dot::after{content:""; position:absolute; inset:.33rem;
+  border-radius:50%; background:var(--sig);}
+.radio .t{font-size:var(--t-micro); letter-spacing:.12em; text-transform:uppercase; color:var(--ink-2);}
+.radio button[aria-checked="true"] .t{color:var(--ink);}
+
+.tabs{display:flex; align-items:stretch; gap:1.5rem; height:100%;
+  border-bottom:var(--hair) solid var(--rule-2);}
+.tabs button{position:relative; font-size:var(--t-micro); letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ink-3); padding:0 .1rem;}
+.tabs button:hover{color:var(--ink-2);}
+.tabs button[aria-selected="true"]{color:var(--ink);}
+.tabs button[aria-selected="true"]::after{content:""; position:absolute; left:0; right:0;
+  bottom:-1px; height:var(--hair); background:var(--sig);}
+/* ============================================================================
+   08  KNOB
+   ========================================================================= */
+.knob{display:flex; flex-direction:column; align-items:center; height:100%; gap:.25rem;}
+.knob .klbl{font-size:var(--t-micro); letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-2); line-height:1; text-align:center; white-space:nowrap;}
+.knob .dial{flex:1 1 auto; width:100%; min-height:0; position:relative;
+  cursor:ns-resize; touch-action:none;}
+.knob .dial svg{display:block; width:100%; height:100%; overflow:visible;}
+.knob .kval{font-family:var(--font-num); font-size:var(--t-val-s); line-height:1;
+  font-variant-numeric:tabular-nums; color:var(--ink); white-space:nowrap; text-align:center;}
+.knob .kval .u{font-family:var(--font-ui); font-size:var(--t-micro); color:var(--ink-3);
+  margin-left:.25rem; letter-spacing:.06em;}
+.knob--s .klbl{font-size:.95rem; letter-spacing:.1em;}
+.knob--s .kval{font-size:var(--t-cap);}
+.knob .dial:focus-visible{outline:var(--hair) solid var(--sig); outline-offset:.15rem;}
+svg .k-tick{stroke:var(--rule-panel); stroke-width:1;}
+svg .k-tick.maj{stroke:var(--ink-3); stroke-width:1;}
+svg .k-track{fill:none; stroke:var(--rule-panel); stroke-width:1.4;}
+svg .k-arc{fill:none; stroke:var(--sig); stroke-width:1.9;}
+svg .k-body{fill:var(--panel-2); stroke:var(--rule); stroke-width:1;}
+svg .k-groove{fill:none; stroke:var(--rule-2); stroke-width:1;}
+svg .k-index{stroke:var(--ink); stroke-width:2.4; stroke-linecap:butt;}
+svg .k-hub{fill:var(--ink-3);}
+
+/* ============================================================================
+   09  SLIDER
+   ========================================================================= */
+.slider{display:flex; flex-direction:column; justify-content:center; height:100%; gap:.3rem;}
+.slider .top{display:flex; align-items:baseline; justify-content:space-between; gap:.5rem;}
+.slider .top .v{font-family:var(--font-num); font-size:var(--t-cap); color:var(--ink);
+  font-variant-numeric:tabular-nums; white-space:nowrap;}
+.slider .top .v .u{font-size:var(--t-micro); color:var(--ink-3); margin-left:.2rem; font-family:var(--font-ui);}
+.slider .track{position:relative; flex:1 1 auto; min-height:.9rem; cursor:ew-resize; touch-action:none;}
+.slider .rail{position:absolute; left:0; right:0; top:50%; height:var(--hair); background:var(--rule);}
+.slider .fill{position:absolute; left:0; top:50%; height:1px; margin-top:-.5px; background:var(--sig);}
+.slider .thumb{position:absolute; top:0; bottom:0; width:1.35rem; background:var(--panel-2);
+  border:var(--hair) solid var(--rule); transform:translateX(-50%);
+  transition:border-color var(--dur) var(--ease);}
+.slider .thumb::after{content:""; position:absolute; left:50%; top:.3rem; bottom:.3rem; width:var(--hair);
+  background:var(--ink); transform:translateX(-.5px);}
+.slider:hover .thumb{border-color:var(--ink-3);}
+.slider .ticks{position:absolute; inset:0; pointer-events:none;}
+.slider .ticks i{position:absolute; top:50%; width:var(--hair); height:.42rem;
+  margin-top:.42rem; background:var(--rule-panel);}
+.slider .ticks i.maj{height:.62rem; background:var(--ink-3);}
+.slider .track:focus-visible{outline:var(--hair) solid var(--sig); outline-offset:.15rem;}
+
+/* ============================================================================
+   10  LED / PROGRESS / LIST
+   ========================================================================= */
+.led{position:relative; width:1.5rem; height:1.5rem; border-radius:50%; flex:none;
+  background:var(--led-off); box-shadow:inset 0 0 0 var(--hair) var(--rule-2);
+  transition:background var(--dur) linear, box-shadow var(--dur) linear;}
+.led::after{content:""; position:absolute; inset:.42rem; border-radius:50%;
+  background:var(--plate); opacity:.55;}
+.led[data-on="1"]{background:var(--sig); box-shadow:0 0 0 var(--hair) var(--sig), 0 0 .8rem var(--halo);}
+.led[data-on="1"]::after{opacity:0;}
+.led--sm{width:1.1rem; height:1.1rem;}
+.led--sm::after{inset:.32rem;}
+.led--clip[data-on="1"]{background:var(--danger); box-shadow:0 0 0 var(--hair) var(--danger),
+  0 0 .8rem rgba(255,97,82,.28);}
+
+.progress{display:flex; flex-direction:column; justify-content:center; gap:.4rem; height:100%;}
+.progress .top{display:flex; align-items:baseline; justify-content:space-between; gap:.5rem;}
+.progress .top .v{font-family:var(--font-num); font-size:var(--t-micro); color:var(--ink-2);}
+.progress .track{position:relative; height:.8rem; background:var(--well);
+  box-shadow:inset 0 0 0 var(--hair) var(--rule-panel);}
+.progress .fill{position:absolute; left:0; top:0; bottom:0; width:0; background:var(--sig);}
+.progress .fill--thin{background:var(--ink-2);}
+
+.list{border:var(--hair) solid var(--rule-panel); background:var(--well); overflow-y:auto;
+  height:100%; padding:.3rem; scrollbar-width:thin; scrollbar-color:var(--rule) transparent;}
+.list::-webkit-scrollbar{width:.55rem;}
+.list::-webkit-scrollbar-thumb{background:var(--rule);}
+.list button{display:flex; align-items:center; gap:.6rem; width:100%; height:2rem; padding:0 .5rem;
+  text-align:left; border-left:var(--hair) solid transparent;
+  font-family:var(--font-num); font-size:var(--t-cap); color:var(--ink-2);}
+.list button .ix{font-size:var(--t-micro); color:var(--ink-3); width:1.6rem; flex:none;}
+.list button:hover{background:var(--panel-2); color:var(--ink);}
+.list button[aria-selected="true"]{background:var(--panel-2); color:var(--ink);
+  border-left-color:var(--sig);}
+/* ============================================================================
+   11  INSTRUMENT WELLS (canvas displays)
+   ========================================================================= */
+.well{border:var(--hair) solid var(--rule-panel); background:var(--well); overflow:hidden;}
+.well canvas{display:block; width:100%; height:100%;}
+.well .measure{position:absolute; top:.45rem; right:.7rem; pointer-events:none;
+  font-family:var(--font-num); font-size:var(--t-micro); color:var(--ink-3); letter-spacing:.04em;}
+.well .measure b{color:var(--ink-2); font-weight:400;}
+.well--flush{border-left:0; border-right:0;}
+
+/* ============================================================================
+   12  POPUPS (menu / listbox)
+   ========================================================================= */
+.pop{position:absolute; z-index:60; min-width:13rem; padding:.3rem 0;
+  background:var(--panel); border:var(--hair) solid var(--rule);
+  box-shadow:0 .7rem 1.8rem rgba(0,0,0,.34);}
+html[data-surface="day"] .pop{box-shadow:0 .7rem 1.8rem rgba(0,0,0,.13);}
+.pop button{display:flex; align-items:center; gap:.8rem; width:100%; padding:.42rem .9rem;
+  text-align:left; font-size:var(--t-cap); color:var(--ink-2);}
+.pop button:hover{background:var(--panel-2); color:var(--ink);}
+.pop button .sc{margin-left:auto; font-family:var(--font-num); font-size:var(--t-micro);
+  color:var(--ink-3); letter-spacing:.04em;}
+.pop button .mk{width:.45rem; height:.45rem; background:var(--sig); flex:none;}
+.pop button[aria-checked="false"] .mk{background:none;}
+.pop .sep{height:var(--hair); background:var(--rule-2); margin:.3rem 0;}
+.pop .hd{padding:.4rem .9rem .5rem; font-size:var(--t-micro); letter-spacing:var(--tr-label);
+  text-transform:uppercase; color:var(--ink-3);}
+
+/* ============================================================================
+   13  ANATOMY (specimen index)
+   ========================================================================= */
+html[data-anatomy="on"] .plate::before{
+  content:""; position:absolute; inset:0; z-index:20; pointer-events:none;
+  background-image:
+    linear-gradient(to right, var(--grid) var(--hair), transparent var(--hair)),
+    linear-gradient(to bottom, var(--grid) var(--hair), transparent var(--hair));
+  background-size:1rem 1rem;
+}
+.tag{position:absolute; z-index:23; pointer-events:none; padding:.02rem .22rem;
+  background:var(--sig); color:var(--on-sig); font-family:var(--font-num); font-size:.82rem;
+  line-height:1.25; letter-spacing:.02em;}
+.hl{position:absolute; z-index:22; pointer-events:none; border:var(--hair) solid var(--sig);
+  box-shadow:0 0 0 var(--hair) var(--halo);}
+html[data-anatomy="off"] .tag,html[data-anatomy="off"] .hl{display:none;}
+
+.sheet{display:none; width:calc(var(--cols) * 1rem); margin-top:3rem;}
+html[data-sheet="on"] .sheet{display:block;}
+.sheet .h{display:flex; align-items:baseline; justify-content:space-between; gap:2rem;
+  padding-bottom:.7rem; border-bottom:var(--hair) solid var(--rule); margin-bottom:1.1rem;}
+.sheet .h .t{font-size:1.45rem; letter-spacing:.22em; text-transform:uppercase; color:var(--ink);}
+.sheet .h .s{font-size:var(--t-micro); letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);}
+.sheet .g{display:grid; grid-template-columns:repeat(5,1fr); gap:.3rem 2.4rem;}
+.sheet .it{display:flex; align-items:baseline; gap:.7rem; height:2.1rem; text-align:left;
+  border-bottom:var(--hair) solid var(--rule-2);}
+.sheet .it .n{font-family:var(--font-num); font-size:var(--t-micro); color:var(--ink-3);
+  width:1.9rem; flex:none; letter-spacing:.06em;}
+.sheet .it .nm{font-size:var(--t-cap); letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2);}
+.sheet .it:hover .nm{color:var(--ink);}
+.sheet .it:hover .n,.sheet .it[aria-pressed="true"] .n{color:var(--sig);}
+.sheet .it[aria-pressed="true"] .nm{color:var(--ink);}
+.sheet .f{margin-top:1rem; font-size:var(--t-micro); letter-spacing:.12em; text-transform:uppercase;
+  color:var(--ink-3); display:flex; justify-content:space-between;}
+
+/* ============================================================================
+   14  MOTION
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important; animation:none !important;}
+}
+/* ============================================================================
+   15  SKIN - reference language: rounded, soft, product-grade hardware
+   ----------------------------------------------------------------------------
+   Structure (sections 01-14) stays; this layer owns every material property.
+   ========================================================================= */
+
+/* 15.1  THE CARD ---------------------------------------------------------- */
+.plate{
+  border-radius:var(--r-card);
+  box-shadow:var(--card-shadow);
+  overflow:visible;
+}
+body{background:var(--void);}
+
+/* 15.2  TYPE --------------------------------------------------------------- */
+.lbl{font-family:var(--font-ui); font-weight:500; letter-spacing:var(--tr-label);
+     font-size:var(--t-micro); text-transform:uppercase; color:var(--ink-2);}
+.lbl--dim{color:var(--ink-3); font-weight:400;}
+.readout{font-family:var(--font-num); font-weight:500; letter-spacing:-.01em;}
+.readout .k{font-family:var(--font-ui); font-weight:500; letter-spacing:var(--tr-label);}
+.readout .u{font-family:var(--font-ui); font-weight:400; letter-spacing:.03em; color:var(--ink-3);}
+
+/* 15.3  SECTIONS: hairline edge, 2px radius, 0.6-cell gaps -----------------
+   A panel grows 0.2 cells on every side, so the authored 1-cell grid becomes a
+   0.6-cell gap and the inner inset grows from 1.35 to 1.55 cells. */
+section.panel.c{
+  left:calc(var(--x) * 1rem - .2rem);
+  top:calc(var(--y) * 1rem - .2rem);
+  width:calc(var(--w) * 1rem + .4rem);
+  height:calc(var(--h) * 1rem + .4rem);
+  background:var(--panel);
+  border:var(--hair) solid var(--rule);
+  border-radius:var(--r-block);
+}
+.panel > .cap{
+  height:2.5rem;
+  padding:0 1.15rem 0 1.3rem;
+  border-bottom:0;
+  align-items:center;
+}
+.panel > .cap .lbl{color:var(--ink-2);}
+.panel > .cap .lbl--dim{color:var(--ink-3);}
+/* section number in front of the caption, mono and faint */
+.idx{font-family:var(--font-num); font-size:.88rem; font-weight:400; color:var(--ink-3);
+  letter-spacing:.02em; margin-right:.55rem;}
+.cap .t{display:flex; align-items:baseline;}
+
+/* 15.4  WELLS (displays) ------------------------------------------------- */
+.well{
+  background:var(--well);
+  border:0;
+  border-radius:var(--r-well);
+}
+.well .measure{top:.5rem; left:.75rem; right:auto; letter-spacing:.05em;}
+
+/* 15.5  HEADER RAIL ------------------------------------------------------ */
+.rail{border-bottom:0;}
+.mark .box{
+  width:2.3rem; height:2.3rem; border:0; border-radius:2px;
+  background:var(--panel-2); box-shadow:inset 0 0 0 var(--hair) var(--rule);
+}
+.mark .box::after{left:.7rem; top:.7rem; width:.9rem; height:.9rem; border-radius:1px;}
+.mark .word{font-size:1.75rem; font-weight:600; letter-spacing:.22em;}
+.title{gap:.1rem;}
+.title .t1{font-weight:500; letter-spacing:.06em; text-transform:uppercase; font-size:2.3rem;
+  line-height:.98;}
+.title .t2{letter-spacing:.12em; font-weight:400;}
+
+/* focus is for the keyboard; a pointer never draws a box */
+html[data-pointer="1"] :focus{outline:none !important;}
+:focus-visible{outline:var(--hair) solid var(--ink-2); outline-offset:.2rem;}
+.knob .dial:focus-visible,.slider .track:focus-visible{outline-offset:.15rem;}
+
+/* active = the control itself lifts a little, never a box around it */
+.knob.is-active .face{
+  box-shadow:0 .26rem .5rem var(--knob-shadow), inset 0 1px 0 rgba(255,255,255,.16),
+             0 0 .55rem var(--halo);
+}
+/* the arc thickens a hair: the dial reads as picked up, no ring appears around it */
+.knob.is-active svg .k-arc{stroke-width:2.8;}
+.slider.is-active .thumb{border-color:var(--sig); background:var(--panel-2);
+  box-shadow:0 0 .45rem var(--halo);}
+
+/* 15.6  FIELDS: flat, hairline edge, no stepper arrows -------------------- */
+.field{
+  border:var(--hair) solid var(--rule);
+  background:var(--panel-2);
+  border-radius:var(--r-ctl);
+}
+.field:hover{border-color:var(--rule-ctl);}
+.field .k{letter-spacing:var(--tr-label); font-weight:500; color:var(--ink-3);}
+.field .v{font-weight:500; letter-spacing:.01em;}
+.field .cv{border-top-color:var(--ink-2);}
+.field[aria-expanded="true"]{border-color:var(--sig);}
+
+.sel{
+  border:var(--hair) solid var(--rule);
+  background:var(--panel-2);
+  border-radius:var(--r-ctl);
+}
+.sel .arw{width:2rem; border-radius:0;}
+.sel .arw:hover{background:var(--track); color:var(--ink);}
+.sel .arw i{border-top-width:.36rem; border-bottom-width:.36rem;}
+.sel .arw.prev i{border-right-width:.5rem;}
+.sel .arw.next i{border-left-width:.5rem;}
+.sel .mid .k{font-weight:500; color:var(--ink-3);}
+.sel .mid .v{letter-spacing:.08em; font-weight:500;}
+
+/* number field: drag anywhere, three dots as the grip, no triangles */
+.nf{border:var(--hair) solid var(--rule); background:var(--panel-2); border-radius:var(--r-ctl);
+  cursor:ns-resize; touch-action:none;}
+.nf .k{font-weight:500; color:var(--ink-3);}
+.nf .steps{display:none;}
+.nf .grip{display:flex; flex-direction:column; justify-content:center; gap:.16rem;
+  width:1.5rem; align-self:stretch; align-items:center; flex:none;}
+.nf .grip i{width:.17rem; height:.17rem; border-radius:50%; background:var(--ink-3);}
+.nf:hover .grip i{background:var(--ink-2);}
+
+.tf{border:var(--hair) solid var(--rule); background:var(--panel-2); border-radius:var(--r-ctl);}
+.tf .k{font-weight:500; color:var(--ink-3);}
+.tf:focus-within{border-color:var(--sig);}
+
+/* 15.7  BUTTONS + SEGMENTED: flat chips, ink inversion -------------------- */
+.btn{
+  border:var(--hair) solid var(--rule);
+  background:var(--panel-2);
+  border-radius:var(--r-ctl);
+  padding:0 1.1rem;
+  font-family:var(--font-ui); font-weight:500; letter-spacing:.14em;
+  color:var(--ink-2);
+}
+.btn:hover{background:var(--track); color:var(--ink); border-color:var(--rule-ctl);}
+.btn:active,.btn[aria-pressed="true"]{
+  background:var(--ink); color:var(--plate); border-color:var(--ink);
+}
+.btn--icon{padding:0; border-radius:var(--r-ctl); background:transparent;}
+
+.btnrow{gap:.4rem;}
+.btnrow .btn{border-right:var(--hair) solid var(--rule); border-radius:var(--r-ctl); padding:0 .3rem;}
+
+.seg{
+  border:var(--hair) solid var(--rule);
+  border-radius:var(--r-ctl);
+  padding:0;
+  gap:0;
+  background:var(--panel-2);
+  overflow:hidden;
+}
+.seg button{
+  border-right:var(--hair) solid var(--rule);
+  border-radius:0;
+  font-family:var(--font-ui); font-weight:500; letter-spacing:.12em;
+  color:var(--ink-2);
+}
+.seg button:last-child{border-right:0;}
+.seg button:hover{background:var(--track); color:var(--ink);}
+.seg button[aria-pressed="true"]{background:var(--ink); color:var(--plate);}
+
+/* 15.8  TOGGLE: miniature switch ----------------------------------------- */
+.toggle .track{
+  width:3.2rem; height:1.7rem;
+  border:var(--hair) solid var(--rule-ctl);
+  border-radius:var(--r-ctl);
+  background:var(--panel-2);
+  transition:background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.toggle .cam{
+  top:50%; left:.22rem; width:1.24rem; height:1.24rem; border-radius:1px;
+  background:var(--ink-3);
+  transform:translateY(-50%);
+  transition:left var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.toggle[aria-checked="true"] .cam{left:calc(100% - 1.46rem); background:var(--on-sig);}
+.toggle[aria-checked="true"] .track{background:var(--sig); border-color:var(--sig);}
+
+/* 15.9  CHECKBOX / RADIO / TOGGLE: one square mark language ----------------
+   Both marks are the same 1.2-cell square with a 2px radius: a checkbox is a
+   boolean, a radio is a choice, but the mark looks identical and only the
+   context differs. Selection = accent edge + accent inset square. */
+.chk .box,
+.radio .dot{
+  position:relative; width:1.2rem; height:1.2rem; border-radius:2px;
+  border:var(--hair) solid var(--rule-ctl); background:var(--panel-2);
+  transition:border-color var(--dur) var(--ease);
+}
+.chk:hover .box, .radio button:hover .dot{border-color:var(--ink-2);}
+.chk[aria-checked="true"] .box,
+.radio button[aria-checked="true"] .dot{border-color:var(--sig);}
+.chk[aria-checked="true"] .box::after,
+.radio button[aria-checked="true"] .dot::after{
+  content:""; position:absolute; inset:.3rem; border-radius:1px; background:var(--sig);
+}
+.chk[aria-checked="mixed"] .box::after,
+.chk[aria-checked="mixed"] .dot::after{
+  content:""; position:absolute; left:.3rem; right:.3rem; top:50%; height:1px; background:var(--ink);
+}
+.radio .t{letter-spacing:.12em; font-weight:500;}
+.radio button{height:2.1rem;}
+
+/* 15.10  TABS ------------------------------------------------------------ */
+.tabs{border-bottom:var(--hair) solid var(--rule); gap:1.5rem;}
+/* tabs living inside a panel caption do not need their own rule */
+.cap .tabs{border-bottom:0; height:100%;}
+.cap .tabs button{position:relative;}
+/* a switch that sits in a row of controls keeps its label and its cap together */
+.toggle.toggle--tight{justify-content:flex-start; gap:1rem;}
+/* lamp + caption read as one object: same box, same centre line */
+.lamprow{display:flex; align-items:center; gap:.7rem;}
+.tabs button{letter-spacing:.14em; font-family:var(--font-ui); font-weight:500; color:var(--ink-3);}
+.tabs button:hover{color:var(--ink-2);}
+.tabs button[aria-selected="true"]{color:var(--ink);}
+.tabs button[aria-selected="true"]::after{height:2px; bottom:-1px; border-radius:0; background:var(--sig);}
+/* 15.10b  inset hairline under a section caption ------------------------- */
+.panel > .cap{position:relative;}
+.panel > .cap::after{
+  content:""; position:absolute; left:1.3rem; right:1.15rem; bottom:0;
+  height:var(--hair); background:var(--rule);
+}
+
+/* 15.11  KNOB: a machined disc, one accent arc, one pointer ---------------
+   No tick ring. Track and arc are 2% of the dial; the body is a gradient disc
+   with a 1px edge, a soft shadow and an inner top highlight; the pointer is a
+   2px bar that turns about the centre. */
+.knob .klbl{font-family:var(--font-ui); font-weight:500; letter-spacing:.14em; color:var(--ink-3);}
+.knob .kval{font-weight:500; letter-spacing:-.02em;}
+.knob--s .klbl{letter-spacing:.08em;}
+/* Tracking is added after the last glyph too, so a flush centred run reads half a step
+   left of the dial; text-indent gives that half back. Width 100% + text-align keeps the
+   name and the value on the dial's centre line by construction, not by flex arithmetic. */
+.knob .klbl,.knob .kval{width:100%; text-align:center;}
+.knob .klbl{text-indent:.14em;}
+.knob--s .klbl{text-indent:.08em;}
+.knob .dial{display:block;}
+/* The disc is a square sized by WIDTH and centred by a transform, so its centre is the
+   dial's centre no matter what the flex box does. Sizing it by height (v006 first pass)
+   made a 99px square overflow an 88px dial and put the ring 10px right of the name; the
+   grid-centred variant then landed 10px left. A transform cannot drift. */
+.knob .square{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:100%; aspect-ratio:1/1;}
+.knob svg{position:absolute; inset:0; width:100%; height:100%; overflow:visible;}
+svg .k-track{fill:none; stroke:var(--rule); stroke-width:2; stroke-linecap:round;}
+svg .k-arc{fill:none; stroke:var(--sig); stroke-width:2; stroke-linecap:round;}
+.knob .face{
+  position:absolute; inset:12%; border-radius:50%;
+  background:linear-gradient(145deg,var(--panel),var(--knob));
+  border:var(--hair) solid var(--rule);
+  box-shadow:0 .26rem .5rem var(--knob-shadow), inset 0 1px 0 rgba(255,255,255,.16);
+}
+.knob .ptr{position:absolute; inset:0; transform:rotate(var(--angle,-135deg));}
+.knob .ptr::before{
+  content:""; position:absolute; left:calc(50% - 1.25px); top:10%;
+  width:2.5px; height:19%; background:var(--ink); border-radius:1px;
+}
+.knob .dial:focus-visible{outline:var(--hair) solid var(--sig); outline-offset:.15rem;}
+
+/* 15.12  SLIDER: hairline track, small square cap ------------------------ */
+.slider .top .v{font-weight:500; letter-spacing:-.01em;}
+.slider .rail{height:2px; border-radius:1px; background:var(--rule); top:calc(50% - 1px);}
+.slider .fill{height:2px; border-radius:1px; margin-top:-1px; background:var(--sig);}
+.slider .thumb{
+  width:.7rem; height:1.35rem; top:50%; bottom:auto;
+  border:var(--hair) solid var(--rule-ctl); border-radius:1px;
+  background:var(--panel);
+  transform:translate(-50%,-50%);
+  box-shadow:0 .12rem .3rem var(--knob-shadow);
+}
+.slider .thumb::after{display:none;}
+.slider:hover .thumb{border-color:var(--ink-2);}
+.slider .ticks{display:none;}
+
+/* 15.13  LED / PROGRESS -------------------------------------------------- */
+.led{width:1.2rem; height:1.2rem; box-shadow:none; background:var(--led-off);}
+.led::after{display:none;}
+.led[data-on="1"]{background:var(--sig-2); box-shadow:0 0 .45rem var(--halo);}
+.led--sm{width:.9rem; height:.9rem;}
+.led--gate[data-on="1"]{background:var(--sig);}
+.led--clip[data-on="1"]{background:var(--danger); box-shadow:0 0 .45rem rgba(251,84,61,.34);}
+
+.progress .top .v{font-weight:500;}
+.progress .track{height:.45rem; border-radius:1px; background:var(--well);
+  box-shadow:inset 0 0 0 var(--hair) var(--rule);}
+.progress .fill{border-radius:1px; background:var(--sig);}
+
+/* 15.14  LIST: flat rows, no radius, straight highlight ------------------- */
+.list{
+  border:0; border-radius:0; background:var(--track);
+  padding:0;
+}
+.list button{
+  border-left:0; border-radius:0; height:2.1rem; padding:0 .6rem;
+  font-weight:500; letter-spacing:.01em;
+}
+.list button .ix{color:var(--ink-3); font-size:1rem;}
+.list button:hover{background:var(--panel-2);}
+.list button[aria-selected="true"]{background:var(--panel-2); color:var(--ink);
+  box-shadow:inset 2px 0 0 var(--sig);}
+
+/* 15.15  POPUPS ---------------------------------------------------------- */
+.pop{
+  border:var(--hair) solid var(--rule);
+  border-radius:var(--r-block);
+  padding:.4rem;
+  box-shadow:0 1.4rem 3rem -1rem rgba(0,0,0,.66);
+}
+html[data-surface="day"] .pop{box-shadow:0 1.4rem 3rem -1.2rem rgba(60,58,52,.4);}
+.pop button{border-radius:var(--r-ctl); padding:.5rem .8rem; font-weight:400;}
+.pop button:hover{background:var(--panel-2);}
+.pop .sep{margin:.35rem .5rem;}
+.pop .hd{padding:.4rem .8rem .5rem; letter-spacing:.18em; font-weight:500;}
+.pop button .mk{width:.4rem; height:.4rem; border-radius:2px;}
+.pop button .sc{letter-spacing:.04em;}
+
+/* 15.16  ANATOMY / SPECIMEN ---------------------------------------------- */
+.tag{border-radius:var(--r-well); font-size:.8rem; padding:.05rem .26rem;}
+html[data-anatomy="on"] .plate::before{border-radius:var(--r-card);}
+.hl{border-radius:var(--r-ctl);}
+.sheet .it{border-bottom:0; border-radius:var(--r-well);}
+.sheet .it:hover{background:var(--track);}
+.sheet .h{border-bottom:var(--hair) solid var(--rule);}
+/* 15.17  HERO READOUT (the instrument's headline number) ------------------ */
+.hero{display:flex; flex-direction:column; justify-content:flex-end; gap:.3rem;}
+.hero .hv{
+  display:flex; align-items:baseline; gap:.45rem;
+  font-family:var(--font-num); font-weight:500;
+  font-size:3.3rem; line-height:.82; letter-spacing:-.035em;
+}
+.hero .hu{font-family:var(--font-ui); font-weight:500; font-size:1.15rem;
+  letter-spacing:.06em; color:var(--ink-3);}
+/* the secondary figures read as one spec line, not three columns */
+.stats{display:flex; align-items:flex-end; justify-content:flex-end; gap:2.2rem;}
+.stats .sp{display:flex; align-items:baseline; gap:.6rem;}
+.stats .k{font-style:normal; font-size:var(--t-micro); letter-spacing:var(--tr-label);
+  text-transform:uppercase; color:var(--ink-3);}
+.stats .v{font-family:var(--font-num); font-weight:400; font-size:1.35rem; line-height:1;
+  letter-spacing:.03em; color:var(--ink);}
+.stats .u{font-style:normal; font-family:var(--font-ui); font-size:1rem; color:var(--ink-3);}
+/* @@CSS15e@@ */
+</style>
+</head>
+<body>
+<div class="stage">
+<div class="plate" id="plate">
+
+  <!-- ===== RAIL: identity, preset, paper, help, menu, run ================= -->
+  <div class="c rail" style="--x:0;--y:0;--w:120;--h:6">
+
+    <div class="c mark" data-el="logo" data-name="Logo" style="--x:2;--y:1.7;--w:6;--h:1.9">
+      <span class="word">APC</span>
+    </div>
+
+    <div class="c title" data-el="label" data-name="Label" style="--x:9;--y:1.5;--w:28;--h:3.4">
+      <span class="t1">Filter</span>
+      <span class="t2">User interface sample</span>
+    </div>
+
+    <button class="c field" id="dd-preset" data-el="dropdown" data-name="Dropdown"
+            aria-haspopup="listbox" aria-expanded="false" style="--x:38;--y:1.4;--w:25;--h:3.2">
+      <span class="k">Preset</span>
+      <span class="v" id="dd-preset-v">004 HARMONIC VEIL</span>
+      <span class="cv"></span>
+    </button>
+
+    <div class="c seg" id="seg-ab" data-el="segmented" data-name="Segmented"
+         role="group" aria-label="Preset slot" style="--x:64;--y:1.4;--w:9;--h:3.2">
+      <button aria-pressed="true">A</button><button aria-pressed="false">B</button>
+    </div>
+
+    <div class="c seg" id="seg-surface" data-el="segmented" data-name="Segmented"
+         role="group" aria-label="Paper" style="--x:74;--y:1.4;--w:15;--h:3.2">
+      <button aria-pressed="true" data-surface-set="night">Night</button>
+      <button aria-pressed="false" data-surface-set="day">Day</button>
+    </div>
+
+    <button class="c btn btn--icon" id="btn-help" data-el="button" data-name="Button"
+            aria-pressed="false" title="Specimen index (A)" style="--x:90;--y:1.4;--w:3.2;--h:3.2">
+      <svg width="62%" height="62%" viewBox="0 0 12 16" aria-hidden="true" fill="none"
+           stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+        <path d="M2.7 5.1c0-1.8 1.4-3 3.3-3s3.3 1.2 3.3 3c0 1.4-.8 2.1-2 2.9-1 .7-1.3 1.2-1.3 2.2v.6"/>
+        <path d="M6 12.6v1.6"/>
+      </svg>
+    </button>
+
+    <button class="c btn btn--icon" id="btn-menu" data-el="menu" data-name="Menu"
+            aria-haspopup="menu" aria-expanded="false" aria-label="Menu"
+            style="--x:94.2;--y:1.4;--w:3.2;--h:3.2">
+      <svg width="45%" height="45%" viewBox="0 0 12 12" aria-hidden="true">
+        <rect x="5" y="0" width="2" height="2" fill="currentColor"/>
+        <rect x="5" y="5" width="2" height="2" fill="currentColor"/>
+        <rect x="5" y="10" width="2" height="2" fill="currentColor"/>
+      </svg>
+    </button>
+
+    <div class="c" style="--x:104;--y:2;--w:12;--h:2;display:flex;align-items:center;gap:.7rem">
+      <span class="led led--ok" id="led-run" data-el="led" data-name="LED" data-on="1"></span>
+      <span class="lbl lbl--dim">Run</span>
+    </div>
+  </div>
+
+  <!-- ===== LEFT: input stage (top of the chain), monitoring ============== -->
+  <section class="c panel" data-el="panel" data-name="Panel" style="--x:2;--y:7;--w:26;--h:20">
+    <div class="cap">
+      <span class="t"><i class="idx">01</i><span class="lbl" data-el="label" data-name="Label">Input</span></span>
+      <span class="readout readout--sm" data-el="readout" data-name="Readout">
+        <span id="ro-gain">+0.0</span><span class="u">dB</span>
+      </span>
+    </div>
+  </section>
+  <div class="c well" data-el="waveform" data-name="Waveform"
+       style="--x:3.4;--y:10.4;--w:23.2;--h:7"><canvas id="waveform"></canvas></div>
+  <div class="c slider" id="sl-gain" data-el="slider" data-name="Slider"
+       style="--x:3.4;--y:18.4;--w:23.2;--h:3.4">
+    <div class="top"><span class="lbl">Gain</span><span class="v"><span class="nv">+0.0</span><span class="u">dB</span></span></div>
+    <div class="track" tabindex="0" role="slider" aria-label="Input gain"
+         aria-valuemin="-24" aria-valuemax="24" aria-valuenow="0">
+      <span class="rail"></span><span class="fill"></span>
+      <span class="ticks"></span><span class="thumb"></span>
+    </div>
+  </div>
+  <div class="c toggle" id="tg-phase" data-el="toggle" data-name="Toggle" role="switch"
+       aria-checked="false" tabindex="0" style="--x:3.4;--y:22.8;--w:23.2;--h:2.8">
+    <span class="lbl">Phase</span><span class="track"><i class="cam"></i></span>
+  </div>
+
+  <section class="c panel" data-el="panel" data-name="Panel" style="--x:2;--y:28;--w:26;--h:20">
+    <div class="cap">
+      <span class="t"><i class="idx">02</i><span class="lbl">Monitor</span></span>
+      <div class="seg" id="seg-trig" data-el="segmented" data-name="Segmented" role="group"
+           aria-label="Scope trigger" style="width:11.6rem;height:1.9rem">
+        <button aria-pressed="true">Free</button><button aria-pressed="false">Rise</button>
+      </div>
+    </div>
+  </section>
+  <div class="c well" data-el="scope" data-name="Scope"
+       style="--x:3.4;--y:31.4;--w:23.2;--h:9.4"><canvas id="scope"></canvas></div>
+  <div class="c divider" data-el="divider" data-name="Divider" style="--x:3.4;--y:42.3;--w:23.2;--h:1">
+    <span class="dl">Trigger 0.00</span><span class="dr">5 ms</span>
+  </div>
+  <div class="c chk" id="chk-hold" data-el="checkbox" data-name="Checkbox" role="checkbox"
+       aria-checked="false" tabindex="0" style="--x:3.4;--y:43.8;--w:11;--h:2.8">
+    <span class="box"></span><span class="lbl">Hold</span>
+  </div>
+  <div class="c lamprow" style="--x:16.8;--y:43.8;--w:9;--h:2.8">
+    <span class="led led--sm led--ok" id="led-signal" data-el="led" data-name="LED"></span>
+    <span class="lbl lbl--dim">Signal</span>
+  </div>
+  <!-- ===== CENTER: the instrument - display and its controls in one card === -->
+  <section class="c panel" data-el="panel" data-name="Panel" style="--x:29;--y:7;--w:66;--h:41">
+
+    <div class="cap" style="justify-content:flex-start; gap:2rem">
+      <span class="t"><i class="idx">03</i><span class="lbl">Filter</span></span>
+      <div class="tabs" id="tabs" data-el="tabs" data-name="Tabs" role="tablist" style="width:19rem">
+        <button role="tab" aria-selected="true" data-mode="response">Response</button>
+        <button role="tab" aria-selected="false" data-mode="phase">Phase</button>
+      </div>
+    </div>
+
+    <div class="c hero" style="--x:1.6;--y:4.1;--w:26;--h:5">
+      <span class="lbl">Cutoff frequency</span>
+      <div class="hv"><span id="ro-fc">1.20</span><span class="hu">kHz</span></div>
+    </div>
+    <div class="c stats" style="--x:33.6;--y:4.1;--w:31;--h:5">
+      <span class="sp"><i class="k">Q</i><b class="v" id="ro-q">2.40</b></span>
+      <span class="sp"><i class="k">Slope</i><b class="v" id="ro-slope">24</b></span>
+      <span class="sp"><i class="k">Level</i><b class="v" id="ro-lv">+6.2</b><em class="u">dB</em></span>
+    </div>
+
+    <div class="c well" data-el="graph" data-name="Graph"
+         style="--x:1.6;--y:10.6;--w:36.2;--h:12.6">
+      <canvas id="graph"></canvas>
+      <span class="measure" id="measure"><b>--</b> / <b>--</b></span>
+    </div>
+
+    <div class="c knob" id="kn-cutoff" data-el="knob" data-name="Knob" style="--x:40;--y:10.6;--w:8.8;--h:12.6">
+      <span class="klbl">Cutoff</span>
+      <div class="dial" tabindex="0" role="slider" aria-label="Cutoff"
+           aria-valuemin="20" aria-valuemax="20000" aria-valuenow="1200"></div>
+      <span class="kval"><span class="nv">1.20</span><span class="u">kHz</span></span>
+    </div>
+    <div class="c knob knob--s" id="kn-reso" data-el="knob" data-name="Knob" style="--x:51.9;--y:14.6;--w:4.8;--h:8.6">
+      <span class="klbl">Reso</span>
+      <div class="dial" tabindex="0" role="slider" aria-label="Resonance"
+           aria-valuemin="0.5" aria-valuemax="14" aria-valuenow="0.71"></div>
+      <span class="kval"><span class="nv">0.71</span></span>
+    </div>
+    <div class="c knob knob--s" id="kn-drive" data-el="knob" data-name="Knob" style="--x:59.8;--y:14.6;--w:4.8;--h:8.6">
+      <span class="klbl">Drive</span>
+      <div class="dial" tabindex="0" role="slider" aria-label="Drive"
+           aria-valuemin="0" aria-valuemax="24" aria-valuenow="3"></div>
+      <span class="kval"><span class="nv">3.0</span><span class="u">dB</span></span>
+    </div>
+
+    <div class="c divider" data-el="divider" data-name="Divider"
+         style="--x:1.6;--y:24.7;--w:63;--h:1.4">
+      <span class="dl">Spectrum</span>
+    </div>
+
+    <div class="c well" data-el="spectrum" data-name="Spectrum"
+         style="--x:1.6;--y:26.7;--w:63;--h:8.8"><canvas id="spec"></canvas></div>
+
+    <button class="c field" id="dd-type" data-el="dropdown" data-name="Dropdown"
+            aria-haspopup="listbox" aria-expanded="false" style="--x:1.6;--y:36.9;--w:13.6;--h:2.8">
+      <span class="k">Type</span>
+      <span class="v" id="dd-type-v">LOWPASS</span>
+      <span class="cv"></span>
+    </button>
+    <div class="c seg" id="seg-slope" data-el="segmented" data-name="Segmented" role="group"
+         aria-label="Slope" style="--x:17.27;--y:36.9;--w:12.6;--h:2.8">
+      <button aria-pressed="false">12</button><button aria-pressed="true">24</button>
+      <button aria-pressed="false">48</button>
+    </div>
+    <div class="c toggle toggle--tight" id="tg-keytrk" data-el="toggle" data-name="Toggle" role="switch"
+         aria-checked="false" tabindex="0" style="--x:31.93;--y:36.9;--w:12;--h:2.8">
+      <span class="lbl">Key track</span><span class="track"><i class="cam"></i></span>
+    </div>
+    <div class="c sel" id="sel-char" data-el="selector" data-name="Selector"
+         style="--x:46;--y:36.9;--w:18.6;--h:2.8">
+      <button class="arw prev" aria-label="Previous character"><i></i></button>
+      <span class="mid"><span class="k">Char</span><span class="v" id="sel-char-v">Steel</span></span>
+      <button class="arw next" aria-label="Next character"><i></i></button>
+    </div>
+  </section>
+
+  <!-- ===== RIGHT: output at the end of the chain, morph below ============ -->
+  <section class="c panel" data-el="panel" data-name="Panel" style="--x:96;--y:7;--w:22;--h:20">
+    <div class="cap">
+      <span class="t"><i class="idx">05</i><span class="lbl">Output</span></span>
+      <span class="readout readout--sm" data-el="readout" data-name="Readout" style="gap:.3rem">
+        <span class="v" id="ro-out">-3.1</span><span class="u">dB</span>
+      </span>
+    </div>
+  </section>
+  <div class="c well" data-el="meter" data-name="Meter"
+       style="--x:97.4;--y:10.4;--w:19.2;--h:6.2"><canvas id="meter"></canvas></div>
+  <div class="c lamprow" style="--x:97.4;--y:17.2;--w:13;--h:1.8">
+    <span class="led led--clip" id="led-clip" data-el="led" data-name="LED"></span>
+    <span class="lbl lbl--dim">Clip</span>
+  </div>
+  <div class="c radio" id="radio-mode" data-el="radio" data-name="Radio" role="radiogroup"
+       aria-label="Routing" style="--x:97.4;--y:19.4;--w:19.2;--h:5.8">
+    <button role="radio" aria-checked="true"><span class="dot"></span><span class="t">Stereo</span></button>
+    <button role="radio" aria-checked="false"><span class="dot"></span><span class="t">Mono</span></button>
+    <button role="radio" aria-checked="false"><span class="dot"></span><span class="t">M-S</span></button>
+  </div>
+
+  <section class="c panel" data-el="panel" data-name="Panel" style="--x:96;--y:28;--w:22;--h:20">
+    <div class="cap">
+      <span class="t"><i class="idx">06</i><span class="lbl">Morph</span></span>
+      <span class="lbl lbl--dim">XY</span>
+    </div>
+  </section>
+  <div class="c well" data-el="xypad" data-name="XY Pad"
+       style="--x:97.4;--y:31.4;--w:19.2;--h:15.2"><canvas id="xy"></canvas></div>
+
+  <!-- ===== BOTTOM: sequence with its patch memory, envelope =============== -->
+  <section class="c panel" data-el="panel" data-name="Panel" style="--x:2;--y:49;--w:70;--h:15">
+    <div class="cap">
+      <span class="t"><i class="idx">07</i><span class="lbl">Sequence</span></span>
+      <div class="btnrow" id="transport" data-el="buttons" data-name="Buttons"
+           data-role="transport" style="width:11.2rem;height:1.9rem">
+        <button class="btn" id="btn-run" aria-pressed="true" aria-label="Run">
+          <svg width=".85rem" height=".85rem" viewBox="0 0 10 10" aria-hidden="true">
+            <path d="M1 0 L10 5 L1 10 Z" fill="currentColor"/></svg>
+        </button>
+        <button class="btn" id="btn-stop" aria-pressed="false" aria-label="Stop">
+          <svg width=".85rem" height=".85rem" viewBox="0 0 10 10" aria-hidden="true">
+            <rect x="1" y="1" width="8" height="8" fill="currentColor"/></svg>
+        </button>
+        <button class="btn" id="btn-loop" aria-pressed="true" aria-label="Loop">
+          <svg width=".95rem" height=".95rem" viewBox="0 0 12 12" aria-hidden="true">
+            <path d="M2 6a4 4 0 0 1 6.9-2.8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M9.6 .6 L9.6 3.6 L6.6 3.6" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M10 6a4 4 0 0 1-6.9 2.8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M2.4 11.4 L2.4 8.4 L5.4 8.4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+  <div class="c well" data-el="stepseq" data-name="Step Sequencer"
+       style="--x:3.4;--y:52.2;--w:44;--h:8"><canvas id="seq"></canvas></div>
+  <div class="c nf" id="nf-bpm" data-el="numberfield" data-name="Number Field" style="--x:3.4;--y:60.8;--w:10.4;--h:2.9">
+    <span class="k">Bpm</span><span class="v"><span id="nf-bpm-v">120</span></span>
+    <span class="grip"><i></i><i></i><i></i></span>
+  </div>
+  <div class="c tf" data-el="textfield" data-name="Text Field" style="--x:14.8;--y:60.8;--w:14;--h:2.9">
+    <span class="k">Name</span><input id="tf-name" value="BOUNCE" maxlength="14" spellcheck="false"
+      aria-label="Pattern name">
+  </div>
+  <div class="c progress" id="pr-pos" data-el="progress" data-name="Progress" style="--x:29.8;--y:60.9;--w:11;--h:2.7">
+    <div class="top"><span class="lbl">Bar</span><span class="v" id="pr-pos-v">1.1</span></div>
+    <div class="track"><span class="fill"></span></div>
+  </div>
+  <div class="c lamprow" style="--x:42;--y:60.8;--w:8;--h:2.9">
+    <span class="led led--sm led--gate" id="led-gate" data-el="led" data-name="LED"></span>
+    <span class="lbl lbl--dim">Gate</span>
+  </div>
+
+  <div class="c list" id="list-patterns" data-el="list" data-name="List" role="listbox"
+       aria-label="Patterns" style="--x:48.4;--y:52.2;--w:22;--h:8.4"></div>
+  <button class="c btn" id="btn-save" data-el="button" data-name="Button"
+          style="--x:48.4;--y:60.8;--w:22;--h:2.9">Store</button>
+
+  <section class="c panel" data-el="panel" data-name="Panel" style="--x:73;--y:49;--w:45;--h:15">
+    <div class="cap">
+      <span class="t"><i class="idx">08</i><span class="lbl">Envelope</span></span>
+      <span class="lbl lbl--dim">ADSR</span>
+    </div>
+  </section>
+  <div class="c well" data-el="envelope" data-name="Envelope"
+       style="--x:74.4;--y:52.2;--w:42.2;--h:6.2"><canvas id="env"></canvas></div>
+  <div class="c slider" id="sl-a" data-el="slider" data-name="Slider"
+       style="--x:74.4;--y:59.2;--w:9.6;--h:3.4">
+    <div class="top"><span class="lbl">A</span><span class="v"><span class="nv">12</span><span class="u">ms</span></span></div>
+    <div class="track" tabindex="0" role="slider" aria-label="Attack" aria-valuemin="1"
+         aria-valuemax="2000" aria-valuenow="12"><span class="rail"></span><span class="fill"></span>
+      <span class="ticks"></span><span class="thumb"></span></div>
+  </div>
+  <div class="c slider" id="sl-d" data-el="slider" data-name="Slider"
+       style="--x:85;--y:59.2;--w:9.6;--h:3.4">
+    <div class="top"><span class="lbl">D</span><span class="v"><span class="nv">240</span><span class="u">ms</span></span></div>
+    <div class="track" tabindex="0" role="slider" aria-label="Decay" aria-valuemin="1"
+         aria-valuemax="2000" aria-valuenow="240"><span class="rail"></span><span class="fill"></span>
+      <span class="ticks"></span><span class="thumb"></span></div>
+  </div>
+  <div class="c slider" id="sl-s" data-el="slider" data-name="Slider"
+       style="--x:95.6;--y:59.2;--w:9.6;--h:3.4">
+    <div class="top"><span class="lbl">S</span><span class="v"><span class="nv">55</span><span class="u">%</span></span></div>
+    <div class="track" tabindex="0" role="slider" aria-label="Sustain" aria-valuemin="0"
+         aria-valuemax="100" aria-valuenow="55"><span class="rail"></span><span class="fill"></span>
+      <span class="ticks"></span><span class="thumb"></span></div>
+  </div>
+  <div class="c slider" id="sl-r" data-el="slider" data-name="Slider"
+       style="--x:106.2;--y:59.2;--w:9.6;--h:3.4">
+    <div class="top"><span class="lbl">R</span><span class="v"><span class="nv">480</span><span class="u">ms</span></span></div>
+    <div class="track" tabindex="0" role="slider" aria-label="Release" aria-valuemin="1"
+         aria-valuemax="4000" aria-valuenow="480"><span class="rail"></span><span class="fill"></span>
+      <span class="ticks"></span><span class="thumb"></span></div>
+  </div>
+
+  <!-- ===== FOOT: technical stamp ========================================= -->
+  <div class="c" style="--x:0;--y:65;--w:120;--h:4;border-top:var(--hair) solid var(--rule)">
+    <span class="c lbl lbl--dim" data-el="label" data-name="Label"
+          style="--x:2;--y:1.35;--w:26;--h:1.4">APC Filter F-30 &middot; face 01</span>
+    <span class="c divider--v" style="--x:28;--y:1;--w:0;--h:2"></span>
+    <span class="c readout readout--sm" data-el="readout" data-name="Readout"
+          style="--x:30;--y:1.25;--w:24;--h:1.6">
+      <span class="v" id="ro-fmt">48.0k</span><span class="u">&middot; 32 bit &middot; 2.6 ms</span>
+    </span>
+    <span class="c divider--v" style="--x:55;--y:1;--w:0;--h:2"></span>
+    <div class="c progress" id="pr-ana" data-el="progress" data-name="Progress"
+         style="--x:57;--y:1.05;--w:15;--h:2">
+      <div class="top"><span class="lbl">Analysis</span><span class="v" id="pr-ana-v">0%</span></div>
+      <div class="track"><span class="fill"></span></div>
+    </div>
+    <span class="c divider--v" style="--x:73;--y:1;--w:0;--h:2"></span>
+    <span class="c readout readout--sm" data-el="readout" data-name="Readout"
+          style="--x:75;--y:1.25;--w:14;--h:1.6">
+      <span class="k">El</span><span class="v" id="ro-el">30/30</span>
+    </span>
+    <span class="c divider--v" style="--x:90;--y:1;--w:0;--h:2"></span>
+    <span class="c lbl lbl--dim" style="--x:92;--y:1.35;--w:24;--h:1.4">T paper &middot; A index &middot; space run</span>
+  </div>
+
+  <div id="tags" aria-hidden="true"></div>
+</div><!-- /plate -->
+
+<!-- ===== SPECIMEN INDEX: the plate as its own drawing ==================== -->
+<section class="sheet" id="sheet" aria-label="Specimen index">
+  <div class="h">
+    <span class="t">Specimen index</span>
+    <span class="s">Every APC kit element, once on this plate / 30 items</span>
+  </div>
+  <div class="g" id="sheet-grid"></div>
+  <div class="f">
+    <span>Hover an item to locate it on the plate</span>
+    <span id="sheet-check">30 / 30</span>
+  </div>
+</section>
+</div><!-- /stage -->
+<script src="plate.js"></script>
+
+
+
+
+
+</div>
+</div>
+
+</body>
+</html>

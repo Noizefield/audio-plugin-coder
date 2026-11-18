@@ -1,0 +1,5128 @@
+{
+  "schema": "apc-hub-kit-catalog/1.0",
+  "description": "Hand-maintained catalog behind the Hub KIT page. Registered component names and mock scenarios are re-derived from templates/webview/apc-ui/*.js on every request; everything else (docs, demo scenes, coverage) lives here. test/hub-kit.test.js fails when the two disagree. The visual spec of every element (parts, states, sizes, tokens) lives in design_library/apc-minimal/design-system.json \"elements\". How to extend: .agents/guides/hub-kit.md",
+  "sources": {
+    "kitDir": "templates/webview/apc-ui",
+    "contract": "templates/webview/apc-ui/CONTRACT.md",
+    "guides": [
+      ".agents/guides/ui-kit-controls.md",
+      ".agents/guides/ui-kit-widgets.md",
+      ".agents/guides/ui-kit-viz.md",
+      ".agents/guides/ui-kit-panels.md",
+      ".agents/guides/ui-kit-native.md"
+    ],
+    "standards": [
+      ".agents/rules/product-standards.md",
+      "schemas/apc-standards.json"
+    ],
+    "themes": "design_library/manifest.json",
+    "elementSpec": "design_library/apc-minimal/design-system.json"
+  },
+  "groups": [
+    "Controls",
+    "Widgets",
+    "Visualisation",
+    "Context & Help",
+    "Chrome",
+    "Settings",
+    "Presets",
+    "Dialogs"
+  ],
+  "scenarioNotes": {
+    "demo": "Unlicensed: footer shows [DEMO]; gated verbs open the activation sheet.",
+    "trial": "Trial with 27 days left: [TRIAL 27 d].",
+    "licensed": "Licensed to a test customer.",
+    "unverified": "License file present but not verified: [UNVERIFIED] + explanation.",
+    "update-available": "Update 1.3.0 available with release notes; footer shows the update note.",
+    "update-failed": "First download fails at 40 percent, the retry succeeds.",
+    "io-error": "Every persisting call returns {error:\"io\", path}: shows the never-fail-silently toasts."
+  },
+  "gestureSets": {
+    "control": [
+      {
+        "input": "Drag (knob: vertical, ~150 px = full range; slider: along the track)",
+        "action": "adjust; wrapped in apc.param.begin ... set* ... end"
+      },
+      {
+        "input": "Shift+drag / Ctrl (Cmd on macOS)+drag",
+        "action": "fine x10 / super-fine x100; modifiers are latched at pointer-down"
+      },
+      {
+        "input": "Alt/Option+click",
+        "action": "reset to declared default (base value only, modulation untouched) - U-01"
+      },
+      {
+        "input": "Double-click",
+        "action": "reset by default; ui.double_click = \"value_entry\" opens value entry instead - U-02/U-15"
+      },
+      {
+        "input": "Click on the readout",
+        "action": "inline text entry: Enter commits, Esc cancels; accepts 850, 850 Hz, 1.2k, 1,2 kHz, -6 dB, 35%; invalid = red flash + stays focused; out of range = clamped + hint"
+      },
+      {
+        "input": "Wheel",
+        "action": "one notch = 1 % of range (Shift 0.1 %; stepped = one step); inside scrollable panels only after 120 ms hover or with Shift"
+      },
+      {
+        "input": "Arrow keys / PageUp, PageDown / Home, End",
+        "action": "1 % (Shift 0.1 %) / 10 % / min, max"
+      },
+      {
+        "input": "Enter or F2",
+        "action": "value entry (selector: open list; toggle: toggle)"
+      },
+      {
+        "input": "Space",
+        "action": "toggle (toggle) or open the list (selector)"
+      },
+      {
+        "input": "Delete / Backspace",
+        "action": "reset to default"
+      },
+      {
+        "input": "Right-click, Shift+F10, ContextMenu key, the \"...\" button, touch long-press",
+        "action": "context panel (never the browser menu) - U-03"
+      },
+      {
+        "input": "F1 or ? (not while typing), the visible Help button",
+        "action": "help mode: click any control for its manual entry; Esc or F1 leaves - U-09, X-09"
+      },
+      {
+        "input": "Esc",
+        "action": "closes entry / menu / context panel / manual / help mode"
+      }
+    ],
+    "context": [
+      {
+        "input": "Right-click, Shift+F10, ContextMenu key, \"...\" button, touch long-press",
+        "action": "open the panel (VALUE, MODULATION, MIDI, HELP in that order)"
+      },
+      {
+        "input": "Tab / Shift+Tab",
+        "action": "focus is trapped inside the panel (role=dialog)"
+      },
+      {
+        "input": "Esc",
+        "action": "closes the panel and returns focus to the control"
+      }
+    ],
+    "help": [
+      {
+        "input": "Hover or keyboard focus on a control",
+        "action": "info bar shows [Name] value (default x) - what effect ...; tooltip after ui.tooltip_delay_ms (400 ms)"
+      },
+      {
+        "input": "F1 or ? (not while typing)",
+        "action": "toggle help mode; clicking a control opens its manual entry without changing it"
+      },
+      {
+        "input": "Help button (always visible)",
+        "action": "same as F1; hosts often swallow F1 and ? - X-09"
+      },
+      {
+        "input": "Esc",
+        "action": "leave help mode / close the manual"
+      }
+    ],
+    "gripper": [
+      {
+        "input": "Drag the corner",
+        "action": "aspect-locked uniform scale, snaps to 5 %, clamped 50..300 %; calls apc.ui.setScale on release"
+      },
+      {
+        "input": "Arrow keys / PageUp, PageDown",
+        "action": "5 % / 25 % (the gripper is also a keyboard slider)"
+      }
+    ],
+    "scale": [
+      {
+        "input": "- / + buttons",
+        "action": "steps 50..300 % in 25 % steps - U-08"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "knob",
+      "registered": true,
+      "group": "Controls",
+      "title": "Knob",
+      "file": "apc-controls.js",
+      "guide": ".agents/guides/ui-kit-controls.md#markup",
+      "summary": "Rotary control: vertical drag, SVG ring with modulation arcs, readout under the dial, value entry on click. Reads its ParamDescriptor from the bridge.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"knob\" data-param=\"cutoff_hz\" data-label=\"CUTOFF\"\n     style=\"left:3rem;top:5rem;width:6rem;height:8rem\"></div>",
+      "options": [
+        {
+          "name": "data-param",
+          "required": true,
+          "desc": "Immutable parameter ID (X-01). The descriptor comes from apc.params.get."
+        },
+        {
+          "name": "data-label",
+          "desc": "Visible label and accessible name (default: existing text, else descriptor name)."
+        },
+        {
+          "name": "data-readout",
+          "values": "below|above|none",
+          "desc": "Readout position (below by default); \"false\" still hides it."
+        },
+        {
+          "name": "data-bipolar",
+          "values": "true",
+          "desc": "Value arc starts at the centre (automatic when min < 0 < max)."
+        },
+        {
+          "name": "data-size",
+          "values": "sm|md|lg|<length>|<rem>",
+          "desc": "Knob diameter: sm 2rem | md 3rem | lg 4rem | a CSS length | a bare number = rem (default --knob-size)."
+        },
+        {
+          "name": "data-unit",
+          "values": "inline|separate|none",
+          "desc": "Unit style: inline \"1.2 kHz\" (default), a dimmed separate span, or none (aria keeps the unit)."
+        },
+        {
+          "name": "data-ticks",
+          "values": "5|steps",
+          "desc": "5 = five ticks incl. both ends; steps = one per step of a stepped / choice parameter."
+        },
+        {
+          "name": "data-disabled",
+          "values": "true",
+          "desc": "No interaction, aria-disabled, out of the tab order; el.__apcCtl.setDisabled(bool) at runtime."
+        }
+      ],
+      "events": [
+        {
+          "name": "ctl:drag",
+          "dir": "out",
+          "payload": "{id, active}",
+          "note": "gesture start/end; the tooltip uses it"
+        },
+        {
+          "name": "undo:push",
+          "dir": "out",
+          "payload": "{label, id, before?, after?, kind?}",
+          "note": "module optional; nobody listening is fine"
+        },
+        {
+          "name": "params:changed",
+          "dir": "in",
+          "payload": "{id}",
+          "note": "refetch the descriptor (after modulation / MIDI edits)"
+        },
+        {
+          "name": "settings:changed",
+          "dir": "in",
+          "payload": "settings or settings.ui",
+          "note": "refreshes APC.prefs (double_click, wheel_target, tooltips ...)"
+        },
+        {
+          "name": "license:gated",
+          "dir": "out",
+          "payload": "{fn, result}",
+          "note": "when a bridge call returns {error:\"gated\"}"
+        },
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value, modulated?}",
+          "note": "live updates; id \"*\" re-reads everything"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.param.set",
+        "apc.param.begin",
+        "apc.param.end",
+        "apc.param.reset",
+        "apc.settings.get"
+      ],
+      "gestureSet": "control",
+      "standards": [
+        "U-01",
+        "U-02",
+        "U-03",
+        "U-04",
+        "U-15",
+        "X-09"
+      ],
+      "demo": {
+        "cols": 34,
+        "rows": 14,
+        "scripts": [
+          "apc-controls.js",
+          "apc-context.js",
+          "apc-help.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:6rem;height:9rem\" data-apc=\"knob\" data-param=\"cutoff_hz\" data-label=\"CUTOFF\"></div><div class=\"apc-cell\" style=\"left:9rem;top:2rem;width:6rem;height:9rem\" data-apc=\"knob\" data-param=\"gain_db\" data-label=\"GAIN\"></div><div class=\"apc-cell\" style=\"left:16rem;top:2rem;width:6rem;height:9rem\" data-apc=\"knob\" data-param=\"detune_ct\" data-label=\"DETUNE\"></div><div class=\"apc-cell\" style=\"left:23rem;top:2rem;width:6rem;height:9rem\" data-apc=\"knob\" data-param=\"lfo_rate_hz\" data-label=\"RATE\" data-readout=\"false\"></div>",
+        "expect": [
+          "[data-apc=\"knob\"][role=\"slider\"]"
+        ],
+        "hint": "CUTOFF is modulated (ring + arcs) and MIDI-learned. Try drag, Shift+drag, Alt+click, double-click, click the readout, right-click."
+      },
+      "tests": [
+        "kit-a.html"
+      ]
+    },
+    {
+      "name": "slider",
+      "registered": true,
+      "group": "Controls",
+      "title": "Slider",
+      "file": "apc-controls.js",
+      "guide": ".agents/guides/ui-kit-controls.md#markup",
+      "summary": "Linear control, vertical (default) or horizontal, with modulation bands along the track and the same readout / entry rules as the knob.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"slider\" data-param=\"mix_pct\" data-label=\"MIX\"></div>\n<div class=\"apc-cell\" data-apc=\"slider\" data-param=\"mix_pct\" data-orientation=\"h\"></div>",
+      "options": [
+        {
+          "name": "data-param",
+          "required": true,
+          "desc": "Immutable parameter ID (X-01)."
+        },
+        {
+          "name": "data-label",
+          "desc": "Visible label and accessible name."
+        },
+        {
+          "name": "data-orientation",
+          "values": "h",
+          "desc": "Horizontal slider (default vertical)."
+        },
+        {
+          "name": "data-readout",
+          "values": "below|above|none",
+          "desc": "Readout position (below by default); \"false\" still hides it."
+        },
+        {
+          "name": "data-size",
+          "values": "sm|md|lg|<length>|<rem>",
+          "desc": "Slider length: sm 4rem | md 6rem | lg 9rem | a CSS length | a bare number = rem (default --slider-len, 6rem)."
+        },
+        {
+          "name": "data-orient",
+          "values": "horizontal|h|vertical",
+          "desc": "Orientation (alias of data-orientation)."
+        },
+        {
+          "name": "data-unit",
+          "values": "inline|separate|none",
+          "desc": "Unit style, as the knob."
+        },
+        {
+          "name": "data-ticks",
+          "values": "5|steps",
+          "desc": "Ticks along the track."
+        },
+        {
+          "name": "data-bipolar",
+          "values": "true",
+          "desc": "Fill from the centre (automatic when the range spans 0)."
+        },
+        {
+          "name": "data-disabled",
+          "values": "true",
+          "desc": "No interaction, aria-disabled, out of the tab order; el.__apcCtl.setDisabled(bool) at runtime."
+        }
+      ],
+      "events": [
+        {
+          "name": "ctl:drag",
+          "dir": "out",
+          "payload": "{id, active}",
+          "note": "gesture start/end; the tooltip uses it"
+        },
+        {
+          "name": "undo:push",
+          "dir": "out",
+          "payload": "{label, id, before?, after?, kind?}",
+          "note": "module optional; nobody listening is fine"
+        },
+        {
+          "name": "params:changed",
+          "dir": "in",
+          "payload": "{id}",
+          "note": "refetch the descriptor (after modulation / MIDI edits)"
+        },
+        {
+          "name": "settings:changed",
+          "dir": "in",
+          "payload": "settings or settings.ui",
+          "note": "refreshes APC.prefs (double_click, wheel_target, tooltips ...)"
+        },
+        {
+          "name": "license:gated",
+          "dir": "out",
+          "payload": "{fn, result}",
+          "note": "when a bridge call returns {error:\"gated\"}"
+        },
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value, modulated?}",
+          "note": "live updates; id \"*\" re-reads everything"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.param.set",
+        "apc.param.begin",
+        "apc.param.end",
+        "apc.param.reset",
+        "apc.settings.get"
+      ],
+      "gestureSet": "control",
+      "standards": [
+        "U-01",
+        "U-02",
+        "U-04",
+        "U-15",
+        "X-09"
+      ],
+      "demo": {
+        "cols": 34,
+        "rows": 14,
+        "scripts": [
+          "apc-controls.js",
+          "apc-context.js",
+          "apc-help.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:1.5rem;width:4rem;height:11rem\" data-apc=\"slider\" data-param=\"mix_pct\" data-label=\"MIX\"></div><div class=\"apc-cell\" style=\"left:8rem;top:1.5rem;width:4rem;height:11rem\" data-apc=\"slider\" data-param=\"lfo_depth_pct\" data-label=\"DEPTH\"></div><div class=\"apc-cell\" style=\"left:14rem;top:2rem;width:18rem;height:3.5rem\" data-apc=\"slider\" data-param=\"gain_db\" data-label=\"GAIN\" data-orientation=\"h\"></div><div class=\"apc-cell\" style=\"left:14rem;top:7.5rem;width:18rem;height:3.5rem\" data-apc=\"slider\" data-param=\"drive_db\" data-label=\"DRIVE\" data-orientation=\"h\"></div>",
+        "expect": [
+          "[data-apc=\"slider\"][role=\"slider\"]"
+        ],
+        "hint": "DEPTH has a modulation band. Click the track to jump, drag to slide."
+      },
+      "tests": [
+        "kit-a.html"
+      ]
+    },
+    {
+      "name": "selector",
+      "registered": true,
+      "group": "Controls",
+      "title": "Selector",
+      "file": "apc-controls.js",
+      "guide": ".agents/guides/ui-kit-controls.md#markup",
+      "summary": "Choice list. descriptor.choices are labels and labels (not indexes) go over the bridge. Arrows step, the menu lists the labels.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"selector\" data-param=\"osc_wave\" data-label=\"WAVE\"></div>",
+      "options": [
+        {
+          "name": "data-param",
+          "required": true,
+          "desc": "Parameter ID; descriptor must carry choices[]."
+        },
+        {
+          "name": "data-label",
+          "desc": "Visible label and accessible name."
+        },
+        {
+          "name": "data-size",
+          "values": "sm|md|lg|<length>|<rem>",
+          "desc": "Control height (default --ctl-h)."
+        },
+        {
+          "name": "data-steppers",
+          "values": "false",
+          "desc": "Hide the visible previous / next buttons (default: shown, 1:1 with ArrowDown / ArrowUp)."
+        },
+        {
+          "name": "data-disabled",
+          "values": "true",
+          "desc": "No interaction, aria-disabled, out of the tab order; el.__apcCtl.setDisabled(bool) at runtime."
+        }
+      ],
+      "events": [
+        {
+          "name": "ctl:drag",
+          "dir": "out",
+          "payload": "{id, active}",
+          "note": "gesture start/end; the tooltip uses it"
+        },
+        {
+          "name": "undo:push",
+          "dir": "out",
+          "payload": "{label, id, before?, after?, kind?}",
+          "note": "module optional; nobody listening is fine"
+        },
+        {
+          "name": "params:changed",
+          "dir": "in",
+          "payload": "{id}",
+          "note": "refetch the descriptor (after modulation / MIDI edits)"
+        },
+        {
+          "name": "settings:changed",
+          "dir": "in",
+          "payload": "settings or settings.ui",
+          "note": "refreshes APC.prefs (double_click, wheel_target, tooltips ...)"
+        },
+        {
+          "name": "license:gated",
+          "dir": "out",
+          "payload": "{fn, result}",
+          "note": "when a bridge call returns {error:\"gated\"}"
+        },
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value, modulated?}",
+          "note": "live updates; id \"*\" re-reads everything"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.param.set",
+        "apc.param.begin",
+        "apc.param.end",
+        "apc.param.reset",
+        "apc.settings.get"
+      ],
+      "gestureSet": "control",
+      "standards": [
+        "U-01",
+        "U-02",
+        "X-09"
+      ],
+      "demo": {
+        "cols": 24,
+        "rows": 10,
+        "scripts": [
+          "apc-controls.js",
+          "apc-context.js",
+          "apc-help.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:8rem;height:5rem\" data-apc=\"selector\" data-param=\"osc_wave\" data-label=\"WAVE\"></div><div class=\"apc-cell\" style=\"left:12rem;top:2rem;width:8rem;height:5rem\" data-apc=\"selector\" data-param=\"bypass\" data-label=\"BYPASS\"></div>",
+        "expect": [
+          "[data-apc=\"selector\"][role]"
+        ],
+        "hint": "Click or press Space to open the list; arrows step; double-click resets."
+      },
+      "tests": [
+        "kit-a.html"
+      ]
+    },
+    {
+      "name": "toggle",
+      "registered": true,
+      "group": "Controls",
+      "title": "Toggle",
+      "file": "apc-controls.js",
+      "guide": ".agents/guides/ui-kit-controls.md#markup",
+      "summary": "Boolean switch (role=switch). Sends true/false when the descriptor value is boolean, otherwise 0/1.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"toggle\" data-param=\"bypass\" data-label=\"BYPASS\"></div>",
+      "options": [
+        {
+          "name": "data-param",
+          "required": true,
+          "desc": "Parameter ID."
+        },
+        {
+          "name": "data-label",
+          "desc": "Visible label and accessible name."
+        },
+        {
+          "name": "data-size",
+          "values": "sm|md|lg|<length>|<rem>",
+          "desc": "Control height (default --ctl-h)."
+        },
+        {
+          "name": "data-variant",
+          "values": "button",
+          "desc": "Boxed look with a square LED instead of the sliding switch."
+        },
+        {
+          "name": "data-disabled",
+          "values": "true",
+          "desc": "No interaction, aria-disabled, out of the tab order; el.__apcCtl.setDisabled(bool) at runtime."
+        }
+      ],
+      "events": [
+        {
+          "name": "ctl:drag",
+          "dir": "out",
+          "payload": "{id, active}",
+          "note": "gesture start/end; the tooltip uses it"
+        },
+        {
+          "name": "undo:push",
+          "dir": "out",
+          "payload": "{label, id, before?, after?, kind?}",
+          "note": "module optional; nobody listening is fine"
+        },
+        {
+          "name": "params:changed",
+          "dir": "in",
+          "payload": "{id}",
+          "note": "refetch the descriptor (after modulation / MIDI edits)"
+        },
+        {
+          "name": "settings:changed",
+          "dir": "in",
+          "payload": "settings or settings.ui",
+          "note": "refreshes APC.prefs (double_click, wheel_target, tooltips ...)"
+        },
+        {
+          "name": "license:gated",
+          "dir": "out",
+          "payload": "{fn, result}",
+          "note": "when a bridge call returns {error:\"gated\"}"
+        },
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value, modulated?}",
+          "note": "live updates; id \"*\" re-reads everything"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.param.set",
+        "apc.param.begin",
+        "apc.param.end",
+        "apc.param.reset",
+        "apc.settings.get"
+      ],
+      "gestureSet": "control",
+      "standards": [
+        "U-01",
+        "X-09"
+      ],
+      "demo": {
+        "cols": 24,
+        "rows": 10,
+        "scripts": [
+          "apc-controls.js",
+          "apc-context.js",
+          "apc-help.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:8rem;height:5rem\" data-apc=\"toggle\" data-param=\"bypass\" data-label=\"BYPASS\"></div>",
+        "expect": [
+          "[data-apc=\"toggle\"][role=\"switch\"]"
+        ],
+        "hint": "Click or Space toggles; Alt+click resets to the declared default."
+      },
+      "tests": [
+        "kit-a.html"
+      ]
+    },
+    {
+      "name": "button",
+      "registered": true,
+      "group": "Widgets",
+      "title": "Button",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "Action (momentary), latching toggle button or primary action with an optional LED and icon slot; can drive a parameter (press = on, release = off).",
+      "markup": "<div class=\"apc-cell\" data-apc=\"button\" data-label=\"Reset\" data-variant=\"action\"\n     style=\"left:2rem;top:2rem;width:7rem\"></div>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-variant",
+          "desc": "action (momentary, default) | latch (toggle, aria-pressed) | primary (emphasised action).",
+          "values": "action|latch|primary"
+        },
+        {
+          "name": "data-led",
+          "desc": "LED slot: on while latched / held; the tone colours it.",
+          "values": "true|ok|warn|error"
+        },
+        {
+          "name": "data-icon",
+          "desc": "Glyph before the label; or a child with data-slot=\"icon\" (inline svg)."
+        },
+        {
+          "name": "data-pressed",
+          "desc": "Initial latch state.",
+          "values": "true"
+        },
+        {
+          "name": "data-action",
+          "desc": "Action name carried in the events."
+        },
+        {
+          "name": "data-param",
+          "desc": "Optional parameter: action = press writes max/on, release min/off (one host gesture); latch toggles min/max (pressed = value > min)."
+        }
+      ],
+      "events": [
+        {
+          "name": "apc:click (DOM)",
+          "dir": "out",
+          "payload": "{id, pressed}",
+          "note": "action variants"
+        },
+        {
+          "name": "apc:change (DOM)",
+          "dir": "out",
+          "payload": "{pressed, value}",
+          "note": "CustomEvent on the host, bubbles"
+        },
+        {
+          "name": "button",
+          "dir": "out",
+          "payload": "{id, variant, action, param?, pressed}",
+          "note": "bus event"
+        },
+        {
+          "name": "widget:change",
+          "dir": "out",
+          "payload": "{id, kind, param?, value, ...}",
+          "note": "bus twin of the DOM event apc:change"
+        },
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value, modulated?}",
+          "note": "live updates of a bound parameter"
+        },
+        {
+          "name": "params:changed",
+          "dir": "in",
+          "payload": "{id}",
+          "note": "refetch the descriptor"
+        },
+        {
+          "name": "undo:push",
+          "dir": "out",
+          "payload": "{label, id, before?, after?, kind?}",
+          "note": "module optional; nobody listening is fine"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.param.set",
+        "apc.param.begin",
+        "apc.param.end"
+      ],
+      "gestures": [
+        {
+          "input": "Click / Enter / Space",
+          "action": "activate (native button); latch toggles aria-pressed"
+        },
+        {
+          "input": "Enter or Space with data-param",
+          "action": "press on keydown, release on keyup (one begin ... end gesture)"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 9,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:7rem\" data-apc=\"button\" data-label=\"Reset\"></div><div class=\"apc-cell\" style=\"left:10rem;top:2rem;width:7rem\" data-apc=\"button\" data-label=\"Apply\" data-variant=\"primary\"></div><div class=\"apc-cell\" style=\"left:18rem;top:2rem;width:8rem\" data-apc=\"button\" data-label=\"Bypass\" data-variant=\"latch\" data-led=\"true\" data-param=\"bypass\"></div><div class=\"apc-cell\" style=\"left:27rem;top:2rem;width:7rem\" data-apc=\"button\" data-label=\"Mute\" data-variant=\"latch\"></div><div class=\"apc-cell\" style=\"left:2rem;top:5rem;width:7rem\" data-apc=\"button\" data-label=\"Disabled\" data-disabled=\"true\"></div><div class=\"apc-cell\" style=\"left:10rem;top:5rem;width:7rem\" data-apc=\"button\" data-label=\"Play\" data-icon=\"▶\"></div>",
+        "expect": [
+          ".apc-w--button .apc-button"
+        ],
+        "hint": "Bypass is bound to the mock parameter \"bypass\" (latch + LED). Tab to a button and press Enter/Space; the disabled one is skipped."
+      }
+    },
+    {
+      "name": "buttons",
+      "registered": true,
+      "group": "Widgets",
+      "title": "Button group",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "One choice of N shown as a joined button row or column; binds to a choice parameter or static items.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"buttons\" data-label=\"WAVE\" data-param=\"osc_wave\"\n     style=\"left:2rem;top:2rem;width:16rem\"></div>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-param",
+          "desc": "Choice parameter (labels cross the bridge) or a stepped numeric parameter."
+        },
+        {
+          "name": "data-items",
+          "desc": "JSON list [\"A\", {\"value\":\"b\",\"label\":\"B\",\"disabled\":true,\"icon\":\"●\",\"title\":\"..\"}] or \"A|B|C\"; or child <option> elements."
+        },
+        {
+          "name": "data-value",
+          "desc": "Initial value."
+        },
+        {
+          "name": "data-orient",
+          "desc": "horizontal | vertical.",
+          "values": "horizontal|vertical"
+        }
+      ],
+      "events": [
+        {
+          "name": "apc:change (DOM)",
+          "dir": "out",
+          "payload": "{index, value, label}",
+          "note": "CustomEvent on the host, bubbles"
+        },
+        {
+          "name": "widget:change",
+          "dir": "out",
+          "payload": "{id, kind, param?, value, ...}",
+          "note": "bus twin of the DOM event apc:change"
+        },
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value, modulated?}",
+          "note": "live updates of a bound parameter"
+        },
+        {
+          "name": "params:changed",
+          "dir": "in",
+          "payload": "{id}",
+          "note": "refetch the descriptor"
+        },
+        {
+          "name": "undo:push",
+          "dir": "out",
+          "payload": "{label, id, before?, after?, kind?}",
+          "note": "module optional; nobody listening is fine"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.param.set",
+        "apc.param.begin",
+        "apc.param.end"
+      ],
+      "gestures": [
+        {
+          "input": "Click an item",
+          "action": "select it"
+        },
+        {
+          "input": "Arrow keys (all four)",
+          "action": "move AND select, wrapping"
+        },
+        {
+          "input": "Home / End",
+          "action": "first / last item"
+        },
+        {
+          "input": "Space / Enter",
+          "action": "select the focused item"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 12,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:20rem\" data-apc=\"buttons\" data-label=\"WAVE\" data-param=\"osc_wave\"></div><div class=\"apc-cell\" style=\"left:2rem;top:6rem;width:14rem\" data-apc=\"buttons\" data-label=\"RANGE\" data-items=\"[&quot;Low&quot;,&quot;Mid&quot;,&quot;High&quot;]\" data-value=\"Mid\"></div><div class=\"apc-cell\" style=\"left:26rem;top:2rem;width:7rem\" data-apc=\"buttons\" data-label=\"AXIS\" data-items=\"[&quot;X&quot;,&quot;Y&quot;,&quot;Z&quot;]\" data-orient=\"vertical\"></div>",
+        "expect": [
+          ".apc-w--buttons .apc-seg"
+        ],
+        "hint": "The first group follows the mock choice parameter osc_wave (Sine/Saw/Square/Triangle); the others are static. Arrow keys move and select."
+      }
+    },
+    {
+      "name": "segmented",
+      "registered": true,
+      "group": "Widgets",
+      "title": "Segmented",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "Compact one-of-N selector: the same control as the button group under its other name.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"segmented\" data-items='[\"A\",\"B\",\"C\"]' data-value=\"B\"\n     style=\"left:2rem;top:2rem;width:12rem\"></div>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-param",
+          "desc": "Choice parameter (labels cross the bridge) or a stepped numeric parameter."
+        },
+        {
+          "name": "data-items",
+          "desc": "JSON list [\"A\", {\"value\":\"b\",\"label\":\"B\",\"disabled\":true,\"icon\":\"●\",\"title\":\"..\"}] or \"A|B|C\"; or child <option> elements."
+        },
+        {
+          "name": "data-value",
+          "desc": "Initial value."
+        },
+        {
+          "name": "data-orient",
+          "desc": "horizontal | vertical.",
+          "values": "horizontal|vertical"
+        }
+      ],
+      "events": [
+        {
+          "name": "apc:change (DOM)",
+          "dir": "out",
+          "payload": "{index, value, label}",
+          "note": "CustomEvent on the host, bubbles"
+        },
+        {
+          "name": "widget:change",
+          "dir": "out",
+          "payload": "{id, kind, param?, value, ...}",
+          "note": "bus twin of the DOM event apc:change"
+        },
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value, modulated?}",
+          "note": "live updates of a bound parameter"
+        },
+        {
+          "name": "params:changed",
+          "dir": "in",
+          "payload": "{id}",
+          "note": "refetch the descriptor"
+        },
+        {
+          "name": "undo:push",
+          "dir": "out",
+          "payload": "{label, id, before?, after?, kind?}",
+          "note": "module optional; nobody listening is fine"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.param.set",
+        "apc.param.begin",
+        "apc.param.end"
+      ],
+      "gestures": [
+        {
+          "input": "Click an item",
+          "action": "select it"
+        },
+        {
+          "input": "Arrow keys (all four)",
+          "action": "move AND select, wrapping"
+        },
+        {
+          "input": "Home / End",
+          "action": "first / last item"
+        },
+        {
+          "input": "Space / Enter",
+          "action": "select the focused item"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 10,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:14rem\" data-apc=\"segmented\" data-label=\"MODE\" data-items=\"[&quot;Mono&quot;,&quot;Poly&quot;,&quot;Legato&quot;]\" data-value=\"Poly\"></div><div class=\"apc-cell\" style=\"left:2rem;top:6rem;width:16rem\" data-apc=\"segmented\" data-label=\"WAVE\" data-param=\"osc_wave\" data-size=\"sm\"></div><div class=\"apc-cell\" style=\"left:22rem;top:2rem;width:8rem\" data-apc=\"segmented\" data-label=\"OFF\" data-items=\"[{&quot;value&quot;:&quot;a&quot;,&quot;label&quot;:&quot;A&quot;},{&quot;value&quot;:&quot;b&quot;,&quot;label&quot;:&quot;B&quot;,&quot;disabled&quot;:true},{&quot;value&quot;:&quot;c&quot;,&quot;label&quot;:&quot;C&quot;}]\"></div>",
+        "expect": [
+          ".apc-w--buttons .apc-seg"
+        ],
+        "hint": "Same element as \"buttons\". The third group has a disabled item that arrow keys skip."
+      }
+    },
+    {
+      "name": "checkbox",
+      "registered": true,
+      "group": "Widgets",
+      "title": "Checkbox",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "Boolean option with a square box, tick, label and an indeterminate (mixed) state; binds to a two-state parameter (checked = value > min).",
+      "markup": "<div class=\"apc-cell\" data-apc=\"checkbox\" data-label=\"Bypass\" data-param=\"bypass\"\n     style=\"left:2rem;top:2rem;width:10rem\"></div>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-param",
+          "desc": "Boolean / two-state parameter."
+        },
+        {
+          "name": "data-checked",
+          "desc": "Initial checked state.",
+          "values": "true"
+        },
+        {
+          "name": "data-indeterminate",
+          "desc": "Shows the mixed state until the first toggle.",
+          "values": "true"
+        }
+      ],
+      "events": [
+        {
+          "name": "apc:change (DOM)",
+          "dir": "out",
+          "payload": "{checked, value}",
+          "note": "CustomEvent on the host, bubbles"
+        },
+        {
+          "name": "widget:change",
+          "dir": "out",
+          "payload": "{id, kind, param?, value, ...}",
+          "note": "bus twin of the DOM event apc:change"
+        },
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value, modulated?}",
+          "note": "live updates of a bound parameter"
+        },
+        {
+          "name": "params:changed",
+          "dir": "in",
+          "payload": "{id}",
+          "note": "refetch the descriptor"
+        },
+        {
+          "name": "undo:push",
+          "dir": "out",
+          "payload": "{label, id, before?, after?, kind?}",
+          "note": "module optional; nobody listening is fine"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.param.set",
+        "apc.param.begin",
+        "apc.param.end"
+      ],
+      "gestures": [
+        {
+          "input": "Click the box or the label / Space",
+          "action": "toggle"
+        },
+        {
+          "input": "Indeterminate",
+          "action": "the first toggle leaves \"mixed\" and checks"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 9,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:11rem\" data-apc=\"checkbox\" data-label=\"Bypass\" data-param=\"bypass\"></div><div class=\"apc-cell\" style=\"left:14rem;top:2rem;width:11rem\" data-apc=\"checkbox\" data-label=\"Snap to grid\" data-checked=\"true\"></div><div class=\"apc-cell\" style=\"left:2rem;top:5rem;width:11rem\" data-apc=\"checkbox\" data-label=\"Mixed\" data-indeterminate=\"true\"></div><div class=\"apc-cell\" style=\"left:14rem;top:5rem;width:11rem\" data-apc=\"checkbox\" data-label=\"Disabled\" data-disabled=\"true\"></div>",
+        "expect": [
+          ".apc-w--checkbox [role=\"checkbox\"]"
+        ],
+        "hint": "Bypass follows the mock parameter of the same name. \"Mixed\" shows aria-checked=\"mixed\" until clicked."
+      }
+    },
+    {
+      "name": "radio",
+      "registered": true,
+      "group": "Widgets",
+      "title": "Radio group",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "One choice of N as indicator-plus-label rows (stacked by default); same options, events and keys as the button group.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"radio\" data-label=\"Mode\" data-param=\"osc_wave\"\n     style=\"left:2rem;top:2rem;width:10rem\"></div>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-param",
+          "desc": "Choice parameter (labels cross the bridge) or a stepped numeric parameter."
+        },
+        {
+          "name": "data-items",
+          "desc": "JSON list [\"A\", {\"value\":\"b\",\"label\":\"B\",\"disabled\":true,\"icon\":\"●\",\"title\":\"..\"}] or \"A|B|C\"; or child <option> elements."
+        },
+        {
+          "name": "data-value",
+          "desc": "Initial value."
+        },
+        {
+          "name": "data-orient",
+          "desc": "horizontal | vertical.",
+          "values": "horizontal|vertical"
+        }
+      ],
+      "events": [
+        {
+          "name": "apc:change (DOM)",
+          "dir": "out",
+          "payload": "{index, value, label}",
+          "note": "CustomEvent on the host, bubbles"
+        },
+        {
+          "name": "widget:change",
+          "dir": "out",
+          "payload": "{id, kind, param?, value, ...}",
+          "note": "bus twin of the DOM event apc:change"
+        },
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value, modulated?}",
+          "note": "live updates of a bound parameter"
+        },
+        {
+          "name": "params:changed",
+          "dir": "in",
+          "payload": "{id}",
+          "note": "refetch the descriptor"
+        },
+        {
+          "name": "undo:push",
+          "dir": "out",
+          "payload": "{label, id, before?, after?, kind?}",
+          "note": "module optional; nobody listening is fine"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.param.set",
+        "apc.param.begin",
+        "apc.param.end"
+      ],
+      "gestures": [
+        {
+          "input": "Click an item",
+          "action": "select it"
+        },
+        {
+          "input": "Arrow keys (all four)",
+          "action": "move AND select, wrapping"
+        },
+        {
+          "input": "Home / End",
+          "action": "first / last item"
+        },
+        {
+          "input": "Space / Enter",
+          "action": "select the focused item"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 12,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:10rem\" data-apc=\"radio\" data-label=\"WAVE\" data-param=\"osc_wave\"></div><div class=\"apc-cell\" style=\"left:14rem;top:2rem;width:20rem\" data-apc=\"radio\" data-label=\"QUALITY\" data-items=\"[&quot;Draft&quot;,&quot;Good&quot;,&quot;Best&quot;]\" data-value=\"Good\" data-orient=\"horizontal\"></div>",
+        "expect": [
+          ".apc-w--radio [role=\"radio\"]"
+        ],
+        "hint": "Vertical group bound to osc_wave; the horizontal one is static. The round look is a token: set --r-radio: 50%."
+      }
+    },
+    {
+      "name": "dropdown",
+      "registered": true,
+      "group": "Widgets",
+      "title": "Dropdown",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "Closed field that opens a popup listbox (optionally searchable); binds to a choice or stepped parameter.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"dropdown\" data-label=\"WAVE\" data-param=\"osc_wave\" data-searchable=\"true\"\n     style=\"left:2rem;top:2rem;width:10rem\"></div>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-param",
+          "desc": "Choice parameter (labels cross the bridge) or a stepped numeric parameter."
+        },
+        {
+          "name": "data-items",
+          "desc": "JSON list [\"A\", {\"value\":\"b\",\"label\":\"B\",\"disabled\":true,\"icon\":\"●\",\"title\":\"..\"}] or \"A|B|C\"; or child <option> elements."
+        },
+        {
+          "name": "data-value",
+          "desc": "Initial value."
+        },
+        {
+          "name": "data-orient",
+          "desc": "horizontal | vertical.",
+          "values": "horizontal|vertical"
+        },
+        {
+          "name": "data-placeholder",
+          "desc": "Text shown when nothing is selected."
+        },
+        {
+          "name": "data-searchable",
+          "desc": "Filter field in the popup.",
+          "values": "true"
+        }
+      ],
+      "events": [
+        {
+          "name": "apc:change (DOM)",
+          "dir": "out",
+          "payload": "{index, value, label}",
+          "note": "CustomEvent on the host, bubbles"
+        },
+        {
+          "name": "widget:change",
+          "dir": "out",
+          "payload": "{id, kind, param?, value, ...}",
+          "note": "bus twin of the DOM event apc:change"
+        },
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value, modulated?}",
+          "note": "live updates of a bound parameter"
+        },
+        {
+          "name": "params:changed",
+          "dir": "in",
+          "payload": "{id}",
+          "note": "refetch the descriptor"
+        },
+        {
+          "name": "undo:push",
+          "dir": "out",
+          "payload": "{label, id, before?, after?, kind?}",
+          "note": "module optional; nobody listening is fine"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.param.set",
+        "apc.param.begin",
+        "apc.param.end"
+      ],
+      "gestures": [
+        {
+          "input": "Closed: Down / Up / Enter / Space / Alt+Down",
+          "action": "open the popup"
+        },
+        {
+          "input": "Closed: typing",
+          "action": "opens and jumps (type-ahead)"
+        },
+        {
+          "input": "Open: arrows, PageUp / PageDown, Home / End",
+          "action": "move; Enter (Space unless searchable) chooses"
+        },
+        {
+          "input": "Esc / Tab / outside click",
+          "action": "close (Esc returns focus to the field)"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 14,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:11rem\" data-apc=\"dropdown\" data-label=\"WAVE\" data-param=\"osc_wave\"></div><div class=\"apc-cell\" style=\"left:15rem;top:2rem;width:11rem\" data-apc=\"dropdown\" data-label=\"SEARCHABLE\" data-searchable=\"true\" data-items=\"[&quot;Reverb&quot;,&quot;Delay&quot;,&quot;Chorus&quot;,&quot;Flanger&quot;,&quot;Phaser&quot;,&quot;Distortion&quot;,&quot;Bitcrusher&quot;,&quot;Compressor&quot;,&quot;Limiter&quot;,&quot;Equalizer&quot;]\" data-placeholder=\"Pick an effect\"></div><div class=\"apc-cell\" style=\"left:28rem;top:2rem;width:6rem\" data-apc=\"dropdown\" data-label=\"SIZE\" data-items=\"[&quot;S&quot;,&quot;M&quot;,&quot;L&quot;]\" data-value=\"M\" data-size=\"sm\"></div>",
+        "expect": [
+          ".apc-w--dropdown [role=\"combobox\"]"
+        ],
+        "hint": "Click or press Down to open; the popup flips and clamps inside the plate. Type to jump; the middle one filters."
+      }
+    },
+    {
+      "name": "menu",
+      "registered": true,
+      "group": "Widgets",
+      "title": "Menu",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "Popup, anchor or context menu with checkable items, shortcuts, separators and one submenu level; also available as APC.widgets.openMenu(items, opts).",
+      "markup": "<div class=\"apc-cell\" data-apc=\"menu\" data-label=\"File\" data-onselect=\"onMenu\"\n     data-items='[{\"id\":\"new\",\"label\":\"New\",\"shortcut\":\"Ctrl+N\"},\"-\",{\"id\":\"snap\",\"label\":\"Snap\",\"checked\":true}]'\n     style=\"left:2rem;top:2rem;width:6rem\"></div>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-label",
+          "desc": "Caption of the trigger button."
+        },
+        {
+          "name": "data-items",
+          "desc": "JSON items: keys id, label, shortcut, checked, disabled, title, items[] (submenu); \"-\" or {separator:true}."
+        },
+        {
+          "name": "data-trigger",
+          "desc": "none = no button (open by API or context).",
+          "values": "none"
+        },
+        {
+          "name": "data-context",
+          "desc": "Open at the pointer on contextmenu / ContextMenu key / Shift+F10 of that area.",
+          "values": "true|parent|<selector>"
+        },
+        {
+          "name": "data-onselect",
+          "desc": "Name of a global function called with the chosen item."
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true = disabled trigger.",
+          "values": "true"
+        }
+      ],
+      "events": [
+        {
+          "name": "menu (bus)",
+          "dir": "out",
+          "payload": "{id: host id, item: {id, label, checked, shortcut}}",
+          "note": "APC.emit(\"menu\", ...)"
+        },
+        {
+          "name": "apc:select (DOM)",
+          "dir": "out",
+          "payload": "{id, item}",
+          "note": "CustomEvent on the host"
+        },
+        {
+          "name": "handle.onselect",
+          "dir": "out",
+          "payload": "item",
+          "note": "assign a function"
+        }
+      ],
+      "bridge": [],
+      "gestures": [
+        {
+          "input": "Trigger: click / Enter / Space",
+          "action": "open; Down / Up open at the first / last item"
+        },
+        {
+          "input": "Menu: arrows (wrap), Home / End",
+          "action": "move"
+        },
+        {
+          "input": "Right / Left",
+          "action": "open / close a submenu (Esc on the root closes and refocuses the trigger)"
+        },
+        {
+          "input": "Enter / Space",
+          "action": "use the item (checkable items toggle)"
+        },
+        {
+          "input": "Tab / outside click",
+          "action": "close"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 14,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:7rem\" data-apc=\"menu\" data-label=\"File\" data-items=\"[{&quot;id&quot;:&quot;new&quot;,&quot;label&quot;:&quot;New&quot;,&quot;shortcut&quot;:&quot;Ctrl+N&quot;},{&quot;id&quot;:&quot;open&quot;,&quot;label&quot;:&quot;Open...&quot;,&quot;shortcut&quot;:&quot;Ctrl+O&quot;},&quot;-&quot;,{&quot;id&quot;:&quot;snap&quot;,&quot;label&quot;:&quot;Snap to grid&quot;,&quot;checked&quot;:true},{&quot;id&quot;:&quot;export&quot;,&quot;label&quot;:&quot;Export&quot;,&quot;items&quot;:[{&quot;id&quot;:&quot;wav&quot;,&quot;label&quot;:&quot;WAV&quot;},{&quot;id&quot;:&quot;mp3&quot;,&quot;label&quot;:&quot;MP3&quot;,&quot;disabled&quot;:true}]}]\"></div><div class=\"apc-cell\" style=\"left:10rem;top:2rem;width:7rem\" data-apc=\"menu\" data-label=\"Edit\" data-items=\"[{&quot;id&quot;:&quot;undo&quot;,&quot;label&quot;:&quot;Undo&quot;,&quot;shortcut&quot;:&quot;Ctrl+Z&quot;},{&quot;id&quot;:&quot;redo&quot;,&quot;label&quot;:&quot;Redo&quot;,&quot;shortcut&quot;:&quot;Ctrl+Y&quot;}]\"></div><div class=\"apc-cell\" style=\"left:2rem;top:6rem;width:30rem;height:5rem\" data-apc=\"menu\" data-trigger=\"none\" data-context=\"parent\" data-items=\"[{&quot;id&quot;:&quot;cut&quot;,&quot;label&quot;:&quot;Cut&quot;},{&quot;id&quot;:&quot;copy&quot;,&quot;label&quot;:&quot;Copy&quot;},{&quot;id&quot;:&quot;paste&quot;,&quot;label&quot;:&quot;Paste&quot;}]\"><div style=\"padding:.5rem;font:var(--t-label) var(--font-ui);color:var(--ink-2);border:var(--stroke) dashed var(--rule-2);height:100%;box-sizing:border-box\">RIGHT-CLICK HERE FOR A CONTEXT MENU</div></div>",
+        "expect": [
+          ".apc-w--menu .apc-menu-btn"
+        ],
+        "hint": "File has a checkable item and a submenu (Right arrow). The dashed area is a context-menu target (right-click or Shift+F10)."
+      }
+    },
+    {
+      "name": "tabs",
+      "registered": true,
+      "group": "Widgets",
+      "title": "Tabs",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "Tablist with panels built from child elements; the selected tab is marked by an accent underline (side bar when vertical).",
+      "markup": "<div class=\"apc-cell\" data-apc=\"tabs\" style=\"left:2rem;top:2rem;width:20rem;height:8rem\">\n  <section data-tab=\"OSC\">...</section><section data-tab=\"FILTER\">...</section>\n</div>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-tab",
+          "desc": "On child elements: the tab title; the child becomes the panel."
+        },
+        {
+          "name": "data-disabled",
+          "desc": "On a child with data-tab: that tab is disabled.",
+          "values": "true"
+        },
+        {
+          "name": "data-value",
+          "desc": "Start tab: index | title | panel id (also data-selected on a child)."
+        },
+        {
+          "name": "data-orient",
+          "desc": "horizontal | vertical.",
+          "values": "horizontal|vertical"
+        },
+        {
+          "name": "data-label",
+          "desc": "Accessible name of the tablist."
+        }
+      ],
+      "events": [
+        {
+          "name": "apc:change (DOM)",
+          "dir": "out",
+          "payload": "{index, value, panel}",
+          "note": "CustomEvent on the host, bubbles"
+        },
+        {
+          "name": "widget:change",
+          "dir": "out",
+          "payload": "{id, kind, param?, value, ...}",
+          "note": "bus twin of the DOM event apc:change"
+        }
+      ],
+      "bridge": [],
+      "gestures": [
+        {
+          "input": "Click a tab",
+          "action": "activate"
+        },
+        {
+          "input": "Left / Right (Up / Down when vertical)",
+          "action": "move and activate, wrapping, skipping disabled"
+        },
+        {
+          "input": "Home / End",
+          "action": "first / last tab"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 40,
+        "rows": 14,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:22rem;height:7rem\" data-apc=\"tabs\" data-label=\"Sections\"><section data-tab=\"OSC\"><span style=\"font:var(--t-value) var(--font-ui)\">Oscillator panel</span></section><section data-tab=\"FILTER\"><span style=\"font:var(--t-value) var(--font-ui)\">Filter panel</span></section><section data-tab=\"FX\" data-disabled=\"true\">disabled</section><section data-tab=\"OUT\"><span style=\"font:var(--t-value) var(--font-ui)\">Output panel</span></section></div><div class=\"apc-cell\" style=\"left:26rem;top:2rem;width:12rem;height:9rem\" data-apc=\"tabs\" data-orient=\"vertical\" data-label=\"Pages\"><section data-tab=\"A\"><span style=\"font:var(--t-value) var(--font-ui)\">Page A</span></section><section data-tab=\"B\"><span style=\"font:var(--t-value) var(--font-ui)\">Page B</span></section></div>",
+        "expect": [
+          ".apc-w--tabs [role=\"tab\"]",
+          ".apc-w--tabs [role=\"tabpanel\"]"
+        ],
+        "hint": "The FX tab is disabled and skipped by the arrow keys. The right one is vertical (Up/Down)."
+      }
+    },
+    {
+      "name": "textfield",
+      "registered": true,
+      "group": "Widgets",
+      "title": "Text field",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "Single-line text input (e.g. a preset name) with validation, help text and an error message under the field.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"textfield\" data-label=\"NAME\" data-placeholder=\"Untitled\" data-maxlength=\"40\" data-required=\"true\"\n     data-pattern=\"[\\w \\-]+\" data-pattern-message=\"Letters, digits, space, dash\" style=\"left:2rem;top:2rem;width:14rem\"></div>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-value",
+          "desc": "Initial text."
+        },
+        {
+          "name": "data-type",
+          "desc": "text | search | password | email | url.",
+          "values": "text|search|password|email|url"
+        },
+        {
+          "name": "data-placeholder",
+          "desc": "Placeholder text."
+        },
+        {
+          "name": "data-maxlength",
+          "desc": "Maximum length."
+        },
+        {
+          "name": "data-minlength",
+          "desc": "Minimum length."
+        },
+        {
+          "name": "data-required",
+          "desc": "Must not be empty.",
+          "values": "true"
+        },
+        {
+          "name": "data-pattern",
+          "desc": "Full-match regular expression."
+        },
+        {
+          "name": "data-pattern-message",
+          "desc": "Message when the pattern fails."
+        },
+        {
+          "name": "data-required-message",
+          "desc": "Message when empty."
+        },
+        {
+          "name": "data-help",
+          "desc": "Help text shown under the field."
+        },
+        {
+          "name": "data-error",
+          "desc": "Start in the error state with this message."
+        }
+      ],
+      "events": [
+        {
+          "name": "apc:input (DOM)",
+          "dir": "out",
+          "payload": "{value}",
+          "note": "while typing"
+        },
+        {
+          "name": "apc:change (DOM)",
+          "dir": "out",
+          "payload": "{value}",
+          "note": "CustomEvent on the host, bubbles"
+        },
+        {
+          "name": "apc:submit (DOM)",
+          "dir": "out",
+          "payload": "{value}",
+          "note": "Enter"
+        },
+        {
+          "name": "widget:change",
+          "dir": "out",
+          "payload": "{id, kind, param?, value, ...}",
+          "note": "bus twin of the DOM event apc:change"
+        }
+      ],
+      "bridge": [],
+      "gestures": [
+        {
+          "input": "Enter",
+          "action": "commit (and submit); an invalid value stays focused with the message"
+        },
+        {
+          "input": "Esc",
+          "action": "restore the last committed value"
+        },
+        {
+          "input": "Blur",
+          "action": "commit when valid"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 12,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:14rem\" data-apc=\"textfield\" data-label=\"NAME\" data-placeholder=\"Untitled\" data-maxlength=\"24\" data-required=\"true\" data-help=\"Letters, digits, space, dash\" data-pattern=\"[\\w \\-]+\" data-pattern-message=\"Letters, digits, space, dash only\"></div><div class=\"apc-cell\" style=\"left:18rem;top:2rem;width:14rem\" data-apc=\"textfield\" data-label=\"SEARCH\" data-type=\"search\" data-placeholder=\"Find...\"></div><div class=\"apc-cell\" style=\"left:2rem;top:7rem;width:14rem\" data-apc=\"textfield\" data-label=\"WITH ERROR\" data-value=\"bad value\" data-error=\"This name is already used\"></div><div class=\"apc-cell\" style=\"left:18rem;top:7rem;width:14rem\" data-apc=\"textfield\" data-label=\"DISABLED\" data-value=\"locked\" data-disabled=\"true\"></div>",
+        "expect": [
+          ".apc-w--textfield input.apc-input"
+        ],
+        "hint": "Type a character outside the pattern in NAME and press Enter: the field stays focused with the message. Esc restores."
+      }
+    },
+    {
+      "name": "numberfield",
+      "registered": true,
+      "group": "Widgets",
+      "title": "Number field",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "Typed numeric input with units and step buttons; parsing and formatting are the knob's value entry (Hz kHz dB % ms s, \"1.2k\", decimal comma).",
+      "markup": "<div class=\"apc-cell\" data-apc=\"numberfield\" data-label=\"CUTOFF\" data-param=\"cutoff_hz\"\n     style=\"left:2rem;top:2rem;width:10rem\"></div>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-param",
+          "desc": "Parameter (range, unit, step from the descriptor)."
+        },
+        {
+          "name": "data-min",
+          "desc": "Static minimum (without data-param)."
+        },
+        {
+          "name": "data-max",
+          "desc": "Static maximum."
+        },
+        {
+          "name": "data-step",
+          "desc": "Static step."
+        },
+        {
+          "name": "data-unit",
+          "desc": "Static unit."
+        },
+        {
+          "name": "data-value",
+          "desc": "Initial value."
+        },
+        {
+          "name": "data-default",
+          "desc": "Declared default (reset target)."
+        },
+        {
+          "name": "data-digits",
+          "desc": "Decimal places."
+        },
+        {
+          "name": "data-steppers",
+          "desc": "false hides the step buttons.",
+          "values": "false"
+        }
+      ],
+      "events": [
+        {
+          "name": "apc:change (DOM)",
+          "dir": "out",
+          "payload": "{value, text}",
+          "note": "CustomEvent on the host, bubbles"
+        },
+        {
+          "name": "widget:change",
+          "dir": "out",
+          "payload": "{id, kind, param?, value, ...}",
+          "note": "bus twin of the DOM event apc:change"
+        },
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value, modulated?}",
+          "note": "live updates of a bound parameter"
+        },
+        {
+          "name": "params:changed",
+          "dir": "in",
+          "payload": "{id}",
+          "note": "refetch the descriptor"
+        },
+        {
+          "name": "undo:push",
+          "dir": "out",
+          "payload": "{label, id, before?, after?, kind?}",
+          "note": "module optional; nobody listening is fine"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.param.set",
+        "apc.param.begin",
+        "apc.param.end"
+      ],
+      "gestures": [
+        {
+          "input": "Enter / Esc",
+          "action": "commit / revert"
+        },
+        {
+          "input": "Up / Down",
+          "action": "step (Shift fine)"
+        },
+        {
+          "input": "PageUp / PageDown",
+          "action": "coarse step"
+        },
+        {
+          "input": "Wheel while focused",
+          "action": "step"
+        },
+        {
+          "input": "Hold a step button",
+          "action": "repeat; the whole hold is one host gesture"
+        },
+        {
+          "input": "Out of range",
+          "action": "clamped with a hint; unparsable input shows the error state"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 11,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:10rem\" data-apc=\"numberfield\" data-label=\"CUTOFF\" data-param=\"cutoff_hz\"></div><div class=\"apc-cell\" style=\"left:14rem;top:2rem;width:10rem\" data-apc=\"numberfield\" data-label=\"GAIN\" data-param=\"gain_db\"></div><div class=\"apc-cell\" style=\"left:26rem;top:2rem;width:8rem\" data-apc=\"numberfield\" data-label=\"STEPS\" data-min=\"1\" data-max=\"16\" data-step=\"1\" data-value=\"8\" data-digits=\"0\"></div><div class=\"apc-cell\" style=\"left:2rem;top:6rem;width:10rem\" data-apc=\"numberfield\" data-label=\"FREQ (STATIC)\" data-min=\"20\" data-max=\"20000\" data-unit=\"Hz\" data-value=\"440\" data-steppers=\"false\"></div>",
+        "expect": [
+          ".apc-w--numberfield input[role=\"spinbutton\"]"
+        ],
+        "hint": "Type \"1.2k\" into CUTOFF or \"-6\" into GAIN; out-of-range values clamp with a hint. Hold a step button to repeat."
+      }
+    },
+    {
+      "name": "label",
+      "registered": true,
+      "group": "Widgets",
+      "title": "Label",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "Static text in one of four roles: title, label, caption (sentence font) or value; can name another widget via aria-labelledby.",
+      "markup": "<span class=\"apc-cell\" data-apc=\"label\" data-role=\"title\" data-text=\"FILTER\" style=\"left:2rem;top:2rem;width:8rem\"></span>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-role",
+          "desc": "title (heading) | label | caption | value.",
+          "values": "title|label|caption|value"
+        },
+        {
+          "name": "data-level",
+          "desc": "Heading level for data-role=\"title\"."
+        },
+        {
+          "name": "data-text",
+          "desc": "The text (else the element's own text)."
+        },
+        {
+          "name": "data-for",
+          "desc": "Selector or id of the widget this text names (sets its aria-labelledby)."
+        }
+      ],
+      "events": [],
+      "bridge": [],
+      "gestures": [
+        {
+          "input": "(not interactive)",
+          "action": "handle.setText(t) / getText() at runtime"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 10,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:1.5rem;width:12rem\" data-apc=\"label\" data-role=\"title\" data-text=\"Oscillator\"></div><div class=\"apc-cell\" style=\"left:2rem;top:3.5rem;width:12rem\" data-apc=\"label\" data-role=\"label\" data-text=\"Waveform\"></div><div class=\"apc-cell\" style=\"left:2rem;top:5rem;width:18rem\" data-apc=\"label\" data-role=\"caption\" data-text=\"Captions use the sentence font for longer help text.\"></div><div class=\"apc-cell\" style=\"left:22rem;top:3.5rem;width:8rem\" data-apc=\"label\" data-role=\"value\" data-text=\"1.20 kHz\"></div>",
+        "expect": [
+          ".apc-w--label.apc-text--title",
+          ".apc-w--label.apc-text--caption"
+        ],
+        "hint": "Four text roles: title, label (UPPERCASE, letter-spaced), caption (--font-text) and value (tabular numerals)."
+      }
+    },
+    {
+      "name": "readout",
+      "registered": true,
+      "group": "Widgets",
+      "title": "Readout",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "Live read-only value: a parameter (formatted like the knob readout), a meter feed or a value you set from code.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"readout\" data-param=\"cutoff_hz\" data-label=\"CUTOFF\"\n     style=\"left:2rem;top:2rem;width:8rem\"></div>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-param",
+          "desc": "Parameter to display."
+        },
+        {
+          "name": "data-meter",
+          "desc": "Bridge meter event id (number); readout accepts dB or linear per handle."
+        },
+        {
+          "name": "data-unit",
+          "desc": "Unit text."
+        },
+        {
+          "name": "data-digits",
+          "desc": "Decimal places."
+        },
+        {
+          "name": "data-layout",
+          "desc": "stack | inline.",
+          "values": "stack|inline"
+        },
+        {
+          "name": "data-align",
+          "desc": "start | center | end.",
+          "values": "start|center|end"
+        }
+      ],
+      "events": [
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value, modulated?}",
+          "note": "follows the bound parameter"
+        },
+        {
+          "name": "meter (bridge)",
+          "dir": "in",
+          "payload": "{id, value}",
+          "note": "follows data-meter"
+        }
+      ],
+      "bridge": [
+        "apc.params.get"
+      ],
+      "gestures": [
+        {
+          "input": "(not interactive)",
+          "action": "handle.setValue(number|text), getText(); aria-live is off so values do not chatter"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 9,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:9rem\" data-apc=\"readout\" data-param=\"cutoff_hz\" data-label=\"CUTOFF\"></div><div class=\"apc-cell\" style=\"left:12rem;top:2rem;width:9rem\" data-apc=\"readout\" data-param=\"gain_db\" data-label=\"GAIN\" data-align=\"center\"></div><div class=\"apc-cell\" style=\"left:22rem;top:2rem;width:12rem\" data-apc=\"readout\" data-param=\"detune_ct\" data-label=\"DETUNE\" data-layout=\"inline\"></div><div class=\"apc-cell\" style=\"left:2rem;top:5.5rem;width:9rem\" data-apc=\"readout\" data-meter=\"demo-peak\" data-unit=\"dB\" data-digits=\"1\" data-label=\"PEAK\" data-size=\"lg\"></div>",
+        "expect": [
+          ".apc-w--readout .apc-rd__value"
+        ],
+        "hint": "The first three follow mock parameters (change them with a knob elsewhere); PEAK waits for a meter event with id demo-peak."
+      }
+    },
+    {
+      "name": "panel",
+      "registered": true,
+      "group": "Widgets",
+      "title": "Panel",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "Titled frame with a hairline border; optionally collapsible. Children are the body.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"panel\" data-title=\"FILTER\" data-collapsible=\"true\"\n     style=\"left:2rem;top:2rem;width:14rem;height:6rem\">...</div>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-title",
+          "desc": "Title (or data-label)."
+        },
+        {
+          "name": "data-collapsible",
+          "desc": "Header becomes a toggle button.",
+          "values": "true"
+        },
+        {
+          "name": "data-collapsed",
+          "desc": "Start collapsed.",
+          "values": "true"
+        }
+      ],
+      "events": [
+        {
+          "name": "apc:toggle (DOM)",
+          "dir": "out",
+          "payload": "{collapsed}",
+          "note": "collapse / expand"
+        },
+        {
+          "name": "apc:change (DOM)",
+          "dir": "out",
+          "payload": "{collapsed}",
+          "note": "CustomEvent on the host, bubbles"
+        }
+      ],
+      "bridge": [],
+      "gestures": [
+        {
+          "input": "Header button: click / Enter / Space",
+          "action": "collapse or expand (aria-expanded, aria-controls)"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 12,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:15rem;height:7rem\" data-apc=\"panel\" data-title=\"Filter\" data-collapsible=\"true\"><span style=\"font:var(--t-value) var(--font-ui);color:var(--ink)\">Panel body. Click the title to collapse.</span></div><div class=\"apc-cell\" style=\"left:19rem;top:2rem;width:15rem;height:4rem\" data-apc=\"panel\" data-title=\"Static panel\"><span style=\"font:var(--t-value) var(--font-ui);color:var(--ink-2)\">No toggle.</span></div><div class=\"apc-cell\" style=\"left:19rem;top:7rem;width:15rem;height:3rem\" data-apc=\"panel\" data-title=\"Collapsed\" data-collapsible=\"true\" data-collapsed=\"true\"><span>hidden body</span></div>",
+        "expect": [
+          ".apc-w--panel .apc-panel__head"
+        ],
+        "hint": "A panel is a frame, not a layout engine: position panels with .apc-cell and place content inside."
+      }
+    },
+    {
+      "name": "divider",
+      "registered": true,
+      "group": "Widgets",
+      "title": "Divider",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "Hairline rule, horizontal or vertical, with optional inline text.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"divider\" data-label=\"OUTPUT\" style=\"left:2rem;top:2rem;width:20rem\"></div>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-orient",
+          "desc": "horizontal | vertical.",
+          "values": "horizontal|vertical"
+        },
+        {
+          "name": "data-label",
+          "desc": "Text in the line."
+        }
+      ],
+      "events": [],
+      "bridge": [],
+      "gestures": [
+        {
+          "input": "(not interactive)",
+          "action": "role=separator with aria-orientation"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 9,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:30rem\" data-apc=\"divider\"></div><div class=\"apc-cell\" style=\"left:2rem;top:4rem;width:30rem\" data-apc=\"divider\" data-label=\"OUTPUT\"></div><div class=\"apc-cell\" style=\"left:18rem;top:5.5rem;width:1rem;height:3rem\" data-apc=\"divider\" data-orient=\"vertical\"></div>",
+        "expect": [
+          ".apc-w--divider [role=\"separator\"], [data-apc=\"divider\"][role=\"separator\"]"
+        ],
+        "hint": "Plain, labelled and vertical dividers."
+      }
+    },
+    {
+      "name": "led",
+      "registered": true,
+      "group": "Widgets",
+      "title": "LED",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "Status lamp (off, on, ok, warn, error) that can follow a parameter or a choice parameter; the label carries the meaning too, never colour alone.",
+      "markup": "<span class=\"apc-cell\" data-apc=\"led\" data-label=\"CLIP\" data-state=\"error\" style=\"left:2rem;top:2rem;width:6rem\"></span>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-state",
+          "desc": "off | on | ok | warn | error.",
+          "values": "on|off|ok|warn|error"
+        },
+        {
+          "name": "data-on",
+          "desc": "true = on.",
+          "values": "true"
+        },
+        {
+          "name": "data-param",
+          "desc": "Lamp is on when value > min."
+        },
+        {
+          "name": "data-states",
+          "desc": "Comma list mapping a choice parameter's index to a state, e.g. \"off,ok,warn,error\"."
+        }
+      ],
+      "events": [
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value}",
+          "note": "follows data-param"
+        }
+      ],
+      "bridge": [
+        "apc.params.get"
+      ],
+      "gestures": [
+        {
+          "input": "(not interactive)",
+          "action": "role=img with aria-label \"label: state\"; handle.setState(s) / setOn(b)"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 9,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:7rem\" data-apc=\"led\" data-label=\"POWER\" data-state=\"on\"></div><div class=\"apc-cell\" style=\"left:10rem;top:2rem;width:7rem\" data-apc=\"led\" data-label=\"OK\" data-state=\"ok\"></div><div class=\"apc-cell\" style=\"left:18rem;top:2rem;width:7rem\" data-apc=\"led\" data-label=\"WARN\" data-state=\"warn\"></div><div class=\"apc-cell\" style=\"left:26rem;top:2rem;width:7rem\" data-apc=\"led\" data-label=\"CLIP\" data-state=\"error\"></div><div class=\"apc-cell\" style=\"left:2rem;top:5rem;width:9rem\" data-apc=\"led\" data-label=\"BYPASS\" data-param=\"bypass\"></div><div class=\"apc-cell\" style=\"left:14rem;top:5rem;width:7rem\" data-apc=\"led\" data-label=\"IDLE\" data-state=\"off\"></div>",
+        "expect": [
+          ".apc-w--led .apc-led"
+        ],
+        "hint": "BYPASS follows the mock parameter bypass (on when value > min)."
+      }
+    },
+    {
+      "name": "progress",
+      "registered": true,
+      "group": "Widgets",
+      "title": "Progress",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "Determinate or indeterminate bar, horizontal or vertical, with an optional value text; can follow a parameter or a meter feed.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"progress\" data-label=\"LOAD\" data-value=\"0.4\" data-show-value=\"true\"\n     style=\"left:2rem;top:2rem;width:12rem\"></div>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-value",
+          "desc": "Current value."
+        },
+        {
+          "name": "data-min",
+          "desc": "Minimum (0)."
+        },
+        {
+          "name": "data-max",
+          "desc": "Maximum (1)."
+        },
+        {
+          "name": "data-indeterminate",
+          "desc": "Busy animation (static segment under reduced motion).",
+          "values": "true"
+        },
+        {
+          "name": "data-show-value",
+          "desc": "Show the value text.",
+          "values": "true"
+        },
+        {
+          "name": "data-state",
+          "desc": "Fill colour: ok | warn | error.",
+          "values": "ok|warn|error"
+        },
+        {
+          "name": "data-orient",
+          "desc": "horizontal | vertical.",
+          "values": "horizontal|vertical"
+        },
+        {
+          "name": "data-param",
+          "desc": "Follow a parameter."
+        },
+        {
+          "name": "data-meter",
+          "desc": "Follow a bridge meter event id."
+        }
+      ],
+      "events": [
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value}",
+          "note": "follows data-param"
+        },
+        {
+          "name": "meter (bridge)",
+          "dir": "in",
+          "payload": "{id, value}",
+          "note": "follows data-meter"
+        }
+      ],
+      "bridge": [
+        "apc.params.get"
+      ],
+      "gestures": [
+        {
+          "input": "(not interactive)",
+          "action": "role=progressbar with aria-valuenow/min/max/valuetext (no valuenow while indeterminate); handle.setValue(v), setState(s)"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 12,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:14rem\" data-apc=\"progress\" data-label=\"LOAD\" data-value=\"0.4\" data-show-value=\"true\"></div><div class=\"apc-cell\" style=\"left:2rem;top:5rem;width:14rem\" data-apc=\"progress\" data-label=\"SCANNING\" data-indeterminate=\"true\"></div><div class=\"apc-cell\" style=\"left:2rem;top:8rem;width:14rem\" data-apc=\"progress\" data-label=\"DISK\" data-value=\"0.92\" data-state=\"warn\" data-show-value=\"true\"></div><div class=\"apc-cell\" style=\"left:18rem;top:2rem;width:14rem\" data-apc=\"progress\" data-label=\"MIX (PARAM)\" data-param=\"mix_pct\" data-show-value=\"true\"></div><div class=\"apc-cell\" style=\"left:34rem;top:2rem;width:2rem;height:8rem\" data-apc=\"progress\" data-orient=\"vertical\" data-value=\"0.6\" data-aria-label=\"Vertical level\"></div>",
+        "expect": [
+          ".apc-w--progress [role=\"progressbar\"]"
+        ],
+        "hint": "Determinate, indeterminate, warn state, a parameter-bound bar and a vertical one."
+      }
+    },
+    {
+      "name": "list",
+      "registered": true,
+      "group": "Widgets",
+      "title": "List",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "Scrollable listbox, single or multi select with range and select-all keys; single select can bind to a choice parameter.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"list\" data-label=\"LAYERS\" data-rows=\"5\" data-items='[\"A\",\"B\",\"C\"]'\n     style=\"left:2rem;top:2rem;width:12rem\"></div>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-items",
+          "desc": "JSON items or child <option> elements."
+        },
+        {
+          "name": "data-param",
+          "desc": "Single-select only: a choice parameter."
+        },
+        {
+          "name": "data-multiple",
+          "desc": "Multi select (check boxes).",
+          "values": "true"
+        },
+        {
+          "name": "data-value",
+          "desc": "Initial selection: JSON array or comma list when multiple."
+        },
+        {
+          "name": "data-rows",
+          "desc": "Visible rows before it scrolls (6)."
+        }
+      ],
+      "events": [
+        {
+          "name": "apc:change (DOM)",
+          "dir": "out",
+          "payload": "{value, indices}",
+          "note": "CustomEvent on the host, bubbles"
+        },
+        {
+          "name": "apc:activate (DOM)",
+          "dir": "out",
+          "payload": "{index}",
+          "note": "Enter or double-click"
+        },
+        {
+          "name": "widget:change",
+          "dir": "out",
+          "payload": "{id, kind, param?, value, ...}",
+          "note": "bus twin of the DOM event apc:change"
+        },
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value, modulated?}",
+          "note": "live updates of a bound parameter"
+        },
+        {
+          "name": "params:changed",
+          "dir": "in",
+          "payload": "{id}",
+          "note": "refetch the descriptor"
+        },
+        {
+          "name": "undo:push",
+          "dir": "out",
+          "payload": "{label, id, before?, after?, kind?}",
+          "note": "module optional; nobody listening is fine"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.param.set",
+        "apc.param.begin",
+        "apc.param.end"
+      ],
+      "gestures": [
+        {
+          "input": "Click / arrows",
+          "action": "select (single: selection follows focus)"
+        },
+        {
+          "input": "Home / End, PageUp / PageDown",
+          "action": "move"
+        },
+        {
+          "input": "Typing",
+          "action": "type-ahead"
+        },
+        {
+          "input": "Multi: Space or plain click",
+          "action": "toggle"
+        },
+        {
+          "input": "Multi: Shift+arrow / Shift+click",
+          "action": "extend a range"
+        },
+        {
+          "input": "Multi: Ctrl/Cmd+A",
+          "action": "select all"
+        },
+        {
+          "input": "Enter / double-click",
+          "action": "activate"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 12,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:12rem\" data-apc=\"list\" data-label=\"WAVE\" data-param=\"osc_wave\" data-rows=\"4\"></div><div class=\"apc-cell\" style=\"left:16rem;top:2rem;width:14rem\" data-apc=\"list\" data-label=\"LAYERS\" data-multiple=\"true\" data-rows=\"5\" data-items=\"[&quot;Pad&quot;,&quot;Bass&quot;,&quot;Lead&quot;,&quot;Pluck&quot;,&quot;Noise&quot;,&quot;Choir&quot;,&quot;Strings&quot;]\" data-value=\"[&quot;Bass&quot;,&quot;Lead&quot;]\"></div>",
+        "expect": [
+          ".apc-w--list [role=\"listbox\"]"
+        ],
+        "hint": "Left: single select bound to osc_wave. Right: multi select (Space toggles, Shift extends, Ctrl+A selects all, rows scroll)."
+      }
+    },
+    {
+      "name": "logo",
+      "registered": true,
+      "group": "Widgets",
+      "title": "Logo",
+      "file": "apc-widgets.js",
+      "guide": ".agents/guides/ui-kit-widgets.md#the-elements",
+      "summary": "Wordmark or lockup slot (text, image or inline SVG). A link button is rendered only when a URL is configured; a click calls apc.openUrl.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"logo\" data-text=\"ACME\" data-sub=\"AUDIO\" data-link=\"company\"\n     style=\"left:2rem;top:2rem;width:8rem\"></div>",
+      "options": [
+        {
+          "name": "data-label",
+          "desc": "Visible caption; also the accessible name."
+        },
+        {
+          "name": "data-aria-label",
+          "desc": "Accessible name when there is no visible label."
+        },
+        {
+          "name": "data-title",
+          "desc": "Tooltip (title attribute)."
+        },
+        {
+          "name": "data-size",
+          "desc": "Control height: sm | md | lg | a CSS length | a bare number = rem (sets --w-h).",
+          "values": "sm|md|lg|<length>"
+        },
+        {
+          "name": "data-disabled",
+          "desc": "true (or empty) = disabled; handle.setDisabled(bool) at runtime.",
+          "values": "true"
+        },
+        {
+          "name": "data-text",
+          "desc": "Wordmark text."
+        },
+        {
+          "name": "data-sub",
+          "desc": "Small second line."
+        },
+        {
+          "name": "data-src",
+          "desc": "Image URL or data URI (the kit never fetches the network)."
+        },
+        {
+          "name": "data-alt",
+          "desc": "Alt text of an image or svg mark."
+        },
+        {
+          "name": "data-url",
+          "desc": "Literal URL for the link."
+        },
+        {
+          "name": "data-link",
+          "desc": "Key of apc.info links (company | product | docs | support).",
+          "values": "company|product|docs|support"
+        }
+      ],
+      "events": [],
+      "bridge": [
+        "apc.info",
+        "apc.openUrl"
+      ],
+      "gestures": [
+        {
+          "input": "Click / Enter on the link button",
+          "action": "apc.openUrl {url} (native allow-lists it); no button exists without a configured URL"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-widgets.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 9,
+        "scripts": [
+          "apc-controls.js",
+          "apc-widgets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:10rem\" data-apc=\"logo\" data-text=\"ACME\" data-sub=\"AUDIO\" data-link=\"company\"></div><div class=\"apc-cell\" style=\"left:14rem;top:2rem;width:10rem\" data-apc=\"logo\" data-text=\"EXAMPLE SYNTH\" data-sub=\"PRODUCT\" data-link=\"product\"></div><div class=\"apc-cell\" style=\"left:2rem;top:5.5rem;width:10rem\" data-apc=\"logo\" data-text=\"NO LINK\"></div>",
+        "expect": [
+          ".apc-w--logo .apc-logo__text"
+        ],
+        "hint": "The first two become links because the mock configures info.links.company / product; the third has no URL so it is plain text."
+      }
+    },
+    {
+      "name": "graph",
+      "registered": true,
+      "group": "Visualisation",
+      "title": "Graph",
+      "file": "apc-viz.js",
+      "guide": ".agents/guides/ui-kit-viz.md#elements-at-a-glance",
+      "summary": "2D plot on a canvas: curves, grid, axes and draggable nodes bound to parameters (EQ response, filter, transfer curve). Colours read from the viz tokens at draw time.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"graph\" data-label=\"EQ\" data-xscale=\"log\" data-xmin=\"20\" data-xmax=\"20000\" data-ymin=\"-18\" data-ymax=\"18\"\n     data-xunit=\"Hz\" data-yunit=\"dB\" data-nodes='[{\"id\":\"b1\",\"x\":\"cutoff_hz\",\"y\":\"gain_db\",\"label\":\"1\"}]'\n     style=\"left:2rem;top:2rem;width:24rem;height:10rem\"></div>",
+      "options": [
+        {
+          "name": "data-xscale",
+          "desc": "linear | log | sqrt.",
+          "values": "linear|log|sqrt"
+        },
+        {
+          "name": "data-xmin",
+          "desc": "X range (default 0..1; 20..20000 when log)."
+        },
+        {
+          "name": "data-ymin",
+          "desc": "Y range (default -1..1)."
+        },
+        {
+          "name": "data-xunit",
+          "desc": "X unit (Hz when log)."
+        },
+        {
+          "name": "data-yunit",
+          "desc": "Y unit."
+        },
+        {
+          "name": "data-axes",
+          "desc": "both | x | y | none.",
+          "values": "both|x|y|none"
+        },
+        {
+          "name": "data-grid",
+          "desc": "true | false."
+        },
+        {
+          "name": "data-nodes",
+          "desc": "JSON [{id, label, x:\"param\", y:\"param\", q:\"param\", xv, yv, qv, color:\"1\"..\"4\", lockX, lockY}]; without params the node is free (events only)."
+        },
+        {
+          "name": "data-curves",
+          "desc": "JSON curve specs: {fn|points|x,y|values, color, width, fill, dash, label}."
+        },
+        {
+          "name": "data-connect",
+          "desc": "Draw a line through the nodes."
+        },
+        {
+          "name": "data-viz",
+          "desc": "Feed id of a curve pushed by the host."
+        },
+        {
+          "name": "data-label",
+          "desc": "Accessible name."
+        }
+      ],
+      "events": [
+        {
+          "name": "graph:node (bus)",
+          "dir": "out",
+          "payload": "{id, node, x, y, q, phase: begin|move|end|wheel|key|reset, text}",
+          "note": "also DOM \"apc-node\""
+        },
+        {
+          "name": "viz (bridge)",
+          "dir": "in",
+          "payload": "{id, data}",
+          "note": "native name apc.viz; data shape per element; emit ~30 fps from analysis, not per audio buffer"
+        },
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value, modulated?}",
+          "note": "bound node params follow the host"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.param.set",
+        "apc.param.begin",
+        "apc.param.end",
+        "apc.param.reset"
+      ],
+      "gestures": [
+        {
+          "input": "Drag a node",
+          "action": "moves x/y (Shift = 10x finer); one begin ... end gesture per drag"
+        },
+        {
+          "input": "Wheel on a node",
+          "action": "changes Q"
+        },
+        {
+          "input": "Alt/Option+click a node",
+          "action": "reset its params to default (U-01)"
+        },
+        {
+          "input": "Arrows on a focused node",
+          "action": "move 1 % (Shift 0.1 %, PageUp/PageDown 10 %)"
+        },
+        {
+          "input": "+ / - on a focused node",
+          "action": "Q"
+        },
+        {
+          "input": "Delete / Backspace",
+          "action": "reset the node"
+        },
+        {
+          "input": "Hover / focus",
+          "action": "tooltip with the values and guides"
+        }
+      ],
+      "standards": [
+        "U-01",
+        "U-07"
+      ],
+      "tests": [
+        "kit-viz.html"
+      ],
+      "demo": {
+        "cols": 40,
+        "rows": 15,
+        "scripts": [
+          "apc-viz.js",
+          "apc-mock-viz.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:1.5rem;top:1.5rem;width:26rem;height:11rem\" data-apc=\"graph\" data-label=\"Parametric EQ\" data-xscale=\"log\" data-xmin=\"20\" data-xmax=\"20000\" data-ymin=\"-18\" data-ymax=\"18\" data-xunit=\"Hz\" data-yunit=\"dB\" data-nodes=\"[{&quot;id&quot;:&quot;b1&quot;,&quot;x&quot;:&quot;cutoff_hz&quot;,&quot;y&quot;:&quot;gain_db&quot;,&quot;label&quot;:&quot;1&quot;},{&quot;id&quot;:&quot;b2&quot;,&quot;xv&quot;:3000,&quot;yv&quot;:6,&quot;qv&quot;:1.2,&quot;label&quot;:&quot;2&quot;,&quot;color&quot;:&quot;2&quot;},{&quot;id&quot;:&quot;b3&quot;,&quot;xv&quot;:9000,&quot;yv&quot;:-8,&quot;label&quot;:&quot;3&quot;,&quot;color&quot;:&quot;3&quot;}]\" data-curves=\"[{&quot;points&quot;:[[20,0],[200,2],[1000,0],[4000,5],[12000,-4],[20000,-9]],&quot;color&quot;:&quot;accent&quot;,&quot;fill&quot;:true}]\"></div><div class=\"apc-cell\" style=\"left:29rem;top:1.5rem;width:9.5rem;height:5rem\" data-apc=\"graph\" data-label=\"Transfer curve\" data-xmin=\"-1\" data-xmax=\"1\" data-ymin=\"-1\" data-ymax=\"1\" data-axes=\"none\" data-curves=\"[{&quot;x&quot;:[-1,-0.5,0,0.5,1],&quot;y&quot;:[-0.8,-0.6,0,0.6,0.8],&quot;color&quot;:&quot;line&quot;}]\"></div>",
+        "expect": [
+          ".apc-viz-graph canvas.apc-viz-cv",
+          ".apc-viz-graph .apc-viz-node"
+        ],
+        "hint": "Node 1 is bound to cutoff_hz / gain_db (mock params); 2 and 3 are free. Drag, Shift+drag, wheel for Q, Alt+click, or focus a node and use the arrows. Curves are display only."
+      }
+    },
+    {
+      "name": "envelope",
+      "registered": true,
+      "group": "Visualisation",
+      "title": "Envelope",
+      "file": "apc-viz.js",
+      "guide": ".agents/guides/ui-kit-viz.md#elements-at-a-glance",
+      "summary": "ADSR or free N-point envelope editor on the graph engine; ADSR nodes bind to attack, decay, sustain and release parameters (unbound ids keep local values).",
+      "markup": "<div class=\"apc-cell\" data-apc=\"envelope\" data-attack=\"attack_s\" data-release=\"release_s\" data-tmax=\"3\"\n     style=\"left:2rem;top:2rem;width:16rem;height:9rem\"></div>",
+      "options": [
+        {
+          "name": "data-mode",
+          "desc": "adsr (default) | multi.",
+          "values": "adsr|multi"
+        },
+        {
+          "name": "data-attack",
+          "desc": "Parameter id (also data-decay, data-sustain, data-release)."
+        },
+        {
+          "name": "data-tmax",
+          "desc": "Seconds on the x axis (4)."
+        },
+        {
+          "name": "data-hold",
+          "desc": "Length of the sustain plateau."
+        },
+        {
+          "name": "data-xscale",
+          "desc": "sqrt for adsr (short times stay editable); linear for multi."
+        },
+        {
+          "name": "data-curvature",
+          "desc": "0..1: fast-then-slow segments (0.55); 0 = straight."
+        },
+        {
+          "name": "data-points",
+          "desc": "multi: JSON [{id, xv, yv}]."
+        },
+        {
+          "name": "data-editable",
+          "desc": "multi: allow adding / removing points (true)."
+        },
+        {
+          "name": "data-label",
+          "desc": "Accessible name."
+        }
+      ],
+      "events": [
+        {
+          "name": "envelope:node (bus)",
+          "dir": "out",
+          "payload": "{id, node, x, y, phase, adsr:{attack,decay,sustain,release}}",
+          "note": "drag / key / reset"
+        },
+        {
+          "name": "envelope:change (bus)",
+          "dir": "out",
+          "payload": "{id, mode, phase: end|key|reset|add|remove, adsr | points:[{id,x,y}]}",
+          "note": "committed edit"
+        },
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value}",
+          "note": "bound ADSR parameters follow the host"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.param.set",
+        "apc.param.begin",
+        "apc.param.end",
+        "apc.param.reset"
+      ],
+      "gestures": [
+        {
+          "input": "Drag a node",
+          "action": "edits time / level; attack + decay + hold + release stay within tmax"
+        },
+        {
+          "input": "Multi: double-click the plot",
+          "action": "add a point; Insert adds one after the focused point"
+        },
+        {
+          "input": "Delete / Backspace",
+          "action": "remove a free point (>= 2 stay) / reset"
+        },
+        {
+          "input": "Arrows on a focused node",
+          "action": "move 1 % (Shift 0.1 %)"
+        },
+        {
+          "input": "Alt/Option+click a node",
+          "action": "reset to default (U-01)"
+        }
+      ],
+      "standards": [
+        "U-01",
+        "U-07"
+      ],
+      "tests": [
+        "kit-viz.html"
+      ],
+      "demo": {
+        "cols": 40,
+        "rows": 14,
+        "scripts": [
+          "apc-viz.js",
+          "apc-mock-viz.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:1.5rem;top:1.5rem;width:18rem;height:10rem\" data-apc=\"envelope\" data-label=\"Amp envelope\" data-attack=\"attack_s\" data-release=\"release_s\" data-tmax=\"3\"></div><div class=\"apc-cell\" style=\"left:21rem;top:1.5rem;width:17.5rem;height:10rem\" data-apc=\"envelope\" data-label=\"Free envelope\" data-mode=\"multi\" data-xmin=\"0\" data-xmax=\"4\" data-xscale=\"linear\" data-points=\"[{&quot;id&quot;:&quot;p1&quot;,&quot;xv&quot;:0,&quot;yv&quot;:0},{&quot;id&quot;:&quot;p2&quot;,&quot;xv&quot;:0.6,&quot;yv&quot;:1},{&quot;id&quot;:&quot;p3&quot;,&quot;xv&quot;:1.8,&quot;yv&quot;:0.35},{&quot;id&quot;:&quot;p4&quot;,&quot;xv&quot;:4,&quot;yv&quot;:0}]\"></div>",
+        "expect": [
+          ".apc-viz-envelope canvas.apc-viz-cv",
+          ".apc-viz-envelope .apc-viz-node"
+        ],
+        "hint": "Left: ADSR bound to attack_s / release_s (decay and sustain are local). Right: free multi-point envelope: double-click to add a point, Delete removes it."
+      }
+    },
+    {
+      "name": "spectrum",
+      "registered": true,
+      "group": "Visualisation",
+      "title": "Spectrum",
+      "file": "apc-viz.js",
+      "guide": ".agents/guides/ui-kit-viz.md#elements-at-a-glance",
+      "summary": "Live spectrum analyser (fill, line or bars) fed by the viz event; log or linear frequency axis, peak hold and frame-rate independent smoothing. Display only.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"spectrum\" data-viz=\"spec\" data-label=\"Spectrum\" data-style=\"fill\"\n     style=\"left:2rem;top:2rem;width:24rem;height:8rem\"></div>",
+      "options": [
+        {
+          "name": "data-viz",
+          "desc": "Feed id ({type:\"spectrum\", db:[...], fs, log?} or a bare dB array)."
+        },
+        {
+          "name": "data-style",
+          "desc": "fill | line | bars.",
+          "values": "fill|line|bars"
+        },
+        {
+          "name": "data-bands",
+          "desc": "bars: number of bars (48)."
+        },
+        {
+          "name": "data-fmin",
+          "desc": "Frequency range (20 / 20000)."
+        },
+        {
+          "name": "data-dbmin",
+          "desc": "dB range (-90 / 0)."
+        },
+        {
+          "name": "data-xscale",
+          "desc": "log (default) | linear.",
+          "values": "log|linear"
+        },
+        {
+          "name": "data-smoothing",
+          "desc": "0..0.98 (0.6)."
+        },
+        {
+          "name": "data-peak-hold",
+          "desc": "true | false."
+        },
+        {
+          "name": "data-hold-ms",
+          "desc": "Peak hold time (900)."
+        },
+        {
+          "name": "data-fall",
+          "desc": "Peak fall dB/s (18)."
+        },
+        {
+          "name": "data-slope",
+          "desc": "dB/oct tilt around 1 kHz (0)."
+        },
+        {
+          "name": "data-axes",
+          "desc": "both | x | y | none."
+        },
+        {
+          "name": "data-grid",
+          "desc": "true | false."
+        }
+      ],
+      "events": [
+        {
+          "name": "viz (bridge)",
+          "dir": "in",
+          "payload": "{id, data}",
+          "note": "native name apc.viz; data shape per element; emit ~30 fps from analysis, not per audio buffer"
+        }
+      ],
+      "bridge": [],
+      "gestures": [
+        {
+          "input": "(display only)",
+          "action": "no pointer or keyboard interaction; a text alternative names the strongest component (once per second)"
+        },
+        {
+          "input": "Reduced motion",
+          "action": "no smoothing, no peak fall"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-viz.html"
+      ],
+      "demo": {
+        "cols": 40,
+        "rows": 15,
+        "scripts": [
+          "apc-viz.js",
+          "apc-mock-viz.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:1.5rem;top:1.5rem;width:24rem;height:7rem\" data-apc=\"spectrum\" data-viz=\"demo-spec\" data-label=\"Spectrum (fill)\" data-style=\"fill\" data-smoothing=\"0.5\"></div><div class=\"apc-cell\" style=\"left:1.5rem;top:9rem;width:24rem;height:5rem\" data-apc=\"spectrum\" data-viz=\"demo-spec\" data-label=\"Spectrum (line)\" data-style=\"line\" data-axes=\"none\"></div><div class=\"apc-cell\" style=\"left:27rem;top:1.5rem;width:11.5rem;height:12.5rem\" data-apc=\"spectrum\" data-viz=\"demo-spec\" data-label=\"Spectrum (bars)\" data-style=\"bars\" data-bands=\"24\" data-xscale=\"linear\"></div>",
+        "expect": [
+          ".apc-viz-spectrum canvas.apc-viz-cv"
+        ],
+        "hint": "Fed by apc-mock-viz.js (demo only; a real plugin pushes the same {type:\"spectrum\"} payloads from native)."
+      }
+    },
+    {
+      "name": "waveform",
+      "registered": true,
+      "group": "Visualisation",
+      "title": "Waveform",
+      "file": "apc-viz.js",
+      "guide": ".agents/guides/ui-kit-viz.md#elements-at-a-glance",
+      "summary": "Waveform display: static peaks of a sample, a scrolling roll, or an oscilloscope trace; one min/max column per device pixel. Display only.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"waveform\" data-label=\"Sample\" data-axes=\"none\"\n     style=\"left:2rem;top:2rem;width:20rem;height:4rem\"></div>",
+      "options": [
+        {
+          "name": "data-viz",
+          "desc": "Feed id ({type:\"waveform\", min:[..], max:[..]} peak columns or {samples:[..]})."
+        },
+        {
+          "name": "data-mode",
+          "desc": "static | scroll | scope.",
+          "values": "static|scroll|scope"
+        },
+        {
+          "name": "data-ymin",
+          "desc": "Y range (-1 / 1)."
+        },
+        {
+          "name": "data-yunit",
+          "desc": "Y unit."
+        },
+        {
+          "name": "data-axes",
+          "desc": "none (default) | both | x | y."
+        },
+        {
+          "name": "data-grid",
+          "desc": "true | false."
+        },
+        {
+          "name": "data-trigger",
+          "desc": "scope: rising zero crossing trigger.",
+          "values": "true"
+        },
+        {
+          "name": "data-spc",
+          "desc": "scroll: samples per column (256)."
+        },
+        {
+          "name": "data-cols",
+          "desc": "scroll: ring size (2048)."
+        },
+        {
+          "name": "data-samples",
+          "desc": "JSON initial samples."
+        },
+        {
+          "name": "data-label",
+          "desc": "Accessible name."
+        }
+      ],
+      "events": [
+        {
+          "name": "viz (bridge)",
+          "dir": "in",
+          "payload": "{id, data}",
+          "note": "native name apc.viz; data shape per element; emit ~30 fps from analysis, not per audio buffer"
+        }
+      ],
+      "bridge": [],
+      "gestures": [
+        {
+          "input": "(display only)",
+          "action": "no interaction; API: setSamples, setPeaks, pushPeaks, pushSamples, clear, setCursor(0..1) draws an accent playhead"
+        },
+        {
+          "input": "Text alternative",
+          "action": "states the value range"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-viz.html"
+      ],
+      "demo": {
+        "cols": 40,
+        "rows": 14,
+        "scripts": [
+          "apc-viz.js",
+          "apc-mock-viz.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:1.5rem;top:1.5rem;width:36rem;height:4rem\" data-apc=\"waveform\" data-label=\"Sample (static)\" data-axes=\"none\" data-samples=\"[0,0.17,0.33,0.48,0.62,0.73,0.82,0.89,0.93,0.94,0.92,0.88,0.81,0.72,0.61,0.48,0.34,0.19,0.04,-0.11,-0.25,-0.39,-0.51,-0.61,-0.7,-0.76,-0.81,-0.82,-0.81,-0.78,-0.73,-0.66,-0.56,-0.45,-0.34,-0.21,-0.08,0.06,0.19,0.31,0.42,0.51,0.6,0.66,0.7,0.72,0.72,0.7,0.66,0.6,0.52,0.43,0.33,0.21,0.1,-0.02,-0.13,-0.24,-0.34,-0.43,-0.5,-0.56,-0.6,-0.63,-0.63,-0.62,-0.59,-0.54,-0.48,-0.4,-0.31,-0.22,-0.12,-0.01,0.09,0.18,0.27,0.35,0.42,0.48,0.52,0.55,0.56,0.55,0.53,0.49,0.43,0.37,0.3,0.21,0.13,0.04,-0.05,-0.14,-0.22,-0.29,-0.36,-0.41,-0.45,-0.48,-0.49,-0.48,-0.47,-0.44,-0.4,-0.34,-0.28,-0.21,-0.13,-0.06,0.02,0.1,0.17,0.24,0.3,0.35,0.39,0.41,0.43,0.43,0.42,0.39,0.36,0.31,0.26,0.2,0.14,0.07,0,-0.07,-0.13,-0.19,-0.25,-0.29,-0.33,-0.36,-0.37,-0.38,-0.37,-0.35,-0.32,-0.29,-0.24,-0.19,-0.14,-0.08,-0.02,0.04,0.1,0.16,0.2,0.25,0.28,0.31,0.32,0.33,0.33,0.31,0.29,0.26,0.23,0.18,0.13,0.08,0.03,-0.02,-0.07,-0.12,-0.17,-0.21,-0.24,-0.26,-0.28,-0.29,-0.29,-0.28,-0.26,-0.24,-0.21,-0.17,-0.13,-0.09,-0.04,0.01,0.05,0.1,0.14,0.17,0.2,0.23,0.24,0.25,0.25,0.25,0.24,0.22,0.19,0.16,0.12,0.09,0.05,0.01,-0.03,-0.07,-0.11,-0.14,-0.17,-0.19,-0.21,-0.22,-0.22,-0.22,-0.21,-0.2,-0.17,-0.15,-0.12,-0.09,-0.05,-0.02,0.02,0.06,0.09,0.12,0.14,0.16,0.18,0.19,0.2,0.19,0.19,0.18,0.16,0.14,0.11,0.08,0.05,0.02,-0.01,-0.04,-0.07,-0.1,-0.12,-0.14,-0.15,-0.17,-0.17,-0.17,-0.17,-0.16,-0.14,-0.13,-0.1,-0.08,-0.05,-0.03]\"></div><div class=\"apc-cell\" style=\"left:1.5rem;top:6.5rem;width:36rem;height:4rem\" data-apc=\"waveform\" data-label=\"Rolling peaks\" data-mode=\"scroll\" data-viz=\"demo-roll\" data-axes=\"none\"></div>",
+        "expect": [
+          ".apc-viz-waveform canvas.apc-viz-cv"
+        ],
+        "hint": "Top: a static sample (data-samples). Bottom: scrolling peak columns fed by the demo mock."
+      }
+    },
+    {
+      "name": "scope",
+      "registered": true,
+      "group": "Visualisation",
+      "title": "Scope",
+      "file": "apc-viz.js",
+      "guide": ".agents/guides/ui-kit-viz.md#elements-at-a-glance",
+      "summary": "Oscilloscope trace with an optional rising-zero-crossing trigger (the waveform element in scope mode). Display only.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"scope\" data-viz=\"osc\" data-trigger=\"true\" data-label=\"Oscilloscope\"\n     style=\"left:2rem;top:2rem;width:20rem;height:6rem\"></div>",
+      "options": [
+        {
+          "name": "data-viz",
+          "desc": "Feed id ({type:\"waveform\", min:[..], max:[..]} peak columns or {samples:[..]})."
+        },
+        {
+          "name": "data-mode",
+          "desc": "static | scroll | scope.",
+          "values": "static|scroll|scope"
+        },
+        {
+          "name": "data-ymin",
+          "desc": "Y range (-1 / 1)."
+        },
+        {
+          "name": "data-yunit",
+          "desc": "Y unit."
+        },
+        {
+          "name": "data-axes",
+          "desc": "none (default) | both | x | y."
+        },
+        {
+          "name": "data-grid",
+          "desc": "true | false."
+        },
+        {
+          "name": "data-trigger",
+          "desc": "scope: rising zero crossing trigger.",
+          "values": "true"
+        },
+        {
+          "name": "data-spc",
+          "desc": "scroll: samples per column (256)."
+        },
+        {
+          "name": "data-cols",
+          "desc": "scroll: ring size (2048)."
+        },
+        {
+          "name": "data-samples",
+          "desc": "JSON initial samples."
+        },
+        {
+          "name": "data-label",
+          "desc": "Accessible name."
+        }
+      ],
+      "events": [
+        {
+          "name": "viz (bridge)",
+          "dir": "in",
+          "payload": "{id, data}",
+          "note": "native name apc.viz; data shape per element; emit ~30 fps from analysis, not per audio buffer"
+        }
+      ],
+      "bridge": [],
+      "gestures": [
+        {
+          "input": "(display only)",
+          "action": "no interaction; each frame replaces the trace"
+        },
+        {
+          "input": "Reduced motion",
+          "action": "the mock emits one static frame"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-viz.html"
+      ],
+      "demo": {
+        "cols": 40,
+        "rows": 13,
+        "scripts": [
+          "apc-viz.js",
+          "apc-mock-viz.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:1.5rem;top:1.5rem;width:36rem;height:5rem\" data-apc=\"scope\" data-label=\"Oscilloscope\" data-viz=\"demo-scope\" data-trigger=\"true\" data-axes=\"none\"></div><div class=\"apc-cell\" style=\"left:1.5rem;top:7.5rem;width:36rem;height:3.5rem\" data-apc=\"scope\" data-label=\"Scope with axes\" data-viz=\"demo-scope\" data-axes=\"both\"></div>",
+        "expect": [
+          ".apc-viz canvas.apc-viz-cv"
+        ],
+        "hint": "Fed by apc-mock-viz.js frames of 512 samples; with the trigger on, the trace is stable."
+      }
+    },
+    {
+      "name": "meter",
+      "registered": true,
+      "group": "Visualisation",
+      "title": "Meter",
+      "file": "apc-viz.js",
+      "guide": ".agents/guides/ui-kit-viz.md#elements-at-a-glance",
+      "summary": "Level meter (1 or 2 channels, continuous or segmented) with peak hold, a latching clip lamp, warn/clip zones and dB ticks. Value convention: linear amplitude by default, dB with data-input=\"db\".",
+      "markup": "<div class=\"apc-cell\" data-apc=\"meter\" data-meter=\"out\" data-channels=\"2\" data-label=\"Output\"\n     style=\"left:2rem;top:2rem;width:4rem;height:10rem\"></div>",
+      "options": [
+        {
+          "name": "data-meter",
+          "desc": "Feed id: bridge event meter {id,value} (also data-viz / the element id)."
+        },
+        {
+          "name": "data-meter-r",
+          "desc": "Second id for the right channel."
+        },
+        {
+          "name": "data-channels",
+          "desc": "1 | 2.",
+          "values": "1|2"
+        },
+        {
+          "name": "data-orientation",
+          "desc": "v (default) | h.",
+          "values": "v|h"
+        },
+        {
+          "name": "data-min",
+          "desc": "Scale minimum dB (-60)."
+        },
+        {
+          "name": "data-max",
+          "desc": "Scale maximum dB (6)."
+        },
+        {
+          "name": "data-warn",
+          "desc": "Warn level dB (-12)."
+        },
+        {
+          "name": "data-clip-at",
+          "desc": "Clip level dB (0)."
+        },
+        {
+          "name": "data-style",
+          "desc": "continuous | segmented.",
+          "values": "continuous|segmented"
+        },
+        {
+          "name": "data-segments",
+          "desc": "Segment count (auto)."
+        },
+        {
+          "name": "data-peak-hold",
+          "desc": "true | false."
+        },
+        {
+          "name": "data-hold-ms",
+          "desc": "Peak hold (1500)."
+        },
+        {
+          "name": "data-fall",
+          "desc": "Fall dB/s (24)."
+        },
+        {
+          "name": "data-ticks",
+          "desc": "true | false."
+        },
+        {
+          "name": "data-input",
+          "desc": "linear (default) | db for meter events.",
+          "values": "linear|db"
+        },
+        {
+          "name": "data-announce",
+          "desc": "Live-region level announcements (false)."
+        }
+      ],
+      "events": [
+        {
+          "name": "meter (bridge)",
+          "dir": "in",
+          "payload": "{id, value}",
+          "note": "linear amplitude, or dB with data-input=\"db\""
+        },
+        {
+          "name": "viz (bridge)",
+          "dir": "in",
+          "payload": "{id, data}",
+          "note": "native name apc.viz; data shape per element; emit ~30 fps from analysis, not per audio buffer"
+        },
+        {
+          "name": "meter:clip (bus)",
+          "dir": "out",
+          "payload": "{id, on}",
+          "note": "also DOM \"apc-clip\""
+        }
+      ],
+      "bridge": [],
+      "gestures": [
+        {
+          "input": "Click the clip lamp / Enter / Space",
+          "action": "reset the clip latch (a real button)"
+        },
+        {
+          "input": "Ballistics",
+          "action": "instant attack, linear fall (data-fall); clip latches until reset"
+        },
+        {
+          "input": "Screen readers",
+          "action": "role=meter with aria-valuetext \"L -12.3 dB, R -14.0 dB, clipped\" (max 4x/s)"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-viz.html"
+      ],
+      "demo": {
+        "cols": 40,
+        "rows": 14,
+        "scripts": [
+          "apc-viz.js",
+          "apc-mock-viz.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:1.5rem;width:4.5rem;height:10.5rem\" data-apc=\"meter\" data-label=\"Output L R\" data-meter=\"demo-m\" data-channels=\"2\" data-input=\"db\"></div><div class=\"apc-cell\" style=\"left:8rem;top:1.5rem;width:2.6rem;height:10.5rem\" data-apc=\"meter\" data-label=\"Segmented\" data-meter=\"demo-m2\" data-style=\"segmented\" data-input=\"db\" data-ticks=\"false\"></div><div class=\"apc-cell\" style=\"left:13rem;top:1.5rem;width:12rem;height:3rem\" data-apc=\"meter\" data-label=\"Horizontal\" data-meter=\"demo-m3\" data-orientation=\"h\" data-input=\"db\"></div><div class=\"apc-cell\" style=\"left:13rem;top:5.5rem;width:12rem;height:1.8rem\" data-apc=\"meter\" data-label=\"Horizontal segmented\" data-meter=\"demo-m4\" data-orientation=\"h\" data-style=\"segmented\" data-input=\"db\" data-ticks=\"false\"></div>",
+        "expect": [
+          ".apc-viz-meter canvas.apc-viz-cv",
+          ".apc-viz-meter .apc-viz-clip"
+        ],
+        "hint": "Fed by apc-mock-viz.js; it touches 0 dB now and then, which latches the clip lamp (click it to reset)."
+      }
+    },
+    {
+      "name": "stepseq",
+      "registered": true,
+      "group": "Visualisation",
+      "title": "Step sequencer",
+      "file": "apc-viz.js",
+      "guide": ".agents/guides/ui-kit-viz.md#elements-at-a-glance",
+      "summary": "Step grid (gate, value or pitch mode) with accents, beat grouping, a playhead and row labels; paint with the pointer or edit by keyboard. Array parameters are supported via the bridge.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"stepseq\" data-count=\"16\" data-rows=\"4\" data-row-labels=\"KICK,SNARE,HAT,CLAP\" data-viz=\"seq\"\n     style=\"left:2rem;top:2rem;width:30rem;height:6rem\"></div>",
+      "options": [
+        {
+          "name": "data-mode",
+          "desc": "gate (default) | value | pitch.",
+          "values": "gate|value|pitch"
+        },
+        {
+          "name": "data-count",
+          "desc": "Steps (16, max 64)."
+        },
+        {
+          "name": "data-rows",
+          "desc": "gate 4, pitch 12, value 1."
+        },
+        {
+          "name": "data-length",
+          "desc": "Active steps (= count)."
+        },
+        {
+          "name": "data-group",
+          "desc": "Beat grouping (4)."
+        },
+        {
+          "name": "data-min",
+          "desc": "value mode range (0..1)."
+        },
+        {
+          "name": "data-numbers",
+          "desc": "Step-number header (true)."
+        },
+        {
+          "name": "data-row-labels",
+          "desc": "Comma list."
+        },
+        {
+          "name": "data-steps",
+          "desc": "JSON: gate = rows x count of 0|1|2 (2 = accent); value = count numbers; pitch = count rows from the bottom, -1 = rest."
+        },
+        {
+          "name": "data-accents",
+          "desc": "JSON booleans (value / pitch)."
+        },
+        {
+          "name": "data-param",
+          "desc": "Bridge parameter; used only when its descriptor is an array parameter ({array:true}, type/kind \"steps\" or an array value)."
+        },
+        {
+          "name": "data-viz",
+          "desc": "Playhead feed id ({type:\"playhead\", step} | {type:\"steps\", steps, accents?})."
+        },
+        {
+          "name": "data-id",
+          "desc": "Element id used in events."
+        }
+      ],
+      "events": [
+        {
+          "name": "stepseq (bus)",
+          "dir": "out",
+          "payload": "{id, mode, steps, accents?, length, count, phase: change|end|key|api|length|clear}",
+          "note": "also DOM \"apc-stepseq\""
+        },
+        {
+          "name": "viz (bridge)",
+          "dir": "in",
+          "payload": "{id, data}",
+          "note": "native name apc.viz; data shape per element; emit ~30 fps from analysis, not per audio buffer"
+        },
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value:[...]}",
+          "note": "array parameters accept apc.param.set {id, value:[...]}"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.param.set",
+        "apc.param.begin",
+        "apc.param.end"
+      ],
+      "gestures": [
+        {
+          "input": "Press + drag",
+          "action": "paint steps (starting on a lit cell erases)"
+        },
+        {
+          "input": "Shift+click",
+          "action": "toggle accent"
+        },
+        {
+          "input": "Value mode: click / drag",
+          "action": "set the value from the pointer height (Shift unquantised, Alt clears)"
+        },
+        {
+          "input": "Pitch mode: click",
+          "action": "select the row; click again = rest"
+        },
+        {
+          "input": "Arrows",
+          "action": "move (value mode: Up/Down edit; pitch: Up/Down change pitch)"
+        },
+        {
+          "input": "Home / End",
+          "action": "first / last step"
+        },
+        {
+          "input": "Space / Enter",
+          "action": "toggle (Shift+Space accent)"
+        },
+        {
+          "input": "Delete / Backspace",
+          "action": "clear"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-viz.html"
+      ],
+      "demo": {
+        "cols": 40,
+        "rows": 15,
+        "scripts": [
+          "apc-viz.js",
+          "apc-mock-viz.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:1.5rem;top:1.5rem;width:28rem;height:6rem\" data-apc=\"stepseq\" data-label=\"Drum steps\" data-viz=\"demo-seq\" data-count=\"16\" data-rows=\"4\" data-row-labels=\"KICK,SNARE,HAT,CLAP\" data-steps=\"[[2,0,0,0,1,0,0,0,2,0,0,1,0,0,1,0],[0,0,0,0,2,0,0,0,0,0,0,0,2,0,0,1],[1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,1],[0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0]]\"></div><div class=\"apc-cell\" style=\"left:1.5rem;top:8.5rem;width:18rem;height:5rem\" data-apc=\"stepseq\" data-label=\"Velocity\" data-viz=\"demo-seq\" data-mode=\"value\" data-count=\"8\" data-numbers=\"false\" data-steps=\"[0.9,0.4,0.6,0.35,1,0.45,0.7,0.5]\" data-accents=\"[true,false,false,false,true,false,false,false]\"></div><div class=\"apc-cell\" style=\"left:21rem;top:8.5rem;width:17.5rem;height:5rem\" data-apc=\"stepseq\" data-label=\"Pitch\" data-viz=\"demo-seq\" data-mode=\"pitch\" data-count=\"8\" data-rows=\"8\" data-numbers=\"false\" data-steps=\"[0,2,4,5,7,-1,4,2]\"></div>",
+        "expect": [
+          ".apc-viz-stepseq [role=\"grid\"], .apc-viz-stepseq[role=\"grid\"]",
+          ".apc-viz-stepseq .apc-viz-step"
+        ],
+        "hint": "Click and drag to paint; Shift+click accents; arrows + Space for the keyboard. The playhead comes from the demo mock (120 bpm 16ths)."
+      }
+    },
+    {
+      "name": "xypad",
+      "registered": true,
+      "group": "Visualisation",
+      "title": "XY pad",
+      "file": "apc-viz.js",
+      "guide": ".agents/guides/ui-kit-viz.md#elements-at-a-glance",
+      "summary": "Two-axis pad bound to two parameters: absolute press-and-drag, Shift for relative fine control, a tick marks the defaults.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"xypad\" data-x=\"cutoff_hz\" data-y=\"resonance_pct\" data-xlabel=\"CUTOFF\" data-ylabel=\"RESO\"\n     style=\"left:2rem;top:2rem;width:10rem;height:10rem\"></div>",
+      "options": [
+        {
+          "name": "data-x",
+          "desc": "X parameter id (unbound = local 0..1, or data-xmin / data-xmax)."
+        },
+        {
+          "name": "data-y",
+          "desc": "Y parameter id."
+        },
+        {
+          "name": "data-xlabel",
+          "desc": "X readout label."
+        },
+        {
+          "name": "data-ylabel",
+          "desc": "Y readout label."
+        },
+        {
+          "name": "data-grid",
+          "desc": "Grid divisions (4)."
+        },
+        {
+          "name": "data-id",
+          "desc": "Element id used in events."
+        },
+        {
+          "name": "data-label",
+          "desc": "Accessible name."
+        }
+      ],
+      "events": [
+        {
+          "name": "xypad:change (bus)",
+          "dir": "out",
+          "payload": "{id, x, y, nx, ny, phase: begin|move|end|key|reset}",
+          "note": "also DOM \"apc-xypad\""
+        },
+        {
+          "name": "param (bridge)",
+          "dir": "in",
+          "payload": "{id, value}",
+          "note": "both parameters follow the host"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.param.set",
+        "apc.param.begin",
+        "apc.param.end",
+        "apc.param.reset"
+      ],
+      "gestures": [
+        {
+          "input": "Press and drag",
+          "action": "jump to the pointer and follow (one begin ... end gesture)"
+        },
+        {
+          "input": "Shift+press",
+          "action": "relative fine control (10x)"
+        },
+        {
+          "input": "Alt/Option+click or double-click",
+          "action": "reset both parameters (U-01, U-02)"
+        },
+        {
+          "input": "Arrows on the thumb",
+          "action": "1 % (Shift 0.1 %)"
+        },
+        {
+          "input": "PageUp / PageDown",
+          "action": "y 10 %"
+        },
+        {
+          "input": "Home / End",
+          "action": "x min / max"
+        },
+        {
+          "input": "Delete / Backspace",
+          "action": "reset"
+        }
+      ],
+      "standards": [
+        "U-01",
+        "U-02",
+        "U-07"
+      ],
+      "tests": [
+        "kit-viz.html"
+      ],
+      "demo": {
+        "cols": 36,
+        "rows": 14,
+        "scripts": [
+          "apc-viz.js",
+          "apc-mock-viz.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:1.5rem;width:12rem;height:11rem\" data-apc=\"xypad\" data-label=\"Filter pad\" data-x=\"cutoff_hz\" data-y=\"resonance_pct\" data-xlabel=\"CUTOFF\" data-ylabel=\"RESO\"></div><div class=\"apc-cell\" style=\"left:17rem;top:1.5rem;width:9rem;height:9rem\" data-apc=\"xypad\" data-label=\"Free pad\" data-xlabel=\"X\" data-ylabel=\"Y\"></div>",
+        "expect": [
+          ".apc-viz-xypad .apc-viz-thumb"
+        ],
+        "hint": "The left pad drives the mock parameters cutoff_hz / resonance_pct; the right one is free (local 0..1). Drag, Shift for fine, double-click resets."
+      }
+    },
+    {
+      "name": "picture",
+      "registered": true,
+      "group": "Visualisation",
+      "title": "Picture",
+      "file": "apc-viz.js",
+      "guide": ".agents/guides/ui-kit-viz.md#elements-at-a-glance",
+      "summary": "Image or artwork slot (relative path or data URI only, never the network) with a token-coloured test-image placeholder and an optional spectrum overlay.",
+      "markup": "<div class=\"apc-cell\" data-apc=\"picture\" data-alt=\"Cover art\" data-src=\"art/cover.png\" data-fit=\"cover\"\n     style=\"left:2rem;top:2rem;width:12rem;height:8rem\"></div>",
+      "options": [
+        {
+          "name": "data-alt",
+          "desc": "MANDATORY accessible text (data-alt=\"\" = decorative). Missing: a warning toast."
+        },
+        {
+          "name": "data-src",
+          "desc": "Relative path or data:image/... only; http(s), file:, javascript: are rejected with a visible error block."
+        },
+        {
+          "name": "data-fit",
+          "desc": "contain (with src) | cover (without) | fill.",
+          "values": "contain|cover|fill"
+        },
+        {
+          "name": "data-seed",
+          "desc": "Placeholder composition."
+        },
+        {
+          "name": "data-overlay",
+          "desc": "spectrum | none.",
+          "values": "spectrum|none"
+        },
+        {
+          "name": "data-overlay-style",
+          "desc": "fill | line | bars."
+        },
+        {
+          "name": "data-viz",
+          "desc": "Overlay feed id."
+        }
+      ],
+      "events": [
+        {
+          "name": "error (bus)",
+          "dir": "out",
+          "payload": "{message, detail?, source}",
+          "note": "rejected URL or failed load; shown as a toast"
+        }
+      ],
+      "bridge": [],
+      "gestures": [
+        {
+          "input": "(display only)",
+          "action": "role=img with aria-label = alt; setSrc(url) / setFit(f) at runtime"
+        },
+        {
+          "input": "Rejected URL",
+          "action": "visible error block (role=alert) and APC.emit(\"error\")"
+        }
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "tests": [
+        "kit-viz.html"
+      ],
+      "demo": {
+        "cols": 40,
+        "rows": 12,
+        "scripts": [
+          "apc-viz.js",
+          "apc-mock-viz.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:1.5rem;width:16rem;height:9rem\" data-apc=\"picture\" data-alt=\"Procedural test image\" data-seed=\"3\" data-fit=\"cover\"></div><div class=\"apc-cell\" style=\"left:20rem;top:1.5rem;width:18rem;height:9rem\" data-apc=\"picture\" data-alt=\"Test image with spectrum overlay\" data-overlay=\"spectrum\" data-viz=\"demo-spec\" data-smoothing=\"0.5\" data-seed=\"5\" data-fit=\"cover\"></div>",
+        "expect": [
+          ".apc-viz-picture canvas, .apc-viz-picture img, .apc-viz-picture .apc-viz-cv"
+        ],
+        "hint": "No src: a procedurally drawn stand-in (labelled TEST IMAGE). The right one overlays a live spectrum (demo mock feed)."
+      }
+    },
+    {
+      "name": "context-panel",
+      "registered": false,
+      "via": [
+        "knob",
+        "slider",
+        "selector",
+        "toggle"
+      ],
+      "group": "Context & Help",
+      "title": "Context panel",
+      "file": "apc-context.js",
+      "guide": ".agents/guides/ui-kit-controls.md#context-panel-u-03",
+      "summary": "Not a data-apc component: every control opens it on right-click / Shift+F10 / the \"...\" button. Sections in order VALUE -> MODULATION -> MIDI -> HELP. Programmatic: APC.context. Offered sources: APC.context.sources.",
+      "markup": "// nothing to mount - it belongs to the controls:\nAPC.context.sources = [{ id: \"lfo1\", name: \"LFO 1\" }, { id: \"macro1\", name: \"Macro 1\" }];",
+      "options": [
+        {
+          "name": "APC.context.sources",
+          "desc": "Array of {id, name} offered in \"+ Add source\" (default LFO 1/2, Env 1/2, Macro 1, Velocity, Keytrack, Mod Wheel, Aftertouch, Random, Breath, Expression)."
+        },
+        {
+          "name": "descriptor.modSources",
+          "desc": "Optional per-parameter extra sources."
+        }
+      ],
+      "events": [
+        {
+          "name": "context:opened / context:closed",
+          "dir": "out",
+          "payload": "{...}",
+          "note": "informational"
+        },
+        {
+          "name": "params:changed",
+          "dir": "out",
+          "payload": "{id}",
+          "note": "after modulation / MIDI edits"
+        },
+        {
+          "name": "undo:push",
+          "dir": "out",
+          "payload": "{label, id, before?, after?, kind?}",
+          "note": "module optional"
+        }
+      ],
+      "bridge": [
+        "apc.mod.set",
+        "apc.mod.remove",
+        "apc.mod.clear",
+        "apc.midi.learn",
+        "apc.midi.unlearn",
+        "apc.params.get"
+      ],
+      "gestureSet": "context",
+      "standards": [
+        "U-03",
+        "U-04",
+        "U-12",
+        "X-09"
+      ],
+      "demo": {
+        "cols": 40,
+        "rows": 24,
+        "scripts": [
+          "apc-controls.js",
+          "apc-context.js",
+          "apc-help.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:6rem;height:9rem\" data-apc=\"knob\" data-param=\"cutoff_hz\" data-label=\"CUTOFF\"></div><div class=\"apc-cell\" style=\"left:9rem;top:2rem;width:4rem;height:9rem\" data-apc=\"slider\" data-param=\"lfo_depth_pct\" data-label=\"DEPTH\"></div>",
+        "actions": [
+          {
+            "contextmenu": "[data-param=\"cutoff_hz\"]"
+          }
+        ],
+        "expect": [
+          ".apc-ctx[role=\"dialog\"]"
+        ],
+        "hint": "Opened automatically on CUTOFF (2 modulation routes, MIDI CC 74). Esc closes it."
+      },
+      "tests": [
+        "kit-a.html"
+      ]
+    },
+    {
+      "name": "infobar",
+      "registered": true,
+      "group": "Context & Help",
+      "title": "Info bar",
+      "file": "apc-help.js",
+      "guide": ".agents/guides/ui-kit-controls.md#help-u-09",
+      "summary": "One-line help text: hovering or focusing a control shows [Name] value (default x) - what effect ...; idle shows the preset name and * when dirty. The footer embeds one automatically.",
+      "markup": "<div data-apc=\"infobar\" data-idle=\"Hover a control\"></div>",
+      "options": [
+        {
+          "name": "data-idle",
+          "desc": "Initial idle text."
+        }
+      ],
+      "events": [
+        {
+          "name": "prefs:changed",
+          "dir": "in",
+          "payload": "{tooltips, ...}",
+          "note": "ui.tooltips = false disables the hover text"
+        },
+        {
+          "name": "ctl:drag",
+          "dir": "in",
+          "payload": "{id, active}",
+          "note": "hidden while dragging"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.settings.get"
+      ],
+      "gestureSet": "help",
+      "standards": [
+        "U-09",
+        "X-09"
+      ],
+      "demo": {
+        "cols": 40,
+        "rows": 14,
+        "scripts": [
+          "apc-controls.js",
+          "apc-help.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:1.5rem;width:6rem;height:9rem\" data-apc=\"knob\" data-param=\"cutoff_hz\" data-label=\"CUTOFF\"></div><div class=\"apc-cell\" style=\"left:9rem;top:1.5rem;width:6rem;height:9rem\" data-apc=\"knob\" data-param=\"resonance_pct\" data-label=\"RESO\"></div><div class=\"apc-cell\" style=\"left:2rem;top:11.5rem;width:36rem;height:1.75rem\" data-apc=\"infobar\" data-idle=\"Hover or focus a control\"></div>",
+        "expect": [
+          "[data-apc=\"infobar\"]"
+        ],
+        "hint": "Hover or Tab onto a knob: the bar shows the parameter help text (written once in the descriptor)."
+      },
+      "tests": [
+        "kit-a.html"
+      ]
+    },
+    {
+      "name": "help-button",
+      "registered": true,
+      "group": "Context & Help",
+      "title": "Help button",
+      "file": "apc-help.js",
+      "guide": ".agents/guides/ui-kit-controls.md#help-u-09",
+      "summary": "Visible Help button (X-09: F1 and ? are often swallowed by the host). Toggles help mode: click any control to open its manual entry without changing it. The header embeds one by default.",
+      "markup": "<div data-apc=\"help-button\"></div>",
+      "options": [],
+      "events": [
+        {
+          "name": "help:mode",
+          "dir": "out",
+          "payload": "{on}",
+          "note": "informational"
+        },
+        {
+          "name": "help:manual",
+          "dir": "out",
+          "payload": "{id}",
+          "note": "a manual entry was opened"
+        }
+      ],
+      "bridge": [
+        "apc.params.get",
+        "apc.info",
+        "apc.openUrl",
+        "apc.settings.get"
+      ],
+      "gestureSet": "help",
+      "standards": [
+        "U-09",
+        "X-09"
+      ],
+      "demo": {
+        "cols": 34,
+        "rows": 16,
+        "scripts": [
+          "apc-controls.js",
+          "apc-help.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:1rem;width:6rem;height:1.75rem\" data-apc=\"help-button\"></div><div class=\"apc-cell\" style=\"left:2rem;top:4rem;width:6rem;height:9rem\" data-apc=\"knob\" data-param=\"cutoff_hz\" data-label=\"CUTOFF\"></div><div class=\"apc-cell\" style=\"left:10rem;top:4rem;width:6rem;height:9rem\" data-apc=\"knob\" data-param=\"gain_db\" data-label=\"GAIN\"></div>",
+        "expect": [
+          "[data-apc=\"help-button\"] button"
+        ],
+        "hint": "Click Help, then click a knob: its manual entry opens. Esc leaves help mode."
+      },
+      "tests": [
+        "kit-a.html"
+      ]
+    },
+    {
+      "name": "header",
+      "registered": true,
+      "group": "Chrome",
+      "title": "Header",
+      "file": "apc-chrome.js",
+      "guide": ".agents/guides/ui-kit-controls.md#footer-and-header-u-16-u-11",
+      "summary": "Brand lockup (logo -> company URL, name -> product URL, only when configured in apc.info.links), a Save slot, the Help button, the theme switch, the scale control and the settings gear. Links go through apc.openUrl on click, never automatically.",
+      "markup": "<header class=\"apc-cell\" data-apc=\"header\" data-product=\"Example Synth\" data-manufacturer=\"Example Audio\"\n        style=\"left:0;top:0;width:50rem;height:2.5rem\"></header>",
+      "options": [
+        {
+          "name": "data-product / data-manufacturer",
+          "desc": "Text shown until apc.info arrives."
+        },
+        {
+          "name": "data-logo-src",
+          "desc": "Image used instead of the manufacturer text."
+        },
+        {
+          "name": "data-save",
+          "values": "true",
+          "desc": "Render a plain Save button in the Save slot (emits preset:save); otherwise the slot is left for the presets module."
+        },
+        {
+          "name": "data-help",
+          "values": "false",
+          "desc": "Omit the Help-button slot."
+        },
+        {
+          "name": "data-scale",
+          "values": "false",
+          "desc": "Omit the +/- scale control."
+        }
+      ],
+      "events": [
+        {
+          "name": "settings:open",
+          "dir": "out",
+          "payload": "{tab?}",
+          "note": "gear button"
+        },
+        {
+          "name": "preset:save",
+          "dir": "out",
+          "payload": "-",
+          "note": "plain Save button (data-save=\"true\")"
+        },
+        {
+          "name": "theme:changed / theme:available",
+          "dir": "out",
+          "payload": "{mode, theme}",
+          "note": "U-07"
+        },
+        {
+          "name": "scale:changed",
+          "dir": "out",
+          "payload": "{scale}",
+          "note": "U-08"
+        }
+      ],
+      "bridge": [
+        "apc.info",
+        "apc.openUrl",
+        "apc.settings.get",
+        "apc.settings.set",
+        "apc.ui.getPrefs",
+        "apc.ui.setScale"
+      ],
+      "gestureSet": "help",
+      "standards": [
+        "U-07",
+        "U-08",
+        "U-11",
+        "U-09",
+        "X-09"
+      ],
+      "demo": {
+        "cols": 50,
+        "rows": 6,
+        "scripts": [
+          "apc-controls.js",
+          "apc-help.js",
+          "apc-chrome.js"
+        ],
+        "body": "<header class=\"apc-cell\" style=\"left:0rem;top:0rem;width:50rem;height:2.5rem\" data-apc=\"header\" data-product=\"Example Synth\" data-manufacturer=\"Example Audio\" data-save=\"true\"></header>",
+        "expect": [
+          ".apc-header .apc-brand"
+        ],
+        "hint": "Brand parts become links only because the mock configures info.links.company / product. Click a link: it goes through apc.openUrl (mock records it, nothing opens)."
+      },
+      "tests": [
+        "kit-a.html"
+      ]
+    },
+    {
+      "name": "footer",
+      "registered": true,
+      "group": "Chrome",
+      "title": "Footer",
+      "file": "apc-chrome.js",
+      "guide": ".agents/guides/ui-kit-controls.md#footer-and-header-u-16-u-11",
+      "summary": "Version v<semver> is ALWAYS visible (U-16, never only in a menu). Shares the spot with the [DEMO] / [TRIAL n d] badge and the \"update available\" note; hosts an info bar showing the preset name and dirty *. Switch the scenario to see each state.",
+      "markup": "<footer class=\"apc-cell\" data-apc=\"footer\" data-version=\"1.2.0\"\n        style=\"left:0;top:25.5rem;width:50rem;height:2rem\"></footer>",
+      "options": [
+        {
+          "name": "data-version",
+          "desc": "Version text shown synchronously before apc.info resolves."
+        }
+      ],
+      "events": [
+        {
+          "name": "license:open",
+          "dir": "out",
+          "payload": "-",
+          "note": "badge click (the license dialog listens)"
+        },
+        {
+          "name": "update:open",
+          "dir": "out",
+          "payload": "-",
+          "note": "update note click (the update dialog listens)"
+        },
+        {
+          "name": "license / update / preset (bridge)",
+          "dir": "in",
+          "payload": "{status} / {state} / {state}",
+          "note": "repaints live"
+        }
+      ],
+      "bridge": [
+        "apc.info",
+        "apc.license.status",
+        "apc.update.state",
+        "apc.presets.state"
+      ],
+      "scenarios": [
+        "demo",
+        "trial",
+        "licensed",
+        "unverified",
+        "update-available"
+      ],
+      "standards": [
+        "U-16",
+        "L-02"
+      ],
+      "demo": {
+        "cols": 50,
+        "rows": 6,
+        "scripts": [
+          "apc-controls.js",
+          "apc-help.js",
+          "apc-chrome.js"
+        ],
+        "body": "<footer class=\"apc-cell\" style=\"left:0rem;top:3.5rem;width:50rem;height:2rem\" data-apc=\"footer\" data-version=\"1.2.0\"></footer>",
+        "expect": [
+          "[data-testid=\"apc-version\"]"
+        ],
+        "hint": "Pick scenario demo / trial / update-available to see the badge and the update note beside the version."
+      },
+      "tests": [
+        "kit-a.html"
+      ]
+    },
+    {
+      "name": "scale",
+      "registered": true,
+      "group": "Chrome",
+      "title": "Scale control",
+      "file": "apc-chrome.js",
+      "guide": ".agents/guides/ui-kit-controls.md#scale-and-gripper-u-08",
+      "summary": "The +/- scale control: 50..300 % in 25 % steps through one scale pipeline (APC.chrome.scale). The header embeds one by default.",
+      "markup": "<div data-apc=\"scale\" data-min=\"0.5\" data-max=\"3\"></div>",
+      "options": [
+        {
+          "name": "data-min / data-max",
+          "desc": "Scale range (default 0.5..3.0; never wider)."
+        }
+      ],
+      "events": [
+        {
+          "name": "scale:changed",
+          "dir": "out",
+          "payload": "{scale}",
+          "note": "also persisted via apc.ui.setScale"
+        }
+      ],
+      "bridge": [
+        "apc.ui.getPrefs",
+        "apc.ui.setScale"
+      ],
+      "gestureSet": "scale",
+      "standards": [
+        "U-08"
+      ],
+      "demo": {
+        "cols": 24,
+        "rows": 6,
+        "scripts": [
+          "apc-chrome.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:12rem;height:2rem\" data-apc=\"scale\"></div>",
+        "expect": [
+          "[data-apc=\"scale\"] button"
+        ],
+        "hint": "Click + / - and watch the percentage. The Hub iframe scale selector is separate: it resizes the window, the control resizes the plugin."
+      },
+      "tests": [
+        "kit-a.html"
+      ]
+    },
+    {
+      "name": "gripper",
+      "registered": true,
+      "group": "Chrome",
+      "title": "Gripper",
+      "file": "apc-chrome.js",
+      "guide": ".agents/guides/ui-kit-controls.md#scale-and-gripper-u-08",
+      "summary": "Bottom-right corner gripper: aspect-locked drag, snaps to 5 %, forwards raw deltas to the native resizeGrip functions (no-op outside JUCE) and calls apc.ui.setScale on release. Also a keyboard slider.",
+      "markup": "<div class=\"apc-grip\" data-apc=\"gripper\"></div>",
+      "options": [],
+      "events": [
+        {
+          "name": "scale:changed",
+          "dir": "out",
+          "payload": "{scale}",
+          "note": "on release"
+        }
+      ],
+      "bridge": [
+        "apc.ui.setScale"
+      ],
+      "gestureSet": "gripper",
+      "standards": [
+        "U-08"
+      ],
+      "demo": {
+        "cols": 24,
+        "rows": 10,
+        "scripts": [
+          "apc-chrome.js"
+        ],
+        "body": "<div class=\"apc-grip\" data-apc=\"gripper\"></div>",
+        "expect": [
+          ".apc-grip[data-apc=\"gripper\"]"
+        ],
+        "hint": "Drag the corner: outside JUCE the native resize is a no-op, so only the scale value changes."
+      },
+      "tests": [
+        "kit-a.html"
+      ]
+    },
+    {
+      "name": "theme-switch",
+      "registered": true,
+      "group": "Chrome",
+      "title": "Theme switch",
+      "file": "apc-chrome.js",
+      "guide": ".agents/guides/ui-kit-controls.md#themes-u-07",
+      "summary": "Night / Day / Follow-OS button (U-07, optional per product: hidden unless features.themeEnabled). Sets data-theme=\"night|day\" on <html>. A design supplies its own [data-theme] token blocks; the kit ships fallback sets.",
+      "markup": "<div data-apc=\"theme-switch\"></div>",
+      "options": [],
+      "events": [
+        {
+          "name": "theme:changed / theme:available",
+          "dir": "out",
+          "payload": "{mode, theme}",
+          "note": "persisted via apc.settings.set {ui:{theme}}"
+        }
+      ],
+      "bridge": [
+        "apc.info",
+        "apc.settings.get",
+        "apc.settings.set"
+      ],
+      "standards": [
+        "U-07"
+      ],
+      "demo": {
+        "cols": 24,
+        "rows": 6,
+        "scripts": [
+          "apc-chrome.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:12rem;height:2rem\" data-apc=\"theme-switch\"></div>",
+        "expect": [
+          "[data-apc=\"theme-switch\"] button"
+        ],
+        "hint": "Click to cycle Follow OS -> Night -> Day. The viewport selector in the Hub only sets the starting mode."
+      },
+      "tests": [
+        "kit-a.html"
+      ]
+    },
+    {
+      "name": "settings",
+      "registered": true,
+      "group": "Settings",
+      "title": "Settings overlay",
+      "file": "apc-settings.js",
+      "guide": ".agents/guides/ui-kit-panels.md#markup-and-options",
+      "summary": "Overlay (not an OS dialog) with tabs Global, Engine / Quality, MIDI, Presets & Data, License, About (U-05). Changes are written immediately as a minimal patch; a failed write shows an inline error plus a toast and the control snaps back. Engine edits stay per instance (X-08).",
+      "markup": "<button data-apc=\"settings\" aria-label=\"Settings\">&#9881;</button>\n<script>APC.emit(\"settings:open\", { tab: \"midi\" });</script>",
+      "options": [
+        {
+          "name": "(none)",
+          "desc": "Opens on click / Enter. APC.emit(\"settings:open\", {tab}) or APC.settingsUI.open({tab}). Esc closes, focus is trapped and restored."
+        }
+      ],
+      "events": [
+        {
+          "name": "settings:open",
+          "dir": "in",
+          "payload": "{tab?}",
+          "note": "tab: global | engine | midi | presets | license | about"
+        },
+        {
+          "name": "settings:changed",
+          "dir": "out",
+          "payload": "{settings}",
+          "note": "after every successful write"
+        },
+        {
+          "name": "presets:rescanned",
+          "dir": "out",
+          "payload": "{count, builtAt}",
+          "note": "Presets & Data tab"
+        }
+      ],
+      "bridge": [
+        "apc.settings.get",
+        "apc.settings.set",
+        "apc.engine.get",
+        "apc.engine.set",
+        "apc.midi.table.get",
+        "apc.midi.table.set",
+        "apc.midi.learn",
+        "apc.midi.unlearn",
+        "apc.presets.info",
+        "apc.presets.rescan",
+        "apc.presets.openFolder",
+        "apc.presets.restoreFactory",
+        "apc.info",
+        "apc.openUrl",
+        "apc.ui.setScale",
+        "apc.diagnostics.copy"
+      ],
+      "scenarios": "all",
+      "standards": [
+        "U-05",
+        "U-06",
+        "U-07",
+        "U-10",
+        "U-12",
+        "X-08",
+        "X-10",
+        "P-14"
+      ],
+      "demo": {
+        "cols": 50,
+        "rows": 28,
+        "scripts": [
+          "apc-license-ui.js",
+          "apc-update-ui.js",
+          "apc-presets.js",
+          "apc-settings.js"
+        ],
+        "body": "<button class=\"apc-btn\" data-apc=\"settings\" aria-label=\"Settings\" style=\"position:absolute;left:1rem;top:1rem\">&#9881; Settings</button>",
+        "actions": [
+          {
+            "click": "[data-apc=\"settings\"]"
+          }
+        ],
+        "expect": [
+          ".apc-kb-sheet[role=\"dialog\"]"
+        ],
+        "hint": "Opened automatically. Switch tabs; most changes write at once (see the mock call log via APC.mock.calls in the console)."
+      },
+      "tests": [
+        "kit-b-settings.html"
+      ]
+    },
+    {
+      "name": "presets",
+      "registered": true,
+      "group": "Presets",
+      "title": "Preset browser",
+      "file": "apc-presets.js",
+      "guide": ".agents/guides/ui-kit-panels.md#markup-and-options",
+      "summary": "Full browser: scope, filters (OR within a group, AND across), search, true sorting, ratings, favorites, dirty *, Revert, Init, A/B with copy, Save / Save As, Import / Export. Native does the filtering and sorting; every I/O error is a visible toast naming the path. Needs a definite height.",
+      "markup": "<div data-apc=\"presets\" style=\"width:46rem;height:24rem\"></div>",
+      "options": [
+        {
+          "name": "data-categories",
+          "values": "pad,bass",
+          "desc": "Show only these categories."
+        },
+        {
+          "name": "data-hide-categories",
+          "values": "bass",
+          "desc": "Hide these categories."
+        }
+      ],
+      "events": [
+        {
+          "name": "presets:changed",
+          "dir": "out",
+          "payload": "{reason, id}",
+          "note": "load / save / revert / rate ..."
+        },
+        {
+          "name": "license:open",
+          "dir": "out",
+          "payload": "{verb}",
+          "note": "a gated verb (Save As, Import, Export) returned {error:\"gated\"}"
+        },
+        {
+          "name": "preset (bridge)",
+          "dir": "in",
+          "payload": "{state}",
+          "note": "current preset / dirty / A-B changed natively"
+        }
+      ],
+      "bridge": [
+        "apc.presets.list",
+        "apc.presets.state",
+        "apc.presets.load",
+        "apc.presets.save",
+        "apc.presets.revert",
+        "apc.presets.init",
+        "apc.presets.rate",
+        "apc.presets.favorite",
+        "apc.presets.import",
+        "apc.presets.exportPack",
+        "apc.presets.ab",
+        "apc.presets.info",
+        "apc.info",
+        "apc.openUrl"
+      ],
+      "scenarios": [
+        "licensed",
+        "demo",
+        "io-error"
+      ],
+      "standards": [
+        "U-10",
+        "U-13",
+        "X-09",
+        "P-04",
+        "P-07",
+        "P-15",
+        "L-02"
+      ],
+      "demo": {
+        "cols": 50,
+        "rows": 28,
+        "scripts": [
+          "apc-license-ui.js",
+          "apc-presets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:46rem;height:24rem\" data-apc=\"presets\"></div>",
+        "expect": [
+          ".apc-pb__row"
+        ],
+        "hint": "Scenario demo: Save As / Import / Export open the activation sheet (gated). Scenario io-error: save failures name the failing path in a toast."
+      },
+      "tests": [
+        "kit-b-presets.html"
+      ]
+    },
+    {
+      "name": "preset-chip",
+      "registered": true,
+      "group": "Presets",
+      "title": "Preset chip",
+      "file": "apc-presets.js",
+      "guide": ".agents/guides/ui-kit-panels.md#markup-and-options",
+      "summary": "Compact header chip: previous / next, preset name with dirty *, a visible Save button (Ctrl/Cmd+S is only an accelerator, X-09). Clicking the name opens the browser as a modal sheet.",
+      "markup": "<div data-apc=\"preset-chip\"></div>",
+      "options": [
+        {
+          "name": "data-categories",
+          "values": "pad,bass",
+          "desc": "Same as the browser."
+        },
+        {
+          "name": "data-hide-categories",
+          "values": "bass",
+          "desc": "Same as the browser."
+        }
+      ],
+      "events": [
+        {
+          "name": "presets:changed",
+          "dir": "out",
+          "payload": "{reason, id}",
+          "note": "load / save / revert / rate ..."
+        },
+        {
+          "name": "license:open",
+          "dir": "out",
+          "payload": "{verb}",
+          "note": "a gated verb (Save As, Import, Export) returned {error:\"gated\"}"
+        },
+        {
+          "name": "preset (bridge)",
+          "dir": "in",
+          "payload": "{state}",
+          "note": "current preset / dirty / A-B changed natively"
+        }
+      ],
+      "bridge": [
+        "apc.presets.list",
+        "apc.presets.state",
+        "apc.presets.load",
+        "apc.presets.save",
+        "apc.presets.revert",
+        "apc.presets.init",
+        "apc.presets.rate",
+        "apc.presets.favorite",
+        "apc.presets.import",
+        "apc.presets.exportPack",
+        "apc.presets.ab",
+        "apc.presets.info",
+        "apc.info",
+        "apc.openUrl"
+      ],
+      "scenarios": [
+        "licensed",
+        "demo",
+        "io-error"
+      ],
+      "standards": [
+        "U-10",
+        "U-13",
+        "X-09",
+        "P-07"
+      ],
+      "demo": {
+        "cols": 50,
+        "rows": 28,
+        "scripts": [
+          "apc-license-ui.js",
+          "apc-presets.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:1rem;width:30rem;height:2rem\" data-apc=\"preset-chip\"></div>",
+        "expect": [
+          "[data-apc=\"preset-chip\"] button"
+        ],
+        "hint": "Click the name to open the browser sheet; Save is a real button."
+      },
+      "tests": [
+        "kit-b-presets.html"
+      ]
+    },
+    {
+      "name": "license",
+      "registered": true,
+      "group": "Dialogs",
+      "title": "License",
+      "file": "apc-license-ui.js",
+      "guide": ".agents/guides/ui-kit-panels.md#markup-and-options",
+      "summary": "Inline license status plus the activation sheet. Badge text DEMO, TRIAL n d, LICENSED to <name>, UNVERIFIED with a plain-language explanation. Modes: none (renders nothing), signed-file (Load File only), online-activation (serial + e-mail, Load File, offline method B, Deactivate). Never blocks audio; the sheet always has Later / Esc. Fake serials: TEST-0000-... activates, FULL-... = seat limit.",
+      "markup": "<div data-apc=\"license\" data-drop-target=\"document\"></div>",
+      "options": [
+        {
+          "name": "data-drop-target",
+          "values": "document",
+          "desc": "Accept a dropped .lic file anywhere in the document while the sheet is open."
+        }
+      ],
+      "events": [
+        {
+          "name": "license:open",
+          "dir": "in",
+          "payload": "{verb?, lead?}",
+          "note": "footer badge and every gated verb emit it"
+        },
+        {
+          "name": "license (bridge)",
+          "dir": "in",
+          "payload": "{status}",
+          "note": "repaints live"
+        }
+      ],
+      "bridge": [
+        "apc.license.status",
+        "apc.license.activate",
+        "apc.license.loadFile",
+        "apc.license.offlineRequest",
+        "apc.license.deactivate",
+        "apc.openUrl"
+      ],
+      "scenarios": [
+        "demo",
+        "trial",
+        "licensed",
+        "unverified"
+      ],
+      "standards": [
+        "L-02",
+        "L-06",
+        "L-07",
+        "X-09"
+      ],
+      "demo": {
+        "cols": 40,
+        "rows": 30,
+        "scripts": [
+          "apc-license-ui.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:36rem;height:18rem\" data-apc=\"license\"></div>",
+        "actions": [
+          {
+            "emit": "license:open",
+            "data": {
+              "verb": "PresetSave"
+            }
+          }
+        ],
+        "expect": [
+          "[data-apc=\"license\"] *",
+          ".apc-kb-sheet[role=\"dialog\"]"
+        ],
+        "hint": "The activation sheet opens as if a gated verb (PresetSave) had been refused. Try serial TEST-0000-ABCD with any e-mail."
+      },
+      "tests": [
+        "kit-b-dialogs.html"
+      ]
+    },
+    {
+      "name": "update",
+      "registered": true,
+      "group": "Dialogs",
+      "title": "Update",
+      "file": "apc-update-ui.js",
+      "guide": ".agents/guides/ui-kit-panels.md#markup-and-options",
+      "summary": "Update panel and sheet following Idle -> Checking -> UpToDate | UpdateAvailable -> Downloading (progress, Cancel) -> Verifying -> ReadyToInstall (\"Close your DAW, then run this installer.\") | Failed (visible error + Try again). Never claims it installs by itself and never downloads without a click.",
+      "markup": "<div data-apc=\"update\"></div>",
+      "options": [
+        {
+          "name": "(none)",
+          "desc": "Open the sheet with APC.emit(\"update:open\")."
+        }
+      ],
+      "events": [
+        {
+          "name": "update:open",
+          "dir": "in",
+          "payload": "-",
+          "note": "footer update note emits it"
+        },
+        {
+          "name": "update (bridge)",
+          "dir": "in",
+          "payload": "{state}",
+          "note": "contract wrapper or the bare state object"
+        }
+      ],
+      "bridge": [
+        "apc.update.state",
+        "apc.update.check",
+        "apc.update.download",
+        "apc.update.cancel",
+        "apc.update.revealInstaller",
+        "apc.openUrl"
+      ],
+      "scenarios": [
+        "update-available",
+        "update-failed",
+        "licensed",
+        "demo"
+      ],
+      "standards": [
+        "X-11",
+        "U-16"
+      ],
+      "demo": {
+        "cols": 40,
+        "rows": 24,
+        "scripts": [
+          "apc-update-ui.js"
+        ],
+        "body": "<div class=\"apc-cell\" style=\"left:2rem;top:2rem;width:36rem;height:18rem\" data-apc=\"update\"></div>",
+        "expect": [
+          "[data-apc=\"update\"] *"
+        ],
+        "hint": "Scenario update-available: press Download and watch the state machine. update-failed: the first download fails at 40 percent, the retry succeeds."
+      },
+      "tests": [
+        "kit-b-dialogs.html"
+      ]
+    }
+  ],
+  "coverage": [
+    {
+      "section": "Control gestures",
+      "item": "Alt/Option+click resets to the declared default (base value only)",
+      "decisions": [
+        "U-01"
+      ],
+      "components": [
+        "knob",
+        "slider",
+        "toggle"
+      ],
+      "tests": [
+        "kit-a.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Control gestures",
+      "item": "Double-click resets (switchable to value entry)",
+      "decisions": [
+        "U-02",
+        "U-15"
+      ],
+      "components": [
+        "knob",
+        "slider",
+        "selector"
+      ],
+      "tests": [
+        "kit-a.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Control gestures",
+      "item": "Click on the value readout opens numeric entry (Enter / Esc, locale-aware, clamped with feedback)",
+      "decisions": [
+        "U-02"
+      ],
+      "components": [
+        "knob",
+        "slider"
+      ],
+      "tests": [
+        "kit-a.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Control gestures",
+      "item": "Shift+drag fine adjust (Ctrl super-fine)",
+      "decisions": [
+        "U-01"
+      ],
+      "components": [
+        "knob",
+        "slider"
+      ],
+      "tests": [
+        "kit-a.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Control gestures",
+      "item": "Right-click context panel: value, modulation, MIDI, help",
+      "decisions": [
+        "U-03",
+        "U-12"
+      ],
+      "components": [
+        "context-panel"
+      ],
+      "tests": [
+        "kit-a.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Control gestures",
+      "item": "Modulated controls show one summed ring, live position and marker",
+      "decisions": [
+        "U-04"
+      ],
+      "components": [
+        "knob",
+        "slider",
+        "context-panel"
+      ],
+      "tests": [
+        "kit-a.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Control gestures",
+      "item": "Wheel nudges; scrollable panels follow the wheel-target rule",
+      "decisions": [
+        "U-15"
+      ],
+      "components": [
+        "knob",
+        "slider"
+      ],
+      "tests": [
+        "kit-a.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Window chrome and scaling",
+      "item": "Version string always visible (v<semver> + demo / trial badge + update note)",
+      "decisions": [
+        "U-16"
+      ],
+      "components": [
+        "footer"
+      ],
+      "tests": [
+        "kit-a.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Window chrome and scaling",
+      "item": "Bottom-right corner gripper, rounds to 5 %",
+      "decisions": [
+        "U-08"
+      ],
+      "components": [
+        "gripper"
+      ],
+      "tests": [
+        "kit-a.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Window chrome and scaling",
+      "item": "Scale steps 50..300 % (- / + control)",
+      "decisions": [
+        "U-08"
+      ],
+      "components": [
+        "scale",
+        "header"
+      ],
+      "tests": [
+        "kit-a.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Window chrome and scaling",
+      "item": "Aspect lock on by default",
+      "decisions": [
+        "U-08"
+      ],
+      "components": [
+        "gripper"
+      ],
+      "tests": [
+        "kit-a.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Window chrome and scaling",
+      "item": "Scale persisted machine-wide, clamped to fit at startup; DPR handled separately",
+      "decisions": [
+        "U-08",
+        "U-06"
+      ],
+      "components": [
+        "scale",
+        "settings"
+      ],
+      "tests": [
+        "kit-a.html",
+        "kit-b-settings.html"
+      ],
+      "status": "partial",
+      "note": "the kit calls apc.ui.setScale; persistence and the startup clamp are native"
+    },
+    {
+      "section": "Settings and help",
+      "item": "Settings overlay Global | Engine/Quality | MIDI | Presets & Data | License | About",
+      "decisions": [
+        "U-05"
+      ],
+      "components": [
+        "settings"
+      ],
+      "tests": [
+        "kit-b-settings.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Settings and help",
+      "item": "Theme Night / Day / Follow-OS",
+      "decisions": [
+        "U-07"
+      ],
+      "components": [
+        "theme-switch",
+        "header"
+      ],
+      "tests": [
+        "kit-a.html"
+      ],
+      "status": "kit",
+      "note": "both modes must also pass the contrast rules: run apc validate a11y on the real design"
+    },
+    {
+      "section": "Settings and help",
+      "item": "Tooltip toggle + delay (400 ms), never during drag, fixed anchor / info bar, F1 help mode",
+      "decisions": [
+        "U-09"
+      ],
+      "components": [
+        "infobar",
+        "help-button",
+        "knob"
+      ],
+      "tests": [
+        "kit-a.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Settings and help",
+      "item": "Preset load behavior: Instant / Confirm if dirty",
+      "decisions": [
+        "U-10"
+      ],
+      "components": [
+        "presets",
+        "settings"
+      ],
+      "tests": [
+        "kit-b-presets.html",
+        "kit-b-settings.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Settings and help",
+      "item": "Open Presets Folder + Rescan + Restore defaults",
+      "decisions": [
+        "U-05",
+        "P-14"
+      ],
+      "components": [
+        "settings"
+      ],
+      "tests": [
+        "kit-b-settings.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Settings and help",
+      "item": "Global settings are machine-wide, applied on window open, merged safely",
+      "decisions": [
+        "U-06"
+      ],
+      "components": [
+        "settings"
+      ],
+      "tests": [
+        "kit-b-settings.html"
+      ],
+      "status": "partial",
+      "note": "the UI sends a minimal patch; lock + merge is the native settings store"
+    },
+    {
+      "section": "Settings and help",
+      "item": "Engine / Quality lives in the DAW chunk; the machine value only seeds new instances",
+      "decisions": [
+        "X-08"
+      ],
+      "components": [
+        "settings"
+      ],
+      "tests": [
+        "kit-b-settings.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Settings and help",
+      "item": "Help and quick-save reachable by visible buttons (F1, ? and Ctrl/Cmd+S only accelerate)",
+      "decisions": [
+        "X-09"
+      ],
+      "components": [
+        "help-button",
+        "preset-chip",
+        "presets",
+        "header"
+      ],
+      "tests": [
+        "kit-a.html",
+        "kit-b-presets.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Workflow safety",
+      "item": "Dirty * indicator + Revert to saved",
+      "decisions": [
+        "U-13"
+      ],
+      "components": [
+        "presets",
+        "preset-chip",
+        "footer"
+      ],
+      "tests": [
+        "kit-b-presets.html",
+        "kit-a.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Workflow safety",
+      "item": "A/B compare with Copy A -> B",
+      "decisions": [
+        "U-13"
+      ],
+      "components": [
+        "presets"
+      ],
+      "tests": [
+        "kit-b-presets.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Workflow safety",
+      "item": "Every preset I/O operation reports success or a visible error (never fail silently)",
+      "decisions": [
+        "U-13",
+        "P-07"
+      ],
+      "components": [
+        "presets",
+        "preset-chip",
+        "settings"
+      ],
+      "tests": [
+        "kit-b-presets.html",
+        "kit-b-settings.html",
+        "kit-a.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Workflow safety",
+      "item": "Declared default per parameter (enables reset + migration)",
+      "decisions": [
+        "U-01",
+        "U-13"
+      ],
+      "components": [
+        "knob",
+        "slider",
+        "selector",
+        "toggle"
+      ],
+      "tests": [
+        "kit-a.html"
+      ],
+      "status": "kit",
+      "note": "the descriptor supplies the default; the native parameter table must declare it"
+    },
+    {
+      "section": "Branding",
+      "item": "Header lockup: logo -> company URL, name -> product URL, only if configured",
+      "decisions": [
+        "U-11"
+      ],
+      "components": [
+        "header"
+      ],
+      "tests": [
+        "kit-a.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Branding",
+      "item": "About: version, build date, links, legal; manual Check for Updates always present",
+      "decisions": [
+        "U-11",
+        "X-11"
+      ],
+      "components": [
+        "settings",
+        "update"
+      ],
+      "tests": [
+        "kit-b-settings.html",
+        "kit-b-dialogs.html"
+      ],
+      "status": "kit",
+      "note": ""
+    },
+    {
+      "section": "Branding",
+      "item": "No auto-launch, no embedded ads, fully offline-capable",
+      "decisions": [
+        "U-11",
+        "X-10"
+      ],
+      "components": [
+        "header",
+        "settings"
+      ],
+      "tests": [
+        "kit-a.html"
+      ],
+      "status": "partial",
+      "note": "links open only through apc.openUrl on a click; the native allow-list is outside the kit"
+    },
+    {
+      "section": "Licensing",
+      "item": "Demo gating shown honestly: gated verbs open the activation sheet, never block audio",
+      "decisions": [
+        "L-02"
+      ],
+      "components": [
+        "license",
+        "footer",
+        "presets"
+      ],
+      "tests": [
+        "kit-b-dialogs.html",
+        "kit-b-presets.html"
+      ],
+      "status": "kit",
+      "note": "enforcement itself is native (the UI only reflects apc.license.status)"
+    },
+    {
+      "section": "Opt-in modules",
+      "item": "Undo / redo stack (>= 32 steps)",
+      "decisions": [
+        "U-14"
+      ],
+      "components": [
+        "knob",
+        "context-panel"
+      ],
+      "tests": [],
+      "status": "not-in-kit",
+      "note": "the kit only emits undo:push; there is no undo stack component"
+    },
+    {
+      "section": "Opt-in modules",
+      "item": "Full MIDI Learn table (CC assignment, ranges, export / import)",
+      "decisions": [
+        "U-12",
+        "U-14"
+      ],
+      "components": [
+        "settings"
+      ],
+      "tests": [
+        "kit-b-settings.html"
+      ],
+      "status": "kit",
+      "note": "MIDI tab, shown only when features.midiLearnTable"
+    },
+    {
+      "section": "Opt-in modules",
+      "item": "Drag-and-drop modulation routing, macros",
+      "decisions": [
+        "U-14"
+      ],
+      "components": [],
+      "tests": [],
+      "status": "not-in-kit",
+      "note": ""
+    },
+    {
+      "section": "Opt-in modules",
+      "item": "Auto-update check (default off) + update flow ending in ReadyToInstall",
+      "decisions": [
+        "X-11"
+      ],
+      "components": [
+        "update",
+        "settings"
+      ],
+      "tests": [
+        "kit-b-dialogs.html",
+        "kit-b-settings.html"
+      ],
+      "status": "kit",
+      "note": ""
+    }
+  ],
+  "coverageSource": {
+    "summary": "Baseline checklist of the locked UX standard pack (decisions U-01..U-16, X-08, X-09, P-xx, L-xx), summarised here because plans/ is gitignored and not read at runtime.",
+    "files": [
+      ".agents/rules/product-standards.md",
+      "plans/02-ux-standards/proposed-standard-pack.md (author-side, not read at runtime)"
+    ],
+    "statusLegend": {
+      "kit": "implemented by the kit and covered by a self-test page",
+      "partial": "kit part implemented; the rest is native / per-product",
+      "native": "native or build-side responsibility, not a kit component",
+      "not-in-kit": "opt-in module the kit does not provide yet"
+    }
+  }
+}

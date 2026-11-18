@@ -64,3 +64,56 @@ legend{padding:0 8px; font-size:12px; text-transform:uppercase; letter-spacing:.
 .pcard .dlinks a:hover{color:var(--amber);}
 .pcard .dlinks a.ann{color:var(--muted); font-size:10.5px;}
 .pcard .dlinks a.ann:hover{color:var(--amber);}
+
+/* design card thumbnail: a preview of the design applied to a plugin surface */
+.design-thumb {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+  margin: 0 0 .45rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--paper);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .28);
+}
+/* decision details panel (09b STANDARDS): the long form behind a [?] button */
+.std-drawer {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: min(430px, 96vw);
+  z-index: 60;
+  display: flex; flex-direction: column;
+  background: var(--paper);
+  border-left: 1px solid var(--rule);
+  box-shadow: -12px 0 40px rgba(0, 0, 0, .45);
+}
+.std-drawer[hidden] { display: none; }
+.std-drawer .sd-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule);
+}
+.std-drawer .sd-title { font-size: 10.5px; letter-spacing: .16em; color: var(--muted); }
+.std-drawer .sd-body { padding: 14px 16px 24px; overflow: auto; }
+.std-drawer h4 {
+  margin: 18px 0 6px;
+  font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--muted);
+}
+.std-drawer p { margin: 0 0 8px; font-size: 13px; line-height: 1.55; }
+.std-drawer .sd-q { font-size: 14px; font-weight: 600; color: var(--ink); }
+.std-drawer .sd-sum { color: var(--muted); }
+.std-drawer .sd-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.std-drawer .sd-top b { font-size: 13px; }
+.std-drawer .sd-choices, .std-drawer .sd-list { margin: 0; padding: 0; list-style: none; }
+.std-drawer .sd-choices li {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  padding: 5px 0; border-bottom: 1px solid var(--rule);
+}
+.std-drawer .sd-choices li.is-default { background: rgba(255, 149, 0, .06); }
+.std-drawer .sd-choices code { font-size: 12.5px; color: var(--ink); }
+.std-drawer .sd-note { font-size: 12.5px; color: var(--muted); }
+.std-drawer .sd-list li { padding: 3px 0 3px 14px; position: relative; font-size: 12.5px; color: var(--muted); }
+.std-drawer .sd-list li::before { content: "-"; position: absolute; left: 2px; }
+.std-drawer code { font-size: 12px; }

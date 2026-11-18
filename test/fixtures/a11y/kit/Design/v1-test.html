@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>KitFixture - APC design preview</title>
+<link rel="stylesheet" href="apc-ui/apc-core.css">
+<link rel="stylesheet" href="apc-ui/apc-components.css">
+<style>
+:root {
+  --cols: 20;
+  --rows: 10;
+}
+</style>
+</head>
+<body>
+<div class="apc-plate">
+    <div class="apc-cell apc-knob" id="ctl-gain" data-param="gain" style="left:1rem;top:1rem;width:4rem;height:4rem;"><div class="apc-knob-dial"><div class="apc-knob-pointer"></div></div><div class="apc-ctl-label">GAIN</div></div>
+    <button class="apc-cell apc-psw" id="ctl-bypass" data-param="bypass" aria-checked="false" style="left:8rem;top:1rem;width:5rem;height:2rem;"><span class="led"></span><span>BYPASS</span></button>
+</div>
+<script src="apc-ui/apc-fit.js"></script>
+</body>
+</html>

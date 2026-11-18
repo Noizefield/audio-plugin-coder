@@ -162,3 +162,48 @@ If your GUI doesn't display:
 3. Check browser DevTools (right-click in WebView → Inspect)
 4. Ensure web files are in correct location
 5. Verify CMakeLists.txt embeds files correctly
+
+## UI kit bridge (opt-in, `APC_UI_KIT`)
+
+The JS kit in `apc-ui/` (contract: `apc-ui/CONTRACT.md`) talks to the plugin through native functions. The native side is
+header-only in `common/apc/juce/` and is wired into these templates behind one macro, so plugins that do not opt in are
+unchanged. Full agent guide: `.agents/guides/ui-kit-native.md`.
+
+| Placeholder | Where | Value |
+|---|---|---|
+| `{{APC_UI_KIT_ENABLED}}` | `CMakeLists.txt.template` (`option(<name>_UI_KIT ...)`) | `ON` to opt in, `OFF` otherwise. ON defines `APC_UI_KIT=1` and adds `<repo>/common` to the include path |
+| `<!-- APC_KIT_SCRIPTS -->` | `Source/ui/public/index.html` | one marker after the inlined JUCE interop block; CMake replaces it with `<script>kit bundle</script>` in a generated copy (webview-008: all JS inline) |
+
+What changes in the generated plugin when ON (the templates already contain these blocks, guarded by `#if APC_UI_KIT`):
+
+```cpp
+// PluginProcessor.h (you add this; the editor reads it)
+#include "apc/juce/ApcWebBridge.h"
+apc::web::ApcBackend apcBackend;        // + the stores it points at - see the guide for the full recipe
+
+// PluginEditor.h - member order is part of the contract (relays -> bridge -> webView -> attachments)
+juce::WebSliderRelay driveRelay { ParameterIDs::DRIVE };
+apc::web::ApcBridge apcBridge { audioProcessor.apcBackend };      // destroyed AFTER the webView
+std::unique_ptr<juce::WebBrowserComponent> webView;
+
+// PluginEditor.cpp
+webView = std::make_unique<juce::WebBrowserComponent> (
+    apc::web::addApcNativeFunctions (            // registers all apc.* functions of CONTRACT.md
+        juce::WebBrowserComponent::Options() /* ...existing chain... */,
+        apcBridge));
+webView->goToURL (juce::WebBrowserComponent::getResourceProviderRoot());
+apcBridge.attach (*webView);                     // AFTER goToURL: starts events + the param poll timer
+```
+
+`node bin/apc.js validate webview-order --plugin <Name>` still passes: the bridge sits after the relays and before the webView.
+
+Rules that bite:
+
+- The JS side calls `window.__JUCE__` (upper case) - there is no `window.__juce__`. `apc-bridge.js` implements the same
+  `__juce__invoke` / `__juce__complete` protocol as the JUCE interop library and works with or without it inlined.
+- Native functions are registered once per name. Do not register your own `apc.*` names; the legacy `setUiScale`,
+  `resizeGrip*`, `getUiPrefs` functions in this template keep working next to them.
+- `ApcBackend` lives in the processor and must outlive the editor; the template clears `apcBackend.setScale` in the
+  editor destructor because that lambda captures the editor.
+- Verified by compiling these exact blocks against JUCE 9 (`common/apc/tests/juce`, target `apc_juce_gui_tests`). Not
+  verified: a real DAW, WKWebView, WebKitGTK.

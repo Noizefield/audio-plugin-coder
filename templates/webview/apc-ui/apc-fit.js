@@ -7,16 +7,28 @@
 (function () {
   "use strict";
 
-  var NATIVE = (typeof window !== "undefined" && window.__juce__ &&
-                typeof window.__juce__.invoke === "function")
-    ? window.__juce__.invoke.bind(window.__juce__)
-    : null;
-
+  /* JUCE 9 injects window.__JUCE__ (upper case). A native call is the event
+     "__juce__invoke" { name, params:[...], resultId } sent through
+     __JUCE__.backend.emitEvent (same protocol as apc-bridge.js and JUCE's own
+     webview-interop library). Fire-and-forget here: the completion event is ignored.
+     The lower-case window.__juce__.invoke path never existed in JUCE 9 and is kept
+     only as a harmless fallback for old hosts. */
+  var callId = 0;
   function invokeNative(name) {
-    if (!NATIVE) return false;
     var args = Array.prototype.slice.call(arguments, 1);
-    try { NATIVE.apply(null, [name].concat(args)); return true; }
-    catch (e) { return false; }
+    var J = (typeof window !== "undefined") ? window.__JUCE__ : null;
+    if (J && J.backend && typeof J.backend.emitEvent === "function") {
+      try {
+        callId += 1;
+        J.backend.emitEvent("__juce__invoke", { name: name, params: args, resultId: "fit" + callId });
+        return true;
+      } catch (e) { return false; }
+    }
+    var legacy = (typeof window !== "undefined" && window.__juce__ &&
+                  typeof window.__juce__.invoke === "function") ? window.__juce__ : null;
+    if (!legacy) return false;
+    try { legacy.invoke.apply(legacy, [name].concat(args)); return true; }
+    catch (e2) { return false; }
   }
 
   /* ---- fitCanvas(cv, redraw[, opts]) ---------------------------------------
@@ -50,6 +62,8 @@
      Falls back to a no-op outside JUCE so the preview stays safe in a browser. */
   function attachGrip(el, opts) {
     opts = opts || {};
+    if (el.__apcGripAttached) return;       /* idempotent: mountKit() and the gripper component may both ask */
+    el.__apcGripAttached = true;
     var origin = null;
     el.addEventListener("pointerdown", function (e) {
       if (e.button !== 0) return;
@@ -85,10 +99,10 @@
     });
   }
 
-  window.APC = {
-    invokeNative: invokeNative,
-    fitCanvas: fitCanvas,
-    attachGrip: attachGrip,
-    mountKit: mountKit
-  };
+  /* Extend, never replace: apc-kit.js / the kit-A components may already have created window.APC. */
+  var A = (window.APC = window.APC || {});
+  A.invokeNative = invokeNative;
+  A.fitCanvas = fitCanvas;
+  A.attachGrip = attachGrip;
+  A.mountKit = mountKit;
 })();

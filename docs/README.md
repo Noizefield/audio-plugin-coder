@@ -36,6 +36,7 @@ New to APC? Start here:
 | [Build System](build-system.md) | CMake configuration and build scripts |
 | [Model Routing](model-routing.md) | Per-phase AI model preferences (`apc.config.json`) |
 | [WebView Framework](webview-framework.md) | Building plugins with HTML/CSS/JS UIs |
+| [Open Design MCP](open-design-mcp.md) | Optional OpenDesign design-workspace MCP server for UI design work |
 
 ### Workflows & Processes
 
@@ -51,7 +52,6 @@ New to APC? Start here:
 | Document | Description |
 |----------|-------------|
 | [Troubleshooting Guide](troubleshooting-guide.md) | Common issues and solutions |
-| [Maintenance Triage](maintenance-triage.md) | Orphan/legacy retirement list |
 | [Known Issues](../.agents/troubleshooting/known-issues.yaml) | Database of known problems |
 
 ### Reference

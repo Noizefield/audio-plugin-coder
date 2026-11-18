@@ -1,0 +1,53 @@
+{
+  "schema": "apc-preset/1.0",
+  "kind": "wavetable",
+  "id": "snd_00000000-0000-4000-8000-000000000010",
+  "author": "Fixture Author",
+  "created": "2026-11-01T10:00:00Z",
+  "app_version": "1.0.0",
+  "meta": {
+    "category": "bass",
+    "subcategory": "sub",
+    "articulation": "sustained",
+    "axes": {
+      "bri": "muted",
+      "war": "warm",
+      "agg": "hard",
+      "wid": "mono",
+      "dep": "sub-heavy",
+      "mov": "breathing"
+    },
+    "temporal": {
+      "attack": "instant",
+      "sustain": "sustained",
+      "evolution": "evolving",
+      "release": "short",
+      "rhythm": "none"
+    },
+    "moods": [
+      "dark",
+      "aggressive"
+    ],
+    "tags": [
+      "reese",
+      "saturation"
+    ],
+    "desc": "Fixture sub bass with grit."
+  },
+  "params": {
+    "osc1_wave": [
+      1
+    ]
+  },
+  "modulation": [
+    {
+      "src": "lfo1",
+      "dst": "filter_cutoff_hz",
+      "amount": 0.45,
+      "polarity": "bipolar",
+      "min": 200,
+      "max": 4000
+    }
+  ],
+  "sample_ref": null
+}

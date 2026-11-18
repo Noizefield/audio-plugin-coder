@@ -1,0 +1,15 @@
+{
+  "schema": "apc-preset/1.0",
+  "kind": "sound",
+  "id": "snd_00000000-0000-4000-8000-000000000009",
+  "name": "Init",
+  "author": null,
+  "created": "2026-11-01T10:00:00Z",
+  "app_version": "1.0.0",
+  "meta": {
+    "role": "init",
+    "tags": [],
+    "desc": "Declared default state of every parameter."
+  },
+  "params": {}
+}

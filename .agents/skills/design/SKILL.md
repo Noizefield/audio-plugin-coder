@@ -14,6 +14,8 @@ description: Create the Visual Interface for audio plugins. Use when user mentio
 
 Check if `design_library/manifest.json` exists and count available designs.
 
+**One shipped design.** The framework ships **APC Minimal** (`apc-minimal`): deep teal surfaces, a coral signal, cyan status/data colours, compact rounded corners, subtle material depth and mono numerals. `tokens.css` owns global colours/type/shadows; `design-system.json` documents the tokens, element parts/states/options/accessibility and stores optional `elementTuning` overrides. Preview and tune the library through Hub `#09c-kit`: global colour remains in THEME EDITOR, while ELEMENT SPEC exposes bounded per-element geometry and stroke controls and saves numeric overrides to the design spec. To make a new look, copy `design_library/apc-minimal/` to `design_library/<your-id>/`, edit token values in `tokens.css`, mirror them in `design-system.json`, register the folder in `design_library/manifest.json` (`"tokens": "tokens.css"`, `"spec": "design-system.json"`), then select it in the Hub. **Pick UI elements from the kit, never hand-build them:** controls `knob slider selector toggle`; widgets `button buttons segmented checkbox radio dropdown menu tabs textfield numberfield label readout panel divider led progress list logo` (guide `.agents/guides/ui-kit-widgets.md`); visualisation `graph envelope spectrum waveform scope meter stepseq xypad picture` (guide `.agents/guides/ui-kit-viz.md`); chrome and panels in `ui-kit-controls.md` / `ui-kit-panels.md`. Accent-coloured text uses `--accent-text`.
+
 **Import state management:**
 ```powershell
 # Import state management module

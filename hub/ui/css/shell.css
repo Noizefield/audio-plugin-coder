@@ -42,7 +42,7 @@ details.navsub a{padding-left:20px; font-size:12.5px;}
 .sidefoot{color:var(--muted); font-size:11.5px; margin:14px 0 0;
   border-top:1px solid var(--rule); padding-top:10px;}
 .content{padding:8px 24px 0; overflow-y:auto; min-height:0;}
-.content>main,.content>footer{max-width:884px;}
+.content>main,.content>footer{max-width:none;}   /* every page uses the full width of the content section */
 .content footer{padding:20px 0 40px; color:var(--muted); font-size:13px;
   border-top:1px solid var(--rule); margin-top:8px;}
 /* single active section; hash IS the state */
@@ -59,6 +59,8 @@ body:has(section[id="06-scripts"]:target) a[href="#06-scripts"],
 body:has(section[id="07-templates"]:target) a[href="#07-templates"],
 body:has(section[id="08-tools"]:target) a[href="#08-tools"],
 body:has(section[id="09-settings"]:target) a[href="#09-settings"],
+body:has(section[id="09b-standards"]:target) a[href="#09b-standards"],
+body:has(section[id="09c-kit"]:target) a[href="#09c-kit"],
 body:has(section[id="10-documentation"]:target) a[href="#10-documentation"],
 body:has(section[id="11-videos"]:target) a[href="#11-videos"],
 body:has(section[id="11-consistency"]:target) a[href="#11-consistency"],
@@ -92,6 +94,8 @@ body:has(section[id="06-scripts"]:target) a[href="#06-scripts"]::before,
 body:has(section[id="07-templates"]:target) a[href="#07-templates"]::before,
 body:has(section[id="08-tools"]:target) a[href="#08-tools"]::before,
 body:has(section[id="09-settings"]:target) a[href="#09-settings"]::before,
+body:has(section[id="09b-standards"]:target) a[href="#09b-standards"]::before,
+body:has(section[id="09c-kit"]:target) a[href="#09c-kit"]::before,
 body:has(section[id="10-documentation"]:target) a[href="#10-documentation"]::before,
 body:has(section[id="11-videos"]:target) a[href="#11-videos"]::before,
 body:has(section[id="11-consistency"]:target) a[href="#11-consistency"]::before,

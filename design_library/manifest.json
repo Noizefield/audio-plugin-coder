@@ -1,78 +1,33 @@
 {
-  "version": "1.1.0",
-  "lastUpdated": "2026-08-22T12:00:00Z",
-  "totalDesigns": 3,
+  "version": "2.0.0",
+  "lastUpdated": "2026-11-10T00:00:00Z",
+  "totalDesigns": 1,
   "designs": [
     {
-      "id": "rams60",
-      "name": "Rams 60",
-      "path": "rams60",
-      "vibe": "1960s Braun/Swiss hi-fi instrument — ivory, shellac disc, functional green/orange",
-      "category": "vintage-hardware",
-      "tags": ["rams", "braun", "swiss", "vinyl", "turntable", "skeuomorphic", "technical"],
+      "id": "apc-minimal",
+      "name": "APC Minimal",
+      "path": "apc-minimal",
+      "vibe": "Deep teal plate, cyan energy, red signal - Zeichnung 2030: rounded hardware, hairline rules, mono numerals",
+      "category": "instrument",
+      "tags": ["instrument", "teal", "cyan", "red", "rounded", "mono-numerals", "accessible", "webview"],
       "supports": {
         "visage": false,
         "webview": true
       },
+      "tokens": "tokens.css",
+      "spec": "design-system.json",
       "examples": {
         "webview": ["preview.html"],
         "visage": []
       },
+      "thumbnail": "thumb.png",
       "colors": {
-        "primary": "#1F7A3D",
-        "accent": "#D9531E",
-        "background": "#EFE8D8"
+        "primary": "#FB543D",
+        "accent": "#5BC7D2",
+        "background": "#122935"
       },
-      "bestFor": ["lo-fi", "vintage character", "hardware emulation", "instrument-style UIs"],
-      "created": "2026-08-22",
-      "usageCount": 0
-    },
-    {
-      "id": "amber-signal",
-      "name": "Amber Signal",
-      "path": "amber-signal",
-      "vibe": "Warm, signal-flow, studio-oriented",
-      "category": "modern",
-      "tags": ["warm", "professional", "signal-flow", "studio"],
-      "supports": {
-        "visage": false,
-        "webview": true
-      },
-      "examples": {
-        "webview": ["preview.html"],
-        "visage": []
-      },
-      "colors": {
-        "primary": "#FF9500",
-        "accent": "#FFB946",
-        "background": "#1C1C1E"
-      },
-      "bestFor": ["dynamics", "effects", "metering"],
-      "created": "2026-01-24",
-      "usageCount": 0
-    },
-    {
-      "id": "neogrid-minimal",
-      "name": "NeoGrid Minimal",
-      "path": "neogrid-minimal",
-      "vibe": "Geometric, grid-based, futuristic minimalism",
-      "category": "minimal",
-      "tags": ["modern", "geometric", "grid", "minimal", "futuristic"],
-      "supports": {
-        "visage": false,
-        "webview": true
-      },
-      "examples": {
-        "webview": ["preview.html"],
-        "visage": []
-      },
-      "colors": {
-        "primary": "#00F5FF",
-        "accent": "#7B68EE",
-        "background": "#0A0A0F"
-      },
-      "bestFor": ["synths", "modulators", "utility"],
-      "created": "2026-01-24",
+      "bestFor": ["filter and dynamics plugins", "instrument surfaces", "starting point for your own design"],
+      "created": "2026-11-08",
       "usageCount": 0
     }
   ]

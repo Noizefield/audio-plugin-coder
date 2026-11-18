@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "name": "VisageFixture",
+  "layout": { "mode": "scalable", "plate": { "cols": 40, "rows": 20 } },
+  "tokens": { "--plate": "#1a1a1f", "--ink": "#f0f0f5", "--accent": "#ffc300" },
+  "sections": [],
+  "controls": []
+}

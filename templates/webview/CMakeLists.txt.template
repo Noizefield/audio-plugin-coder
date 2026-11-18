@@ -28,11 +28,61 @@ if({{PLUGIN_NAME_LOWER}}_ENABLE_CLAP AND COMMAND clap_juce_extensions_plugin)
         CLAP_FEATURES {{CLAP_FEATURES}})
 endif()
 
+# ============================================
+# APC UI KIT BRIDGE (opt-in)
+# ============================================
+# Native side of templates/webview/apc-ui (common/apc/juce). OFF keeps this plugin exactly as before.
+# Replace {{APC_UI_KIT_ENABLED}} with ON or OFF at /apc-impl time (same pattern as CLAP above).
+# Needs in PluginProcessor: `apc::web::ApcBackend apcBackend;` - see .agents/guides/ui-kit-native.md.
+option({{PLUGIN_NAME_LOWER}}_UI_KIT "Build {{PLUGIN_DISPLAY_NAME}} with the APC UI kit bridge" {{APC_UI_KIT_ENABLED}})
+set(APC_KIT_INDEX_HTML "Source/ui/public/index.html")
+set(APC_KIT_WEBUI_SOURCES "")
+if({{PLUGIN_NAME_LOWER}}_UI_KIT)
+    if(NOT DEFINED APC_ROOT OR APC_ROOT STREQUAL "")
+        set(APC_ROOT "${CMAKE_SOURCE_DIR}")   # monorepo root (plugins are added from the root CMakeLists)
+    endif()
+    set(APC_KIT_DIR "${APC_ROOT}/templates/webview/apc-ui")
+    # The kit files in their documented load order, concatenated into ONE classic script: fit, kit, bridge, then the
+    # rest alphabetically (apc-widgets.js lands after apc-controls.js, which it needs). Every apc-mock*.js
+    # (apc-mock.js, apc-mock-viz.js) is preview/test only and is never shipped.
+    set(_apc_kit_first apc-fit.js apc-kit.js apc-bridge.js)
+    file(GLOB _apc_kit_rest RELATIVE "${APC_KIT_DIR}" "${APC_KIT_DIR}/apc-*.js")
+    list(SORT _apc_kit_rest)
+    list(REMOVE_ITEM _apc_kit_rest ${_apc_kit_first})
+    list(FILTER _apc_kit_rest EXCLUDE REGEX "^apc-mock.*\\.js$")   # apc-mock.js and apc-mock-viz.js: demo / test data, never shipped
+    set(_apc_kit_bundle "")
+    foreach(_f IN LISTS _apc_kit_first _apc_kit_rest)
+        if(EXISTS "${APC_KIT_DIR}/${_f}")
+            file(READ "${APC_KIT_DIR}/${_f}" _apc_c)
+            string(APPEND _apc_kit_bundle "/* ---- ${_f} ---- */\n${_apc_c}\n")
+            set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${APC_KIT_DIR}/${_f}")
+        endif()
+    endforeach()
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/apc-ui")
+    # webview-008: ALL JavaScript must be INLINE in index.html. Put the placeholder <!-- APC_KIT_SCRIPTS --> in
+    # Source/ui/public/index.html (after the JUCE interop block); configure replaces it with <script>bundle</script>
+    # in a generated copy that is embedded instead of the source file.
+    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/Source/ui/public/index.html" _apc_index)
+    string(FIND "${_apc_index}" "<!-- APC_KIT_SCRIPTS -->" _apc_marker)
+    if(_apc_marker GREATER -1)
+        string(REPLACE "<!-- APC_KIT_SCRIPTS -->" "<script>\n${_apc_kit_bundle}</script>" _apc_index "${_apc_index}")
+        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/apc-ui/index.html" "${_apc_index}")
+        set(APC_KIT_INDEX_HTML "${CMAKE_CURRENT_BINARY_DIR}/apc-ui/index.html")
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/Source/ui/public/index.html")
+    else()
+        # No placeholder: fall back to serving the bundle as a separate resource. UNVERIFIED on real hosts (webview-008).
+        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/apc-ui/apc-kit.bundle.js" "${_apc_kit_bundle}")
+        set(APC_KIT_WEBUI_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/apc-ui/apc-kit.bundle.js")
+        message(WARNING "UI kit: index.html has no <!-- APC_KIT_SCRIPTS --> placeholder; apc-kit.bundle.js is embedded as a separate resource (webview-008 risk).")
+    endif()
+endif()
+
 # CRITICAL: Embed web UI files into binary
 # This creates a zip file and embeds it as C++ binary data
 juce_add_binary_data({{PLUGIN_NAME_LOWER}}_WebUI
     SOURCES
-        Source/ui/public/index.html
+        ${APC_KIT_INDEX_HTML}      # Source/ui/public/index.html, or the kit-injected copy when the UI kit is on
+        ${APC_KIT_WEBUI_SOURCES}   # empty unless the UI kit is on without an index.html placeholder
     # webview-008: NO JS files - ALL JavaScript must be inline in index.html
     # Add any additional web assets here:
     # Source/ui/public/css/style.css
@@ -51,6 +101,11 @@ target_include_directories({{PLUGIN_NAME_LOWER}}
     PRIVATE
         Source
 )
+if({{PLUGIN_NAME_LOWER}}_UI_KIT)
+    # `#include "apc/juce/ApcWebBridge.h"`, "apc/ApcLicense.h", ... live in <repo>/common
+    target_include_directories({{PLUGIN_NAME_LOWER}} PRIVATE "${APC_ROOT}/common")
+    target_compile_definitions({{PLUGIN_NAME_LOWER}} PUBLIC APC_UI_KIT=1)
+endif()
 
 # Required JUCE modules
 target_link_libraries({{PLUGIN_NAME_LOWER}}

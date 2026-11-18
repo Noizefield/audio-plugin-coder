@@ -356,17 +356,27 @@ function renderDesigns(d) {
     }).join('<br>') || mutTok('no HTML files');
     const miss = (g.missingExamples || []).length
       ? '<br>' + warnTok('[!!]') + ' <span class="mut">manifest lists missing: ' + esc(g.missingExamples.join(', ')) + '</span>' : '';
-    const name = '<b>' + esc(g.id) + '</b> - ' + esc(g.name || '') + '<br>' + files + miss;
+    /* a design may ship a thumbnail of its plugin surface (design_library/<id>/<file>) */
+    const thumb = g.thumbnail
+      ? '<img class="design-thumb" loading="lazy" alt="' + esc((g.name || g.id) + ' - plugin surface') + '"' +
+        ' src="/preview/' + encodeURIComponent(g.id) + '/' + String(g.thumbnail).split('/').map(encodeURIComponent).join('/') + '">'
+      : '';
+    const name = thumb + '<b>' + esc(g.id) + '</b> - ' + esc(g.name || '') + '<br>' + files + miss;
+    const present = (ok, file) => (file ? (ok ? okTok('[OK]') : warnTok('[NOT FOUND]')) + ' ' + mono(file) : mutTok('not declared'));
+    const fileCell = '<span style="font-size:12.5px;white-space:nowrap">tokens: ' + present(g.tokensExists, g.tokens) + '<br>spec: ' + present(g.specExists, g.spec) + '</span>' +
+      '<br><a class="mono" href="#09c-kit" data-kit-open="' + esc(g.id) + '" title="Reference plugin, theme editor and element spec of this design">[open in KIT]</a>';
     return [
       name,
       esc(g.category || ''),
       Object.entries(g.colors || {}).map(([k, v]) => '<span class="sw" style="background:' + esc(v) + '"></span>' + mono(v)).join(' · '),
       esc(Object.entries(g.supports || {}).filter(([, v]) => v).map(([k]) => k).join(', ').toUpperCase() || '?'),
       esc((g.bestFor || []).join(', ')),
+      fileCell,
     ];
   });
   return kicker('05', 'DESIGNS', 'design_library/manifest.json' + (d.present ? ' (v' + d.version + ', ' + d.totalDesigns + ' designs)' : ' MISSING')) +
-    (d.present ? table(['Design', 'Category', 'Colors', 'UI', 'Best for'], rows)
+    '<div class="banner mono design-note"><b>Define, preview and tweak designs in <a href="#09c-kit">09c KIT</a></b>: reference plugin, theme editor, element spec. This page indexes design_library/.</div>' +
+    (d.present ? table(['Design', 'Category', 'Colors', 'UI', 'Best for', 'Files'], rows)
       : '<div class="banner mono">' + warnTok() + ' manifest not found</div>') +
     pager('04-commands', null, '06-scripts');
 }
@@ -455,7 +465,7 @@ function renderSettings(cfg) {
     '<div class="frow"><span class="mono">completed</span><span>' + fchk('f-setup-completed', !!((live.setup || {}).completed)) + '</span></div>' +
     '<div class="frow"><span class="mono">completed_at / platform</span><span class="mono mut">' + esc(((live.setup || {}).completed_at) || '-') + ' / ' + esc(((live.setup || {}).platform) || '-') + ' (kept)</span></div></fieldset>' +
     '<p class="mono"><button class="mono minibtn" id="cfg-save">[SAVE]</button> <button class="mono minibtn" id="cfg-reset">[RESET]</button> <span id="cfg-msg"></span></p>' +
-    pager('08-tools', null, '10-documentation');
+    pager('08-tools', null, '09b-standards');
 }
 
 function wireSettings() {
@@ -525,9 +535,300 @@ function wireSettings() {
   };
 }
 
+/* ─── 09b STANDARDS (decision X-06) ───
+   Lists every option from schemas/apc-standards.json. Global-scope options are
+   editable (saved through the one write path, POST /api/v1/config, with the
+   rest of apc.config.json untouched). Plugin-scope options are READ-ONLY here:
+   those answers are decided once in /apc-plan and changed with the CLI. */
+function stdFmt(o, v) {
+  if (v === null || v === undefined) return '(unset)';
+  if (o.type === 'boolean') return v ? 'on' : 'off';
+  return String(v);
+}
+function stdSrcFile(src, plugin) {
+  if (src === 'plugin') return (plugin ? plugin.statusFile : '<plugin>/status.json');
+  if (src === 'global') return 'apc.config.json';
+  return 'schemas/apc-standards.json';
+}
+function stdCli(o) {
+  const hint = o.type === 'enum' ? '<' + (o.values || []).join('|') + '>'
+    : o.type === 'boolean' ? '<true|false>' : o.type === 'number' ? '<number>' : '<text>';
+  return 'apc standards set ' + o.id + ' ' + hint + ' --plugin <Name>';
+}
+function stdControl(o, cur) {
+  const lbl = ' aria-label="' + esc(o.id) + '"';
+  if (o.type === 'boolean') {
+    return '<label><input type="checkbox" data-sid="' + esc(o.id) + '"' + lbl + (cur ? ' checked' : '') + '>' +
+      '<span class="state mono">' + (cur ? '[ON]' : '[OFF]') + '</span></label>';
+  }
+  if (o.type === 'enum') {
+    return '<select class="mono" data-sid="' + esc(o.id) + '"' + lbl + '>' + (o.values || []).map((v) =>
+      '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(v) + '</option>').join('') + '</select>';
+  }
+  if (o.type === 'number') {
+    return '<input type="number" class="mono" data-sid="' + esc(o.id) + '"' + lbl +
+      (o.minimum !== undefined ? ' min="' + esc(o.minimum) + '"' : '') +
+      (o.maximum !== undefined ? ' max="' + esc(o.maximum) + '"' : '') +
+      ' value="' + esc(cur == null ? '' : cur) + '">';
+  }
+  return '<input type="text" class="mono" data-sid="' + esc(o.id) + '"' + lbl + ' value="' + esc(cur == null ? '' : cur) + '">';
+}
+function renderStdOption(o, S) {
+  const eff = S.global.effective[o.id] || { value: o.default, source: 'default' };
+  const isGlobal = o.scope === 'global';
+  const open = o.status === 'open';
+  const edit = (S.edits || {})[o.id];
+  let cur = eff.value;
+  let srcLabel = eff.source;
+  if (edit) {
+    cur = edit.op === 'set' ? edit.value : o.default;
+    srcLabel = edit.op === 'set' ? 'edited (unsaved)' : 'default (override removed, unsaved)';
+  }
+  const head = '<div class="idl mono">' + esc(o.id) +
+    ' <span class="chip">' + esc(o.decision || '?') + '</span> <span class="chip' + (isGlobal ? ' cur' : '') + '">' + esc(String(o.scope).toUpperCase()) + '</span>' +
+    (o.required ? ' <span class="chip">REQUIRED</span>' : '') +
+    (open ? '<span class="tok-open mono">[OPEN] placeholder</span>' : '') +
+    ' <button type="button" class="mono minibtn std-more" data-std-more="' + esc(o.id) + '" aria-expanded="false"' +
+    ' title="What this decision is about: ' + esc(o.decision || o.id) + '">[?]</button></div>';
+  let ctl;
+  if (isGlobal) {
+    const hasOverride = Object.prototype.hasOwnProperty.call(S.global.block, o.id) || (edit && edit.op === 'set');
+    ctl = stdControl(o, cur) +
+      (hasOverride ? ' <button class="mono minibtn" data-sunset="' + esc(o.id) + '" aria-label="Remove override for ' + esc(o.id) + ' (use default)">[DEFAULT]</button>' : '');
+  } else {
+    ctl = '<span class="mono">default: ' + esc(stdFmt(o, o.default)) + '</span><br><span class="mut mono">read-only here [PLUGIN]</span>';
+  }
+  const src = isGlobal
+    ? 'value ' + esc(stdFmt(o, cur)) + ' &middot; source: ' + esc(srcLabel) + ' &rarr; ' + esc(stdSrcFile(edit ? 'default' : eff.source)) +
+      ' &middot; registry default ' + esc(stdFmt(o, o.default))
+    : 'scope plugin &middot; asked once in /apc-plan &middot; stored in &lt;plugin&gt;/status.json &rarr; standards &middot; registry default ' + esc(stdFmt(o, o.default));
+  const cli = isGlobal ? '' : '<div class="cli mono">CLI: ' + esc(stdCli(o)) + '</div>';
+  const openNote = open
+    ? '<div class="src mono"><span class="tok-warn">[!!]</span> decision ' + esc(o.decision) + ' is still OPEN - treat the value as a placeholder, not a commitment.</div>' : '';
+  return '<div class="std-opt ' + (isGlobal ? 'global' : 'plugin') + (open ? ' open' : '') + (edit ? ' dirty' : '') + '" data-id="' + esc(o.id) + '">' +
+    head + '<div class="ctl">' + ctl + '</div>' +
+    '<div class="sum">' + esc(o.summary || '') + '</div>' +
+    '<div class="src mono">' + src + '</div>' + cli + openNote + '</div>';
+}
+function renderStdPlugin(p, S) {
+  const plugOpts = [];
+  S.groups.forEach((g) => g.options.forEach((o) => { if (o.scope === 'plugin') plugOpts.push(o); }));
+  const setN = plugOpts.filter((o) => Object.prototype.hasOwnProperty.call(p.block, o.id)).length;
+  const missingReq = p.issues.filter((i) => /required at plan time/.test(i.message)).length;
+  const otherIssues = p.issues.filter((i) => !/required at plan time/.test(i.message));
+  const rows = plugOpts.map((o) => {
+    const e = p.effective[o.id] || { value: o.default, source: 'default' };
+    const set = e.source === 'plugin';
+    return [
+      mono(o.id) + (o.status === 'open' ? ' <span class="tok-open mono">[OPEN]</span>' : ''),
+      mono(stdFmt(o, e.value)),
+      (set ? okTok('[SET]') : (o.required ? warnTok('[REQUIRED]') : mutTok('[ -- ]'))) + ' ' + mono(stdSrcFile(e.source, p)),
+    ];
+  });
+  const sum = setN + '/' + plugOpts.length + ' answered' + (missingReq ? ' - ' + missingReq + ' required missing' : '') +
+    (otherIssues.length ? ' - ' + otherIssues.length + ' issue(s)' : '');
+  return '<details class="std-pl"><summary class="mono"><b>' + esc(p.name) + '</b> <span class="mut">- ' + esc(sum) + ' - ' + esc(p.statusFile) + '</span></summary>' +
+    (otherIssues.length || p.warnings.length ? '<pre class="screen">' +
+      otherIssues.map((i) => '[!!] ' + esc(i.message)).concat(p.warnings.map((w) => '[..] ' + esc(w.message))).join('\n') + '</pre>' : '') +
+    table(['Option', 'Effective value', 'State / source file'], rows) +
+    '<p class="mono mut" style="font-size:12.5px">Read-only. Answer in /apc-plan or run: apc standards set &lt;id&gt; &lt;value&gt; --plugin ' + esc(p.name) + '</p></details>';
+}
+function renderStandards(S) {
+  const src = 'schemas/apc-standards.json + apc.config.json + &lt;plugin&gt;/status.json';
+  const k = '<p class="kicker"><span class="n">09b</span>// STANDARDS - src: ' + src + '</p>';
+  if (!S) {
+    return k + '<div class="banner mono">' + warnTok('[NOT FOUND]') + ' /api/v1/standards unreachable - expected endpoint of this hub</div>' +
+      pager('09-settings', null, '09c-kit');
+  }
+  if (!S.registryFound) {
+    return k + '<div class="banner mono">' + warnTok('[NOT FOUND]') + ' ' + esc(S.expected || 'schemas/apc-standards.json') +
+      '<br><span class="mut">' + esc(S.error || '') + '</span></div>' + pager('09-settings', null, '09c-kit');
+  }
+  const all = [];
+  S.groups.forEach((g) => g.options.forEach((o) => all.push(o)));
+  const nGlobal = all.filter((o) => o.scope === 'global').length;
+  const open = all.filter((o) => o.status === 'open');
+  const live = S.global.livePresent;
+  const rules = (S.fixedRules || []).map((r) => '<li>' + esc(r.rule) + ' <span class="mut mono">(' + esc(r.decision) + ')</span></li>').join('');
+  const groupsFor = (scope) => S.groups.map((g) => ({ title: g.title, options: g.options.filter((o) => o.scope === scope) }))
+    .filter((g) => g.options.length)
+    .map((g) => '<h3 class="std-grp">' + esc(g.title) + ' <span class="mut mono" style="font-size:12px">(' + g.options.length + ')</span></h3>' +
+      g.options.map((o) => renderStdOption(o, S)).join('')).join('');
+  const dirtyN = Object.keys(S.edits || {}).length;
+  const openDecisions = open.map((o) => o.decision).filter((v, i, a) => a.indexOf(v) === i).join(', ');
+  return k +
+    '<div class="banner mono">registry ' + esc(S.schema) + ' v' + esc(S.version) + ' (locked ' + esc(S.locked) + ') &middot; ' + all.length + ' options: ' +
+    nGlobal + ' global (editable here) + ' + (all.length - nGlobal) + ' plugin (read-only here)' +
+    (open.length ? '<br>' + warnTok('[!!]') + ' ' + open.length + ' option(s) follow OPEN decisions (' + esc(openDecisions) + ') - placeholders' : '') +
+    '</div>' +
+    (live ? '' : '<div class="banner mono">' + warnTok('[NOT FOUND]') + ' apc.config.json (' + esc(S.global.liveError || 'missing') + ') - global values show registry defaults; run /apc-setup before editing</div>') +
+    ((S.global.issues || []).length ? '<pre class="screen">' + S.global.issues.map((i) => '[!!] apc.config.json: ' + esc(i.message)).join('\n') + '</pre>' : '') +
+    '<p class="full">Global options are APC-wide defaults and are saved to apc.config.json (backup .bak first). Plugin options are answered once per plugin in /apc-plan and are shown read-only.</p>' +
+    '<h3>FIXED IN STONE (no option, all products)</h3><ul class="mono" style="font-size:13px">' + rules + '</ul>' +
+    '<h3>GLOBAL OPTIONS (' + nGlobal + ') - editable here</h3>' + groupsFor('global') +
+    '<p class="mono std-act"><button class="mono minibtn" id="std-save"' + (live && dirtyN ? '' : ' disabled') + '>[SAVE GLOBAL]</button> ' +
+    '<button class="mono minibtn" id="std-reset"' + (dirtyN ? '' : ' disabled') + '>[DISCARD EDITS]</button> ' +
+    '<span id="std-msg" role="status">' + (dirtyN ? '<span class="mut">' + dirtyN + ' unsaved change(s)</span>' : '') + '</span></p>' +
+    '<h3>PLUGIN OPTIONS (' + (all.length - nGlobal) + ') - read-only here, decided per plugin in /apc-plan</h3>' + groupsFor('plugin') +
+    '<h3>PER-PLUGIN ANSWERS (read-only)</h3>' +
+    (S.plugins.length ? S.plugins.map((p) => renderStdPlugin(p, S)).join('')
+      : '<div class="banner mono">' + warnTok() + ' no plugins with status.json found</div>') +
+    pager('09-settings', null, '09c-kit');
+}
+function stdRerender() {
+  const sec = document.getElementById('09b-standards');
+  if (!sec) return;
+  const box = $('.content');
+  const y = box ? box.scrollTop : 0;
+  sec.innerHTML = renderStandards(window.__std);
+  wireStandards();
+  if (box) box.scrollTop = y;
+}
+function stdOptionById(id) {
+  let found = null;
+  ((window.__std && window.__std.groups) || []).forEach((g) => g.options.forEach((o) => { if (o.id === id) found = o; }));
+  return found;
+}
+function stdReadControl(el, o) {
+  if (o.type === 'boolean') return el.checked;
+  if (o.type === 'number') return el.value === '' ? NaN : Number(el.value);
+  return el.value;
+}
+/* ─── decision details: the "what is this about" panel ─────────────────────── */
+function stdOption(id) {
+  const S = window.__std; if (!S || !S.groups) return null;
+  for (const g of S.groups) for (const o of (g.options || [])) if (o.id === id) return o;
+  return null;
+}
+function stdDrawer() {
+  let d = document.getElementById('std-drawer');
+  if (d) return d;
+  d = document.createElement('aside');
+  d.id = 'std-drawer';
+  d.className = 'std-drawer';
+  d.setAttribute('role', 'dialog');
+  d.setAttribute('aria-label', 'Decision details');
+  d.hidden = true;
+  d.innerHTML = '<div class="sd-head"><span class="mono sd-title">DECISION</span>' +
+    '<button type="button" class="mono minibtn" id="std-drawer-x">[CLOSE]</button></div>' +
+    '<div class="sd-body" id="std-drawer-body"></div>';
+  document.body.appendChild(d);
+  d.querySelector('#std-drawer-x').addEventListener('click', stdDrawerClose);
+  return d;
+}
+function stdDrawerClose() {
+  const d = document.getElementById('std-drawer');
+  if (d) d.hidden = true;
+  const b = document.querySelector('[data-std-more][aria-expanded="true"]');
+  if (b) { b.setAttribute('aria-expanded', 'false'); b.focus(); }
+}
+function stdDetailsHtml(o, S) {
+  const eff = (S.global && S.global.effective && S.global.effective[o.id]) || { value: o.default, source: 'default' };
+  const edit = (S.edits || {})[o.id];
+  const cur = edit ? (edit.op === 'set' ? edit.value : o.default) : eff.value;
+  const srcLabel = edit ? 'edited (unsaved)' : eff.source;
+  const notes = o.valueNotes || {};
+  let choices = '';
+  if (o.type === 'enum') {
+    choices = (o.values || []).map((v) => [v, notes[v] || '', v === o.default]);
+  } else if (o.type === 'boolean') {
+    choices = [['on', notes['true'] || '', o.default === true], ['off', notes['false'] || '', o.default === false]];
+  } else if (o.type === 'number') {
+    choices = [['range', (o.minimum != null ? o.minimum : '?') + ' … ' + (o.maximum != null ? o.maximum : '?') + ', default ' + o.default, true]];
+  }
+  return '<div class="sd-top mono"><span class="chip">' + esc(o.decision || '?') + '</span> <b>' + esc(o.id) + '</b> ' +
+      '<span class="chip">' + esc(String(o.scope).toUpperCase()) + '</span>' + (o.required ? ' <span class="chip">REQUIRED</span>' : '') +
+      (o.status === 'open' ? ' <span class="tok-open mono">[OPEN]</span>' : '') + '</div>' +
+    '<p class="sd-q">' + esc(o.question || '') + '</p>' +
+    '<p class="sd-sum">' + esc(o.summary || '') + '</p>' +
+    '<h4>WHY THIS EXISTS</h4>' +
+    (o.why ? '<p>' + esc(o.why) + '</p>'
+           : '<p class="mut">No extended note yet. Add a <code>why</code> string to this option in <code>schemas/apc-standards.json</code>.</p>') +
+    (choices.length ? '<h4>CHOICES</h4><ul class="sd-choices">' + choices.map(([v, note, dflt]) =>
+      '<li' + (dflt ? ' class="is-default"' : '') + '><code>' + esc(String(v)) + '</code>' +
+      (dflt ? ' <span class="chip">DEFAULT</span>' : '') +
+      (note ? '<span class="sd-note">' + esc(note) + '</span>' : '') + '</li>').join('') + '</ul>' : '') +
+    '<h4>ENFORCED BY</h4>' +
+    (o.enforced && o.enforced.length
+      ? '<ul class="sd-list">' + o.enforced.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul>'
+      : '<p class="mut">Not documented yet.</p>') +
+    '<h4>CURRENT VALUE</h4><p class="mono">' + esc(stdFmt(o, cur)) +
+      ' <span class="mut">&middot; source: ' + esc(srcLabel) + ' &rarr; ' + esc(stdSrcFile(edit ? 'default' : eff.source)) + '</span></p>' +
+    '<h4>STORED IN</h4><p class="mono">' +
+      (o.scope === 'global' ? 'apc.config.json &rarr; standards &rarr; ' + esc(o.id)
+                            : '&lt;plugin&gt;/status.json &rarr; standards &rarr; ' + esc(o.id)) + '</p>';
+}
+function stdDrawerOpen(id) {
+  const S = window.__std, o = stdOption(id);
+  if (!S || !o) return;
+  const d = stdDrawer();
+  document.getElementById('std-drawer-body').innerHTML = stdDetailsHtml(o, S);
+  d.hidden = false;
+  document.querySelectorAll('[data-std-more]').forEach((b) => b.setAttribute('aria-expanded', String(b.dataset.stdMore === id)));
+  const x = d.querySelector('#std-drawer-x');
+  if (x) x.focus();
+}
+
+function wireStandards() {
+  const sec = document.getElementById('09b-standards');
+  const S = window.__std;
+  if (!sec || !S || !S.registryFound) return;
+  S.edits = S.edits || {};
+  $$('[data-sid]', sec).forEach((el) => {
+    el.addEventListener('change', () => {
+      const o = stdOptionById(el.dataset.sid);
+      if (!o) return;
+      const v = stdReadControl(el, o);
+      if (o.type === 'number' && Number.isNaN(v)) delete S.edits[o.id];
+      else S.edits[o.id] = { op: 'set', value: v };
+      stdRerender();
+    });
+  });
+  $$('[data-sunset]', sec).forEach((b) => {
+    b.addEventListener('click', () => { S.edits[b.dataset.sunset] = { op: 'unset' }; stdRerender(); });
+  });
+  const reset = document.getElementById('std-reset');
+  if (reset) reset.onclick = () => { S.edits = {}; stdRerender(); };
+  /* [?] on any decision opens the details panel */
+  sec.addEventListener('click', (e) => {
+    const b = e.target && e.target.closest ? e.target.closest('[data-std-more]') : null;
+    if (b) stdDrawerOpen(b.dataset.stdMore);
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') stdDrawerClose(); });
+  const save = document.getElementById('std-save');
+  if (save) save.onclick = async () => {
+    const msg = document.getElementById('std-msg');
+    msg.innerHTML = '<span class="mut">[SAVING..]</span>';
+    // Re-read first: never overwrite a newer apc.config.json with a stale copy.
+    const fresh = await api('config');
+    if (!fresh || !fresh.livePresent) { msg.innerHTML = warnTok('[!!]') + ' no live apc.config.json - run /apc-setup first'; return; }
+    const out = JSON.parse(JSON.stringify(fresh.live));
+    const block = (out.standards && typeof out.standards === 'object' && !Array.isArray(out.standards)) ? out.standards : {};
+    Object.entries(S.edits).forEach(([id, e]) => { if (e.op === 'set') block[id] = e.value; else delete block[id]; });
+    out.standards = block;
+    try {
+      const r = await fetch('/api/v1/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(out) });
+      const j = await r.json();
+      if (j && j.ok) {
+        window.__cfg = (await api('config')) || window.__cfg;
+        const next = await api('standards');
+        if (next) { next.edits = {}; window.__std = next; }
+        stdRerender();
+        const m2 = document.getElementById('std-msg');
+        if (m2) m2.innerHTML = okTok('[OK]') + ' saved to apc.config.json' + (j.backup ? ' (backup .bak)' : '');
+      } else {
+        msg.innerHTML = warnTok('[!!]') + ' rejected: ' + esc((j && j.error) || r.status) +
+          (j && j.issues ? '<br>' + j.issues.map((i) => esc(i.message)).join('<br>') : '');
+      }
+    } catch { msg.innerHTML = warnTok('[!!]') + ' request failed'; }
+  };
+}
+
+/* ─── 09c KIT: reference plugin, theme editor, element spec, component gallery: see kit.js ─── */
+
 function renderVideos() {
   return kicker('11', 'VIDEOS', 'YouTube tutorial series - 7 episodes and more to come') +
-    '<div class="vidwrap"><iframe src="https://www.youtube.com/embed/videoseries?list=PLEOCbFL_Mq4o" title="APC YouTube tutorial series" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></div>' +
+    '<div class="vidwrap"><iframe src="https://www.youtube.com/embed/videoseries?list=PLEOCbFL_Mq4o" title="APC YouTube tutorial series" allow="picture-in-picture" allowfullscreen></iframe></div>' +
     '<p class="mono"><a href="https://www.youtube.com/playlist?list=PLEOCbFL_Mq4o" target="_blank" rel="noopener">OPEN PLAYLIST ON YOUTUBE -&gt;</a></p>' +
     '<p class="mut" style="font-size:13px">Explains the framework in detail: setup, workflow, plugins, and more.</p>' +
     pager('doc-webview-framework', null, '11-consistency');
@@ -550,7 +851,7 @@ function renderDocsIndex(docs) {
   return kicker('10', 'DOCUMENTATION', 'docs/*.md · live (' + (docs.total || 0) + ' files, ' + (docs.totalChapters || 0) + ' chapters)') +
     '<p><input class="docsearch mono" id="docsearch" placeholder="FILTER DOCUMENTS + CHAPTERS - live"></p>' +
     '<div id="doclist">' + items + '</div>' +
-    pager('09-settings', null, 'doc-readme');
+    pager('09c-kit', null, 'doc-readme');
 }
 
 function renderDocSection(id, force) {
@@ -623,8 +924,9 @@ async function boot() {
   paintTheme();
   $('#t-dark').onclick = () => setTheme('dark');
   $('#t-light').onclick = () => setTheme('light');
-  const [meta, cfg, plugins, skills, commands, designs, scripts, templates, tools, docs, update, consistency] =
-    await Promise.all([api('meta'), api('config'), api('plugins'), api('skills'), api('commands'), api('designs'), api('scripts'), api('templates'), api('tools'), api('docs'), api('update'), api('consistency')]);
+  const [meta, cfg, plugins, skills, commands, designs, scripts, templates, tools, docs, update, consistency, standards, kit] =
+    await Promise.all([api('meta'), api('config'), api('plugins'), api('skills'), api('commands'), api('designs'), api('scripts'), api('templates'), api('tools'), api('docs'), api('update'), api('consistency'), api('standards'), api('kit')]);
+  window.__std = standards ? Object.assign(standards, { edits: {} }) : null;
   window.__tools = tools;
   window.__meta = meta || {};
   window.__cfg = cfg || {};
@@ -656,6 +958,8 @@ async function boot() {
     '<section id="07-templates">' + renderTemplates(templates || {}) + '</section>' +
     '<section id="08-tools">' + (tools ? renderTools(tools) : '<p class="mono">tools unreachable [..]</p>') + '</section>' +
     '<section id="09-settings">' + renderSettings(cfg || {}) + '</section>' +
+    '<section id="09b-standards">' + renderStandards(window.__std) + '</section>' +
+    '<section id="09c-kit">' + renderKit(kit) + '</section>' +
     '<section id="10-documentation">' + renderDocsIndex(docs || { docs: [] }) + '</section>' +
     renderDocShell(order) +
     '<section id="11-videos">' + renderVideos() + '</section>' +
@@ -672,15 +976,48 @@ async function boot() {
   // lazy doc bodies + submenu active paint (covers every doc id, incl. future ones)
   const load = () => {
     const h = (location.hash || '').replace('#', '');
+    /* older links used #09c-kit/theme; fold them into ?kit=theme#09c-kit, otherwise they
+       would match no section and fall through to 01-overview */
+    if (h.indexOf('/') > 0) {
+      const [b, s] = h.split('/');
+      if (b === '09c-kit' && s) {
+        const q = new URLSearchParams(location.search);
+        q.set('kit', s);
+        location.replace(location.pathname + '?' + q.toString() + '#' + b);
+        return;
+      }
+    }
+    const base = h.split('/')[0];
     if (h.startsWith('doc-')) ensureDoc(h);
-    paintDocActive(h);
+    if (base === '09c-kit') {
+      kitActivate();   // the demo iframe loads only once the page is opened
+      /* the four KIT sections are subpages; they travel in the query because a section is
+         shown by CSS :target and an id can never be "09c-kit/theme" */
+      const sub = new URLSearchParams(location.search).get('kit');
+      if (sub && window.__kit && typeof window.kitSetTab === 'function') {
+        window.kitSetTab(window.__kit, sub, { noUrl: true });
+      }
+    }
+    /* a decision can be linked: #09b-standards/ux.theme opens its details panel */
+    if (base === '09b-standards' && h.indexOf('/') > 0) {
+      if (window.__std && window.__std.registryFound) stdDrawerOpen(h.split('/')[1]);
+    }
+    paintDocActive(base);
   };
   window.addEventListener('hashchange', load);
+  window.addEventListener('popstate', load);   // back/forward across ?kit=<section>
   wireRecheck();
   wireSettings();
+  wireStandards();
+  wireKit();
   paintDocActive((location.hash || '').replace('#', ''));
   load();
   if (!location.hash) location.hash = '#01-overview';
+  else { // deep link (e.g. /#09b-standards): sections only exist now, so re-apply :target
+    const h = location.hash;
+    location.hash = '';
+    location.hash = h;
+  }
 }
 
 function paintDocActive(hash) {

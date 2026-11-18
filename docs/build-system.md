@@ -77,7 +77,7 @@ audio-plugin-coder/
 
 ## Root CMakeLists.txt
 
-The root [`CMakeLists.txt`](CMakeLists.txt) configures the global build environment:
+The root [`CMakeLists.txt`](../CMakeLists.txt) configures the global build environment:
 
 ```cmake
 cmake_minimum_required(VERSION 3.22)
@@ -246,7 +246,7 @@ endif()
 
 ### build-and-install.ps1
 
-The main build script ([`build-and-install.ps1`](scripts/build-and-install.ps1)):
+The main build script ([`build-and-install.ps1`](../scripts/build-and-install.ps1)):
 
 ```powershell
 param(

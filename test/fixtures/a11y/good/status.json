@@ -1,0 +1,10 @@
+{
+  "plugin_name": "GoodFixture",
+  "ui_framework": "webview",
+  "current_phase": "design_complete",
+  "perf_budget": {
+    "webview_overhead_mb": 120,
+    "meter_hz": 30,
+    "measured": { "webview_overhead_mb": 92 }
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "schema": "apc-eval-task/1",
+  "id": "port-visage-to-webview",
+  "title": "Port a Visage plugin UI to WebView (JUCE 9 setup)",
+  "category": "ui",
+  "tags": ["impl", "webview", "visage", "migration", "static"],
+  "timeout_s": 1800,
+  "fixture": "fixture",
+  "prompt": "plugins/TinyVisage renders its UI with Visage (VisageControls.h, VisageJuceHost, visage::visage). Port the UI to WebView and leave the audio side alone.\n\nRequirements:\n1. plugins/TinyVisage/CMakeLists.txt: drop the visage link, add the WebView setup (juce_add_binary_data for the web files, NEEDS_WEBVIEW2 TRUE, JUCE_WEB_BROWSER=1, JUCE_USE_WIN_WEBVIEW2_WITH_STATIC_LINKING=1, juce::juce_gui_extra).\n2. Rewrite Source/PluginEditor.h / .cpp for juce::WebBrowserComponent (webview2 backend, user data folder, native integration, resource provider with getResourceProviderRoot() and a getResource(const juce::String& url) function, relays + parameter attachments for \"gain\" and \"mix\"). Declare members in the safe order: relays, then the WebView, then attachments.\n3. Create the web UI under plugins/TinyVisage/WebUI/: index.html with ALL CSS and JS inlined (no linked stylesheets, no type=module), plus js/index.js and js/juce/index.js (the JUCE 9 interop lives in _tools/JUCE/modules/juce_gui_extra/native/typescript/webview-interop/dist/index.js or @juce-framework/webview).\n4. Delete Source/VisageControls.h and every other Visage reference.\n5. Set ui_framework to \"webview\" in status.json (and framework_selection.decision).\n6. Do NOT touch Source/PluginProcessor.h / .cpp.\n\nGraded with `apc validate webview`, `apc validate webview-order`, `apc validate visage` (must now fail: Visage is gone) and `apc validate plugin`. No build is required.",
+  "setup": [],
+  "checks": [
+    {
+      "id": "webview-validator",
+      "description": "apc validate webview passes",
+      "type": "apc",
+      "args": ["validate", "webview", "--plugin", "TinyVisage"],
+      "expect_exit": 0
+    },
+    {
+      "id": "order-validator",
+      "description": "apc validate webview-order passes and found a WebView",
+      "type": "apc",
+      "args": ["validate", "webview-order", "--plugin", "TinyVisage", "--json"],
+      "expect_exit": 0,
+      "stdout_contains": "\"check\": \"relays-before-webview\"",
+      "stdout_not_contains": "\"check\": \"is-webview\""
+    },
+    {
+      "id": "framework-flag",
+      "description": "status.json ui_framework is webview",
+      "type": "json_path",
+      "path": "plugins/TinyVisage/status.json",
+      "pointer": "ui_framework",
+      "equals": "webview"
+    },
+    {
+      "id": "framework-decision",
+      "description": "status.json framework_selection.decision is webview",
+      "type": "json_path",
+      "path": "plugins/TinyVisage/status.json",
+      "pointer": "framework_selection.decision",
+      "equals": "webview"
+    },
+    {
+      "id": "visage-gone-validator",
+      "description": "apc validate visage no longer passes (nothing Visage left)",
+      "type": "apc",
+      "args": ["validate", "visage", "--plugin", "TinyVisage"],
+      "expect_exit": 1
+    },
+    {
+      "id": "visagecontrols-removed",
+      "description": "VisageControls.h deleted",
+      "type": "file_absent",
+      "path": "plugins/TinyVisage/Source/VisageControls.h"
+    },
+    {
+      "id": "no-visage-link",
+      "description": "CMakeLists.txt no longer links visage::visage",
+      "type": "file_not_contains",
+      "path": "plugins/TinyVisage/CMakeLists.txt",
+      "pattern": "visage"
+    },
+    {
+      "id": "no-visage-editor-h",
+      "description": "PluginEditor.h no longer uses the Visage host/controls",
+      "type": "file_not_contains",
+      "path": "plugins/TinyVisage/Source/PluginEditor.h",
+      "pattern": "Visage(JuceHost|PluginEditor|Controls|Knob)|visage::"
+    },
+    {
+      "id": "no-visage-editor-cpp",
+      "description": "PluginEditor.cpp no longer uses the Visage host/controls",
+      "type": "file_not_contains",
+      "path": "plugins/TinyVisage/Source/PluginEditor.cpp",
+      "pattern": "Visage(JuceHost|PluginEditor|Controls|Knob)|visage::"
+    },
+    {
+      "id": "webui-no-modules",
+      "description": "index.html has no type=module scripts or linked stylesheets",
+      "type": "file_not_contains",
+      "path": "plugins/TinyVisage/WebUI/index.html",
+      "pattern": "type=[\"']module[\"']|rel=[\"']stylesheet[\"']",
+      "flags": "i"
+    },
+    {
+      "id": "processor-h-untouched",
+      "description": "PluginProcessor.h not edited",
+      "type": "unchanged_from_fixture",
+      "path": "plugins/TinyVisage/Source/PluginProcessor.h"
+    },
+    {
+      "id": "processor-cpp-untouched",
+      "description": "PluginProcessor.cpp not edited",
+      "type": "unchanged_from_fixture",
+      "path": "plugins/TinyVisage/Source/PluginProcessor.cpp"
+    },
+    {
+      "id": "state-valid",
+      "description": "apc validate plugin still passes",
+      "type": "apc",
+      "args": ["validate", "plugin", "--plugin", "TinyVisage"],
+      "expect_exit": 0
+    }
+  ]
+}

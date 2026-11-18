@@ -24,7 +24,7 @@ audio-plugin-coder/
 ├── skills/                 # Packaged Codex skill adapter
 ├── test/                   # CLI test suite (test/apc.test.js; run: npm test)
 ├── templates/              # Plugin templates (visage, webview, ffgl, max-external)
-├── design_library/         # UI design examples
+├── design_library/         # UI designs: one shipped (apc-minimal); copy it to start your own
 ├── assets/                 # Logos and banners
 ├── .github/                # GitHub Actions workflows
 ├── AGENTS.md               # Agent guidance (AGENTS.md standard)
@@ -216,10 +216,10 @@ scripts/
 ```
 
 **Critical Scripts:**
-- [`build-and-install.ps1`](scripts/build-and-install.ps1) - Build and install plugins
-- [`state-management.ps1`](scripts/state-management.ps1) - State tracking functions
-- [`validate-webview-setup.ps1`](scripts/validate-webview-setup.ps1) - WebView validation
-- [`codex/apc-codex-run.ps1`](scripts/codex/apc-codex-run.ps1) - Optional Codex tier routing (see [Codex Orchestration](codex-orchestration.md))
+- [`build-and-install.ps1`](../scripts/build-and-install.ps1) - Build and install plugins
+- [`state-management.ps1`](../scripts/state-management.ps1) - State tracking functions
+- [`validate-webview-setup.ps1`](../scripts/validate-webview-setup.ps1) - WebView validation
+- [`codex/apc-codex-run.ps1`](../scripts/codex/apc-codex-run.ps1) - Optional Codex tier routing (see [Codex Orchestration](codex-orchestration.md))
 
 ---
 
@@ -308,7 +308,7 @@ Keep all versions for comparison. Latest version is used for implementation.
 
 Every plugin has a `status.json` file tracking development progress:
 
-```json
+```json no-check
 {
   "plugin_name": "PluginName",
   "version": "v0.0.0",
@@ -355,7 +355,7 @@ ideation → plan → design → code → ship → complete
 
 ### Root CMakeLists.txt
 
-The root [`CMakeLists.txt`](CMakeLists.txt) configures:
+The root [`CMakeLists.txt`](../CMakeLists.txt) configures:
 1. JUCE as a subdirectory
 2. Global build settings
 3. Plugin subdirectory inclusion
@@ -504,4 +504,3 @@ _tools/visage
 - [Build System](build-system.md) - Detailed build documentation
 - [WebView Framework](webview-framework.md) - WebView-specific paths
 - [File Naming Conventions](../.agents/rules/file-naming-conventions.md) - Complete naming rules
-- [Maintenance Triage](maintenance-triage.md) - Orphan/legacy retirement list (nothing deleted without approval)

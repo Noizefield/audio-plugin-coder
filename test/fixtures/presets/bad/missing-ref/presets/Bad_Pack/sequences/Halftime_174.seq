@@ -1,0 +1,41 @@
+{
+  "schema": "apc-preset/1.0",
+  "kind": "sequence",
+  "id": "seq_00000000-0000-4000-8000-000000000030",
+  "name": "Halftime 174",
+  "author": "Fixture Author",
+  "created": "2026-11-01T10:00:00Z",
+  "app_version": "1.0.0",
+  "meta": {
+    "genre": "drum-and-bass",
+    "tempo_bpm": 174,
+    "time_signature": "4/4",
+    "feel": "halftime",
+    "swing_pct": 54,
+    "length_bars": 2,
+    "desc": "Fixture halftime pattern."
+  },
+  "lanes": [
+    {
+      "target_slot": 0,
+      "steps": [
+        {
+          "step": 0,
+          "velocity": 1,
+          "gate": 0.8,
+          "ratchet": 1,
+          "prob": 1,
+          "micro_ms": 0
+        },
+        {
+          "step": 10,
+          "velocity": 0.85,
+          "gate": 0.5,
+          "ratchet": 2,
+          "prob": 0.75,
+          "micro_ms": -6
+        }
+      ]
+    }
+  ]
+}

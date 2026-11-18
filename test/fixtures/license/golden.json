@@ -1,0 +1,62 @@
+{
+  "schema": "apc-license-golden/1",
+  "note": "Committed golden licenses issued by scripts/apc-license.js with the RFC 8032 TEST 1 seed (TEST ONLY). C++ has no Ed25519, so common/apc/tests/test_license_issued.cpp checks that ApcLicense.h canonicalises each license to EXACTLY the \"canonical\" bytes below and hands the verifier that exact message plus this signature; test/license.test.js proves with Node that signature_b64 is a valid Ed25519 signature of \"canonical\" under public_key_b64. Regenerate with test/fixtures/license/make-golden.js.",
+  "seed_hex": "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+  "public_key_b64": "11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=",
+  "product": "DemoSynth",
+  "clock_unix": 1800000000,
+  "machine": [
+    {
+      "label": "cpu",
+      "value": "CoolCPU 9000",
+      "hash": "1c782c9da6964f3d"
+    },
+    {
+      "label": "machine-id",
+      "value": "abc-123",
+      "hash": "6e92da105f726cba"
+    },
+    {
+      "label": "volume",
+      "value": "VOL-777",
+      "hash": "5db51ae450836bf9"
+    }
+  ],
+  "cases": [
+    {
+      "name": "bound-perpetual",
+      "expect_state": "LICENSED",
+      "license_text": "{\n  \"schema\": \"apc-license/1.0\",\n  \"product\": \"DemoSynth\",\n  \"customer_name\": \"Ada \\\"Countess\\\" Lovelace \\\\ \\t\\u0001 Zoë 日本 😀   \",\n  \"customer_email\": \"ada@example.test\",\n  \"order_id\": \"ORD-1\",\n  \"issued_at\": \"2026-10-23T14:30:00Z\",\n  \"expires_at\": null,\n  \"license_type\": \"commercial_perpetual\",\n  \"allowed_seats\": 3,\n  \"machine_components\": [\n    \"1c782c9da6964f3d\",\n    \"6e92da105f726cba\",\n    \"5db51ae450836bf9\"\n  ],\n  \"machine_min_match\": 2,\n  \"signature_ed25519\": \"B6hbmWNjxFZqNA7YLDnwkq9vINNGXQCGoC06Hqkm1BpMYKobzvoxfGk4Q5mIUgoNFLxjON5uEniwJ/VlD3VJDA==\"\n}\n",
+      "canonical": "{\"allowed_seats\":3,\"customer_email\":\"ada@example.test\",\"customer_name\":\"Ada \\\"Countess\\\" Lovelace \\\\ \\t\\u0001 Zoë 日本 😀   \",\"expires_at\":null,\"issued_at\":\"2026-10-23T14:30:00Z\",\"license_type\":\"commercial_perpetual\",\"machine_components\":[\"1c782c9da6964f3d\",\"6e92da105f726cba\",\"5db51ae450836bf9\"],\"machine_min_match\":2,\"order_id\":\"ORD-1\",\"product\":\"DemoSynth\",\"schema\":\"apc-license/1.0\"}",
+      "signature_b64": "B6hbmWNjxFZqNA7YLDnwkq9vINNGXQCGoC06Hqkm1BpMYKobzvoxfGk4Q5mIUgoNFLxjON5uEniwJ/VlD3VJDA=="
+    },
+    {
+      "name": "unbound-nfr",
+      "expect_state": "LICENSED",
+      "license_text": "{\n  \"schema\": \"apc-license/1.0\",\n  \"product\": \"DemoSynth\",\n  \"customer_name\": \"Reviewer\",\n  \"customer_email\": \"ada@example.test\",\n  \"order_id\": \"ORD-1\",\n  \"issued_at\": \"2026-10-23T14:30:00Z\",\n  \"expires_at\": null,\n  \"license_type\": \"nfr\",\n  \"allowed_seats\": 3,\n  \"signature_ed25519\": \"ioUkAaEEi/K087WPCgykD47xdudPyt1hYkFIDAqkaIL0cx6ec9xPlS1hXU22o2W4hw2EDPFZ2UFYVICwKhvvDw==\"\n}\n",
+      "canonical": "{\"allowed_seats\":3,\"customer_email\":\"ada@example.test\",\"customer_name\":\"Reviewer\",\"expires_at\":null,\"issued_at\":\"2026-10-23T14:30:00Z\",\"license_type\":\"nfr\",\"order_id\":\"ORD-1\",\"product\":\"DemoSynth\",\"schema\":\"apc-license/1.0\"}",
+      "signature_b64": "ioUkAaEEi/K087WPCgykD47xdudPyt1hYkFIDAqkaIL0cx6ec9xPlS1hXU22o2W4hw2EDPFZ2UFYVICwKhvvDw=="
+    },
+    {
+      "name": "subscription-expired",
+      "expect_state": "DEMO",
+      "license_text": "{\n  \"schema\": \"apc-license/1.0\",\n  \"product\": \"DemoSynth\",\n  \"customer_name\": \"Ada\",\n  \"customer_email\": \"ada@example.test\",\n  \"order_id\": \"ORD-1\",\n  \"issued_at\": \"2026-10-23T14:30:00Z\",\n  \"expires_at\": \"2026-12-01T00:00:00Z\",\n  \"license_type\": \"subscription\",\n  \"allowed_seats\": 3,\n  \"signature_ed25519\": \"X+UPaEiU9BUShrrtjLCGpKxTP9bkxwfyjDHIr2ysPdbkKGB/VSvk5ZLvxd20Gt5loiHwvNWOMGgax+biA/YSBw==\"\n}\n",
+      "canonical": "{\"allowed_seats\":3,\"customer_email\":\"ada@example.test\",\"customer_name\":\"Ada\",\"expires_at\":\"2026-12-01T00:00:00Z\",\"issued_at\":\"2026-10-23T14:30:00Z\",\"license_type\":\"subscription\",\"order_id\":\"ORD-1\",\"product\":\"DemoSynth\",\"schema\":\"apc-license/1.0\"}",
+      "signature_b64": "X+UPaEiU9BUShrrtjLCGpKxTP9bkxwfyjDHIr2ysPdbkKGB/VSvk5ZLvxd20Gt5loiHwvNWOMGgax+biA/YSBw=="
+    },
+    {
+      "name": "signed-trial",
+      "expect_state": "TRIAL",
+      "license_text": "{\n  \"schema\": \"apc-license/1.0\",\n  \"product\": \"DemoSynth\",\n  \"customer_name\": \"Tess\",\n  \"customer_email\": \"ada@example.test\",\n  \"order_id\": \"ORD-1\",\n  \"issued_at\": \"2026-10-23T14:30:00Z\",\n  \"expires_at\": \"2027-02-01T00:00:00Z\",\n  \"license_type\": \"trial\",\n  \"allowed_seats\": 3,\n  \"signature_ed25519\": \"tNR/5f2Zmwn2CB234nEztdTHeywad69yf1yOn7PZzhHEbDdqjVTWjGhrU6382ocJMMNSApBQcfdDB4VYYuP+Dw==\"\n}\n",
+      "canonical": "{\"allowed_seats\":3,\"customer_email\":\"ada@example.test\",\"customer_name\":\"Tess\",\"expires_at\":\"2027-02-01T00:00:00Z\",\"issued_at\":\"2026-10-23T14:30:00Z\",\"license_type\":\"trial\",\"order_id\":\"ORD-1\",\"product\":\"DemoSynth\",\"schema\":\"apc-license/1.0\"}",
+      "signature_b64": "tNR/5f2Zmwn2CB234nEztdTHeywad69yf1yOn7PZzhHEbDdqjVTWjGhrU6382ocJMMNSApBQcfdDB4VYYuP+Dw=="
+    },
+    {
+      "name": "wrong-product",
+      "expect_state": "UNVERIFIED",
+      "license_text": "{\n  \"schema\": \"apc-license/1.0\",\n  \"product\": \"OtherSynth\",\n  \"customer_name\": \"Ada\",\n  \"customer_email\": \"ada@example.test\",\n  \"order_id\": \"ORD-1\",\n  \"issued_at\": \"2026-10-23T14:30:00Z\",\n  \"expires_at\": null,\n  \"license_type\": \"commercial_perpetual\",\n  \"allowed_seats\": 3,\n  \"signature_ed25519\": \"AivGNvVdB26lnblWvtzmBRJBs2fYIFb7Dvx583YIN9xewzGoOD2jp52r5NA4ZWuVZfTUMw6jk/FFS1VJocFFAA==\"\n}\n",
+      "canonical": "{\"allowed_seats\":3,\"customer_email\":\"ada@example.test\",\"customer_name\":\"Ada\",\"expires_at\":null,\"issued_at\":\"2026-10-23T14:30:00Z\",\"license_type\":\"commercial_perpetual\",\"order_id\":\"ORD-1\",\"product\":\"OtherSynth\",\"schema\":\"apc-license/1.0\"}",
+      "signature_b64": "AivGNvVdB26lnblWvtzmBRJBs2fYIFb7Dvx583YIN9xewzGoOD2jp52r5NA4ZWuVZfTUMw6jk/FFS1VJocFFAA=="
+    }
+  ]
+}

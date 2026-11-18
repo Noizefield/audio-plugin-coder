@@ -1,0 +1,199 @@
+/* =============================================================================
+   APC Minimal - design tokens (the ONE shipped design of the APC UI kit)
+   "Zeichnung 2030": an instrument drawn on deep teal. Five colours, one job each.
+
+     #122935  material  the plate, the panel body, everything that is not signal
+     #5BC7D2  energy    spectrum, meter body, lamps that say "alive"
+     #FB543D  limit     clip, ceiling, the value arc of a control that is being used
+     #ED7941  warning   the meter's approach zone (between energy and limit)
+     #F2B29E  memory    the ghost of a curve you just moved, soft warm washes
+
+   Type: Inter for words, JetBrains Mono for numbers (both bundled under fonts/,
+   OFL-1.1, see fonts/LICENSE-*.txt). No network font, ever.
+
+   This file is the canonical token contract of the design. Everything the kit
+   draws comes from these custom properties - a product restyles itself by
+   overriding values here (never by editing component CSS).
+   Night is the default; [data-theme="day"] is the alternate (same names).
+   Keep in sync with: templates/webview/apc-ui/apc-core.css (defaults),
+   design-system.json (documentation of the same values).
+   ============================================================================= */
+/* ---- the two families, bundled (110 KB total, latin subset) ---------------- */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("fonts/inter-400.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url("fonts/inter-500.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url("fonts/inter-600.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("fonts/jetbrains-mono-400.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url("fonts/jetbrains-mono-500.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root,
+[data-theme="night"] {
+  color-scheme: dark;
+
+  /* ---- surfaces ---------------------------------------------------------- */
+  --apc-letterbox: #0B1A22;   /* outside the plate (window letterbox) */
+  --surface:   #0B1A22;       /* page / deepest layer */
+  --plate:     #122935;       /* plugin background - THE material colour */
+  --plate-2:   #1A3644;       /* raised panel / control body */
+  --plate-3:   #224A5A;       /* raised CONTROL body - the approved plate --panel-2 (buttons, fields, segment track) */
+  --wash:      rgba(234, 242, 243, .06);   /* hover wash over a control body (the plate --track) */
+  --inset:     #0E222C;       /* wells: fields, tracks, graph backgrounds */
+
+  /* ---- lines ------------------------------------------------------------- */
+  --rule:      #5A8492;       /* control borders: >= 3:1 on --plate and --plate-2 (WCAG 1.4.11) */
+  --rule-2:    #234250;       /* quiet dividers, grid lines */
+  --grip-ink:  #5A8492;       /* resize gripper */
+
+  /* ---- text -------------------------------------------------------------- */
+  --ink:       #EAF2F3;       /* primary text, pointers, values */
+  --ink-2:     #9FBDC6;       /* labels, secondary text (>= 4.5:1 on --plate) */
+  --ink-3:     #80A1AC;       /* micro labels, units, axis ticks */
+
+  /* ---- signal ------------------------------------------------------------ */
+  --accent:     #FB543D;      /* THE signal colour: value arc, curve, active, focus */
+  --accent-ink: #1A0A08;      /* text/icon on an --accent fill */
+  --accent-text: #FF7B64;     /* accent-coloured TEXT: the signal hue lifted to clear 4.5:1 */
+  --ok:         #5BC7D2;      /* success / energy / meter body / playhead */
+  --ok-text: #5BC7D2; /* success TEXT (night: --ok already clears 4.5:1) */
+  --apc-danger: #FB543D;      /* error, clip, destructive - the limit hue */
+  --apc-danger-text: #FB543D; /* error / destructive TEXT (night: the danger hue already clears 4.5:1) */
+  --apc-focus:  var(--accent);
+  --apc-overlay: rgba(4, 12, 17, .62);
+  /* ---- data / visualisation --------------------------------------------- */
+  --viz-line:   var(--ink);               /* primary curve / waveform */
+  --viz-accent: var(--accent);            /* highlighted curve, nodes */
+  --viz-fill:   rgba(251, 84, 61, .15);   /* area under a curve */
+--viz-grid:   rgba(91, 199, 210, .10);   /* the plate grid: a 10% cyan hairline, not a grey line */
+  --viz-axis:   var(--ink-3);
+  --viz-1: #ED7941; --viz-2: #56B4E9; --viz-3: #009E73; --viz-4: #F0E442;   /* colour-blind-safe series */
+  --meter-ok:   var(--ok);
+  --meter-warn: #ED7941;                  /* the approach zone: the warning hue */
+  --meter-clip: var(--apc-danger);
+  --led-on:     var(--accent);
+  --led-off:    var(--rule-2);
+  --step-off:   var(--inset);
+  --step-on:    var(--accent);
+  --step-accent: var(--ink);
+  --step-playhead: var(--ok);
+
+  /* ---- modulation sources (Okabe-Ito; differ by dash pattern too) ------- */
+  --apc-mod-1: #e69f00; --apc-mod-2: #56b4e9; --apc-mod-3: #009e73; --apc-mod-4: #f0e442;
+  --apc-mod-5: #3d9be0; --apc-mod-6: #d55e00; --apc-mod-7: #cc79a7; --apc-mod-8: #b8b8b8;
+
+  /* ---- shape: rounded 2-3 px, one material with depth ------------------- */
+  --r-control: 2px;
+  --r-panel:   3px;
+  --r-well:    3px;           /* wells echo the panel corner, one step tighter */
+  --r-radio:   2px;           /* the plate uses ONE square mark: a radio is not a circle */
+  --r-led:     1px;           /* lamps are square chips, not dots */
+  --sh-recess: inset 0 1px 0 rgba(255, 255, 255, .05);
+  --sh-raised: 0 1px 2px rgba(4, 12, 17, .55);
+  --sh-knob:   0 3px 7px rgba(4, 12, 17, .55), inset 0 1px 0 rgba(255, 255, 255, .16);
+  --apc-shadow-pop: 0 10px 30px rgba(4, 12, 17, .62);
+  --halo:      rgba(251, 84, 61, .24);    /* the ring a control wears while you drag it */
+  --memory:    #F2B29E;                   /* the ghost of the previous curve */
+  --knob:      #20404F;                   /* the machined face (gradient end) */
+  --stroke:    1px;
+  --stroke-2:  2px;
+  --disabled-opacity: .4;
+  /* ---- type -------------------------------------------------------------- */
+  --font-ui:   "Inter", ui-sans-serif, "Segoe UI", Roboto, Arial, sans-serif;                 /* words */
+  --font-num:  "JetBrains Mono", ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;    /* numbers */
+  --font-text: "Inter", ui-sans-serif, "Segoe UI", Roboto, Arial, sans-serif;                 /* sentences */
+  --t-micro:   max(9px, .5rem);
+  --t-label:   max(10px, .625rem);
+  --t-value:   max(11px, .6875rem);
+  --t-readout: max(11px, .75rem);
+  --t-title:   max(12px, .875rem);
+  --t-head:    max(14px, 1.125rem);
+  --label-spacing: .14em;     /* UPPERCASE labels are letter-spaced */
+
+  /* ---- sizing (rem = one grid cell; the kit scales as a whole) ---------- */
+  --ctl-h:     1.5rem;        /* button, field, dropdown, tab height */
+  --ctl-gap:   .375rem;       /* gap between related controls */
+  --pad:       .5rem;         /* panel padding */
+  --knob-size: 3rem;          /* default knob diameter (per-control override: data-size or CSS var) */
+  --knob-arc:  .1875rem;      /* knob value-arc thickness */
+  --track-w:   .25rem;        /* slider / meter track thickness */
+  --thumb:     .75rem;        /* slider thumb length */
+  --check:     1rem;          /* checkbox / radio box */
+  --apc-viz-node: .625rem;    /* graph / envelope node and xypad thumb size */
+  --apc-logo-h:   1.5rem;     /* logo image / mark height */
+}
+[data-theme="day"] {
+  color-scheme: light;
+
+  --apc-letterbox: #C9D6DA;
+  --surface:   #D3DEE1;
+  --plate:     #E3EAEC;       /* the same plate, re-inked on paper */
+  --plate-2:   #F2F7F8;
+  --plate-3:   #E7EFF1;
+  --wash:      rgba(18, 41, 53, .06);
+  --inset:     #E9F1F2;
+
+  --rule:      #6F8A94;
+  --rule-2:    #DCE6E8;
+  --grip-ink:  #6F8A94;
+
+  --ink:       #122935;       /* the material colour becomes the ink */
+  --ink-2:     #46626E;
+  --ink-3:     #506C79;
+
+  --accent:     #D0442C;      /* the signal, darkened for paper (>= 3:1 as a graphic) */
+  --accent-ink: #FFFFFF;
+  --accent-text: #A6331F;     /* darker still: >= 4.5:1 as text on plate, plate-2, inset */
+  --ok:         #2A8F9B;      /* the energy hue, darkened for paper */
+  --ok-text: #217180; /* success TEXT: >= 4.5:1 on plate, plate-2, inset */
+  --apc-danger: #D0442C;
+  --apc-danger-text: #A6331F; /* error / destructive TEXT: >= 4.5:1 on plate, plate-2, inset */
+  --apc-overlay: rgba(18, 41, 53, .45);
+
+  --viz-fill:   rgba(208, 68, 44, .16);
+  --viz-grid:   rgba(18, 41, 53, .06);    /* day: the same hairline, ink instead of cyan */
+  --viz-1: #C25A28; --viz-2: #0B6FA8; --viz-3: #00765A; --viz-4: #7F7400;
+  --meter-warn: #B0552A;
+
+  --apc-mod-1: #a35f00; --apc-mod-2: #0b6fa8; --apc-mod-3: #00765a; --apc-mod-4: #7f7400;
+  --apc-mod-5: #0072b2; --apc-mod-6: #c24f00; --apc-mod-7: #a8467f; --apc-mod-8: #5a5a5a;
+
+  --sh-recess: inset 0 1px 0 rgba(255, 255, 255, .70);
+  --sh-raised: 0 1px 2px rgba(18, 41, 53, .14);
+  --sh-knob:   0 2px 5px rgba(18, 41, 53, .16), inset 0 1px 0 rgba(255, 255, 255, .90);
+  --apc-shadow-pop: 0 10px 26px rgba(18, 41, 53, .18);
+  --halo:      rgba(208, 68, 44, .20);
+  --knob:      #F7FBFC;
+}

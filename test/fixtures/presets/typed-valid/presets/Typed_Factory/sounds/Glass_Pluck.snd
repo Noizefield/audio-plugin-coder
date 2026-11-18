@@ -1,0 +1,64 @@
+{
+  "schema": "apc-preset/1.0",
+  "kind": "sound",
+  "id": "snd_00000000-0000-4000-8000-000000000011",
+  "name": "Glass Pluck",
+  "author": "Fixture Author",
+  "created": "2026-11-01T10:00:00Z",
+  "app_version": "1.0.0",
+  "meta": {
+    "category": "pluck",
+    "subcategory": "synth-pluck",
+    "articulation": "struck",
+    "axes": {
+      "bri": "bright",
+      "war": "cool",
+      "agg": "firm",
+      "wid": "wide",
+      "dep": "thin",
+      "mov": "static"
+    },
+    "temporal": {
+      "attack": "instant",
+      "sustain": "sustained",
+      "evolution": "evolving",
+      "release": "short",
+      "rhythm": "none"
+    },
+    "moods": [
+      "ethereal"
+    ],
+    "tags": [
+      "glass"
+    ],
+    "desc": "Glassy short pluck."
+  },
+  "params": {
+    "osc1_wave": "saw",
+    "osc1_tune_st": 0,
+    "filter_cutoff_hz": 95.5,
+    "filter_res": 0.35,
+    "drive_amount": 0.62,
+    "amp_env_attack_s": 0.002,
+    "amp_env_release_s": 0.12
+  },
+  "modulation": [
+    {
+      "src": "lfo1",
+      "dst": "filter_cutoff_hz",
+      "amount": 0.45,
+      "polarity": "bipolar",
+      "min": 200,
+      "max": 4000
+    }
+  ],
+  "sample_ref": "samples/kick_raw.wav",
+  "samples": [
+    {
+      "ref": "samples/kick_raw.wav",
+      "sha256": "4434c9fdd28a2baa322563f99ebd6f6dfc3a356fe698dcdfbaa09141bf13c704",
+      "bytes": 41,
+      "pack": "Typed_Factory"
+    }
+  ]
+}

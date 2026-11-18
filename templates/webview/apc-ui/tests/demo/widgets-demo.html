@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>APC UI kit - widgets demo</title>
+<!-- Self-contained gallery of every kit widget (flat "APC Minimal" look) for visual checks and screenshots.
+     Not a test page (it lives in tests/demo/ so `apc kit test` does not run it).
+     URL options (hash): #day  #night  #open=dropdown | menu | submenu | list   e.g. widgets-demo.html#day&open=menu
+     Screenshot:  msedge --headless=new --screenshot=out.png --window-size=1280,800 --virtual-time-budget=4000 file:///.../widgets-demo.html#day -->
+<link rel="stylesheet" href="../../apc-core.css">
+<link rel="stylesheet" href="../../apc-components.css">
+<link rel="stylesheet" href="../../apc-widgets.css">
+<style>
+  :root { --cols: 50; --rows: 42; }
+  #plate { display: grid; grid-template-columns: 15fr 17fr 18fr; gap: 0; align-content: start; }
+  .col { padding: .625rem .75rem; display: flex; flex-direction: column; gap: .625rem; min-width: 0; border-right: var(--stroke) solid var(--rule-2); }
+  .col:last-child { border-right: 0; }
+  .row { display: flex; gap: .75rem; align-items: flex-start; flex-wrap: wrap; }
+  .row > * { flex: none; }
+  .grow { flex: 1 1 8rem !important; min-width: 0; }
+  .hdr { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .5rem .75rem; border-bottom: var(--stroke) solid var(--rule); }
+</style>
+</head>
+<body>
+<div id="plate" class="apc-plate">
+  <div class="hdr" style="grid-column: 1 / -1">
+    <div data-apc="logo" data-text="ACME" data-sub="AUDIO" data-link="company"></div>
+    <div class="row" style="flex-wrap:nowrap;align-items:center">
+      <div data-apc="menu" data-label="File" data-items='[{"id":"new","label":"New","shortcut":"Ctrl+N"},{"id":"open","label":"Open...","shortcut":"Ctrl+O"},"-",{"id":"snap","label":"Snap to grid","checked":true},{"id":"export","label":"Export","items":[{"id":"wav","label":"WAV"},{"id":"mp3","label":"MP3","disabled":true}]},{"id":"quit","label":"Quit","disabled":true}]'></div>
+      <div data-apc="button" data-label="Save" data-variant="primary"></div>
+      <div data-apc="led" data-label="ACTIVE" data-state="ok"></div>
+    </div>
+  </div>
+
+  <div class="col">
+    <span data-apc="label" data-role="title" data-text="Rotary &amp; linear"></span>
+    <div class="row">
+      <div data-apc="knob" data-param="cutoff_hz" data-label="CUTOFF" data-ticks="5" data-unit="separate"></div>
+      <div data-apc="knob" data-param="resonance_pct" data-label="RES"></div>
+      <div data-apc="knob" data-param="detune_ct" data-label="DETUNE" data-size="sm"></div>
+    </div>
+    <div class="row">
+      <div data-apc="knob" data-param="gain_db" data-label="GAIN" data-size="lg" data-ticks="7" data-readout="above"></div>
+      <div data-apc="slider" data-param="mix_pct" data-label="MIX" data-ticks="5" data-size="md"></div>
+      <div data-apc="slider" data-param="detune_ct" data-label="FINE" data-size="md"></div>
+    </div>
+    <div data-apc="slider" data-orient="horizontal" data-param="drive_db" data-label="DRIVE" data-ticks="4" style="width:100%"></div>
+    <div data-apc="selector" data-param="osc_wave" data-label="WAVE" style="width:100%"></div>
+    <div class="row">
+      <div data-apc="toggle" data-param="bypass" data-label="BYPASS"></div>
+      <div data-apc="toggle" data-param="bypass" data-label="BOXED" data-variant="button"></div>
+      <div data-apc="toggle" data-param="bypass" data-label="OFF" data-disabled="true"></div>
+    </div>
+  </div>
+
+  <div class="col">
+    <span data-apc="label" data-role="title" data-text="Buttons &amp; choices"></span>
+    <div class="row">
+      <div data-apc="button" data-label="Action"></div>
+      <div data-apc="button" data-label="Latch" data-variant="latch" data-led="true" data-pressed="true"></div>
+      <div data-apc="button" data-label="Play" data-icon="&#9654;" data-variant="primary"></div>
+      <div data-apc="button" data-label="Off" data-disabled="true"></div>
+    </div>
+    <div data-apc="segmented" data-label="MODE" data-items='["Mono","Poly","Legato","Unison"]' data-value="Poly"></div>
+    <div class="row">
+      <div data-apc="radio" data-label="QUALITY" data-items='["Draft","Good","Best"]' data-value="Good"></div>
+      <div style="display:flex;flex-direction:column;gap:.25rem">
+        <div data-apc="checkbox" data-label="Oversample" data-checked="true"></div>
+        <div data-apc="checkbox" data-label="Dither"></div>
+        <div data-apc="checkbox" data-label="Mixed" data-indeterminate="true"></div>
+        <div data-apc="checkbox" data-label="Disabled" data-disabled="true"></div>
+      </div>
+    </div>
+    <div data-apc="dropdown" data-label="OSC WAVE" data-param="osc_wave"></div>
+    <div data-apc="tabs" data-label="Sections">
+      <section data-tab="OSC"><div class="row"><div data-apc="led" data-label="LOCK" data-state="on"></div><div data-apc="led" data-label="WARN" data-state="warn"></div><div data-apc="led" data-label="CLIP" data-state="error"></div><div data-apc="led" data-label="IDLE"></div></div></section>
+      <section data-tab="ENV">env panel</section>
+      <section data-tab="FX" data-disabled>fx</section>
+      <section data-tab="OUT">out panel</section>
+    </div>
+  </div>
+
+  <div class="col">
+    <span data-apc="label" data-role="title" data-text="Fields &amp; display"></span>
+    <div data-apc="textfield" data-label="PRESET NAME" data-value="Warm Pad" data-help="Letters, digits and spaces" data-pattern="[A-Za-z0-9 ]+"></div>
+    <div class="row">
+      <div class="grow" data-apc="numberfield" data-label="CUTOFF" data-param="cutoff_hz"></div>
+      <div class="grow" data-apc="numberfield" data-label="GAIN" data-param="gain_db"></div>
+    </div>
+    <div data-apc="textfield" data-label="ERROR STATE" data-value="bad name!" data-error="Letters, digits and spaces only"></div>
+    <div class="row">
+      <div data-apc="readout" data-label="CUTOFF" data-param="cutoff_hz" data-size="lg"></div>
+      <div data-apc="readout" data-label="PEAK" data-meter="peak" data-unit="dB" data-digits="1"></div>
+      <div data-apc="readout" data-label="MIX" data-param="mix_pct"></div>
+    </div>
+    <div data-apc="progress" data-label="CPU" data-value="0.42" data-show-value="true"></div>
+    <div data-apc="progress" data-label="SCANNING" data-indeterminate="true"></div>
+    <div data-apc="divider" data-label="LIBRARY"></div>
+    <div data-apc="list" data-label="PRESETS" data-rows="4" data-items='["Warm Pad","Glass Bell","Sub Bass","Pluck Lead","Air Drone","Hollow Keys"]' data-value="Glass Bell"></div>
+    <div data-apc="panel" data-title="ADVANCED" data-collapsible="true" data-collapsed="false"><span data-apc="label" data-role="caption" data-text="Sentences use the text face, controls and values the mono face."></span></div>
+  </div>
+</div>
+<script src="../../apc-fit.js"></script>
+<script src="../../apc-kit.js"></script>
+<script src="../../apc-mock.js"></script>
+<script src="../../apc-controls.js"></script>
+<script src="../../apc-widgets.js"></script>
+<script>
+(function () {
+  var hash = location.hash.replace(/^#/, "").split("&");
+  if (hash.indexOf("day") >= 0) document.documentElement.setAttribute("data-theme", "day");
+  else document.documentElement.setAttribute("data-theme", "night");
+  APC.mount(document);
+  var open = (hash.filter(function (h) { return h.indexOf("open=") === 0; })[0] || "").slice(5);
+  setTimeout(function () {
+    function press(el, key) { el.dispatchEvent(new KeyboardEvent("keydown", { key: key, bubbles: true, cancelable: true })); }
+    if (open === "dropdown") document.querySelector(".apc-w--dropdown .apc-dd").click();
+    else if (open === "menu" || open === "submenu") {
+      var b = document.querySelector(".apc-w--menu button"); b.click();
+      if (open === "submenu") { var rows = document.querySelectorAll(".apc-mi"); rows[4].focus(); press(rows[4], "ArrowRight"); }
+      else press(document.activeElement, "ArrowDown");
+    }
+    else if (open === "focus") { document.querySelector(".apc-seg.is-selected").focus(); }
+    else if (open === "context") { document.querySelector(".apc-knob").dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 300, clientY: 200 })); }
+    // a few live values
+    APC.mock.meter("peak", -6.3);
+    document.documentElement.setAttribute("data-ready", "1");
+  }, 400);
+})();
+</script>
+</body>
+</html>

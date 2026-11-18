@@ -357,6 +357,26 @@ New controls or layout → `/apc-evolve`. Then `/apc-impl` → `/apc-test` →
 
 ---
 
+## apc CLI - framework commands
+
+Cross-platform (`node bin/apc.js <command>`, or `apc` when installed). Run `apc help` for the full list.
+
+| Command | Purpose | Guide |
+|---|---|---|
+| `apc standards list|set|validate|plan` | Product-standards registry; `plan` is the question list for `/apc-plan` | `.agents/rules/product-standards.md` |
+| `apc presets validate|index|promote|init|paths|check-manifest` | `apc-preset/1.0` tooling | `.agents/guides/presets.md` |
+| `apc audio <Plugin>` | pluginval, clap-validator, null/NaN/tail/bench gates | `.agents/guides/audio-validation.md` |
+| `apc validate rt|a11y --plugin <Name>` | Realtime-safety scan; WCAG/keyboard/perf checks | `.agents/guides/dsp-kit.md`, `.agents/guides/a11y-perf.md` |
+| `apc watch|screenshot <Plugin>` | Hot-reload preview; deterministic screenshots + diff | `.agents/guides/preview-loop.md` |
+| `apc release keygen|manifest|sign|verify` | Signed update manifest | `.agents/guides/updater.md` |
+| `apc sbom <Plugin>` | CycloneDX SBOM + provenance | `.agents/guides/signing-and-provenance.md` |
+| `apc eval list|run|score|record|leaderboard|promote|selftest` | AI eval harness | `.agents/guides/evals.md` |
+| `apc docs check` | Links, snippets, stale strings, version SSOT | `.agents/guides/docs-ci.md` |
+
+See also `.agents/guides/onboarding-5min.md` (fresh clone to green `apc doctor`) and `.agents/guides/licensing-seam.md`, `settings-store.md`, `crash-diagnostics.md`.
+
+---
+
 ## Platform Scripts
 
 Prefer the single cross-platform CLI (Node 18+, zero deps) — it dispatches

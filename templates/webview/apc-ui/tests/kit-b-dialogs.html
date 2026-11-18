@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>kit-b-dialogs</title>
+<link rel="stylesheet" href="../apc-core.css">
+<link rel="stylesheet" href="../apc-components.css">
+</head>
+<body>
+<div id="stage"></div>
+<script src="../apc-fit.js"></script>
+<script src="../apc-kit.js"></script>
+<script src="../apc-mock.js"></script>
+<script src="../apc-license-ui.js"></script>
+<script src="../apc-update-ui.js"></script>
+<script src="harness-b.js"></script>
+<script>
+(function () {
+  "use strict";
+  var APC = window.APC, T = window.T;
+
+  var SIGNED_OK = JSON.stringify({ schema: "apc-license/1.0", product: "example-synth", customer_name: "Pat Example", allowed_seats: 2, signature_ed25519: "TEST-SIGNATURE" });
+  var SIGNED_BAD = JSON.stringify({ schema: "apc-license/1.0", customer_name: "Mallory", signature_ed25519: "TAMPERED" });
+
+  function lic(scenario, mode) {
+    T.reset(scenario);
+    if (mode) APC.mock.config({ licenseMode: mode });
+    T.mount('<div id="lc" data-apc="license"></div>');
+    return T.wait(function () { return T.q("#lc .apc-lc__badge") && T.q("#lc .apc-lc__badge").textContent; }, "status badge").then(function () { return T.q("#lc"); });
+  }
+  function badge() { return T.text("#lc .apc-lc__badge"); }
+  function fb() { var m = T.q("#lc [data-k=feedback] .apc-lc__msg"); return m ? { kind: m.getAttribute("data-kind"), text: m.textContent } : null; }
+  function activate(serial, email) {
+    T.input(T.q("#lc [data-k=serial]"), serial); T.input(T.q("#lc [data-k=email]"), email || "");
+    T.click(T.q("#lc [data-k=activate]"));
+  }
+
+  /* ------------------------------- license ------------------------------- */
+  T.test("license mode none: the component renders nothing and the sheet does not open", function () {
+    T.reset("demo"); APC.mock.config({ licenseMode: "none" });
+    T.mount('<div id="lc" data-apc="license"></div>');
+    return T.sleep(30).then(function () {
+      T.assert(T.q("#lc .apc-lc").hidden, "root hidden");
+      T.eq(T.qa("#lc input, #lc button, #lc textarea").length, 0, "no controls at all");
+      T.eq(T.q("#lc").offsetHeight, 0, "takes no space");
+      APC.emit("license:open", { verb: "PresetSave" });
+      return T.sleep(30);
+    }).then(function () { T.assert(!T.q("[data-apc-sheet=license]"), "no activation sheet when licensing is disabled"); });
+  });
+
+  T.test("license mode signed-file: only Load File (+ paste); no serial, e-mail, activate or offline parts", function () {
+    return lic("demo", "signed-file").then(function () {
+      T.assert(T.q("#lc [data-k=load-file]"), "Load License File button");
+      T.assert(T.q("#lc [data-k=paste]"), "paste fallback");
+      T.assert(!T.q("#lc [data-k=serial]") && !T.q("#lc [data-k=email]") && !T.q("#lc [data-k=activate]") && !T.q("#lc [data-k=offline]"), "online parts absent");
+      T.assert(/Load your license file/.test(T.text("#lc .apc-lc__next")), "way forward: " + T.text("#lc .apc-lc__next"));
+      T.assert(T.q("#lc [data-k=deactivate]").hidden, "nothing to deactivate in DEMO");
+    });
+  });
+
+  T.test("license mode online-activation: serial + e-mail + Activate, Load File, drop zone, offline method B", function () {
+    return lic("demo").then(function () {
+      ["serial", "email", "activate", "load-file", "drop", "offline", "offline-request", "paste"].forEach(function (k) { T.assert(T.q("#lc [data-k=" + k + "]"), "missing " + k); });
+      T.eq(T.q("#lc [data-k=serial]").getAttribute("autocomplete"), "off");
+      T.assert(T.q("#lc label[for='" + T.q("#lc [data-k=serial]").id + "']"), "labelled field");
+    });
+  });
+
+  T.test("status badge: DEMO / TRIAL n d / LICENSED to name / UNVERIFIED, each with a plain-language explanation and the way forward", function () {
+    return lic("demo").then(function () {
+      T.eq(badge(), "DEMO");
+      T.assert(/audio and every parameter work fully/.test(T.text("#lc .apc-lc__why")), "DEMO explanation");
+      T.assert(/Saving your own presets/.test(T.text("#lc .apc-lc__why")), "says what is locked");
+      T.assert(/Enter your serial number/.test(T.text("#lc .apc-lc__next")), "way forward");
+      APC.mock.scenario("trial");
+      return T.wait(function () { return badge() === "TRIAL 27 d"; }, "trial badge (live update from the license event)");
+    }).then(function () {
+      T.assert(/everything is unlocked for 27 more days/i.test(T.text("#lc .apc-lc__why")));
+      T.assert(/After that the plugin keeps working in Demo mode|continues in Demo mode/.test(T.text("#lc .apc-lc__why")), "never dead-silent");
+      APC.mock.scenario("licensed");
+      return T.wait(function () { return badge() === "LICENSED to Test Customer"; }, "licensed badge");
+    }).then(function () {
+      T.assert(!T.q("#lc [data-k=deactivate]").hidden, "Deactivate visible when licensed");
+      T.eq(T.q("#lc .apc-lc__badge").getAttribute("data-state"), "LICENSED");
+      APC.mock.scenario("unverified");
+      return T.wait(function () { return badge() === "UNVERIFIED"; }, "unverified badge");
+    }).then(function () {
+      var why = T.text("#lc .apc-lc__why"), nxt = T.text("#lc .apc-lc__next");
+      T.assert(/keeps working|working in Demo mode/.test(why), "reassures: " + why);
+      T.assert(/Activate again online|load your license file again|contact support/.test(nxt), "way forward: " + nxt);
+      T.assert(!T.q("#lc [data-k=deactivate]").hidden, "can deactivate an unverified machine");
+    });
+  });
+
+  T.test("Activate: TEST-0000-… succeeds; badge, explanation and Deactivate update", function () {
+    return lic("demo").then(function () {
+      activate("test-0000-abcd-1234", "ann@example.test");
+      return T.wait(function () { return badge() === "LICENSED to ann"; }, "licensed to ann");
+    }).then(function () {
+      T.eq(fb().kind, "ok"); T.assert(/Activated/.test(fb().text));
+      T.assert(!T.q("#lc [data-k=deactivate]").hidden);
+      T.eq(APC.mock.calls("apc.license.activate")[0].args, { serial: "test-0000-abcd-1234", email: "ann@example.test" }, "serial and email sent to the bridge");
+      T.eq(T.q("#lc [data-k=serial]").value, "", "serial field cleared after success");
+    });
+  });
+
+  T.test("Activate: FULL-… (seat limit), unknown serial, empty serial, bad e-mail, and offline network are explained in place", function () {
+    return lic("demo").then(function () {
+      activate("FULL-1111-2222", "");
+      return T.wait(function () { return fb() && fb().kind === "err"; }, "seat limit message");
+    }).then(function () {
+      T.assert(/seats .* in use|Deactivate another computer/.test(fb().text), fb().text);
+      T.eq(T.q("#lc [data-k=feedback] [role=alert]").getAttribute("data-kind"), "err");
+      T.eq(badge(), "DEMO", "state unchanged");
+      activate("NOPE-0000", "");
+      return T.wait(function () { return /not recognized/.test((fb() || {}).text || ""); }, "invalid serial");
+    }).then(function () {
+      var n = APC.mock.calls("apc.license.activate").length;
+      activate("   ", "");
+      T.assert(/Enter your serial/.test(fb().text), "empty serial caught locally");
+      T.eq(APC.mock.calls("apc.license.activate").length, n, "no bridge call for an empty serial");
+      activate("TEST-0000-AAAA", "not-an-email");
+      return T.wait(function () { return /email address/.test((fb() || {}).text || ""); }, "bad email");
+    }).then(function () {
+      APC.mock.config({ offline: true });
+      activate("TEST-0000-AAAA", "");
+      return T.wait(function () { return /offline activation/i.test((fb() || {}).text || ""); }, "network error points to offline activation");
+    }).then(function () { T.eq(badge(), "DEMO"); T.assert(!T.q("#lc [aria-busy=true]"), "not left in a busy state"); });
+  });
+
+  T.test("Offline activation (method B): create request code, copy, paste the response back", function () {
+    return lic("demo").then(function () {
+      T.assert(T.q("#lc [data-k=request-code]").parentNode.hidden, "code box hidden until requested");
+      T.click(T.q("#lc [data-k=offline-request]"));
+      return T.wait(function () { return /^APC-REQ-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}$/.test(T.q("#lc [data-k=request-code]").value); }, "request code");
+    }).then(function () {
+      T.assert(!T.q("#lc [data-k=request-code]").parentNode.hidden, "code shown");
+      T.assert(T.q("#lc [data-k=request-code]").readOnly, "read-only so it cannot be mangled");
+      T.assert(T.q("#lc [data-k=copy-code]"), "Copy button");
+      T.assert(/paste/i.test(T.text("#lc [data-k=offline] ol")), "steps explained");
+      T.input(T.q("#lc [data-k=response]"), SIGNED_BAD);
+      T.click(T.q("#lc [data-k=apply-response]"));
+      return T.wait(function () { return fb() && fb().kind === "err"; }, "tampered response rejected");
+    }).then(function () {
+      T.assert(/failed verification/.test(fb().text)); T.eq(badge(), "DEMO", "a bad file never replaces the current state");
+      T.input(T.q("#lc [data-k=response]"), SIGNED_OK);
+      T.click(T.q("#lc [data-k=apply-response]"));
+      return T.wait(function () { return badge() === "LICENSED to Pat Example"; }, "licensed from pasted response");
+    }).then(function () { T.eq(APC.mock.calls("apc.license.offlineRequest").length, 1); });
+  });
+
+  T.test("Load License File: pasted text, invalid text, and drag-and-drop of a .lic file", function () {
+    return lic("demo", "signed-file").then(function () {
+      T.input(T.q("#lc [data-k=paste]"), "this is not json");
+      T.click(T.q("#lc [data-k=use-paste]"));
+      return T.wait(function () { return fb() && fb().kind === "err"; }, "invalid file");
+    }).then(function () {
+      T.assert(/not a valid license file|not a license file|could not be read/.test(fb().text), fb().text);
+      var dt = new DataTransfer(); dt.items.add(new File([SIGNED_OK], "customer.lic", { type: "text/plain" }));
+      var over = new DragEvent("dragover", { dataTransfer: dt, bubbles: true, cancelable: true });
+      T.q("#lc [data-k=drop]").dispatchEvent(over);
+      T.assert(over.defaultPrevented && T.q("#lc [data-k=drop]").classList.contains("is-drop"), "drop target highlights");
+      T.q("#lc [data-k=drop]").dispatchEvent(new DragEvent("drop", { dataTransfer: dt, bubbles: true, cancelable: true }));
+      return T.wait(function () { return badge() === "LICENSED to Pat Example"; }, "licensed via dropped .lic");
+    }).then(function () { T.assert(/License file loaded/.test(fb().text)); });
+  });
+
+  T.test("Deactivate This Machine asks for confirmation, then returns to DEMO", function () {
+    return lic("licensed").then(function () {
+      T.click(T.q("#lc [data-k=deactivate]"));
+      return T.wait(function () { return T.q("[data-apc-confirm]"); }, "confirm");
+    }).then(function () {
+      T.eq(APC.mock.calls("apc.license.deactivate").length, 0, "nothing happens before confirming");
+      T.click(T.q("[data-apc-confirm] [data-k=cancel]"));
+      T.eq(badge(), "LICENSED to Test Customer");
+      T.click(T.q("#lc [data-k=deactivate]"));
+      return T.wait(function () { return T.q("[data-apc-confirm]"); }, "confirm 2");
+    }).then(function () {
+      T.click(T.q("[data-apc-confirm] [data-k=ok]"));
+      return T.wait(function () { return badge() === "DEMO"; }, "back to demo");
+    }).then(function () { T.assert(T.q("#lc [data-k=deactivate]").hidden); T.assert(/deactivated/.test(fb().text)); });
+  });
+
+  T.test("license write failure is visible: inline message + toast naming license.lic", function () {
+    return lic("io-error", "signed-file").then(function () {
+      T.input(T.q("#lc [data-k=paste]"), SIGNED_OK);
+      T.click(T.q("#lc [data-k=use-paste]"));
+      return T.wait(function () { return fb() && fb().kind === "err"; }, "inline error");
+    }).then(function () {
+      T.assert(/license\.lic/.test(fb().text));
+      T.assert(T.toasts("error").some(function (t) { return /license\.lic/.test(t.textContent); }), "toast names the path");
+    });
+  });
+
+  T.test("activation sheet: opened by license:open, explains the gated verb, never blocks (Later / Esc / backdrop close it)", function () {
+    T.reset("demo");
+    APC.emit("license:open", { verb: "PackExport" });
+    return T.wait(function () { return T.q("[data-apc-sheet=license]"); }, "sheet").then(function () {
+      var sh = T.q("[data-apc-sheet=license]");
+      T.eq(sh.getAttribute("role"), "dialog");
+      T.assert(/Exporting preset packs needs a license/.test(sh.textContent), sh.textContent.slice(0, 100));
+      T.assert(/keeps working in Demo mode/.test(sh.textContent), "reassures the user");
+      T.assert(APC.licenseUI.isOpen());
+      T.assert(sh.contains(document.activeElement), "focus inside");
+      T.click(T.q("[data-k=later]", sh));
+      T.assert(!T.q("[data-apc-sheet=license]"), "Later closes");
+      APC.emit("license:open", {});
+      return T.wait(function () { return T.q("[data-apc-sheet=license]"); }, "reopen");
+    }).then(function () {
+      T.key(document.activeElement, "Escape");
+      T.assert(!T.q("[data-apc-sheet=license]"), "Esc closes");
+      T.assert(!APC.licenseUI.isOpen());
+    });
+  });
+
+  T.test("a .lic file dropped anywhere while the activation sheet is open is accepted (document drop target)", function () {
+    T.reset("demo");
+    APC.emit("license:open", {});
+    return T.wait(function () { return T.q("[data-apc-sheet=license] .apc-lc__badge") && T.q("[data-apc-sheet=license] .apc-lc__badge").textContent; }, "sheet").then(function () {
+      var dt = new DataTransfer(); dt.items.add(new File([SIGNED_OK], "x.lic"));
+      document.documentElement.dispatchEvent(new DragEvent("drop", { dataTransfer: dt, bubbles: true, cancelable: true }));
+      return T.wait(function () { return /LICENSED to Pat Example/.test(T.text("[data-apc-sheet=license] .apc-lc__badge")); }, "licensed");
+    });
+  });
+
+  /* ------------------------------- update ------------------------------- */
+  function upd(scenario, cfg) {
+    T.reset(scenario);
+    if (cfg) APC.mock.config(cfg);
+    T.mount('<div id="up" data-apc="update"></div>');
+    return T.wait(function () { return T.q("#up .apc-up__title"); }, "update panel");
+  }
+  function uState() { return T.q("#up .apc-up").getAttribute("data-state"); }
+  function record() { var seen = []; var off = APC.mock.on("update", function (e) { seen.push(e.state.state); }); seen.stop = off; return seen; }
+
+  T.test("update: Idle -> Check -> Checking -> UpToDate (manual check always shows its result)", function () {
+    return upd("licensed").then(function () {
+      T.eq(uState(), "Idle"); T.assert(/v1\.2\.0/.test(T.text("#up .apc-up__title")));
+      T.click(T.q("#up [data-k=check]"));
+      return T.wait(function () { return uState() === "Checking"; }, "Checking");
+    }).then(function () {
+      T.eq(T.q("#up [role=progressbar]").getAttribute("aria-label"), "Checking for updates");
+      return T.wait(function () { return uState() === "UpToDate"; }, "UpToDate");
+    }).then(function () {
+      T.assert(/You have the latest version \(v1\.2\.0\)/.test(T.text("#up .apc-up__title")), T.text("#up .apc-up__title"));
+      T.assert(T.q("#up [data-k=check]"), "can check again");
+    });
+  });
+
+  T.test("update: UpdateAvailable shows version, release notes and an explicit Download (nothing downloads by itself)", function () {
+    return upd("update-available").then(function () {
+      return T.wait(function () { return uState() === "UpdateAvailable"; }, "available");
+    }).then(function () {
+      T.assert(/Version 1\.3\.0 is available \(you have v1\.2\.0\)/.test(T.text("#up .apc-up__title")));
+      T.assert(/New: sample factory pack/.test(T.text("#up [data-k=notes]")), "notes shown");
+      T.eq(T.q("#up [data-k=notes]").tabIndex, 0, "notes scrollable by keyboard");
+      T.assert(T.q("#up [data-k=download]"));
+      T.assert(/does not install anything/.test(T.q("#up").textContent), "sets expectations");
+      T.eq(APC.mock.calls("apc.update.download").length, 0, "no download without a click");
+    });
+  });
+
+  T.test("update: Download -> Downloading (progress) -> Verifying -> ReadyToInstall with the install instruction", function () {
+    var seen;
+    return upd("update-available").then(function () {
+      return T.wait(function () { return uState() === "UpdateAvailable"; }, "available");
+    }).then(function () {
+      seen = record(); var pcts = [];
+      var timer = setInterval(function () { var p = T.q("#up [role=progressbar][data-k=progress]"); if (p) pcts.push(Number(p.getAttribute("aria-valuenow"))); }, 1);
+      T.click(T.q("#up [data-k=download]"));
+      return T.wait(function () { return uState() === "ReadyToInstall"; }, "ReadyToInstall").then(function () { clearInterval(timer); seen.stop(); return pcts; });
+    }).then(function (pcts) {
+      T.eq(seen.filter(function (s, i) { return i === 0 || s !== seen[i - 1]; }), ["Downloading", "Verifying", "ReadyToInstall"], "state machine order");
+      T.assert(pcts.some(function (v) { return v > 0 && v < 100; }), "the progress bar advanced through intermediate values: " + JSON.stringify(pcts));
+      T.assert(T.q("#up").textContent.indexOf("Close your DAW, then run this installer.") >= 0, "exact instruction");
+      T.assert(/ExampleSynth-1\.3\.0-Setup\.exe/.test(T.text("#up [data-k=path]")), "installer path shown");
+      T.assert(!/install(s|ed)? (it |itself )?automatically|will install|restart(ing)? (the )?(daw|plugin)|installing now/i.test(T.q("#up").textContent), "never claims it installs by itself: " + T.q("#up").textContent);
+      T.assert(/cannot replace itself while your DAW is running/.test(T.q("#up").textContent), "explains why");
+      T.click(T.q("#up [data-k=reveal]"));
+      return T.wait(function () { return APC.mock.calls("apc.update.revealInstaller").length; }, "reveal").then(function () { T.assert(!T.q("#up [data-k=download]"), "no Download button any more"); });
+    });
+  });
+
+  T.test("update: Downloading shows a progressbar role with aria-valuenow, and Cancel returns to UpdateAvailable", function () {
+    return upd("update-available", { tickMs: 30 }).then(function () {
+      return T.wait(function () { return uState() === "UpdateAvailable"; }, "available");
+    }).then(function () {
+      T.click(T.q("#up [data-k=download]"));
+      return T.wait(function () { return uState() === "Downloading"; }, "downloading");
+    }).then(function () {
+      var bar = T.q("#up [role=progressbar]");
+      T.eq(bar.getAttribute("aria-valuemin"), "0"); T.eq(bar.getAttribute("aria-valuemax"), "100"); T.assert(bar.hasAttribute("aria-valuenow"));
+      T.assert(/Downloading version 1\.3\.0/.test(T.text("#up .apc-up__title")));
+      T.click(T.q("#up [data-k=cancel]"));
+      return T.wait(function () { return uState() === "UpdateAvailable"; }, "back to available");
+    }).then(function () { T.assert(T.q("#up [data-k=download]"), "can download again"); });
+  });
+
+  T.test("update: Failed shows a visible error, nothing-installed reassurance and a working retry", function () {
+    return upd("update-failed").then(function () {
+      return T.wait(function () { return uState() === "UpdateAvailable"; }, "available");
+    }).then(function () {
+      T.click(T.q("#up [data-k=download]"));
+      return T.wait(function () { return uState() === "Failed"; }, "Failed");
+    }).then(function () {
+      var err = T.q("#up [data-k=error]");
+      T.assert(/interrupted/.test(err.textContent), err.textContent);
+      T.eq(T.q("#up [data-k=title]").getAttribute("role"), "alert");
+      T.assert(/Nothing was installed/.test(T.q("#up").textContent));
+      T.click(T.q("#up [data-k=retry]"));
+      return T.wait(function () { return uState() === "ReadyToInstall"; }, "retry succeeds");
+    }).then(function () { T.eq(APC.mock.calls("apc.update.download").length, 2, "retry re-ran the download"); });
+  });
+
+  T.test("update: a failed CHECK offers Try again that re-checks (no stale download button)", function () {
+    return upd("licensed", { checkFails: true }).then(function () {
+      T.click(T.q("#up [data-k=check]"));
+      return T.wait(function () { return uState() === "Failed"; }, "failed check");
+    }).then(function () {
+      T.assert(/Could not reach the update server/.test(T.q("#up [data-k=error]").textContent));
+      APC.mock.config({ checkFails: false });
+      T.click(T.q("#up [data-k=retry]"));
+      return T.wait(function () { return uState() === "UpToDate"; }, "re-check ok");
+    }).then(function () { T.eq(APC.mock.calls("apc.update.check").length, 2); });
+  });
+
+  T.test("update: event payload may be {state:{...}} (contract) or the bare state object", function () {
+    return upd("licensed").then(function () {
+      APC.mock.emit("update", { state: { state: "Verifying", current: "1.2.0", latest: "1.3.0", progress: 1 } });
+      T.eq(uState(), "Verifying");
+      T.assert(/Verifying the download/.test(T.text("#up .apc-up__title")));
+      APC.bridge.call("apc.update.state"); // ensure bridge still fine
+      APC.mock.emit("update", { state: "UpToDate", current: "1.2.0" });
+      T.eq(uState(), "UpToDate");
+    });
+  });
+
+  T.test("update sheet: update:open opens a dialog with Later; Esc closes; the installer is never launched", function () {
+    T.reset("update-available");
+    APC.emit("update:open");
+    return T.wait(function () { return T.q("[data-apc-sheet=update] [data-k=download]"); }, "sheet with Download").then(function () {
+      var sh = T.q("[data-apc-sheet=update]");
+      T.assert(T.q("[data-k=later]", sh), "Later button");
+      T.click(T.q("[data-k=later]", sh));
+      T.assert(!T.q("[data-apc-sheet=update]"));
+      APC.emit("update:open");
+      return T.wait(function () { return T.q("[data-apc-sheet=update]"); }, "again");
+    }).then(function () {
+      T.key(document.activeElement, "Escape");
+      T.assert(!T.q("[data-apc-sheet=update]"));
+      T.eq(APC.mock.calls("apc.update.revealInstaller").length, 0);
+    });
+  });
+
+  T.test("mock scenarios exist and are deterministic", function () {
+    T.reset();
+    T.eq(APC.mock.scenarios().sort(), ["demo", "io-error", "licensed", "trial", "unverified", "update-available", "update-failed"]);
+    APC.mock.scenario("trial");
+    return T.bridge("apc.license.status").then(function (a) {
+      APC.mock.scenario("trial");
+      return T.bridge("apc.license.status").then(function (b) { T.eq(a, b); T.eq(a.state, "TRIAL"); T.eq(a.daysLeft, 27); });
+    });
+  });
+
+  T.run();
+})();
+</script>
+</body>
+</html>

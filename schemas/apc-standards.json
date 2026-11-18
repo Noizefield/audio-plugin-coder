@@ -1,0 +1,847 @@
+{
+  "schema": "apc-standards/1.0",
+  "version": "1.2.0",
+  "locked": "2026-10-24",
+  "title": "APC Plugin Product Standards",
+  "summary": "Machine-readable registry of every standard option in the locked Plugin Product Standards. 'global' scope = once-and-forever defaults edited in /apc-setup (Advanced Setup) and on the APC Hub settings page. 'plugin' scope = asked once during /apc-plan and stored in the plugin's status.json.",
+  "fixed_rules": [
+    {
+      "id": "never-fail-silently",
+      "decision": "stone",
+      "rule": "Never fail silently on preset/data I/O — report success or a visible error."
+    },
+    {
+      "id": "settings-machine-wide",
+      "decision": "stone",
+      "rule": "Settings live once per machine (never in the DAW project)."
+    },
+    {
+      "id": "help-text-once",
+      "decision": "stone",
+      "rule": "Parameter help text is written once and reused by tooltip + info bar + manual."
+    },
+    {
+      "id": "no-telemetry",
+      "decision": "stone",
+      "rule": "No telemetry. Network only for explicit user actions and the optional update check (auto_update_check, default off)."
+    },
+    {
+      "id": "version-always-visible",
+      "decision": "U-16",
+      "rule": "The version string is always visible in the plugin GUI (footer first, never in a menu)."
+    }
+  ],
+  "groups": [
+    {
+      "id": "presets",
+      "title": "Presets & Data"
+    },
+    {
+      "id": "ux",
+      "title": "UX & Interaction"
+    },
+    {
+      "id": "modules",
+      "title": "Opt-in Modules"
+    },
+    {
+      "id": "licensing",
+      "title": "Licensing"
+    },
+    {
+      "id": "engine",
+      "title": "Engine & State"
+    },
+    {
+      "id": "updates",
+      "title": "Updates"
+    }
+  ],
+  "options": [
+    {
+      "id": "preset.hierarchy",
+      "group": "presets",
+      "decision": "P-01",
+      "scope": "plugin",
+      "type": "enum",
+      "values": [
+        "typed",
+        "flat"
+      ],
+      "default": "typed",
+      "required": true,
+      "question": "Preset architecture: typed tree (sound → kit → patch) or flat (FX)?",
+      "summary": "Typed asset tree sound → kit, sequence → patch. Flat mode for FX and simple synths.",
+      "why": "How a product's saved data is shaped. Typed keeps sound, kit and sequence as separate assets that reference each other - what an instrument with shared components needs. Flat puts everything in one file per preset - what an effect needs. The choice decides the browser tree, the export format and how much a preset can share.",
+      "enforced": [
+        "preset browser tree",
+        "export / import paths",
+        "apc validate presets"
+      ],
+      "valueNotes": {
+        "typed": "sound -> kit -> sequence/patch, assets shared and updated independently",
+        "flat": "one file per preset, no cross-references"
+      }
+    },
+    {
+      "id": "preset.sound_ext",
+      "group": "presets",
+      "decision": "P-02",
+      "scope": "plugin",
+      "type": "string",
+      "default": null,
+      "question": "File extension for sounds (e.g. '.snd'):",
+      "summary": "Per-plugin file extension. Never hardcoded by the framework.",
+      "why": "The extension this product uses for a sound asset. The framework must never hardcode one: the suffix is part of the product's identity and its file associations.",
+      "enforced": [
+        "file dialogs",
+        "browser labels",
+        "export filenames"
+      ],
+      "valueNotes": {}
+    },
+    {
+      "id": "preset.kit_ext",
+      "group": "presets",
+      "decision": "P-02",
+      "scope": "plugin",
+      "type": "string",
+      "default": null,
+      "question": "File extension for kits (e.g. '.kit'):",
+      "summary": "Per-plugin file extension for kit assets.",
+      "why": "The extension for a kit asset (the shared instrument layer in typed mode). It belongs to the product, not the framework.",
+      "enforced": [
+        "file dialogs",
+        "browser labels"
+      ],
+      "valueNotes": {}
+    },
+    {
+      "id": "preset.seq_ext",
+      "group": "presets",
+      "decision": "P-02",
+      "scope": "plugin",
+      "type": "string",
+      "default": null,
+      "question": "File extension for sequences (e.g. '.seq'):",
+      "summary": "Per-plugin file extension for sequence assets.",
+      "why": "The extension for a sequence asset (patterns, automation lanes), kept separate from the sound so a sequence can travel between sounds.",
+      "enforced": [
+        "file dialogs",
+        "browser labels"
+      ],
+      "valueNotes": {}
+    },
+    {
+      "id": "preset.patch_ext",
+      "group": "presets",
+      "decision": "P-02",
+      "scope": "plugin",
+      "type": "string",
+      "default": null,
+      "question": "File extension for patches (e.g. '.pat'):",
+      "summary": "Per-plugin file extension for patch assets.",
+      "why": "The extension for a patch asset (one layer inside a sound). Splitting it from the sound extension is what lets a patch travel on its own.",
+      "enforced": [
+        "file dialogs",
+        "export filenames"
+      ],
+      "valueNotes": {}
+    },
+    {
+      "id": "preset.pack_ext",
+      "group": "presets",
+      "decision": "P-02",
+      "scope": "plugin",
+      "type": "string",
+      "default": null,
+      "question": "File extension for pack archives (e.g. '.pack'):",
+      "summary": "Per-plugin file extension for exported pack archives.",
+      "why": "The extension for an exported pack (factory content, a bank, a bundle), distinct from a preset so the browser and the OS can tell an archive from a sound.",
+      "enforced": [
+        "export",
+        "install",
+        "apc validate presets"
+      ],
+      "valueNotes": {}
+    },
+    {
+      "id": "preset.preset_ext",
+      "group": "presets",
+      "decision": "P-02",
+      "scope": "plugin",
+      "type": "string",
+      "default": null,
+      "question": "File extension for flat presets (e.g. '.preset'):",
+      "summary": "Per-plugin file extension used in flat mode.",
+      "why": "The extension used in flat mode, where a preset is the whole file. Unused when preset.hierarchy is typed.",
+      "enforced": [
+        "flat-mode export / import"
+      ],
+      "valueNotes": {}
+    },
+    {
+      "id": "preset.data_root",
+      "group": "presets",
+      "decision": "P-03",
+      "scope": "plugin",
+      "type": "enum",
+      "values": [
+        "per-user",
+        "machine-wide"
+      ],
+      "default": "per-user",
+      "required": true,
+      "question": "Preset data root: per-user application data or machine-wide?",
+      "summary": "Per-user app data is the default; Program Files / /Applications is rejected (not writable).",
+      "why": "Where the user's presets and packs live. Per-user application data is the only location a plugin can rely on being writable; machine-wide locations (Program Files, /Applications) are refused by the OS for normal users, so they can only hold content installed with admin rights.",
+      "enforced": [
+        "path resolution in apc-presets.js",
+        "apc validate presets"
+      ],
+      "valueNotes": {
+        "per-user": "the user's application-data folder, always writable",
+        "machine-wide": "a system location, needs elevation to write"
+      }
+    },
+    {
+      "id": "preset.export_mode",
+      "group": "presets",
+      "decision": "P-09",
+      "scope": "plugin",
+      "type": "enum",
+      "values": [
+        "self-contained",
+        "pack-archive"
+      ],
+      "default": "self-contained",
+      "question": "Export a single preset as self-contained (embedded assets) or as a pack archive?",
+      "summary": "Self-contained embeds referenced assets so one file works anywhere.",
+      "why": "What a 'send me your preset' file contains. Self-contained embeds the assets it references, so the file works where nothing is installed; pack-archive keeps references and needs the same pack at the far end - smaller, but it can arrive broken.",
+      "enforced": [
+        "export",
+        "import",
+        "apc validate presets"
+      ],
+      "valueNotes": {
+        "self-contained": "asset bytes embedded, works anywhere",
+        "pack-archive": "references only, needs the same pack"
+      }
+    },
+    {
+      "id": "preset.factory_delivery",
+      "group": "presets",
+      "decision": "P-08",
+      "scope": "plugin",
+      "type": "enum",
+      "values": [
+        "hybrid",
+        "files",
+        "compiled"
+      ],
+      "default": "hybrid",
+      "question": "Factory content delivery: compiled INIT + showcase + full pack as files?",
+      "summary": "Hybrid keeps the plugin usable with no files on disk; the full factory pack ships as an editable pack folder.",
+      "why": "How factory content reaches the user. Hybrid keeps the plugin usable with nothing on disk and ships the full, editable pack beside it; files-only makes the plugin useless before the pack is installed; compiled-only makes the factory content uneditable.",
+      "enforced": [
+        "installer",
+        "first-run behaviour",
+        "restore factory layout"
+      ],
+      "valueNotes": {
+        "hybrid": "compiled core plus an editable pack folder",
+        "files": "pack only, must be installed first",
+        "compiled": "baked in, not editable"
+      }
+    },
+    {
+      "id": "preset.factory_install",
+      "group": "presets",
+      "decision": "P-14",
+      "scope": "plugin",
+      "type": "enum",
+      "values": [
+        "user-folder",
+        "shared-seed"
+      ],
+      "default": "user-folder",
+      "question": "Where does the installer place factory packs: the installing user's folder, or a shared read-only location seeded on first run?",
+      "summary": "Default user-folder (owner decision 2026-11-07). Known caveat: an elevated installer resolves the INSTALLING user's profile, so other accounts on the machine get no factory pack until they use Restore Factory Layout. shared-seed avoids this.",
+      "why": "Where the factory pack is copied on install. The user folder is visible and editable - but an elevated installer resolves the installing account, so other users start empty until they run Restore Factory Layout. The shared seed avoids that at the cost of hiding content in a system location.",
+      "enforced": [
+        "installer",
+        "restore factory layout",
+        "multi-user test"
+      ],
+      "valueNotes": {
+        "user-folder": "per-user copy, editable, empty for other accounts after an elevated install",
+        "shared-seed": "one machine-wide seed every account can read"
+      }
+    },
+    {
+      "id": "preset.host_program_list",
+      "group": "presets",
+      "decision": "P-12",
+      "scope": "plugin",
+      "type": "boolean",
+      "default": false,
+      "question": "Expose presets in the host program list / MIDI program change?",
+      "summary": "Per-plugin option, default off. Requires deferred apply — hosts may change programs on the audio thread.",
+      "why": "Whether the host's own program list mirrors the product's presets. It needs deferred apply, because a host may change programs on the audio thread and loading a preset there is not safe.",
+      "enforced": [
+        "program list bridge",
+        "deferred apply path"
+      ],
+      "valueNotes": {
+        "true": "mirror product presets into the host list",
+        "false": "the host keeps its own list"
+      }
+    },
+    {
+      "id": "preset.taxonomy",
+      "group": "presets",
+      "decision": "P-10",
+      "scope": "plugin",
+      "type": "string",
+      "default": "PMX/1",
+      "fixed": true,
+      "question": "Taxonomy vocabulary (frozen, PMX/1):",
+      "summary": "Shared PMX/1 vocabulary for all products; unused categories are hidden. Vocabulary is append-only.",
+      "why": "The shared vocabulary every product tags presets with (PMX/1). One vocabulary is what makes a cross-product browser and semantic search possible; append-only means old presets never lose their tags.",
+      "enforced": [
+        "preset tags",
+        "browser categories",
+        "semantic search"
+      ],
+      "valueNotes": {}
+    },
+    {
+      "id": "ux.theme_enabled",
+      "group": "ux",
+      "decision": "U-07",
+      "scope": "plugin",
+      "type": "boolean",
+      "default": false,
+      "question": "Day/Night theme available in this product?",
+      "summary": "Optional per-product feature. When on: Night / Day / Follow-OS, default Follow-OS.",
+      "why": "A product may ship one paper or two. Off keeps the surface single-minded: one drawing, no theme switch in the rail. On adds the Night/Day control and the follow-OS preference, which is two more states to design for every element.",
+      "enforced": [
+        "the theme switch is only drawn when this is on",
+        "apc validate ui warns about a theme switch without this"
+      ],
+      "valueNotes": {
+        "true": "two papers, rail switch, follows ux.theme",
+        "false": "one paper, baked in"
+      }
+    },
+    {
+      "id": "ux.theme",
+      "group": "ux",
+      "decision": "U-07",
+      "scope": "global",
+      "type": "enum",
+      "values": [
+        "night",
+        "day",
+        "follow-os"
+      ],
+      "default": "follow-os",
+      "question": "Interface theme:",
+      "summary": "Global UI preference. Applies when the plugin window is opened/reopened.",
+      "why": "Which paper the plugin opens on. The preference is global because a user chooses their working light once, not per plugin. Follow-OS defers to the desktop setting, so the plugin matches whatever the rest of the screen is doing at the moment the window opens.",
+      "enforced": [
+        "data-theme on <html> at mount",
+        "the theme switch writes this preference back"
+      ],
+      "valueNotes": {
+        "night": "always the dark paper",
+        "day": "always the light paper",
+        "follow-os": "reads the OS setting each time the window opens"
+      }
+    },
+    {
+      "id": "ux.double_click",
+      "group": "ux",
+      "decision": "U-02",
+      "scope": "global",
+      "type": "enum",
+      "values": [
+        "reset",
+        "value_entry"
+      ],
+      "default": "reset",
+      "question": "Double-click on a control resets it or opens value entry?",
+      "summary": "Double-click = reset by default, user-switchable to value entry.",
+      "why": "A control has one gesture left over after drag, wheel and right-click. Reset is the mixing-console habit: throw the knob back to its default and keep playing. Value entry is the data habit: type an exact number. They cannot share the gesture, so the product has to pick.",
+      "enforced": [
+        "apc-controls.js dblclick handler"
+      ],
+      "valueNotes": {
+        "reset": "double-click returns the control to its default",
+        "value_entry": "double-click opens the inline number entry"
+      }
+    },
+    {
+      "id": "ux.preset_load",
+      "group": "ux",
+      "decision": "U-10",
+      "scope": "global",
+      "type": "enum",
+      "values": [
+        "instant",
+        "confirm-if-dirty"
+      ],
+      "default": "confirm-if-dirty",
+      "question": "Preset load behaviour:",
+      "summary": "Instant, or ask for confirmation when the current preset is dirty.",
+      "why": "What happens when a preset is loaded over unsaved edits. Instant is faster for auditioning and trusts the undo path; confirm-if-dirty protects work and costs one click. This is the only place where a wrong default can destroy a take.",
+      "enforced": [
+        "preset browser load path",
+        "APC.emit('preset:load')"
+      ],
+      "valueNotes": {
+        "instant": "load immediately, edits are replaced",
+        "confirm-if-dirty": "ask first when the preset is modified"
+      }
+    },
+    {
+      "id": "ux.tooltips",
+      "group": "ux",
+      "decision": "U-09",
+      "scope": "global",
+      "type": "boolean",
+      "default": true,
+      "question": "Show tooltip help?",
+      "summary": "Tooltip toggle. Tooltip text comes from the single shared help source.",
+      "why": "Whether resting on a control explains it. On is right for iconographic plates and for anything with a hidden modifier; off is right when every label already says what the control does and the tooltip would only repeat it.",
+      "enforced": [
+        "APC.tooltip",
+        "apc-help.js"
+      ],
+      "valueNotes": {
+        "true": "hovering shows the control's what/effect/how",
+        "false": "no tooltips anywhere"
+      }
+    },
+    {
+      "id": "ux.tooltip_delay_ms",
+      "group": "ux",
+      "decision": "U-09",
+      "scope": "global",
+      "type": "number",
+      "default": 400,
+      "question": "Tooltip delay in milliseconds:",
+      "summary": "Never shown during a drag.",
+      "why": "How long the pointer has to rest before the explanation appears. Short values feel nervous and pop up while you are still aiming; long ones never appear at all because the hand has already moved on. 400 ms is roughly the speed of an intentional hover.",
+      "enforced": [
+        "APC.tooltip delay"
+      ],
+      "valueNotes": {}
+    },
+    {
+      "id": "ux.help_mode",
+      "group": "ux",
+      "decision": "U-09",
+      "scope": "plugin",
+      "type": "boolean",
+      "default": false,
+      "question": "F1 help mode (click any element for full help)?",
+      "summary": "Opt-in module. Tooltip + info bar are baseline; help mode is the extra.",
+      "why": "A mode that turns the plate into its own manual: every control explains what it is, what it does, and how to use it. It costs a rail button and a second reading of every label, so it is a per-product choice rather than a default.",
+      "enforced": [
+        "help button in the rail",
+        "data-help on <html>",
+        "F1"
+      ],
+      "valueNotes": {
+        "true": "ships the help mode and its button",
+        "false": "no help mode"
+      }
+    },
+    {
+      "id": "ux.wheel_target",
+      "group": "ux",
+      "decision": "U-08",
+      "scope": "global",
+      "type": "enum",
+      "values": [
+        "control",
+        "panel"
+      ],
+      "default": "control",
+      "question": "Mouse wheel target:",
+      "summary": "Wheel over a control nudges it, or the scrollable panel scrolls.",
+      "why": "Where the mouse wheel acts. Control-under-the-pointer is precise but unforgiving on small dials; panel-under-the-pointer is forgiving but can move the wrong thing when panels are dense. This is a feel decision, not a technical one.",
+      "enforced": [
+        "wheel handler in apc-controls.js"
+      ],
+      "valueNotes": {
+        "control": "the wheel changes the control you are pointing at",
+        "panel": "the wheel changes the focused panel's primary control"
+      }
+    },
+    {
+      "id": "ux.reset_animation",
+      "group": "ux",
+      "decision": "U-08",
+      "scope": "global",
+      "type": "enum",
+      "values": [
+        "snap",
+        "glide"
+      ],
+      "default": "glide",
+      "question": "Reset animation:",
+      "summary": "How a reset-to-default moves the control.",
+      "why": "Whether a reset snaps or glides back to the value. Glide shows the journey, which helps you understand how far you were and makes the reset feel like an action; snap is immediate and silent, which suits a fast workflow.",
+      "enforced": [
+        "APC.glide class",
+        "prefers-reduced-motion always snaps"
+      ],
+      "valueNotes": {
+        "snap": "jump straight to the value",
+        "glide": "animate to the value (~180 ms)"
+      }
+    },
+    {
+      "id": "ux.scaling_step_pct",
+      "group": "ux",
+      "decision": "U-08",
+      "scope": "global",
+      "type": "number",
+      "default": 100,
+      "question": "GUI scaling step in percent (50-300):",
+      "summary": "Discrete steps 50-300 %. See .agents/rules/ui-layout-system.md.",
+      "why": "The step of the window-scale control, as a percentage of the authored plate. 100 % is the plate at its authored size; the step decides how far one click of [+] travels.",
+      "enforced": [
+        "rail scale control",
+        "apc-scale.js"
+      ],
+      "valueNotes": {}
+    },
+    {
+      "id": "ux.aspect_lock",
+      "group": "ux",
+      "decision": "U-08",
+      "scope": "global",
+      "type": "boolean",
+      "default": true,
+      "question": "Lock the GUI aspect ratio while resizing?",
+      "summary": "Uniform zoom by default; per-product opt-out uses a reflowing layout.",
+      "why": "Whether the window keeps the plate's aspect ratio while resizing. On, the plate scales as one drawing and everything stays where the design put it. Off, the plate must letterbox or reflow, which is a different layout contract.",
+      "enforced": [
+        "setFixedAspectRatio",
+        "snapWindowToAspect in resized()"
+      ],
+      "valueNotes": {
+        "true": "aspect locked, plate scales uniformly",
+        "false": "window may take any shape; layout must handle it"
+      }
+    },
+    {
+      "id": "ux.version_position",
+      "group": "ux",
+      "decision": "U-16",
+      "scope": "plugin",
+      "type": "enum",
+      "values": [
+        "footer",
+        "header"
+      ],
+      "default": "footer",
+      "question": "Where is the always-visible version string?",
+      "summary": "Footer preferred, else an always-visible header/status area. Never in a menu.",
+      "why": "Where the build stamp lives. The footer keeps it visible while you are mixing (useful when reporting a bug); the header keeps it out of the working area. Both are honest, the trade is attention vs. tidiness.",
+      "enforced": [
+        "header / footer component",
+        "apc validate ui checks the stamp exists"
+      ],
+      "valueNotes": {
+        "footer": "stamp in the foot bar",
+        "header": "stamp beside the product name"
+      }
+    },
+    {
+      "id": "module.undo_redo",
+      "group": "modules",
+      "decision": "U-14",
+      "scope": "plugin",
+      "type": "boolean",
+      "default": false,
+      "question": "Undo/redo stack (at least 32 steps)?",
+      "summary": "Opt-in module. Covers preset loads and resets.",
+      "why": "Undo has to cover preset loads and resets - the two destructive actions. Opt-in, because a correct stack must own every state change in the processor, which is real work rather than a UI switch.",
+      "enforced": [
+        "processor state stack",
+        "Ctrl/Cmd+Z",
+        "menu entries"
+      ],
+      "valueNotes": {
+        "true": "undo/redo for preset loads and resets",
+        "false": "no undo"
+      }
+    },
+    {
+      "id": "module.midi_learn_table",
+      "group": "modules",
+      "decision": "U-14",
+      "scope": "plugin",
+      "type": "boolean",
+      "default": false,
+      "question": "Full MIDI-learn table (CC assignment, ranges, export)?",
+      "summary": "Opt-in module. Basic MIDI learn via the context menu is baseline (U-12).",
+      "why": "A persisted table of learned CCs per product, on top of the baseline right-click learn (U-12). The table is what makes a mapping survive a restart.",
+      "enforced": [
+        "settings storage",
+        "context menu entry"
+      ],
+      "valueNotes": {
+        "true": "learned CCs are stored and restored",
+        "false": "learn is session-only (baseline)"
+      }
+    },
+    {
+      "id": "module.drag_modulation",
+      "group": "modules",
+      "decision": "U-14",
+      "scope": "plugin",
+      "type": "boolean",
+      "default": false,
+      "question": "Drag-and-drop modulation routing?",
+      "summary": "Opt-in module.",
+      "why": "Dragging a modulation source onto a control instead of picking one from a menu. The fastest routing gesture available, and the most expensive to make work on touch.",
+      "enforced": [
+        "modulation routing UI",
+        "touch fallback in the context menu"
+      ],
+      "valueNotes": {
+        "true": "drag a source onto a target",
+        "false": "route from the context menu only"
+      }
+    },
+    {
+      "id": "module.macros",
+      "group": "modules",
+      "decision": "U-14",
+      "scope": "plugin",
+      "type": "boolean",
+      "default": false,
+      "question": "Macro controls (4-8 performance knobs)?",
+      "summary": "Opt-in module.",
+      "why": "Named controls that drive several parameters at once. Cheap in the UI, but every macro needs a defined sum mode and a display convention, or two routes fight over one value.",
+      "enforced": [
+        "macro page",
+        "parameter sum rules"
+      ],
+      "valueNotes": {
+        "true": "ships macro controls",
+        "false": "no macros"
+      }
+    },
+    {
+      "id": "module.oversampling",
+      "group": "modules",
+      "decision": "U-14",
+      "scope": "plugin",
+      "type": "boolean",
+      "default": false,
+      "question": "Oversampling engine (1x/2x/4x/8x + bounce-time quality)?",
+      "summary": "Opt-in module. Requires accurate latency reporting.",
+      "why": "Internal oversampling. A per-product decision because it costs real CPU and obliges the plugin to report latency accurately to the host.",
+      "enforced": [
+        "engine",
+        "latency reporting",
+        "settings"
+      ],
+      "valueNotes": {
+        "true": "oversampling with latency reporting",
+        "false": "native rate"
+      }
+    },
+    {
+      "id": "module.semantic_preset_search",
+      "group": "modules",
+      "decision": "U-10",
+      "scope": "plugin",
+      "type": "boolean",
+      "default": false,
+      "question": "Semantic preset search (\"search by vibe\")?",
+      "summary": "Opt-in module. Uses the frozen PMX/1 vocabulary.",
+      "why": "Searching presets by meaning rather than by name, using the PMX/1 vocabulary. Only worth shipping once the taxonomy is populated - otherwise it searches an empty field.",
+      "enforced": [
+        "preset browser search",
+        "taxonomy"
+      ],
+      "valueNotes": {
+        "true": "semantic search in the browser",
+        "false": "name and tag search only"
+      }
+    },
+    {
+      "id": "license.mode",
+      "group": "licensing",
+      "decision": "L-02",
+      "scope": "plugin",
+      "type": "enum",
+      "values": [
+        "free",
+        "demo",
+        "trial",
+        "demo+trial"
+      ],
+      "default": "free",
+      "required": true,
+      "question": "Commercial model: free, demo (save-gated), trial, or demo + trial?",
+      "summary": "One universal binary for demo and licensed users. Demo gates exactly preset save + pack export/install.",
+      "why": "What a fresh install is. One binary for demo and licensed users keeps support to a single build; the demo gate is exactly preset save and pack export/install, so a demo stays usable and honest rather than crippled.",
+      "enforced": [
+        "license verification",
+        "save / export gates"
+      ],
+      "valueNotes": {
+        "free": "no licensing at all",
+        "demo": "licensed features gated from the start",
+        "trial": "full function for a fixed period",
+        "demo+trial": "trial first, then demo"
+      }
+    },
+    {
+      "id": "license.trial_days",
+      "group": "licensing",
+      "decision": "L-03",
+      "scope": "plugin",
+      "type": "number",
+      "default": 40,
+      "question": "Trial length in days (0 = no trial):",
+      "summary": "Built-in timer from first launch, no key or email. Expiry degrades to demo mode.",
+      "why": "The length of the built-in trial, counted from first launch with no key and no email. Expiry degrades to demo mode rather than locking the plugin, so nobody loses access to a project they already made.",
+      "enforced": [
+        "trial timer",
+        "settings storage"
+      ],
+      "valueNotes": {}
+    },
+    {
+      "id": "license.seats",
+      "group": "licensing",
+      "decision": "L-05",
+      "scope": "plugin",
+      "type": "number",
+      "default": 3,
+      "question": "Licensed seats per product:",
+      "summary": "Seats per license (default 3; online-activation enforces it, signed-file records it but cannot enforce it). Machine-bound with in-app deactivation.",
+      "why": "How many machines one license covers. Online activation can enforce it; a signed file can only record it - which is why the method matters more than the number.",
+      "enforced": [
+        "activation server",
+        "license record"
+      ],
+      "valueNotes": {}
+    },
+    {
+      "id": "license.method",
+      "group": "licensing",
+      "decision": "L-07",
+      "scope": "plugin",
+      "type": "enum",
+      "values": [
+        "signed-file",
+        "online-activation",
+        "third-party"
+      ],
+      "default": "signed-file",
+      "question": "How are licenses issued? signed-file (you sign license files, no server) · online-activation (key + activation server with seat limit, plus offline file) · third-party (iLok / licensing SDK - documented pointer only)",
+      "summary": "Only asked when license.mode is not free. The plugin always verifies a signed apc-license/1.0 file; the methods differ only in how the file is issued. Dongles/iLok and third-party SDKs are documented pointers, not built in.",
+      "why": "How a license is issued, not how it is checked: the plugin always verifies the same signed apc-license/1.0 file. The methods differ only in who mints it - you, an activation server, or a third party.",
+      "enforced": [
+        "license verification",
+        "issue flow"
+      ],
+      "valueNotes": {
+        "signed-file": "you sign and send the file",
+        "online-activation": "a server issues it, seats enforceable",
+        "third-party": "documented pointer to an external system"
+      }
+    },
+    {
+      "id": "license.protection",
+      "group": "licensing",
+      "decision": "L-06",
+      "scope": "plugin",
+      "type": "enum",
+      "values": [
+        "minimal",
+        "hardened"
+      ],
+      "default": "minimal",
+      "question": "Protection depth: minimal (signed + machine-bound + deactivation) or hardened (adds third-party wrapper - pointer only)?",
+      "summary": "Minimal is the default and the honest option: any client-side scheme can be defeated and a license file can be copied; this only stops casual sharing. hardened = documented pointer to external wrappers (higher support cost, false positives).",
+      "why": "How hard the client tries. Minimal is the honest option: any client-side scheme can be defeated and a file can be copied, so it stops casual sharing and claims nothing more. Hardened points at external wrappers, which cost support time and produce false positives on real users.",
+      "enforced": [
+        "license verification",
+        "support policy"
+      ],
+      "valueNotes": {
+        "minimal": "stops casual sharing, no false positives",
+        "hardened": "external wrapper, higher support cost"
+      }
+    },
+    {
+      "id": "update.auto_check",
+      "group": "updates",
+      "decision": "L-09",
+      "scope": "plugin",
+      "type": "boolean",
+      "default": false,
+      "question": "Automatic update check?",
+      "summary": "Optional per-plugin feature, user toggle, default off. Manual \"Check for Updates\" is always present.",
+      "why": "Whether the plugin checks for updates by itself. Off by default, because a plugin that contacts the network uninvited is a trust problem; the manual check is always present.",
+      "enforced": [
+        "update check",
+        "settings toggle"
+      ],
+      "valueNotes": {
+        "true": "checks on launch",
+        "false": "manual check only"
+      }
+    },
+    {
+      "id": "update.endpoint",
+      "group": "updates",
+      "decision": "X-07",
+      "scope": "plugin",
+      "type": "string",
+      "default": null,
+      "question": "Update feed URL:",
+      "summary": "Where the manual/auto update check looks. Leave empty to disable the check.",
+      "why": "Where the check goes. Empty disables it entirely - the honest default for a product that does not publish updates yet.",
+      "enforced": [
+        "update check",
+        "apc validate"
+      ],
+      "valueNotes": {}
+    },
+    {
+      "id": "engine.state_scope",
+      "group": "engine",
+      "decision": "X-08",
+      "scope": "plugin",
+      "type": "enum",
+      "values": [
+        "chunk",
+        "machine"
+      ],
+      "default": "chunk",
+      "question": "Are Engine/Quality settings (oversampling, voices) saved in the DAW project or machine-wide?",
+      "summary": "Amends U-06 for sound-affecting engine settings: default chunk = saved with the DAW project so a project recalls identically on any machine; the machine-wide setting only supplies the default for NEW instances.",
+      "why": "Amends U-06 for settings that change the sound. Chunk keeps engine settings in the DAW project, so a project recalls identically on any machine; the machine-wide setting only supplies defaults for new instances.",
+      "enforced": [
+        "state serialisation",
+        "engine settings"
+      ],
+      "valueNotes": {
+        "chunk": "saved with the project",
+        "machine": "a per-machine default for new instances"
+      }
+    }
+  ]
+}

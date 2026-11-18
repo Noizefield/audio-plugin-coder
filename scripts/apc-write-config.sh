@@ -24,6 +24,9 @@ COMPLETED=false
 ENABLE_CODEX=false
 ENABLE_CODEX_ESCALATION=false
 INSTALL_CODEX_PROFILES=false
+# Global defaults for the locked Plugin Product Standards (apc-standards/1.0).
+# JSON object of option id -> value, e.g. '{"ux.theme":"night"}'
+STANDARDS='{}'
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -38,6 +41,7 @@ while [[ $# -gt 0 ]]; do
         --enable-codex) ENABLE_CODEX=true; shift ;;
         --enable-codex-escalation) ENABLE_CODEX_ESCALATION=true; shift ;;
         --install-codex-profiles) INSTALL_CODEX_PROFILES=true; shift ;;
+        --standards) STANDARDS="$2"; shift 2 ;;
         *) echo "Unknown arg: $1" >&2; exit 1 ;;
     esac
 done
@@ -79,6 +83,7 @@ if command -v jq &>/dev/null; then
         --argjson completed_at "$COMPLETED_AT" \
         --argjson enable_codex "$ENABLE_CODEX" \
         --argjson enable_codex_esc "$ENABLE_CODEX_ESCALATION" \
+        --argjson standards "$STANDARDS" \
         '
         . as $cfg
         | ($example[0].models.codex) as $codex_default
@@ -89,6 +94,7 @@ if command -v jq &>/dev/null; then
         | .defaults.ui_framework_preference=$ui
         | .defaults.enable_visage=$visage
         | .models.profile=$profile
+        | .standards = ((.standards // {}) + $standards)
         | .models.codex = (.models.codex // $codex_default)
         | .models.codex.enabled = $enable_codex
         | .models.codex.escalation = (.models.codex.escalation // $codex_default.escalation)

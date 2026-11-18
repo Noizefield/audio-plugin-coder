@@ -54,6 +54,20 @@ if ($state.formats -and $state.formats.clap -eq $true) {
 - Memory leaks
 - clap-validator (CLAP opt-ins only; pluginval does NOT read .clap)
 
+**Framework gates (run when the plugin is built; details in `.agents/guides/audio-validation.md`):**
+```bash
+node bin/apc.js validate rt --plugin <Name>      # static realtime-safety scan of processBlock
+node bin/apc.js validate a11y --plugin <Name>    # WCAG contrast, keyboard reach, perf-budget hints (WebView)
+node bin/apc.js audio <Name>                     # pluginval (strictness 10), clap-validator (CLAP opt-ins),
+                                                 # null/block-size invariance, NaN/denormal, tail, CPU bench
+node bin/apc.js presets validate <preset-dir>    # PMX/1 lint + reference integrity (when presets ship)
+node bin/apc.js standards validate --plugin <Name>
+```
+- A gate that cannot run (missing binary, harness, baseline) is reported **skipped with a reason - never as a pass**. Report skipped gates to the user.
+- First run on a plugin needs a reviewed `apc audio <Name> --baseline-update`.
+- `// apc-rt-ok: <reason>` suppresses a single reviewed realtime finding.
+- Standards-driven checks (only for options the plugin enabled): kill-mid-save + golden-file preset load, settings concurrent-writer merge, engine state recall from the project chunk (`engine.state_scope`), update-flow `ReadyToInstall`, demo-vs-licensed bit-identical audio.
+
 **Completion:**
 ```
 Γ£à Tests complete!

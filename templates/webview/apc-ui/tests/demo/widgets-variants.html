@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>APC UI kit - widget variants and states</title>
+<!-- Visual check page, not a test (lives in tests/demo/): orientations, sizes, disabled, error and edge states. Hash: #day | #night -->
+<link rel="stylesheet" href="../../apc-core.css">
+<link rel="stylesheet" href="../../apc-components.css">
+<link rel="stylesheet" href="../../apc-widgets.css">
+<style>
+  :root { --cols: 50; --rows: 36; }
+  #plate { display: grid; grid-template-columns: 1fr 1fr 1fr; align-content: start; }
+  .col { padding: .625rem .75rem; display: flex; flex-direction: column; gap: .75rem; min-width: 0; border-right: var(--stroke) solid var(--rule-2); }
+  .col:last-child { border-right: 0; }
+  .row { display: flex; gap: .75rem; align-items: flex-start; flex-wrap: wrap; }
+  .row > * { flex: none; }
+</style>
+</head>
+<body>
+<div id="plate" class="apc-plate">
+  <div class="col">
+    <span data-apc="label" data-role="title" data-text="Choices"></span>
+    <div data-apc="segmented" data-label="VERTICAL" data-orient="vertical" data-items='["Sine","Saw","Square"]' data-value="Saw"></div>
+    <div data-apc="radio" data-label="HORIZONTAL" data-orient="horizontal" data-items='["A","B","C"]' data-value="B"></div>
+    <div data-apc="buttons" data-label="WITH ICONS" data-items='[{"value":"l","label":"L","icon":"&#9664;"},{"value":"c","label":"C","icon":"&#9632;"},{"value":"r","label":"R","icon":"&#9654;","disabled":true}]' data-value="c"></div>
+    <div data-apc="buttons" data-label="PARAM (osc_wave)" data-param="osc_wave"></div>
+    <div data-apc="dropdown" data-label="SEARCHABLE" data-searchable="true" data-placeholder="Pick a preset"><option>Warm Pad</option><option>Glass Bell</option><option>Sub Bass</option></div>
+    <div data-apc="dropdown" data-label="DISABLED" data-disabled="true" data-items='["A"]'></div>
+    <div data-apc="dropdown" data-label="ERROR (unknown param)" data-param="nope"></div>
+    <div data-apc="list" data-label="MULTI" data-multiple="true" data-rows="4" data-value="b,d"><option value="a">Layer A</option><option value="b">Layer B</option><option value="c">Layer C</option><option value="d">Layer D</option><option value="e">Layer E</option></div>
+  </div>
+  <div class="col">
+    <span data-apc="label" data-role="title" data-text="Fields"></span>
+    <div data-apc="textfield" data-label="REQUIRED" data-required="true" data-placeholder="Type a name"></div>
+    <div data-apc="textfield" data-label="DISABLED" data-value="Locked" data-disabled="true"></div>
+    <div data-apc="numberfield" data-label="UNITS" data-min="20" data-max="20000" data-unit="Hz" data-value="2500"></div>
+    <div data-apc="numberfield" data-label="NO STEPPERS" data-min="0" data-max="10" data-step="1" data-value="4" data-steppers="false"></div>
+    <div data-apc="numberfield" data-label="DISABLED" data-min="0" data-max="10" data-value="4" data-disabled="true"></div>
+    <div class="row">
+      <div data-apc="button" data-label="Small" data-size="sm"></div>
+      <div data-apc="button" data-label="Default"></div>
+      <div data-apc="button" data-label="Large" data-size="lg" data-variant="primary"></div>
+    </div>
+    <div class="row">
+      <div data-apc="button" data-label="" data-aria-label="Play" data-icon="&#9654;"></div>
+      <div data-apc="button" data-label="Rec" data-variant="latch" data-led="error" data-pressed="true"></div>
+      <div data-apc="button" data-label="Momentary" data-param="bypass" data-led="true"></div>
+    </div>
+    <div data-apc="divider" data-label="DISPLAY"></div>
+    <div class="row" style="align-items:flex-end">
+      <div data-apc="readout" data-label="INLINE" data-layout="inline" data-param="cutoff_hz"></div>
+      <div data-apc="readout" data-label="CENTRE" data-align="center" data-param="gain_db" data-size="lg"></div>
+      <div style="height:5rem"><div data-apc="progress" data-label="V" data-orient="vertical" data-value="0.6"></div></div>
+      <div style="display:flex;height:3rem"><div data-apc="divider" data-orient="vertical"></div></div>
+      <div data-apc="progress" data-label="ERR" data-value="0.8" data-state="error" style="width:7rem"></div>
+    </div>
+    <div data-apc="menu" data-label="Context target" data-items='["Cut","Copy","Paste"]' data-context="parent"></div>
+  </div>
+  <div class="col">
+    <span data-apc="label" data-role="title" data-text="Containers"></span>
+    <div data-apc="tabs" data-orient="vertical" data-label="Vertical tabs">
+      <section data-tab="General"><span data-apc="label" data-role="caption" data-text="Vertical tab list with panels at the side."></span></section>
+      <section data-tab="Audio"><div data-apc="checkbox" data-label="Dither" data-checked="true"></div></section>
+      <section data-tab="Disabled" data-disabled>x</section>
+    </div>
+    <div data-apc="panel" data-title="Collapsed panel" data-collapsible="true" data-collapsed="true">hidden body</div>
+    <div data-apc="panel" data-title="Open panel" data-collapsible="true"><div class="row"><div data-apc="knob" data-param="cutoff_hz" data-label="CUT" data-size="sm"></div><div data-apc="knob" data-param="gain_db" data-label="GAIN" data-size="sm" data-disabled="true"></div><div data-apc="knob" data-param="nope" data-label="BAD" data-size="sm"></div></div></div>
+    <div data-apc="panel" data-title="Static frame"><div data-apc="slider" data-orient="horizontal" data-param="mix_pct" data-label="MIX" data-ticks="5" style="width:100%"></div></div>
+    <div class="row">
+      <div data-apc="logo" data-text="ACME"></div>
+      <div data-apc="logo" data-text="ACME" data-sub="Audio" data-url="https://example.test/"></div>
+      <div data-apc="logo"><svg viewBox="0 0 32 8" width="64" height="16"><rect x="0" y="0" width="8" height="8" fill="currentColor"/><rect x="12" y="0" width="8" height="8" fill="none" stroke="currentColor"/><rect x="24" y="0" width="8" height="8" fill="currentColor"/></svg></div>
+    </div>
+    <div data-apc="selector" data-param="osc_wave" data-label="SELECTOR" data-size="lg"></div>
+    <div class="row">
+      <div data-apc="led" data-label="OK" data-state="ok"></div><div data-apc="led" data-label="WARN" data-state="warn"></div><div data-apc="led" data-label="ERR" data-state="error"></div><div data-apc="led" data-label="OFF"></div>
+    </div>
+  </div>
+</div>
+<script src="../../apc-fit.js"></script>
+<script src="../../apc-kit.js"></script>
+<script src="../../apc-mock.js"></script>
+<script src="../../apc-controls.js"></script>
+<script src="../../apc-widgets.js"></script>
+<script>
+  var hash = location.hash.replace(/^#/, "");
+  document.documentElement.setAttribute("data-theme", hash.indexOf("day") >= 0 ? "day" : "night");
+  APC.mount(document);
+</script>
+</body>
+</html>

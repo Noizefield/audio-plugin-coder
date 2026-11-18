@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>kit-b-presets</title>
+<link rel="stylesheet" href="../apc-core.css">
+<link rel="stylesheet" href="../apc-components.css">
+</head>
+<body>
+<div id="stage"></div>
+<script src="../apc-fit.js"></script>
+<script src="../apc-kit.js"></script>
+<script src="../apc-mock.js"></script>
+<script src="../apc-license-ui.js"></script>
+<script src="../apc-presets.js"></script>
+<script src="harness-b.js"></script>
+<script>
+(function () {
+  "use strict";
+  var APC = window.APC, T = window.T;
+
+  function mountBrowser(scenario, attrs) {
+    T.reset(scenario || "licensed");
+    T.mount('<div id="host" data-apc="presets" ' + (attrs || "") + ' style="width:46rem;height:30rem"></div>');
+    var b = T.q("#host").__apcPresets;
+    return b.ready.then(function () { return b; });
+  }
+  function dataNames(b) { return b.state().items.map(function (i) { return i.name; }); }
+  function domNames() { return T.qa(".apc-pb__row .apc-pb__name").map(function (n) { return n.firstChild.nodeValue; }); }
+  function whenNames(b, expected, msg) {
+    return T.wait(function () { return JSON.stringify(dataNames(b)) === JSON.stringify(expected); }, (msg || "names") + " -> " + JSON.stringify(expected)).then(function () {
+      return T.wait(function () { return JSON.stringify(domNames().slice(0, 5)) === JSON.stringify(expected.slice(0, 5)); }, "DOM rows follow the data");
+    }, function (e) { e.message += " (got " + JSON.stringify(dataNames(b)) + ")"; throw e; });
+  }
+  function popup(id) { return T.q('[data-popup="' + id + '"]'); }
+  function openGroup(id) {
+    if (!popup(id)) T.click(T.q('[data-group="' + id + '"]'));
+    T.assert(popup(id), "popup for " + id + " opens");
+    return popup(id);
+  }
+  /* click option checkboxes/radios in a filter popup */
+  function pick(id, values) {
+    var p = openGroup(id);
+    values.forEach(function (v) { T.click(T.q('[data-v="' + v + '"]', p)); p = popup(id); });
+  }
+  function settle(b) { return T.sleep(20).then(function () { return b.refresh(); }); }
+  function setPreset(id) { return T.bridge("apc.presets.load", { id: id }); }
+  function idOf(name) { return T.bridge("apc.presets.list", {}).then(function (r) { return r.items.filter(function (i) { return i.name === name; })[0].id; }); }
+
+  T.test("scope selector: Everything · Patches · Sounds · Kits · Sequences · each pack (typed hierarchy)", function () {
+    return mountBrowser().then(function (b) {
+      T.eq(T.qa("[data-scope]").map(function (n) { return n.textContent; }), ["Everything", "Patches", "Sounds", "Kits", "Sequences", "Factory", "Expansion One", "User"]);
+      T.eq(T.q("[data-scope=all]").getAttribute("aria-checked"), "true");
+      T.eq(T.q("[role=radiogroup]").getAttribute("aria-label"), "Scope");
+      T.assert(/30 presets/.test(T.text("[data-k=count]")), "count: " + T.text("[data-k=count]"));
+      T.click(T.q("[data-scope=patch]"));
+      return T.wait(function () { return b.state().total === 6; }, "6 patches").then(function () {
+        T.assert(b.state().items.every(function (i) { return i.kind === "patch"; }));
+        T.click(T.q("[data-scope='pack:User']"));
+        return T.wait(function () { return b.state().total === 8; }, "8 User items");
+      }).then(function () {
+        T.assert(b.state().items.every(function (i) { return i.pack === "User"; }));
+        T.eq(T.q("[data-scope='pack:User']").getAttribute("aria-checked"), "true");
+      });
+    });
+  });
+
+  T.test("flat hierarchy: kinds are hidden (no Patches/Sounds/Kits/Sequences scopes, no Kind filter)", function () {
+    T.reset("licensed"); APC.mock.config({ hierarchy: "flat" });
+    T.mount('<div id="host" data-apc="presets" style="width:46rem;height:30rem"></div>');
+    var b = T.q("#host").__apcPresets;
+    return b.ready.then(function () {
+      T.eq(T.qa("[data-scope]").map(function (n) { return n.textContent; }), ["Everything", "Factory", "Expansion One", "User"]);
+      T.assert(!T.q('[data-group="kind"]'), "no Kind group in flat mode");
+      T.assert(b.state().items.every(function (i) { return i.kind === "preset"; }));
+      T.assert(!/\bsound ·|\bkit ·|\bpatch ·/.test(T.q(".apc-pb__row .apc-pb__sub").textContent), "row does not show a kind");
+    });
+  });
+
+  T.test("filters: ANY is explicit; popups, no blind cycling; within a group OR, across groups AND (worked example from tagging-filtering.md)", function () {
+    return mountBrowser().then(function (b) {
+      T.assert(/CATEGORY: ANY/.test(T.q('[data-group="category"]').textContent), "starts at ANY");
+      var p = openGroup("category");
+      T.assert(T.q('[data-v="__any"]', p).checked, "ANY is checked while nothing is selected");
+      T.click(T.q('[data-v="bass"]', p));
+      return T.wait(function () { return b.state().total === 7; }, "category=bass").then(function () {
+        T.assert(!T.q('[data-v="__any"]', popup("category")).checked, "ANY unchecked once a value is chosen");
+        T.assert(/CATEGORY: Bass/.test(T.q('[data-group="category"]').textContent));
+        pick("mood", ["dark", "tense"]);
+        return T.wait(function () { return b.state().total === 5; }, "bass AND (dark OR tense)");
+      }).then(function () {
+        T.eq(dataNames(b).sort(), ["Black Hole", "Broken Link", "Reese Tension", "Sub Distort", "Unknown Bass"], "OR inside the mood group, AND with category");
+        pick("axis:bri", ["muted"]);
+        return whenNames(b, ["Broken Link", "Reese Tension", "Sub Distort"], "bri>=muted");
+      }).then(function () {
+        T.assert(!dataNames(b).some(function (n) { return n === "Black Hole"; }), "bri=dark fails the >=muted threshold");
+        T.assert(!dataNames(b).some(function (n) { return n === "Unknown Bass"; }), "untagged sounds do NOT pass a strict axis filter");
+        T.assert(!dataNames(b).some(function (n) { return n === "Velvet Low"; }), "mood=warm/serene does not pass the mood group");
+        T.assert(/BRIGHTNESS: ≥ muted/.test(T.q('[data-group="axis:bri"]').textContent), "button shows the threshold");
+        // ANY on the axis lets the untagged one back in
+        T.click(T.q('[data-v="__any"]', popup("axis:bri")));
+        return T.wait(function () { return b.state().total === 5; }, "axis back to ANY");
+      }).then(function () {
+        T.assert(dataNames(b).indexOf("Unknown Bass") >= 0, "ANY passes untagged assets");
+        T.click(T.q("[data-k=clear-filters]"));
+        return T.wait(function () { return b.state().total === 30; }, "clear all");
+      });
+    });
+  });
+
+  T.test("axis thresholds: at least / at most / exactly on the ordered word list", function () {
+    return mountBrowser().then(function (b) {
+      pick("category", ["bass"]);
+      return T.wait(function () { return b.state().total === 7; }, "bass").then(function () {
+        pick("axis:bri", ["bright"]);                               // >= bright
+        return whenNames(b, ["Reese Tension"], ">= bright");
+      }).then(function () {
+        T.click(T.q('[data-op="lte"]', popup("axis:bri")));         // <= bright (op change re-applies)
+        return T.wait(function () { return b.state().total === 6; }, "<= bright");
+      }).then(function () {
+        T.eq(dataNames(b).sort(), ["Black Hole", "Broken Link", "My Wobble", "Reese Tension", "Sub Distort", "Velvet Low"], "<= bright: tagged bass only (untagged Unknown Bass excluded)");
+        T.click(T.q('[data-op="eq"]', popup("axis:bri")));
+        return T.wait(function () { return b.state().total === 1; }, "= bright");
+      });
+    });
+  });
+
+  T.test("search: case-insensitive over name, subcategory, description, category, author, tags and mood", function () {
+    return mountBrowser().then(function (b) {
+      function search(q) { T.input(T.q("[data-k=search]"), q); return T.wait(function () { return b.state().search === q; }, "search state").then(function () { return T.sleep(10); }).then(function () { return b.refresh(); }); }
+      return search("REESE").then(function () {
+        T.eq(dataNames(b).sort(), ["Reese Tension", "Sub Distort"], "name and tag");
+        return search("tense");
+      }).then(function () {
+        T.eq(dataNames(b).sort(), ["Broken Link", "Reese Tension", "Riser Wash"], "mood");
+        return search("e-piano");
+      }).then(function () {
+        T.eq(dataNames(b), ["Tape Keys"], "subcategory");
+        return search("example audio");
+      }).then(function () {
+        T.assert(b.state().total >= 20, "author");
+        return search("sample drone preset");
+      }).then(function () {
+        T.eq(dataNames(b), ["Ritual Drone"], "description");
+        return search("zzzz-no-match");
+      }).then(function () {
+        T.eq(b.state().total, 0); T.assert(/Nothing matches/.test(T.text(".apc-pb__empty")), "empty state explains itself");
+        return search("");
+      }).then(function () { T.eq(b.state().total, 30); });
+    });
+  });
+
+  T.test("sorting is TRUE sorting, factory items included: NAME, TYPE, RATING, RECENT, BPM, MOST USED", function () {
+    var b0;
+    return mountBrowser().then(function (b) {
+      b0 = b;
+      function sorted(key) { b.setSort(key); return T.wait(function () { return b.state().sort === key; }, "sort " + key).then(function () { return b.refresh(); }).then(function () { return b.state().items; }); }
+      return sorted("name").then(function (its) {
+        var l = its.map(function (i) { return i.name.toLowerCase(); });
+        T.eq(l, l.slice().sort(), "NAME: A to Z across packs");
+        T.assert(its[0].pack === "Factory" && its[0].name === "Black Hole", "first is a factory item in name order, not program order");
+        T.eq(domNames().slice(0, 5), its.slice(0, 5).map(function (i) { return i.name; }), "DOM shows the sorted order");
+        return sorted("type");
+      }).then(function (its) {
+        var cats = its.map(function (i) { return i.meta.category || "~"; });
+        T.eq(cats, cats.slice().sort(), "TYPE: category order");
+        var bass = its.filter(function (i) { return i.meta.category === "bass"; }).map(function (i) { return i.name.toLowerCase(); });
+        T.eq(bass, bass.slice().sort(), "TYPE: then name");
+        T.eq(its[its.length - 1].name, "Scratch 1", "uncategorised sorts last");
+        return sorted("rating");
+      }).then(function (its) {
+        for (var i = 1; i < its.length; i++) T.assert(its[i - 1].rating >= its[i].rating, "RATING desc at " + i);
+        T.eq(its[0].rating, 5);
+        var five = its.filter(function (x) { return x.rating === 5; }).map(function (x) { return x.name.toLowerCase(); });
+        T.eq(five, five.slice().sort(), "RATING: ties by name");
+        return sorted("bpm");
+      }).then(function (its) {
+        T.eq(its.slice(0, 4).map(function (i) { return i.meta.tempo_bpm; }), [90, 128, 140, 174], "BPM ascending");
+        T.assert(!its[4].meta.tempo_bpm, "items without a tempo come last");
+        return sorted("uses");
+      }).then(function (its) {
+        for (var i = 1; i < its.length; i++) T.assert(its[i - 1].uses >= its[i].uses, "MOST USED desc at " + i);
+        return idOf("Neon Lead");
+      }).then(function (id) { return setPreset(id).then(function () { return sorted("recent"); }); })
+        .then(function (its) { T.eq(its[0].name, "Neon Lead", "RECENT: last loaded first"); });
+    });
+  });
+
+  T.test("ratings 0-5 and favorites are separate, keyed by id; keyboard 0-5 / F work on the list", function () {
+    return mountBrowser().then(function (b) {
+      return b.setSort("name").then(function () {
+        var row = T.q(".apc-pb__row");                       // Black Hole (rating 2)
+        T.eq(row.querySelectorAll(".apc-pb__star").length, 5);
+        T.click(row.querySelector('[data-star="5"]'));
+        return T.wait(function () { return b.state().items[0].rating === 5; }, "5 stars");
+      }).then(function () {
+        T.assert(!/Black Hole/.test(T.text("[data-k=current]")), "rating a row does not load it");
+        T.click(T.q('.apc-pb__row [data-star="5"]'));          // clicking the current rating clears it
+        return T.wait(function () { return b.state().items[0].rating === 0; }, "cleared");
+      }).then(function () {
+        T.click(T.q(".apc-pb__row [data-fav]"));
+        return T.wait(function () { return b.state().items[0].favorite === true; }, "favorite");
+      }).then(function () {
+        T.assert(T.q(".apc-pb__row [data-fav]").getAttribute("aria-pressed") === "true", "pressed state exposed");
+        T.eq(b.state().items[0].rating, 0, "favorite does not change the rating");
+        T.q("[data-k=list]").focus();
+        T.key(T.q("[data-k=list]"), "3");
+        return T.wait(function () { return b.state().items[0].rating === 3; }, "key 3");
+      }).then(function () {
+        T.key(T.q("[data-k=list]"), "f");
+        return T.wait(function () { return b.state().items[0].favorite === false; }, "key f toggles");
+      }).then(function () { return T.bridge("apc.presets.list", { search: "Black Hole" }); }).then(function (r) { T.eq(r.items[0].rating, 3, "persisted via the bridge"); });
+    });
+  });
+
+  T.test("category badge codes (2 letters) and row shows the pack/kind line", function () {
+    return mountBrowser().then(function (b) {
+      return b.setSort("name").then(function () {
+        T.eq(T.q(".apc-pb__row .apc-pb__code").textContent, "BA");
+        T.assert(/Factory/.test(T.q(".apc-pb__row .apc-pb__sub").textContent));
+        return b.setScope("pack:User");
+      }).then(function () { return b.setSearch("Scratch 1"); }).then(function () {
+        T.eq(T.q(".apc-pb__row .apc-pb__code").textContent, "--", "uncategorised shows --");
+      });
+    });
+  });
+
+  T.test("dirty *: a parameter edit marks the current preset; Save clears it; Revert restores the stored values", function () {
+    return mountBrowser().then(function (b) {
+      return idOf("Soft Keys").then(setPreset).then(function () { return T.settle(); }).then(function () {
+        T.assert(T.q("[data-k=dirty]").hidden, "clean after load"); T.eq(T.text("[data-k=current]"), "Soft Keys");
+        T.assert(T.q("[data-k=revert]").disabled, "Revert disabled when clean");
+        return T.bridge("apc.param.set", { id: "cutoff_hz", value: 777 });
+      }).then(function () { return T.wait(function () { return !T.q("[data-k=dirty]").hidden; }, "dirty star"); }).then(function () {
+        T.eq(T.text("[data-k=dirty]"), "*"); T.assert(!T.q("[data-k=revert]").disabled);
+        T.click(T.q("[data-k=revert]"));
+        return T.wait(function () { return T.q("[data-k=dirty]").hidden; }, "clean after revert");
+      }).then(function () { return T.bridge("apc.params.get", { id: "cutoff_hz" }); }).then(function (p) {
+        T.assert(p.value !== 777, "value restored: " + p.value);
+        return T.bridge("apc.param.set", { id: "cutoff_hz", value: 777 });
+      }).then(function () { return T.wait(function () { return !T.q("[data-k=dirty]").hidden; }, "dirty again"); }).then(function () {
+        T.click(T.q("[data-k=save]"));       // visible Save button (user preset => overwrite in place)
+        return T.wait(function () { return T.q("[data-k=dirty]").hidden; }, "clean after save");
+      }).then(function () {
+        T.eq(APC.mock.calls("apc.presets.save").length, 1);
+        T.assert(T.toasts("info").some(function (t) { return /Saved/.test(t.textContent); }), "success is visible too");
+      });
+    });
+  });
+
+  T.test("Save on a read-only factory preset / INIT opens Save As (copy-on-write) with a visible sheet", function () {
+    return mountBrowser().then(function (b) {
+      return idOf("Sub Distort").then(setPreset).then(function () { return T.settle(); }).then(function () {
+        T.click(T.q("[data-k=save]"));
+        return T.wait(function () { return T.q(".apc-pb-sheet"); }, "Save As sheet");
+      }).then(function () {
+        T.assert(/read-only/i.test(T.q(".apc-pb-sheet").textContent), "explains why");
+        T.eq(T.q("[data-k=sa-name]").value, "Sub Distort copy");
+        T.eq(T.qa("[data-k=sa-pack] option").map(function (o) { return o.value; }), ["User", "_wip"]);
+        T.eq(T.qa("[data-k=sa-kind] option").length, 4, "kind choice (typed)");
+        T.input(T.q("[data-k=sa-name]"), "My Sub");
+        T.input(T.q("[data-k=sa-tags]"), "heavy, sub");
+        T.choose(T.q("[data-k=sa-category]"), "bass");
+        T.click(T.q("[data-k=sa-save]"));
+        return T.wait(function () { return !T.q(".apc-pb-sheet"); }, "sheet closes");
+      }).then(function () { return T.bridge("apc.presets.list", { search: "My Sub" }); }).then(function (r) {
+        T.eq(r.items.length, 1); T.eq(r.items[0].pack, "User"); T.eq(r.items[0].meta.tags, ["heavy", "sub"]); T.eq(r.items[0].meta.category, "bass");
+        return b.refresh();
+      }).then(function () { T.eq(T.text("[data-k=current]"), "My Sub"); });
+    });
+  });
+
+  T.test("Save As: name collision is reported, never silently overwritten; Overwrite is an explicit second step", function () {
+    return mountBrowser().then(function () {
+      T.click(T.q("[data-k=save-as]"));
+      return T.wait(function () { return T.q("[data-k=sa-name]"); }, "sheet");
+    }).then(function () {
+      T.input(T.q("[data-k=sa-name]"), "Soft Keys"); T.choose(T.q("[data-k=sa-kind]"), "sound");
+      T.click(T.q("[data-k=sa-save]"));
+      return T.wait(function () { return !T.q("[data-k=sa-error]").hidden; }, "exists error");
+    }).then(function () {
+      T.assert(/already exists/.test(T.text("[data-k=sa-error]")));
+      T.assert(!T.q("[data-k=sa-overwrite]").hidden, "Overwrite offered");
+      T.click(T.q("[data-k=sa-overwrite]"));
+      return T.wait(function () { return !T.q(".apc-pb-sheet"); }, "saved");
+    }).then(function () { return T.bridge("apc.presets.list", { search: "Soft Keys" }); }).then(function (r) { T.eq(r.items.length, 1, "replaced, not duplicated"); });
+  });
+
+  T.test("load behavior: Confirm-if-dirty asks before discarding; Instant does not", function () {
+    return mountBrowser().then(function (b) {
+      var idA, idB;
+      return idOf("Soft Keys").then(function (a) { idA = a; return idOf("Tape Keys"); }).then(function (c) { idB = c; return setPreset(idA); }).then(function () {
+        return T.bridge("apc.param.set", { id: "drive_db", value: 9 });
+      }).then(function () { return T.wait(function () { return !T.q("[data-k=dirty]").hidden; }, "dirty"); }).then(function () {
+        return T.bridge("apc.presets.state");
+      }).then(function (s) {
+        T.eq(s.loadBehavior, "confirm-if-dirty");
+        APC.presetsUI.load(idB, "Tape Keys");                  // resolves only after the user answers
+        return T.wait(function () { return T.q("[data-apc-confirm]"); }, "confirm sheet shown");
+      }).then(function () {
+        T.assert(/Soft Keys/.test(T.q("[data-apc-confirm]").textContent), "names the dirty preset");
+        T.click(T.q("[data-apc-confirm] [data-k=cancel]"));
+        return T.sleep(20);
+      }).then(function () {
+        T.eq(T.text("[data-k=current]"), "Soft Keys", "cancel keeps the dirty preset");
+        T.assert(!T.q("[data-k=dirty]").hidden, "still dirty");
+        APC.presetsUI.load(idB, "Tape Keys");
+        return T.wait(function () { return T.q("[data-apc-confirm]"); }, "confirm again");
+      }).then(function () {
+        T.click(T.q("[data-apc-confirm] [data-k=ok]"));
+        return T.wait(function () { return T.text("[data-k=current]") === "Tape Keys"; }, "loaded after discard");
+      }).then(function () {
+        T.assert(T.q("[data-k=dirty]").hidden, "clean after load");
+        return T.bridge("apc.settings.set", { patch: { ui: { preset_load: "instant" } } });
+      }).then(function () { return T.bridge("apc.param.set", { id: "drive_db", value: 11 }); }).then(function () {
+        return T.wait(function () { return !T.q("[data-k=dirty]").hidden; }, "dirty");
+      }).then(function () { return APC.presetsUI.load(idA, "Soft Keys"); }).then(function () {
+        T.assert(!T.q("[data-apc-confirm]"), "Instant: no confirmation");
+        return T.wait(function () { return T.text("[data-k=current]") === "Soft Keys"; }, "instant load");
+      });
+    });
+  });
+
+  T.test("clicking a list row loads it (through the same confirm path)", function () {
+    return mountBrowser().then(function (b) {
+      return b.setSort("name").then(function () {
+        var row = T.q(".apc-pb__row");
+        T.click(row);
+        return T.wait(function () { return T.text("[data-k=current]") === "Black Hole"; }, "loaded");
+      }).then(function () { T.eq(T.q(".apc-pb__row").getAttribute("aria-selected"), "true"); });
+    });
+  });
+
+  T.test("A/B: toggle keeps two states, Copy A->B overwrites B", function () {
+    return mountBrowser().then(function () {
+      var cutoff = function () { return T.bridge("apc.params.get", { id: "cutoff_hz" }).then(function (p) { return p.value; }); };
+      T.eq(T.text("[data-k=ab]"), "A/B: A");
+      return T.bridge("apc.param.set", { id: "cutoff_hz", value: 500 }).then(function () {
+        T.click(T.q("[data-k=ab]"));
+        return T.wait(function () { return T.text("[data-k=ab]") === "A/B: B"; }, "now B");
+      }).then(function () { return T.bridge("apc.param.set", { id: "cutoff_hz", value: 9000 }); }).then(function () {
+        T.click(T.q("[data-k=ab]"));
+        return T.wait(function () { return T.text("[data-k=ab]") === "A/B: A"; }, "back to A");
+      }).then(cutoff).then(function (v) {
+        T.eq(v, 500, "A kept its own value");
+        T.eq(T.text("[data-k=ab-copy]"), "Copy A→B");
+        T.click(T.q("[data-k=ab-copy]"));
+        return T.wait(function () { return APC.mock.calls("apc.presets.ab").length === 3; }, "copy");
+      }).then(function () { T.click(T.q("[data-k=ab]")); return T.wait(function () { return T.text("[data-k=ab]") === "A/B: B"; }, "to B"); }).then(cutoff).then(function (v) {
+        T.eq(v, 500, "B now equals A after the copy");
+        T.eq(T.text("[data-k=ab-copy]"), "Copy B→A", "button follows the active slot");
+        T.eq(T.q("[data-k=ab]").getAttribute("aria-pressed"), "true");
+      });
+    });
+  });
+
+  T.test("Init loads the declared default state; with unsaved changes it asks first", function () {
+    return mountBrowser().then(function () {
+      return idOf("Soft Keys").then(setPreset).then(function () { return T.bridge("apc.param.set", { id: "gain_db", value: 6 }); }).then(function () {
+        return T.wait(function () { return !T.q("[data-k=dirty]").hidden; }, "dirty");
+      }).then(function () {
+        T.click(T.q("[data-k=init]"));
+        return T.wait(function () { return T.q("[data-apc-confirm]"); }, "confirm");
+      }).then(function () {
+        T.click(T.q("[data-apc-confirm] [data-k=ok]"));
+        return T.wait(function () { return T.text("[data-k=current]") === "INIT"; }, "INIT");
+      }).then(function () { return T.bridge("apc.params.get", { id: "gain_db" }); }).then(function (p) { T.eq(p.value, 0, "declared default"); });
+    });
+  });
+
+  T.test("missing assets are shown as a visible [Missing: name] placeholder (row and current preset)", function () {
+    return mountBrowser().then(function (b) {
+      return b.setSearch("Broken Link").then(function () {
+        T.assert(/\[Missing: Sub Kick 02\]/.test(T.q(".apc-pb__row").textContent), "row placeholder");
+        T.click(T.q(".apc-pb__row"));
+        return T.wait(function () { return T.text("[data-k=current]") === "Broken Link"; }, "loaded anyway (never crash)");
+      }).then(function () { T.eq(T.text("[data-k=missing]"), "[Missing: Sub Kick 02]"); });
+    });
+  });
+
+  T.test("every I/O error is a visible toast that names the failing path", function () {
+    return mountBrowser("io-error").then(function (b) {
+      return b.setSort("name").then(function () {
+        T.click(T.q(".apc-pb__row"));
+        return T.wait(function () { return T.toasts("error").length; }, "load error toast");
+      }).then(function () {
+        T.assert(/\.preset/.test(T.toasts("error")[0].textContent) && /\/mock\//.test(T.toasts("error")[0].textContent), "path in toast: " + T.toasts("error")[0].textContent);
+        T.click(T.q('.apc-pb__row [data-star="4"]'));
+        return T.wait(function () { return T.toasts("error").length >= 2; }, "rating error toast");
+      }).then(function () { T.assert(/user-data\.json/.test(T.toasts("error")[1].textContent)); });
+    });
+  });
+
+  T.test("save failure shows the path and keeps the sheet open", function () {
+    return mountBrowser("io-error").then(function () {
+      T.click(T.q("[data-k=save-as]"));
+      return T.wait(function () { return T.q("[data-k=sa-name]"); }, "sheet");
+    }).then(function () {
+      T.input(T.q("[data-k=sa-name]"), "Will Fail"); T.click(T.q("[data-k=sa-save]"));
+      return T.wait(function () { return !T.q("[data-k=sa-error]").hidden; }, "error in sheet");
+    }).then(function () {
+      T.assert(/Will Fail\.preset/.test(T.text("[data-k=sa-error]")), "path in sheet error");
+      T.assert(T.toasts("error").some(function (t) { return /Will Fail\.preset/.test(t.textContent); }), "and in a toast");
+      T.assert(T.q(".apc-pb-sheet"), "sheet stays so nothing typed is lost");
+    });
+  });
+
+  T.test("DEMO: gated verbs (Save As, Import, Export) open the activation sheet instead of failing silently", function () {
+    return mountBrowser("demo").then(function (b) {
+      T.click(T.q("[data-k=save-as]"));
+      return T.wait(function () { return T.q("[data-k=sa-name]"); }, "save sheet").then(function () {
+        T.input(T.q("[data-k=sa-name]"), "Nope"); T.click(T.q("[data-k=sa-save]"));
+        return T.wait(function () { return T.q("[data-apc-sheet=license]"); }, "activation sheet");
+      }).then(function () {
+        T.assert(/Saving presets needs a license/.test(T.q("[data-apc-sheet=license]").textContent), "explains which verb: " + T.q("[data-apc-sheet=license]").textContent.slice(0, 120));
+        T.assert(T.q("[data-k=activate]", T.q("[data-apc-sheet=license]")), "serial entry present");
+        T.assert(!T.q("[data-k=sa-name]"), "save sheet closed");
+        T.assert(T.toasts("error").length === 0, "gated is a prompt, not an error toast");
+        APC.licenseUI.close();
+        T.click(T.q("[data-k=import]"));
+        return T.wait(function () { return T.q("[data-k=import-path]"); }, "import sheet");
+      }).then(function () {
+        T.input(T.q("[data-k=import-path]"), "/tmp/pack.apcpack"); T.click(T.q("[data-k=import-go]"));
+        return T.wait(function () { return T.q("[data-apc-sheet=license]"); }, "activation sheet for import");
+      }).then(function () {
+        T.assert(/Installing preset packs/.test(T.q("[data-apc-sheet=license]").textContent));
+        APC.licenseUI.close();
+        T.click(T.q("[data-k=export]"));
+        return T.wait(function () { return T.q("[data-apc-confirm]"); }, "export confirm");
+      }).then(function () {
+        T.click(T.q("[data-apc-confirm] [data-k=ok]"));
+        return T.wait(function () { return T.q("[data-apc-sheet=license]"); }, "activation sheet for export");
+      }).then(function () { T.assert(/Exporting preset packs/.test(T.q("[data-apc-sheet=license]").textContent)); });
+    });
+  });
+
+  T.test("licensed: Export sends the ids of the current view; Import adds a pack and never overwrites", function () {
+    return mountBrowser("licensed").then(function (b) {
+      return b.setScope("pack:User").then(function () {
+        T.click(T.q("[data-k=export]"));
+        return T.wait(function () { return T.q("[data-apc-confirm]"); }, "confirm");
+      }).then(function () {
+        T.click(T.q("[data-apc-confirm] [data-k=ok]"));
+        return T.wait(function () { return APC.mock.calls("apc.presets.exportPack").length; }, "export call");
+      }).then(function () {
+        T.eq(APC.mock.calls("apc.presets.exportPack")[0].args.ids.length, 8);
+        return T.wait(function () { return T.toasts("info").some(function (t) { return /Exported 8 presets to \/mock\/Exports/.test(t.textContent); }); }, "success toast with path");
+      }).then(function () {
+        T.click(T.q("[data-k=import]"));
+        return T.wait(function () { return T.q("[data-k=import-path]"); }, "import sheet");
+      }).then(function () {
+        T.input(T.q("[data-k=import-path]"), "/tmp/a.apcpack"); T.click(T.q("[data-k=import-go]"));
+        return T.wait(function () { return !T.q("[data-k=import-path]"); }, "closed");
+      }).then(function () {
+        T.click(T.q("[data-k=import]"));
+        return T.wait(function () { return T.q("[data-k=import-path]"); }, "import again");
+      }).then(function () {
+        T.input(T.q("[data-k=import-path]"), "/tmp/a.apcpack"); T.click(T.q("[data-k=import-go]"));
+        return T.wait(function () { return !T.q("[data-k=import-path]"); }, "closed 2");
+      }).then(function () { return T.bridge("apc.presets.info"); }).then(function (pi) {
+        var names = pi.packs.map(function (p) { return p.name; });
+        T.assert(names.indexOf("Imported Pack") >= 0 && names.indexOf("Imported Pack 2") >= 0, "collision gets a suffix: " + names.join(","));
+        return T.wait(function () { return T.qa("[data-scope]").some(function (n) { return n.textContent === "Imported Pack 2"; }); }, "scope bar lists the new pack");
+      });
+    });
+  });
+
+  T.test("keyboard: arrows move the cursor (aria-activedescendant), Enter loads, Home/End jump", function () {
+    return mountBrowser().then(function (b) {
+      return b.setSort("name").then(function () {
+        var list = T.q("[data-k=list]"); list.focus();
+        T.eq(list.getAttribute("role"), "listbox");
+        T.key(list, "ArrowDown"); T.key(list, "ArrowDown");
+        T.eq(b.state().cursor, 2);
+        T.assert(list.getAttribute("aria-activedescendant"), "activedescendant set");
+        T.eq(T.q("#" + list.getAttribute("aria-activedescendant")).getAttribute("data-index"), "2");
+        T.key(list, "End");
+        T.eq(b.state().cursor, 29);
+        T.key(list, "Home"); T.key(list, "Enter");
+        return T.wait(function () { return T.text("[data-k=current]") === dataNames(b)[0]; }, "Enter loads the cursor row");
+      });
+    });
+  });
+
+  T.test("filter popup: Esc closes the popup only (not the surrounding sheet) and returns focus to its button", function () {
+    T.reset("licensed");
+    T.mount('<div id="chipHost" data-apc="preset-chip"></div>');
+    T.click(T.q("[data-k=chip-browse]"));
+    return T.wait(function () { return T.q("[data-apc-sheet=presets] [data-group=category]"); }, "browser sheet").then(function () {
+      var btn = T.q("[data-group=category]");
+      T.click(btn);
+      T.assert(popup("category"), "popup open");
+      T.key(document.activeElement, "Escape");
+      T.assert(!popup("category"), "popup closed"); T.assert(T.q("[data-apc-sheet=presets]"), "sheet still open");
+      T.assert(document.activeElement === btn, "focus back on the filter button");
+      T.key(document.activeElement, "Escape");
+      T.assert(!T.q("[data-apc-sheet=presets]"), "second Esc closes the sheet");
+    });
+  });
+
+  T.test("header chip: name, dirty *, visible Save, prev/next, opens the browser", function () {
+    T.reset("licensed");
+    T.mount('<div data-apc="preset-chip"></div>');
+    return T.wait(function () { return T.text("[data-k=chip-name]"); }, "name").then(function () {
+      T.eq(T.text("[data-k=chip-name]"), "INIT");
+      T.assert(T.q("[data-k=chip-save]").offsetParent !== null, "Save is a visible button (Ctrl/Cmd+S is only an accelerator)");
+      T.click(T.q("[data-k=chip-next]"));
+      return T.wait(function () { return T.text("[data-k=chip-name]") === "Black Hole"; }, "next preset by name");
+    }).then(function () {
+      T.click(T.q("[data-k=chip-prev]"));
+      return T.wait(function () { return T.text("[data-k=chip-name]") === "Velvet Low"; }, "wrapped to the last preset by name");
+    }).then(function () {
+      return T.bridge("apc.param.set", { id: "gain_db", value: 3 });
+    }).then(function () {
+      return T.wait(function () { return !T.q(".apc-pc .apc-pb__dirty").hidden; }, "chip shows *");
+    });
+  });
+
+  T.test("Ctrl/Cmd+S is an accelerator for the visible Save button", function () {
+    return mountBrowser("licensed").then(function () {
+      return idOf("Soft Keys").then(setPreset).then(function () { return T.bridge("apc.param.set", { id: "gain_db", value: 4 }); }).then(function () {
+        return T.wait(function () { return !T.q("[data-k=dirty]").hidden; }, "dirty");
+      }).then(function () {
+        var ev = T.key(document.body, "s", { ctrl: true });
+        T.assert(ev.defaultPrevented, "host/browser save dialog suppressed");
+        return T.wait(function () { return APC.mock.calls("apc.presets.save").length === 1; }, "save call");
+      });
+    });
+  });
+
+  T.test("5,000 presets: refresh+render < 250 ms, fewer than 200 DOM rows, still responsive when scrolled", function () {
+    return mountBrowser("licensed").then(function (b) {
+      APC.mock.loadBank(5000);
+      var t0 = performance.now();
+      return b.refresh().then(function () {
+        var dt = performance.now() - t0;
+        T.eq(b.state().total, 5030);
+        T.assert(dt < 250, "refresh + render took " + dt.toFixed(1) + " ms (limit 250)");
+        var rows = T.qa(".apc-pb__row").length;
+        T.assert(rows > 0 && rows < 200, "DOM rows: " + rows);
+        var list = T.q("[data-k=list]");
+        var s0 = performance.now();
+        list.scrollTop = list.scrollHeight;
+        list.dispatchEvent(new Event("scroll"));
+        var ds = performance.now() - s0;
+        T.assert(ds < 100, "scroll re-render took " + ds.toFixed(1) + " ms");
+        T.assert(T.qa(".apc-pb__row").length < 200, "still < 200 rows after scrolling");
+        var last = T.qa(".apc-pb__row").pop();
+        T.assert(Number(last.getAttribute("data-index")) > 4900, "rows near the end are rendered");
+        var f0 = performance.now();
+        return b.setSearch("amber").then(function () { return b.setSort("rating"); }).then(function () {
+          var df = performance.now() - f0;
+          T.assert(b.state().total > 0 && b.state().total < 5030, "search narrows the big list");
+          T.assert(df < 400, "search + resort on 5k took " + df.toFixed(1) + " ms");
+        });
+      });
+    });
+  });
+
+  T.test("component hygiene: dispose removes listeners and DOM", function () {
+    return mountBrowser("licensed").then(function () {
+      T.reset();                                   // disposes the mounted component
+      T.assert(!T.q(".apc-pb"), "DOM removed");
+      var ev = T.key(document.body, "s", { ctrl: true });
+      return T.sleep(20).then(function () {
+        T.assert(!ev.defaultPrevented, "Ctrl+S accelerator removed with the component");
+        T.eq(APC.mock.calls("apc.presets.state").length, 0, "no bridge traffic after dispose");
+        T.assert(!T.q("[data-apc-sheet]") && !T.q(".apc-kb-backdrop"), "no sheet appeared");
+      });
+    });
+  });
+
+  T.run();
+})();
+</script>
+</body>
+</html>

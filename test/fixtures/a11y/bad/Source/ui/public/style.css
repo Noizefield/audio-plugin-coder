@@ -1,0 +1,28 @@
+/* Deliberately inaccessible: low contrast in BOTH themes, outline removed,
+   hover-only help, animations without a reduced-motion override, heavy
+   effects. Used by test/a11y-validator.test.js. */
+:root {
+  --plate: #1a1a1f;
+  --ink: #4a4a55;
+  --accent: #26262c;
+}
+:root[data-theme="day"] {
+  --plate: #ffffff;
+  --ink: #c8c8c8;
+  --accent: #eeeeee;
+}
+body { background: var(--plate); color: var(--ink); }
+.btn { color: var(--ink); background: var(--plate); }
+.hint { color: var(--ink); }
+.knob { background: var(--plate); border: 2px solid var(--accent); }
+button, .btn, .knob { outline: none; }
+.led { display: inline-block; width: 10px; height: 10px; background: var(--ink); animation: blink 1s infinite; }
+.led2 { animation: blink 1s infinite; }
+@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
+.plate { backdrop-filter: blur(8px); box-shadow: 0 0 40px rgba(0,0,0,.8); }
+.card { backdrop-filter: blur(4px); box-shadow: 0 0 60px #000; }
+.panel { -webkit-backdrop-filter: blur(6px); box-shadow: 0 0 32px #000, 0 0 48px #000; }
+.glow { box-shadow: 0 0 30px #fff; text-shadow: 0 0 28px #fff; }
+.tip { position: relative; }
+.tip::after { content: "Help text that only shows on hover"; display: none; }
+.tip:hover::after { display: block; }

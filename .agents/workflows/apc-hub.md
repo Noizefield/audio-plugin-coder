@@ -1,5 +1,5 @@
 ---
-description: "Open the APC Hub live dashboard (read-only command center)"
+description: "Open the APC Hub live dashboard and inspect the current design library"
 ---
 
 # APC Hub
@@ -18,4 +18,4 @@ powershell -ExecutionPolicy Bypass -File .\scripts\apc-hub.ps1 [-Port 4872] [-No
 bash scripts/apc-hub.sh [--port 4872] [--no-open]
 ```
 
-**Done:** report `-> Dashboard at http://localhost:<port>/` and stop. No validation probes, no follow-ups.
+**Done:** report `-> Dashboard at http://localhost:<port>/` and stop. The Hub's normal review remains read-only; use the guarded 09c KIT element-tuning save when explicitly requested.

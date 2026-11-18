@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "name": "PreviewFixture",
+  "layout": {
+    "mode": "scalable",
+    "plate": { "cols": 20, "rows": 10 },
+    "aspect_lock": true,
+    "scale_range": [0.5, 3.0],
+    "edge_policy": "letterbox",
+    "letterbox_fill": "--surface",
+    "resize_handle": "corner-gripper",
+    "presets": [0.5, 1.0, 2.0],
+    "breakpoints": []
+  },
+  "tokens": { "--surface": "#101014", "--plate": "#1a1a1f", "--ink": "#f0f0f5", "--accent": "#ffc300" },
+  "sections": [{ "id": "mast", "title": "MAST", "cell": { "x": 0, "y": 0, "w": 20, "h": 2 } }],
+  "controls": [
+    { "id": "gain", "param": "gain", "component": "knob", "cell": { "x": 2, "y": 3, "w": 4, "h": 4 }, "label": "GAIN" }
+  ],
+  "canvases": [],
+  "annotations": []
+}

@@ -1,0 +1,61 @@
+{
+  "schema": "apc-eval-task/1",
+  "id": "respect-standards-flow",
+  "title": "Follow the product-standards planning flow (apc standards plan -> set -> validate)",
+  "category": "planning",
+  "tags": ["plan", "standards", "cli"],
+  "timeout_s": 600,
+  "fixture": "fixture",
+  "prompt": "TinyFX (plugins/TinyFX) is a simple free effect plugin that is entering the /apc-plan phase. Its status.json has no \"standards\" block yet.\n\nUse the APC standards CLI -- do not hand-edit status.json and do not touch schemas/apc-standards.json:\n1. Run `apc standards plan --plugin TinyFX` and read the questions.\n2. Answer every REQUIRED question with `apc standards set <id> <value> --plugin TinyFX`. Facts about TinyFX: it is an effect, so presets are flat (no typed sound/kit tree); user data lives per-user (not machine-wide); the license mode is free.\n3. Finish with `apc standards validate --plugin TinyFX`, which must exit 0.\n\nOptional questions may keep their registry defaults.",
+  "setup": [
+    { "op": "copy-from-repo", "from": "schemas/apc-standards.json", "to": "schemas/apc-standards.json" }
+  ],
+  "checks": [
+    {
+      "id": "standards-validate",
+      "description": "apc standards validate --plugin TinyFX exits 0 (all required answered, nothing unknown)",
+      "type": "apc",
+      "args": ["standards", "validate", "--plugin", "TinyFX"],
+      "expect_exit": 0
+    },
+    {
+      "id": "hierarchy-flat",
+      "description": "preset.hierarchy = flat",
+      "type": "json_path",
+      "path": "plugins/TinyFX/status.json",
+      "pointer": ["standards", "preset.hierarchy"],
+      "equals": "flat"
+    },
+    {
+      "id": "data-root-per-user",
+      "description": "preset.data_root = per-user",
+      "type": "json_path",
+      "path": "plugins/TinyFX/status.json",
+      "pointer": ["standards", "preset.data_root"],
+      "equals": "per-user"
+    },
+    {
+      "id": "license-free",
+      "description": "license.mode = free",
+      "type": "json_path",
+      "path": "plugins/TinyFX/status.json",
+      "pointer": ["standards", "license.mode"],
+      "equals": "free"
+    },
+    {
+      "id": "status-preserved",
+      "description": "the rest of status.json survived",
+      "type": "json_path",
+      "path": "plugins/TinyFX/status.json",
+      "pointer": "plugin_name",
+      "equals": "TinyFX"
+    },
+    {
+      "id": "registry-locked",
+      "description": "schemas/apc-standards.json is byte-identical to the repo's locked registry",
+      "type": "file_matches_repo",
+      "path": "schemas/apc-standards.json",
+      "repo_path": "schemas/apc-standards.json"
+    }
+  ]
+}

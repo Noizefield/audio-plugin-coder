@@ -43,6 +43,18 @@ if ($state.ui_framework -eq "pending") {
 - Verify v1-ui-spec.md exists
 - Verify v1-style-guide.md exists
 
+**Design library:** the framework ships one design, `apc-minimal` (`design_library/apc-minimal/`; `tokens.css` = token contract). Copy its folder to start your own design and register it in `design_library/manifest.json`.
+
+**Standard UI kit (WebView):** use `templates/webview/apc-ui/` (contract: `CONTRACT.md`; guides `ui-kit-controls.md`, `ui-kit-widgets.md` (button, buttons, segmented, checkbox, radio, dropdown, menu, tabs, textfield, numberfield, label, readout, panel, divider, led, progress, list, logo), `ui-kit-viz.md` (graph, envelope, spectrum, waveform, scope, meter, stepseq, xypad, picture), `ui-kit-panels.md`; browse it live in the Hub at `#09c-kit` after starting the Hub with `/apc-hub`). The kit ships one design, APC Minimal; **every element is specified by tokens in `design_library/apc-minimal/design-system.json` `elements`** (parts, states, sizes, options, a11y) and every token of the design is listed in its `tokenGroups`. Do NOT hand-build knobs, buttons, dropdowns, tabs, fields, meters, graphs, sequencers, context menus, settings overlays, preset browsers, activation/update dialogs, version footers or grippers - mount the kit components (`data-apc="knob"` etc.) and only supply layout (ui-map) and theme tokens (design_library). Accent-coloured text uses `--accent-text`. Verify with `node bin/apc.js kit test`.
+
+**Preview loop and accessibility (WebView):**
+```bash
+node bin/apc.js watch <Name>                       # debounced compose + lint + live reload
+node bin/apc.js screenshot <Name> --scale 50,100,300   # deterministic shots; --compare <baseline.png> for visual diff
+node bin/apc.js validate a11y --plugin <Name>      # contrast (all themes), keyboard reach, names, focus, reduced motion
+```
+Guides: `.agents/guides/preview-loop.md`, `.agents/guides/a11y-perf.md`. Interactive controls need `tabindex` + an accessible name; the version string must be visible in the footer; help/quick-save need visible buttons.
+
 **Completion:**
 ```
 Γ£à Design phase complete!

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>kit-b-settings</title>
+<link rel="stylesheet" href="../apc-core.css">
+<link rel="stylesheet" href="../apc-components.css">
+</head>
+<body>
+<div id="stage"></div>
+<script src="../apc-fit.js"></script>
+<script src="../apc-kit.js"></script>
+<script src="../apc-mock.js"></script>
+<script src="../apc-license-ui.js"></script>
+<script src="../apc-update-ui.js"></script>
+<script src="../apc-settings.js"></script>
+<script src="harness-b.js"></script>
+<script>
+(function () {
+  "use strict";
+  var APC = window.APC, T = window.T;
+
+  function openSettings(tab) {
+    APC.emit("settings:open", tab ? { tab: tab } : {});
+    return T.wait(function () { return T.q("[data-apc-sheet=settings] .apc-sx__panel:not([hidden])"); }, "settings overlay");
+  }
+  function tabLabels() { return T.qa("[data-apc-sheet=settings] [role=tab]").map(function (b) { return b.textContent; }); }
+  function panel(id) { return T.q("[data-apc-sheet=settings] [data-panel=" + id + "]"); }
+  function tab(id) { return T.q("[data-apc-sheet=settings] [data-tab=" + id + "]"); }
+  function goTab(id) { T.click(tab(id)); return T.wait(function () { return !panel(id).hidden && panel(id).children.length; }, "tab " + id); }
+  function settings() { return T.bridge("apc.settings.get"); }
+
+  T.test("overlay opens from settings:open, is not an OS dialog, tabs follow U-05 order", function () {
+    T.reset();
+    return openSettings().then(function () {
+      T.eq(tabLabels(), ["Global", "Engine / Quality", "MIDI", "Presets & Data", "License", "About"]);
+      T.eq(T.q("[data-apc-sheet=settings] [role=tablist]").getAttribute("role"), "tablist");
+      var sheet = T.q("[data-apc-sheet=settings]");
+      T.eq(sheet.getAttribute("role"), "dialog"); T.eq(sheet.getAttribute("aria-modal"), "true");
+      T.eq(T.qa("[data-apc-sheet=settings] [role=tab][aria-selected=true]").length, 1, "exactly one selected tab");
+      T.eq(T.qa("[data-apc-sheet=settings] [role=tabpanel]:not([hidden])").length, 1, "exactly one visible panel");
+      T.eq(tab("global").getAttribute("aria-controls"), panel("global").id);
+    });
+  });
+
+  T.test("tab visibility rules: MIDI only with midiLearnTable, License hidden when mode none, theme/auto-update rows are feature-gated", function () {
+    T.reset();
+    APC.mock.config({ features: { midiLearnTable: false, themeEnabled: false, autoUpdateCheck: false }, licenseMode: "none" });
+    return openSettings().then(function () {
+      T.eq(tabLabels(), ["Global", "Engine / Quality", "Presets & Data", "About"]);
+      T.assert(!T.q("[data-key=theme]", panel("global")), "no theme row when theme feature is off");
+      T.assert(!T.q("[data-key=auto_update_check]", panel("global")), "no auto-update row when feature is off");
+      T.assert(T.q("[data-key=double_click]", panel("global")), "other rows remain");
+    });
+  });
+
+  T.test("theme row and auto-update row appear when the features are on", function () {
+    T.reset();
+    return openSettings().then(function () {
+      T.assert(T.q("[data-key=theme]", panel("global")), "theme row");
+      T.assert(T.q("[data-key=auto_update_check]", panel("global")), "auto update row");
+      T.eq(T.qa("[data-key=theme] option").map(function (o) { return o.value; }), ["night", "day", "follow-os"]);
+      T.eq(T.q("[data-key=auto_update_check]").checked, false, "auto update is OFF by default");
+    });
+  });
+
+  T.test("[data-apc=settings] opens the overlay; Esc closes it and focus returns to the opener", function () {
+    T.reset();
+    T.mount('<button type="button" id="gear" data-apc="settings">Gear</button>');
+    var gear = T.q("#gear"); gear.focus();
+    T.click(gear);
+    return T.wait(function () { return T.q("[data-apc-sheet=settings]"); }, "overlay").then(function () {
+      T.assert(T.q("[data-apc-sheet=settings]").contains(document.activeElement), "focus moved into the overlay");
+      T.key(document.activeElement, "Escape");
+      T.assert(!T.q("[data-apc-sheet=settings]"), "Esc closes the overlay");
+      T.assert(document.activeElement === gear, "focus returns to the gear button");
+    });
+  });
+
+  T.test("focus is trapped: Tab from the last control wraps to the first, Shift+Tab the other way", function () {
+    T.reset();
+    return openSettings().then(function () {
+      var sheet = T.q("[data-apc-sheet=settings]");
+      var f = window.APC.__kb.visible(sheet), first = f[0], last = f[f.length - 1];
+      last.focus(); var ev = T.key(last, "Tab");
+      T.assert(ev.defaultPrevented, "Tab at the end is intercepted");
+      T.assert(document.activeElement === first, "wrapped to the first control");
+      first.focus(); ev = T.key(first, "Tab", { shift: true });
+      T.assert(document.activeElement === last, "Shift+Tab wrapped to the last control");
+    });
+  });
+
+  T.test("tablist: ArrowDown/ArrowUp/Home/End move between tabs (roving tabindex)", function () {
+    T.reset();
+    return openSettings().then(function () {
+      T.key(tab("global"), "ArrowDown");
+      T.eq(tab("engine").getAttribute("aria-selected"), "true");
+      T.eq(tab("global").tabIndex, -1); T.eq(tab("engine").tabIndex, 0);
+      T.key(tab("engine"), "End");
+      T.eq(tab("about").getAttribute("aria-selected"), "true");
+      T.key(tab("about"), "Home");
+      T.eq(tab("global").getAttribute("aria-selected"), "true");
+    });
+  });
+
+  T.test("Global: changes are written to the machine settings (merge, unknown keys kept)", function () {
+    T.reset();
+    return openSettings().then(function () {
+      T.choose(T.q("[data-key=double_click]"), "value_entry");
+      return T.wait(function () { return APC.mock.calls("apc.settings.set").length; }, "settings.set");
+    }).then(function () { return settings(); }).then(function (s) {
+      T.eq(s.ui.double_click, "value_entry");
+      T.eq(s.ui.tooltips, true, "other keys untouched");
+      T.eq(s.engine.oversampling, 2, "engine machine default untouched");
+      T.eq(APC.mock.calls("apc.settings.set")[0].args, { patch: { ui: { double_click: "value_entry" } } }, "minimal patch");
+    });
+  });
+
+  T.test("Global: tooltip delay is disabled while tooltips are off; scale applies live via apc.ui.setScale", function () {
+    T.reset();
+    return openSettings().then(function () {
+      var tt = T.q("[data-key=tooltips]"), td = T.q("[data-key=tooltip_delay_ms]");
+      T.eq(td.disabled, false);
+      tt.click();
+      return T.wait(function () { return T.q("[data-key=tooltip_delay_ms]").disabled; }, "delay disabled").then(function () {
+        T.choose(T.q("[data-key=scale]"), 150);
+        return T.wait(function () { return APC.mock.calls("apc.ui.setScale").length; }, "setScale call");
+      });
+    }).then(function () {
+      T.eq(APC.mock.calls("apc.ui.setScale")[0].args, { scale: 1.5 });
+      return settings();
+    }).then(function (s) { T.eq(s.ui.tooltips, false); T.eq(s.ui.scale, 1.5); });
+  });
+
+  T.test("Restore defaults asks for confirmation; Cancel changes nothing, OK restores the tab", function () {
+    T.reset();
+    return openSettings().then(function () {
+      T.choose(T.q("[data-key=wheel_target]"), "panel");
+      return T.wait(function () { return APC.mock.calls("apc.settings.set").length; }, "write");
+    }).then(function () {
+      T.click(T.q("[data-k=restore]", panel("global")));
+      return T.wait(function () { return T.q("[data-apc-confirm]"); }, "confirm dialog");
+    }).then(function () {
+      T.assert(/Global/.test(T.q("[data-apc-confirm]").textContent), "confirm names the tab");
+      T.eq(APC.mock.calls("apc.settings.set").length, 1, "nothing written before confirming");
+      T.click(T.q("[data-apc-confirm] [data-k=cancel]"));
+      T.assert(!T.q("[data-apc-confirm]"), "confirm closed");
+      return settings();
+    }).then(function (s) {
+      T.eq(s.ui.wheel_target, "panel", "cancel keeps the value");
+      T.click(T.q("[data-k=restore]", panel("global")));
+      return T.wait(function () { return T.q("[data-apc-confirm]"); }, "confirm again");
+    }).then(function () {
+      T.click(T.q("[data-apc-confirm] [data-k=ok]"));
+      return T.wait(function () { return APC.mock.calls("apc.settings.set").length === 2; }, "restore write");
+    }).then(function () { return settings(); }).then(function (s) {
+      T.eq(s.ui.wheel_target, "control"); T.eq(s.ui.preset_load, "confirm-if-dirty"); T.eq(s.ui.tooltip_delay_ms, 400);
+      T.eq(T.q("[data-key=wheel_target]").value, "control", "control reflects the restored value");
+    });
+  });
+
+  T.test("write failure is visible (error box + toast with the path) and the control snaps back", function () {
+    T.reset("io-error");
+    return openSettings().then(function () {
+      T.choose(T.q("[data-key=double_click]"), "value_entry");
+      return T.wait(function () { return !T.q("[data-k=error]", panel("global")).hidden; }, "inline error");
+    }).then(function () {
+      T.assert(/settings\.json/.test(T.text("[data-k=error]", panel("global"))), "inline error names the failing path");
+      T.assert(T.toasts("error").some(function (t) { return /settings\.json/.test(t.textContent); }), "error toast shows the path");
+      T.eq(T.q("[data-key=double_click]").value, "reset", "control reverted to the stored value");
+    });
+  });
+
+  T.test("Engine: per-instance state vs machine default (X-08) with the explicit note", function () {
+    T.reset();
+    return openSettings("engine").then(function () { return goTab("engine"); }).then(function () {
+      var note = T.text("[data-k=engine-note]", panel("engine"));
+      T.assert(/saved with the project/i.test(note) && /default for new instances/i.test(note), "explicit X-08 note: " + note);
+      T.assert(/latency/i.test(T.text("[data-k=latency]", panel("engine"))), "latency note");
+      T.choose(T.q("[data-key=oversampling]", panel("engine")), 4);
+      return T.wait(function () { return APC.mock.calls("apc.engine.set").length; }, "engine.set");
+    }).then(function () { return T.bridge("apc.engine.get"); }).then(function (e) {
+      T.eq(e.values.oversampling, 4, "this instance changed");
+      T.eq(e.latencySamples, 128);
+      return settings();
+    }).then(function (s) {
+      T.eq(s.engine.oversampling, 2, "machine default NOT changed by a per-instance edit");
+      T.assert(/2/.test(T.text("[data-k=default-oversampling]", panel("engine"))), "default for new instances shown: 2");
+      T.assert(/128 samples/.test(T.text("[data-k=latency]", panel("engine"))), "latency refreshed");
+      APC.mock.newInstance();
+      return T.bridge("apc.engine.get");
+    }).then(function (e) {
+      T.eq(e.values.oversampling, 2, "a NEW instance starts from the machine default");
+      T.choose(T.q("[data-key=oversampling]", panel("engine")), 8);
+      return T.wait(function () { return APC.mock.calls("apc.engine.set").length === 2; }, "second engine.set");
+    }).then(function () {
+      T.click(T.q("[data-k=set-default]", panel("engine")));
+      return T.wait(function () { return APC.mock.calls("apc.settings.set").length; }, "set default");
+    }).then(function () { return settings(); }).then(function (s) {
+      T.eq(s.engine.oversampling, 8, "Set as default for new instances writes the machine default");
+      APC.mock.newInstance(); return T.bridge("apc.engine.get");
+    }).then(function (e) { T.eq(e.values.oversampling, 8); });
+  });
+
+  T.test("Engine: restore defaults confirms, then resets this instance only", function () {
+    T.reset();
+    return openSettings("engine").then(function () { return goTab("engine"); }).then(function () {
+      T.choose(T.q("[data-key=oversampling]", panel("engine")), 8);
+      return T.wait(function () { return APC.mock.calls("apc.engine.set").length; }, "set");
+    }).then(function () {
+      T.click(T.q("[data-k=restore]", panel("engine")));
+      return T.wait(function () { return T.q("[data-apc-confirm]"); }, "confirm");
+    }).then(function () {
+      T.click(T.q("[data-apc-confirm] [data-k=ok]"));
+      return T.wait(function () { return APC.mock.calls("apc.engine.set").length === 2; }, "restore");
+    }).then(function () { return T.bridge("apc.engine.get"); }).then(function (e) {
+      T.eq(e.values.oversampling, 1, "built-in default");
+      return settings();
+    }).then(function (s) { T.eq(s.engine.oversampling, 2, "machine default untouched"); });
+  });
+
+  T.test("MIDI: assign CC, reject out-of-range CC visibly, unlearn, export/import", function () {
+    T.reset();
+    return openSettings("midi").then(function () { return goTab("midi"); }).then(function () {
+      return T.wait(function () { return T.q("tr[data-id=resonance_pct]"); }, "midi rows");
+    }).then(function () {
+      T.input(T.q("tr[data-id=resonance_pct] [data-k=cc]"), "21");
+      return T.wait(function () { return APC.mock.calls("apc.midi.table.set").length === 1; }, "table.set");
+    }).then(function () { return T.bridge("apc.params.get", { id: "resonance_pct" }); }).then(function (p) {
+      T.eq(p.midiCc, 21);
+      T.input(T.q("tr[data-id=resonance_pct] [data-k=cc]"), "200");
+      T.assert(!T.q("[data-k=error]", panel("midi")).hidden, "out-of-range CC shows an error");
+      T.eq(APC.mock.calls("apc.midi.table.set").length, 1, "nothing written for an invalid CC");
+      T.assert(/export/i.test(T.q("[data-k=midi-io] summary").textContent));
+      T.assert(/resonance_pct/.test(T.q("[data-k=midi-export]").value), "export lists the assigned CC");
+      T.assert(/cutoff_hz/.test(T.q("[data-k=midi-export]").value), "the learned CC 74 is exported too");
+      T.click(T.q("tr[data-id=cutoff_hz] [data-k=unlearn]"));
+      return T.wait(function () { return APC.mock.calls("apc.midi.unlearn").length; }, "unlearn");
+    }).then(function () { return T.bridge("apc.params.get", { id: "cutoff_hz" }); }).then(function (p) {
+      T.eq(p.midiCc, null);
+      T.input(T.q("[data-k=midi-import]"), JSON.stringify({ schema: "apc-midi-map/1", rows: [{ id: "gain_db", cc: 7, min: -24, max: 12 }] }));
+      T.click(T.q("[data-k=midi-apply]"));
+      return T.wait(function () { return APC.mock.calls("apc.midi.table.set").length === 2; }, "import");
+    }).then(function () { return T.bridge("apc.params.get", { id: "gain_db" }); }).then(function (p) { T.eq(p.midiCc, 7); });
+  });
+
+  T.test("Presets & Data: read-only root, rescan, index status, factory layout note + confirm, dev-root indicator", function () {
+    T.reset();
+    APC.mock.config({ devRoot: "/repo/assets/presets" });
+    return openSettings("presets").then(function () { return goTab("presets"); }).then(function () {
+      return T.wait(function () { return T.q("[data-k=root]", panel("presets")).value; }, "root path");
+    }).then(function () {
+      var root = T.q("[data-k=root]", panel("presets"));
+      T.assert(root.readOnly, "root path is read-only"); T.assert(/presets/.test(root.value));
+      T.assert(/\d+ assets?/.test(T.text("[data-k=index-status]", panel("presets"))), "index status: " + T.text("[data-k=index-status]", panel("presets")));
+      T.assert(!T.q("[data-k=dev-root]", panel("presets")).hidden && /\/repo\/assets\/presets/.test(T.text("[data-k=dev-root]", panel("presets"))), "dev-root indicator");
+      T.assert(/other user accounts/i.test(panel("presets").textContent), "multi-account note present");
+      T.click(T.q("[data-k=open-folder]", panel("presets")));
+      T.click(T.q("[data-k=rescan]", panel("presets")));
+      return T.wait(function () { return APC.mock.calls("apc.presets.rescan").length && APC.mock.calls("apc.presets.openFolder").length; }, "calls");
+    }).then(function () {
+      T.click(T.q("[data-k=restore-factory]", panel("presets")));
+      return T.wait(function () { return T.q("[data-apc-confirm]"); }, "confirm");
+    }).then(function () {
+      T.eq(APC.mock.calls("apc.presets.restoreFactory").length, 0, "needs confirmation first");
+      T.click(T.q("[data-apc-confirm] [data-k=ok]"));
+      return T.wait(function () { return APC.mock.calls("apc.presets.restoreFactory").length; }, "restore factory");
+    });
+  });
+
+  T.test("Presets & Data: dev-root indicator is absent in release configuration", function () {
+    T.reset();
+    return openSettings("presets").then(function () { return goTab("presets"); }).then(function () {
+      return T.wait(function () { return T.q("[data-k=root]", panel("presets")).value; }, "root");
+    }).then(function () { T.assert(T.q("[data-k=dev-root]", panel("presets")).hidden, "hidden"); });
+  });
+
+  T.test("Presets & Data: rescan failure is visible with the path", function () {
+    T.reset("io-error");
+    return openSettings("presets").then(function () { return goTab("presets"); }).then(function () {
+      T.click(T.q("[data-k=rescan]", panel("presets")));
+      return T.wait(function () { return !T.q("[data-k=error]", panel("presets")).hidden; }, "error");
+    }).then(function () {
+      T.assert(/presets/.test(T.text("[data-k=error]", panel("presets"))));
+      T.assert(T.toasts("error").length >= 1, "toast too");
+    });
+  });
+
+  T.test("License tab hosts the license UI", function () {
+    T.reset();
+    return openSettings("license").then(function () { return goTab("license"); }).then(function () {
+      return T.wait(function () { return T.q(".apc-lc__badge", panel("license")) && T.q(".apc-lc__badge", panel("license")).textContent; }, "badge");
+    }).then(function () { T.eq(T.text(".apc-lc__badge", panel("license")), "DEMO"); T.assert(T.q("[data-k=activate]", panel("license"))); });
+  });
+
+  T.test("About: version, build date, JUCE/framework, only configured links, update panel, legal", function () {
+    T.reset();
+    APC.mock.config({ links: { docs: "" } });
+    return openSettings("about").then(function () { return goTab("about"); }).then(function () {
+      var p = panel("about"), t = p.textContent;
+      T.eq(T.text("[data-k=product]", p), "Example Synth");
+      T.assert(/v1\.2\.0/.test(t), "version"); T.assert(/2026-11-07/.test(t), "build date"); T.assert(/9\.0\.0/.test(t), "JUCE version");
+      var labels = T.qa("[data-k=links] a", p).map(function (a) { return a.textContent; });
+      T.eq(labels, ["Manufacturer website", "Product page", "Support"], "links: only those with a configured URL");
+      T.assert(T.q("[data-k=oss]", p) && T.q("[data-k=eula]", p), "open-source licenses + EULA");
+      T.click(T.q("[data-k=links] a", p));
+      return T.wait(function () { return APC.mock.calls("apc.openUrl").length; }, "openUrl").then(function () {
+        T.eq(APC.mock.calls("apc.openUrl")[0].args.url, "https://example.test/", "links go through the bridge, no direct navigation");
+        return T.wait(function () { return T.q("[data-k=check]", p); }, "Check for Updates button");
+      });
+    });
+  });
+
+  T.test("About: Check for Updates is always present and shows the result", function () {
+    T.reset();
+    return openSettings("about").then(function () { return goTab("about"); }).then(function () {
+      return T.wait(function () { return T.q("[data-k=check]", panel("about")); }, "check button");
+    }).then(function () {
+      T.click(T.q("[data-k=check]", panel("about")));
+      return T.wait(function () { return /latest version/i.test(panel("about").textContent); }, "UpToDate message");
+    });
+  });
+
+  T.run();
+})();
+</script>
+</body>
+</html>

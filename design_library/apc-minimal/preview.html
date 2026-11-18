@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="night">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>APC Minimal - design tokens (Zeichnung 2030)</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  /* Preview chrome only: every colour, size and font below comes from tokens.css. */
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--apc-letterbox); color: var(--ink); font-family: var(--font-ui);
+         -webkit-font-smoothing: antialiased; }
+  .hd { display: flex; align-items: center; gap: 14px; padding: 16px 22px; background: var(--surface);
+        border-bottom: 1px solid var(--rule-2); }
+  .hd .mark { font: 600 15px/1 var(--font-ui); letter-spacing: .22em; }
+  .hd .ttl b { display: block; font: 500 22px/1 var(--font-ui); letter-spacing: .05em; text-transform: uppercase; }
+  .hd .ttl i { display: block; margin-top: 4px; font: 400 9.5px/1 var(--font-ui); font-style: normal;
+               letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .hd .meta { margin-left: auto; font: 400 9.5px/1 var(--font-num); letter-spacing: .1em;
+              text-transform: uppercase; color: var(--ink-3); }
+  .modes { display: grid; grid-template-columns: 1fr 1fr; }
+  .mode { padding: 20px 22px 26px; background: var(--plate); color: var(--ink);
+          border-right: 1px solid var(--rule-2); }
+  .mode h2 { margin: 0; font: 500 12px/1 var(--font-ui); letter-spacing: .14em; text-transform: uppercase; }
+  .mode .sub { margin: 5px 0 0; font: 400 11.5px/1.5 var(--font-ui); color: var(--ink-3); }
+  h3 { margin: 20px 0 8px; font: 500 9.5px/1 var(--font-ui); letter-spacing: .14em;
+       text-transform: uppercase; color: var(--ink-3); }
+  .roles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+  .sw { border: 1px solid var(--rule-2); border-radius: var(--r-control); overflow: hidden;
+        background: var(--plate-2); }
+  .sw i { display: block; height: 34px; }
+  .sw b { display: block; padding: 6px 7px 0; font: 500 9px/1.2 var(--font-ui); letter-spacing: .1em;
+          text-transform: uppercase; }
+  .sw span { display: block; padding: 3px 7px 6px; font: 400 8.5px/1 var(--font-num); color: var(--ink-3); }
+  .neutrals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-top: 7px; }
+</style><style>
+  .type { display: grid; gap: 7px; }
+  .type .r { display: flex; align-items: baseline; gap: 10px; }
+  .type .t { min-width: 62px; font: 400 8.5px/1 var(--font-num); letter-spacing: .06em; color: var(--ink-3); }
+  .type .w { font-family: var(--font-ui); }
+  .type .n { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+  .card { background: var(--plate-2); border: 1px solid var(--rule-2); border-radius: var(--r-panel);
+          box-shadow: var(--sh-raised); padding: 12px 14px 14px; }
+  .cap { display: flex; align-items: baseline; gap: 10px; padding-bottom: 9px;
+         border-bottom: 1px solid var(--rule-2); }
+  .cap i { font: 400 8.5px/1 var(--font-num); font-style: normal; color: var(--ink-3); }
+  .cap .l { font: 500 9.5px/1 var(--font-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
+  .cap .tabs { margin-left: auto; display: flex; gap: 12px; font: 500 9.5px/1 var(--font-ui);
+               letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .cap .tabs .on { color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent); padding-bottom: 7px; }
+
+  .hero em { display: block; font: 500 9px/1 var(--font-ui); font-style: normal; letter-spacing: .14em;
+             text-transform: uppercase; color: var(--ink-3); margin: 12px 0 5px; }
+  .hero b { font: 500 32px/1 var(--font-num); letter-spacing: -.02em; }
+  .hero u { font: 500 11px/1 var(--font-ui); color: var(--ink-3); text-decoration: none; margin-left: 5px; }
+  .spec { display: flex; justify-content: flex-end; gap: 18px; margin-top: 10px;
+          font: 500 9px/1 var(--font-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .spec b { font: 400 14px/1 var(--font-num); color: var(--ink); letter-spacing: 0; margin-left: 6px; }
+
+  .knobs { display: flex; align-items: flex-end; gap: 24px; margin: 16px 0 6px; }
+  .kn { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 76px; }
+  .kn.sm { width: 54px; }
+  .kl { font: 500 8.5px/1 var(--font-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .dial { position: relative; width: 100%; aspect-ratio: 1; }
+  .dial svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .dial .face { position: absolute; inset: 13%; border-radius: 50%;
+                background: linear-gradient(145deg, var(--plate-2), var(--knob));
+                border: 1px solid var(--rule); box-shadow: var(--sh-knob); }
+  .dial .ptr { position: absolute; left: calc(50% - 1px); top: 27%; width: 2px; height: 23%;
+               background: var(--ink); border-radius: 1px; transform-origin: 50% 100%; }
+  .kv { font: 400 13px/1 var(--font-num); color: var(--ink); }
+  .kv em { font: 400 9px/1 var(--font-ui); font-style: normal; color: var(--ink-3); margin-left: 3px; }
+
+  .meter { display: grid; gap: 5px; margin-top: 12px; }
+  .ch { position: relative; height: 7px; border-radius: 2px; background: var(--inset); overflow: hidden; }
+  .ch i { position: absolute; top: 0; bottom: 0; }
+  .bars { display: flex; align-items: flex-end; gap: 2px; height: 44px; padding: 7px 7px 6px;
+          margin-top: 12px; background: var(--inset); border-radius: var(--r-well); }
+  .bars i { flex: 1; background: var(--ok); opacity: .5; border-radius: 1px 1px 0 0; }
+
+  .row { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+  .btn { font: 500 9.5px/1 var(--font-ui); letter-spacing: .14em; text-transform: uppercase; height: 26px;
+         padding: 0 10px; background: var(--plate-2); color: var(--ink-2); border: 1px solid var(--rule);
+         border-radius: var(--r-control); box-shadow: var(--sh-raised); }
+  .btn.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn.ghost { background: transparent; box-shadow: none; }
+  .well { height: 26px; display: flex; align-items: center; padding: 0 9px; background: var(--inset);
+          border: 1px solid var(--rule-2); border-radius: var(--r-control);
+          font: 400 12px/1 var(--font-num); box-shadow: var(--sh-recess); }
+  .lamp { display: inline-flex; align-items: center; gap: 6px; font: 500 9px/1 var(--font-ui);
+          letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .lamp i { width: 8px; height: 8px; border-radius: var(--r-led); background: var(--led-on); }
+  .lamp.off i { background: var(--led-off); }
+  .series { display: flex; height: 12px; border-radius: 2px; overflow: hidden; margin-top: 12px; }
+  .series i { flex: 1; }
+  .mem { display: flex; gap: 10px; align-items: center; margin-top: 12px;
+         font: 400 9px/1 var(--font-ui); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+  .mem b { flex: 1; height: 0; border-top: 1px dashed var(--memory); }
+</style>
+</head><body>
+<header class="hd">
+  <span class="mark">APC</span>
+  <span class="ttl"><b>APC Minimal</b><i>Zeichnung 2030 &middot; design tokens</i></span>
+  <span class="meta">5 colours &middot; 2 families &middot; night + day</span>
+</header>
+<div class="modes">
+  <section class="mode" data-theme="night"><h2>Night</h2>
+    <p class="sub">Deep teal material. Cyan energy, red signal, orange approach, peach memory.</p>
+    <div class="sheet" data-sheet="night"></div>
+  </section>
+  <section class="mode" data-theme="day"><h2>Day</h2>
+    <p class="sub">The same drawing re-inked on paper: the material colour becomes the ink.</p>
+    <div class="sheet" data-sheet="day"></div>
+  </section>
+</div><script>
+/* Fills both modes from the live tokens, so this page can never show a stale value. */
+(function () {
+  "use strict";
+  var ROLES = [
+    ["--plate", "material", "the plate"],
+    ["--ok", "energy", "spectrum / meter"],
+    ["--accent", "limit", "arc / curve / clip"],
+    ["--meter-warn", "warning", "approach zone"],
+    ["--memory", "memory", "ghost curve"]
+  ];
+  var NEUTRALS = ["--surface", "--plate-2", "--inset", "--rule", "--rule-2", "--ink", "--ink-2", "--ink-3"];
+  var SCALE = [["--t-micro", "micro"], ["--t-label", "label"], ["--t-value", "value"], ["--t-readout", "readout"], ["--t-title", "title"], ["--t-head", "head"]];
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function polar(r, deg) { var a = deg * Math.PI / 180; return [r * Math.sin(a), -r * Math.cos(a)]; }
+  function arc(r, a1, a2) {
+    if (a2 - a1 < 0.4) return "";
+    var p1 = polar(r, a1), p2 = polar(r, a2);
+    return "M" + p1[0].toFixed(2) + " " + p1[1].toFixed(2) + " A" + r + " " + r + " 0 " + ((a2 - a1) > 180 ? 1 : 0) + " 1 " + p2[0].toFixed(2) + " " + p2[1].toFixed(2);
+  }
+  function knob(label, n, value, unit, small) {
+    var k = el("div", "kn" + (small ? " sm" : ""));
+    k.appendChild(el("span", "kl", label));
+    var d = el("div", "dial");
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 100 100");
+    /* One ring technique for both: a circle with a dash of exactly 270 degrees
+       (or 270*n), rotated so the gap sits at the bottom. An `A` arc command is
+       fragile across renderers; a dash pattern is not. */
+    var C = 2 * Math.PI * 46;
+    function ring(fraction, stroke) {
+      var c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("cx", "50"); c.setAttribute("cy", "50"); c.setAttribute("r", "46");
+      c.setAttribute("fill", "none"); c.setAttribute("stroke-width", "2");
+      c.setAttribute("stroke-linecap", "round");
+      c.setAttribute("transform", "rotate(135 50 50)");
+      c.setAttribute("stroke-dasharray", (C * 0.75 * fraction).toFixed(2) + " " + (C + 2).toFixed(2));
+      c.style.stroke = stroke;
+      svg.appendChild(c);
+    }
+    ring(1, "var(--rule)");
+    if (n > 0.004) ring(n, "var(--accent)");
+    d.appendChild(svg);
+    d.appendChild(el("span", "face"));
+    var ptr = el("i", "ptr");
+    ptr.style.transform = "rotate(" + (-135 + 270 * n).toFixed(1) + "deg)";
+    d.appendChild(ptr);
+    k.appendChild(d);
+    var kv = el("span", "kv", value);
+    if (unit) kv.appendChild(el("em", null, unit));
+    k.appendChild(kv);
+    return k;
+  }
+  function card() {
+    var c = el("div", "card");
+    var cap = el("div", "cap");
+    cap.appendChild(el("i", null, "03"));
+    cap.appendChild(el("span", "l", "Filter"));
+    var tabs = el("span", "tabs");
+    tabs.appendChild(el("span", "on", "Response"));
+    tabs.appendChild(el("span", null, "Phase"));
+    cap.appendChild(tabs);
+    c.appendChild(cap);
+    var hero = el("div", "hero");
+    hero.appendChild(el("em", null, "Cutoff frequency"));
+    var hb = el("b", null, "1.20"); hero.appendChild(hb);
+    hero.appendChild(el("u", null, "kHz"));
+    c.appendChild(hero);
+    var spec = el("div", "spec");
+    [["Q", "2.40"], ["Slope", "24"], ["Level", "+6.2 dB"]].forEach(function (p) {
+      var s = el("span", null, p[0]); s.appendChild(el("b", null, p[1])); spec.appendChild(s);
+    });
+    c.appendChild(spec);
+    var ks = el("div", "knobs");
+    ks.appendChild(knob("Cutoff", 0.42, "1.20", "kHz", false));
+    ks.appendChild(knob("Reso", 0.16, "0.71", "", true));
+    ks.appendChild(knob("Drive", 0.125, "+3.0", "dB", true));
+    c.appendChild(ks);
+    var meter = el("div", "meter");
+    [0.60, 0.68].forEach(function (fill, i) {
+      var ch = el("div", "ch");
+      var ok = el("i", null, ""); ok.style.background = "var(--meter-ok)"; ok.style.width = (fill * 100) + "%";
+      var wn = el("i", null, ""); wn.style.background = "var(--meter-warn)"; wn.style.left = (fill * 100) + "%"; wn.style.width = "9%";
+      var cl = el("i", null, ""); cl.style.background = "var(--meter-clip)"; cl.style.left = ((fill + 0.09) * 100) + "%"; cl.style.width = "5%";
+      ch.appendChild(ok); ch.appendChild(wn); ch.appendChild(cl);
+      meter.appendChild(ch);
+    });
+    c.appendChild(meter);
+    var bars = el("div", "bars");
+    for (var i = 0; i < 56; i++) {
+      var f = i / 55, h = Math.max(0.12, 1 - Math.pow(f / 0.62, 3.2));
+      if (f > 0.62) h = Math.max(0.06, 0.34 * Math.pow(1 - (f - 0.62) / 0.38, 1.6));
+      var b = el("i", null, ""); b.style.height = Math.round(h * 30 + 3) + "px";
+      b.style.opacity = String(0.35 + h * 0.55);
+      bars.appendChild(b);
+    }
+    c.appendChild(bars);
+    var row = el("div", "row");
+    row.appendChild(el("button", "btn", "Type &middot; Lowpass".replace("&middot;", "\u00b7")));
+    row.appendChild(el("button", "btn on", "24"));
+    row.appendChild(el("button", "btn ghost", "48"));
+    var well = el("span", "well", "+0.0 dB"); row.appendChild(well);
+    var lamp = el("span", "lamp"); lamp.appendChild(el("i")); lamp.appendChild(el("span", null, "Signal")); row.appendChild(lamp);
+    var lamp2 = el("span", "lamp off"); lamp2.appendChild(el("i")); lamp2.appendChild(el("span", null, "Clip")); row.appendChild(lamp2);
+    c.appendChild(row);
+    var series = el("div", "series");
+    ["--viz-1", "--viz-2", "--viz-3", "--viz-4"].forEach(function (t) {
+      var s = el("i", null, ""); s.style.background = "var(" + t + ")"; series.appendChild(s);
+    });
+    c.appendChild(series);
+    var mem = el("div", "mem"); mem.appendChild(el("span", null, "previous curve")); mem.appendChild(el("b")); mem.appendChild(el("span", null, "memory"));
+    c.appendChild(mem);
+    return c;
+  }  var sheets = document.querySelectorAll(".sheet");
+  for (var s = 0; s < sheets.length; s++) {
+    (function (sheet) {
+      var mode = sheet.parentNode, cs = getComputedStyle(mode);
+
+      sheet.appendChild(el("h3", null, "Palette - one colour, one job"));
+      var roles = el("div", "roles");
+      ROLES.forEach(function (r) {
+        var sw = el("div", "sw"), chip = el("i");
+        chip.style.background = "var(" + r[0] + ")";
+        sw.appendChild(chip);
+        sw.appendChild(el("b", null, r[1]));
+        sw.appendChild(el("span", null, cs.getPropertyValue(r[0]).trim().toUpperCase() + " " + r[2]));
+        roles.appendChild(sw);
+      });
+      sheet.appendChild(roles);
+
+      var neu = el("div", "neutrals");
+      NEUTRALS.forEach(function (n) {
+        var sw = el("div", "sw"), chip = el("i");
+        chip.style.background = "var(" + n + ")";
+        sw.appendChild(chip);
+        sw.appendChild(el("span", null, n.replace("--", "") + "  " + cs.getPropertyValue(n).trim()));
+        neu.appendChild(sw);
+      });
+      sheet.appendChild(neu);
+
+      sheet.appendChild(el("h3", null, "Type - Inter for words, JetBrains Mono for numbers"));
+      var type = el("div", "type");
+      SCALE.forEach(function (sc) {
+        var row = el("div", "r");
+        row.appendChild(el("span", "t", sc[0].replace("--t-", "") + " " + cs.getPropertyValue(sc[0]).trim()));
+        var w = el("span", "w", "Cutoff frequency"); w.style.fontSize = "var(" + sc[0] + ")";
+        var n = el("span", "n", "1.20 kHz 2.40 +6.2"); n.style.fontSize = "var(" + sc[0] + ")";
+        row.appendChild(w); row.appendChild(n);
+        type.appendChild(row);
+      });
+      sheet.appendChild(type);
+
+      sheet.appendChild(el("h3", null, "Instrument - the language applied"));
+      sheet.appendChild(card());
+    })(sheets[s]);
+  }
+})();
+</script>
+</body>
+</html>

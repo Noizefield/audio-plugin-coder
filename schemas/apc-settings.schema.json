@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apc.audio/schemas/apc-settings.schema.json",
+  "title": "APC machine-wide settings",
+  "description": "Schema for <AppDataRoot>/<Manufacturer>/<PluginName>/settings.json (framework standard apc-settings/1.0, decisions U-05..U-07, U-10, L-08). Global UI preferences live here and are never stored in the DAW project chunk. Unknown keys are preserved on write (forward compatibility).",
+  "type": "object",
+  "required": ["schema"],
+  "properties": {
+    "schema": { "const": "apc-settings/1.0" },
+    "ui": {
+      "type": "object",
+      "description": "Global (machine-wide) UI preferences. Hot-applies to all open instances where the platform allows it; otherwise on window reopen.",
+      "properties": {
+        "theme": {
+          "type": "string",
+          "enum": ["night", "day", "follow-os"],
+          "default": "follow-os"
+        },
+        "scale": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 3.0,
+          "default": 1.0
+        },
+        "tooltips": { "type": "boolean", "default": true },
+        "tooltip_delay_ms": {
+          "type": "integer",
+          "enum": [200, 400, 800, 1200],
+          "default": 400
+        },
+        "preset_load": {
+          "type": "string",
+          "enum": ["instant", "confirm-if-dirty"],
+          "default": "confirm-if-dirty"
+        },
+        "wheel_target": {
+          "type": "string",
+          "enum": ["control", "panel"],
+          "default": "control"
+        },
+        "reset_animation": {
+          "type": "string",
+          "enum": ["snap", "glide"],
+          "default": "glide"
+        },
+        "double_click": {
+          "type": "string",
+          "enum": ["reset", "value_entry"],
+          "default": "reset"
+        },
+        "aspect_lock": { "type": "boolean", "default": true },
+        "auto_update_check": { "type": "boolean", "default": false }
+      },
+      "additionalProperties": true
+    },
+    "engine": {
+      "type": "object",
+      "description": "Plugin-specific engine/quality settings. Changing these may change reported latency.",
+      "properties": {
+        "oversampling": {
+          "type": "integer",
+          "enum": [1, 2, 4, 8],
+          "default": 1
+        },
+        "bounce_oversampling": {
+          "type": "integer",
+          "enum": [1, 2, 4, 8],
+          "default": 1
+        },
+        "max_voices": { "type": "integer", "minimum": 1 },
+        "max_polyphony": { "type": "integer", "minimum": 1 },
+        "quality": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "presets": {
+      "type": "object",
+      "description": "Preset browser state. Asset ids are stable UUIDs, never display names.",
+      "properties": {
+        "recents": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "last_pack": { "type": ["string", "null"] },
+        "last_preset": { "type": ["string", "null"] },
+        "favorites": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "index_built_at": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "license": {
+      "type": "object",
+      "description": "Activation state. Never contains the secret itself - that lives in license.lic.",
+      "properties": {
+        "activated": { "type": "boolean", "default": false },
+        "mode": {
+          "type": "string",
+          "enum": ["free", "demo", "trial", "demo+trial", "licensed"]
+        },
+        "trial_started_at": { "type": ["string", "null"] },
+        "trial_days": { "type": ["integer", "null"] }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

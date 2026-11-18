@@ -1,0 +1,47 @@
+name: Docs check
+
+# Docs-as-truth: relative links + anchors, fenced snippet syntax, stale-string
+# lint and version SSOT. Never executes snippets. See .agents/guides/docs-ci.md.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.md'
+      - 'docs/**'
+      - '.agents/**'
+      - 'package.json'
+      - 'hub/version.js'
+      - 'CMakeLists.txt'
+      - 'scripts/apc-docs.js'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    paths:
+      - '**.md'
+      - 'docs/**'
+      - '.agents/**'
+      - 'package.json'
+      - 'hub/version.js'
+      - 'CMakeLists.txt'
+      - 'scripts/apc-docs.js'
+      - '.github/workflows/docs.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    name: apc docs check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '20'
+      # ubuntu-latest ships bash and pwsh, so shell snippets are syntax-checked, not skipped.
+      - name: Docs check
+        run: node bin/apc.js docs check
+      - name: Docs + eval unit tests
+        run: node --test test/docs-check.test.js test/eval.test.js

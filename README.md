@@ -12,6 +12,34 @@
 
 ## What's new
 
+### v2.0.0: from "AI builds a plugin" to "AI ships a product"
+
+APC 2.0 is the biggest release yet. Six focused workstreams landed at once: nearly **500 new files**, **450+ automated tests** and **1,100+ C++ checks**. Everything a commercial plugin needs beyond the DSP now comes with the framework: presets, licensing, updates, a professional UI kit with a real design, and the tools to prove that all of it works.
+
+**A complete, designed UI kit.** Not just knobs: more than **40 ready-made elements**, all themeable, accessible and resizable. Knobs, sliders, selectors and toggles; buttons, tabs, dropdowns, menus, text and number fields, readouts, LEDs and meters; and live visualisations (spectrum, scope, waveform, envelope, step sequencer, XY pad, graph). Around them sit the parts every product needs: a preset browser with A/B, a settings page, a right-click context panel with modulation and MIDI-learn, F1 help and tooltips, a window gripper that snaps in 5 % steps, a version footer, and activation and update dialogs. Everything works in a browser with a mock backend, so you can design before writing any C++.
+
+**APC Minimal: one look, done properly.** The kit ships with a single, carefully reviewed design. "Zeichnung 2030" is an instrument drawn on deep teal: five colours with one job each, bundled Inter and JetBrains Mono (no network fonts, ever), night and day modes, and **every one of 441 text/background pairs passing WCAG 4.5:1**. Restyle it by changing tokens, never component CSS. → [`design_library/apc-minimal/`](design_library/apc-minimal/README.md)
+
+**The Hub became a design studio.** Page **09c KIT** shows the canonical design reference, every component live in night or day at any scale, a **theme editor** with live preview, contrast checking and `tokens.css` export, and an **element spec** where you tune line weights, radii and knob or slider geometry and save them straight into the design library. → [`docs/hub.md`](docs/hub.md)
+
+**Presets, the professional way.** A typed preset format (`apc-preset/1.0`) with factory packs, tags and a filterable browser, content-hashed samples, crash-safe atomic saves (kill-mid-save tested), A/B compare, and `apc presets validate|index|promote` to keep packs clean.
+
+**Sell your plugin: licensing and updates.** Two licensing methods out of the box: **signed license files** (offline, Ed25519) and **online activation** with seat limits, plus a reference issuer server. A signed update manifest and an in-plugin update flow check, download, verify and install without a third-party updater. All of it is local-first: no telemetry, and crash reports never leave the user's machine.
+
+**A DSP library you can trust.** `common/dsp/` (`APC::dsp`) is header-only: parameter smoother, denormal guard, lock-free FIFO, biquad, SVF, soft clipper, dry/wet and a 2× oversampler, with self-tests. `apc validate rt` scans your `processBlock` for realtime crimes (allocations, locks, I/O).
+
+**Prove it works.**
+- `apc audio <Plugin>` runs pluginval (strictness 10), clap-validator, null and block-size invariance, NaN/denormal, tail and CPU-bench gates. Gates that can't run report *skipped*, never a fake pass.
+- `apc validate a11y` checks contrast, keyboard reach, focus and reduced motion.
+- `apc watch` gives you a hot-reload preview, and `apc screenshot --compare` diffs the UI pixel by pixel.
+- `apc sbom` writes a CycloneDX SBOM with provenance, and signing and packaging scripts cover Windows, macOS and Linux.
+
+**Measured, not guessed.** `apc eval` scores AI agents on golden tasks (add a parameter, fix the WebView member-order crash, port Visage to WebView, respect the standards flow). `apc docs check` keeps every doc honest (links, snippets, stale strings) in CI. `apc doctor --fix` and a dev container get a new machine running fast.
+
+**Plugin Product Standards.** One machine-readable registry (`apc-standards/1.0`) decides how every plugin behaves (scaling, help, presets, licensing, updates). Global defaults live in `/apc-setup` or the Hub's **09b STANDARDS** page, and per-plugin answers come from `/apc-plan`.
+
+> **Upgrading from 1.x:** the old design libraries `rams60`, `amber-signal` and `neogrid-minimal` are gone. Copy `design_library/apc-minimal/` to start your own design. **Honest status:** the UI kit is WebView-only for now (no Visage version yet) and has been verified in headless Edge, not yet inside every DAW. The C++ parts are verified with MSVC; macOS/Linux compilers and real code signing still need field runs. Full details: [CHANGELOG](CHANGELOG.md).
+
 ### v1.8.0
 
 **CLAP plugin format (beta).** New plugins can now opt into a CLAP build during `/apc-plan` — [clap-juce-extensions](https://github.com/free-audio/clap-juce-extensions) wraps the same JUCE `AudioProcessor` and editor, so no plugin-code changes are needed: it emits a `<Name>_CLAP` target producing `Name.clap` alongside VST3/Standalone. Builds, per-user install (no admin on Windows), `clap-validator` runs, Inno installer component and macOS DMG folder are all wired end-to-end; `plugins/ClapSmokeTest` is the canonical opt-in example and `clap.id_prefix` in `apc.config.json` controls plugin IDs.
@@ -58,7 +86,7 @@ Start: clone -> `/apc-setup` (Claude Code / Kilo / Cursor / OpenCode) or `$audio
 
 ## APC Hub
 
-The APC Hub gives you a complete, live overview of the framework and your plugins - no build required, read-only by default:
+The APC Hub gives you a complete, live overview of the framework and your plugins - no build required, read-only by default. Since 2.0 it is also the design studio for the UI kit: page **09c KIT** previews every component and lets you edit theme tokens and tune elements of APC Minimal ([docs](docs/hub.md)):
 
 ```bash
 node hub/server.js --port 4872   # or: /apc-hub in your agent

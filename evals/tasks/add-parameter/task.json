@@ -1,0 +1,63 @@
+{
+  "schema": "apc-eval-task/1",
+  "id": "add-parameter",
+  "title": "Add a float parameter to an existing plugin",
+  "category": "impl",
+  "tags": ["impl", "parameters", "static"],
+  "timeout_s": 900,
+  "fixture": "fixture",
+  "prompt": "The plugin TinyGain (plugins/TinyGain) already has one parameter, \"gain\". Add a second float parameter:\n\n- ID: \"drive\", display name \"Drive\"\n- range 0.0 to 1.0, default 0.0\n\nRequirements:\n1. Declare it in TinyGainAudioProcessor::createParameterLayout() next to \"gain\".\n2. Read it in processBlock() through apvts.getRawParameterValue(\"drive\") and use it (a simple soft-saturation amount is fine; exact DSP is not graded).\n3. Document it in plugins/TinyGain/.ideas/parameter-spec.md.\n4. Do not remove or rename the existing \"gain\" parameter.\n5. Leave the project state consistent: `apc validate plugin --plugin TinyGain` must still pass.\n\nNo build is required; the work is graded statically.",
+  "setup": [],
+  "checks": [
+    {
+      "id": "drive-declared",
+      "description": "AudioParameterFloat with ID \"drive\" is declared",
+      "type": "file_contains",
+      "path": "plugins/TinyGain/Source/PluginProcessor.cpp",
+      "pattern": "AudioParameterFloat[^;]*?\"drive\""
+    },
+    {
+      "id": "drive-range",
+      "description": "drive uses a 0..1 range",
+      "type": "file_contains",
+      "path": "plugins/TinyGain/Source/PluginProcessor.cpp",
+      "pattern": "\"drive\"[^;]*?NormalisableRange<float>\\s*\\(\\s*0(\\.0*)?f?\\s*,\\s*1(\\.0*)?f?\\s*[,)]"
+    },
+    {
+      "id": "drive-default",
+      "description": "drive defaults to 0.0",
+      "type": "file_contains",
+      "path": "plugins/TinyGain/Source/PluginProcessor.cpp",
+      "pattern": "\"drive\"[^;]*?NormalisableRange<float>[^;]*?\\)\\s*,\\s*0(\\.0*)?f?\\s*[,)]"
+    },
+    {
+      "id": "drive-read",
+      "description": "processBlock reads the parameter through the APVTS",
+      "type": "file_contains",
+      "path": "plugins/TinyGain/Source/PluginProcessor.cpp",
+      "pattern": "getRawParameterValue\\s*\\(\\s*\"drive\"\\s*\\)"
+    },
+    {
+      "id": "gain-kept",
+      "description": "the existing gain parameter is untouched",
+      "type": "file_contains",
+      "path": "plugins/TinyGain/Source/PluginProcessor.cpp",
+      "pattern": "AudioParameterFloat[^;]*?\"gain\""
+    },
+    {
+      "id": "spec-documented",
+      "description": "parameter-spec.md documents drive",
+      "type": "file_contains",
+      "path": "plugins/TinyGain/.ideas/parameter-spec.md",
+      "pattern": "\\bdrive\\b",
+      "flags": "i"
+    },
+    {
+      "id": "state-valid",
+      "description": "apc validate plugin still passes",
+      "type": "apc",
+      "args": ["validate", "plugin", "--plugin", "TinyGain"],
+      "expect_exit": 0
+    }
+  ]
+}

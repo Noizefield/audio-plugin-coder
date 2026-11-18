@@ -1,0 +1,528 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apc.audio/schemas/apc-preset.schema.json",
+  "title": "APC preset / patch file",
+  "description": "Schema for APC preset assets (framework standard apc-preset/1.0, decision P-04). Values are stored in real-world units (95.5 Hz, 0.85 sustain, -1.5 dB), never normalized 0..1. Choice parameters store their label string, never an index. Parameter keys are immutable IDs (X-01). The same document shape is used for the host state chunk, plus root attributes state_version and app_version. Controlled-vocabulary values (category, axes, moods, genre) are stored as lowercase SLUGS from schemas/pmx1-vocabulary.json, never display labels or indices (P-04, P-10).",
+  "type": "object",
+  "required": [
+    "schema",
+    "kind",
+    "id",
+    "name"
+  ],
+  "properties": {
+    "schema": {
+      "const": "apc-preset/1.0"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "sound",
+        "kit",
+        "sequence",
+        "patch",
+        "preset"
+      ]
+    },
+    "id": {
+      "type": "string",
+      "description": "Stable UUID. Assigned at creation; renames and moves never change it.",
+      "pattern": "^(snd|kit|seq|pat|pre)_[0-9a-fA-F-]{36}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "author": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "created": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "app_version": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "state_version": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Host chunk only. Absent in ordinary asset files. Bump when the chunk layout changes in a breaking way; restore is defaults-first (P-07), so additive changes do not need a bump."
+    },
+    "engine": {
+      "type": "object",
+      "description": "Host chunk only (option engine.state_scope=chunk, decision X-08). Sound-affecting Engine/Quality settings that must recall identically on any machine. When engine.state_scope=machine this section is absent. Never written into ordinary asset files (a preset must not change the engine quality of the project).",
+      "properties": {
+        "oversampling": {
+          "type": [
+            "integer",
+            "string"
+          ],
+          "description": "Oversampling factor (1,2,4,8...) or a choice label."
+        },
+        "quality": {
+          "type": "string",
+          "description": "Quality mode label."
+        },
+        "voices": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum polyphony."
+        }
+      },
+      "additionalProperties": {
+        "type": [
+          "number",
+          "string",
+          "boolean"
+        ]
+      }
+    },
+    "meta": {
+      "type": "object",
+      "description": "PMX/1 taxonomy metadata. Unknown vocabulary keys are ignored, never rejected.",
+      "properties": {
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Category slug from pmx1-vocabulary.json (instrument categories plus the effect categories appended in vocabulary 1.1.0)."
+        },
+        "subcategory": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "articulation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "genre": {
+          "type": [
+            "string",
+            "array",
+            "null"
+          ],
+          "description": "Genre slug, or an array of slugs (multi-select). Slugs come from pmx1-vocabulary.json (e.g. 'drum-and-bass'). Aliases such as 'drum&bass' are accepted on read and linted.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "feel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tempo_bpm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "time_signature": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "length_bars": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "swing_pct": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "axes": {
+          "type": "object",
+          "description": "PMX/1 axes. Keys: bri, war, agg, wid, dep, mov, rou, spa, met, den.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "temporal": {
+          "type": "object",
+          "description": "PMX/1 temporal fields. Keys: attack, sustain, evolution, release, rhythm.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "moods": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "1-2 mood slugs (e.g. 'dark', 'ethereal'), never display labels."
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "desc": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "role": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Special asset role. 'init' marks the declared-default INIT asset (exempt from factory metadata completeness).",
+          "enum": [
+            "init",
+            null
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "params": {
+      "type": "object",
+      "description": "Parameter values keyed by immutable parameter ID. Real-world units. Choice parameters store the label string.",
+      "additionalProperties": {
+        "type": [
+          "number",
+          "string",
+          "boolean"
+        ]
+      }
+    },
+    "modulation": {
+      "type": "array",
+      "description": "Typed modulation routes. A flat scalar map cannot hold a mod matrix.",
+      "items": {
+        "type": "object",
+        "required": [
+          "src",
+          "dst",
+          "amount"
+        ],
+        "properties": {
+          "src": {
+            "type": "string"
+          },
+          "dst": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "polarity": {
+            "type": "string",
+            "enum": [
+              "bipolar",
+              "unipolar"
+            ]
+          },
+          "min": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "sample_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Legacy single-sample reference: relative path from the pack root, e.g. \"samples/kick_raw.wav\". Prefer 'samples' (content-hashed). A path alone is fragile inside a host chunk."
+    },
+    "samples": {
+      "type": "array",
+      "description": "Content-hashed sample references. Resolution order: relative ref verified by sha256, then hash lookup in the sample index, then embedded_b64, then a visible [Missing] placeholder. Required form inside a host chunk.",
+      "items": {
+        "type": "object",
+        "required": [
+          "ref",
+          "sha256"
+        ],
+        "properties": {
+          "ref": {
+            "type": "string",
+            "description": "Path relative to the pack root, forward slashes, no '..' segments."
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "Lower-case hex SHA-256 of the sample file bytes."
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pack": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Pack folder name that owns the file (chunk portability)."
+          },
+          "embedded_b64": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional base64 file body so the state survives a missing file."
+          },
+          "missing": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "slots": {
+      "type": "array",
+      "description": "Kit slots (kind=kit).",
+      "items": {
+        "type": "object",
+        "required": [
+          "slot"
+        ],
+        "properties": {
+          "slot": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pad_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "midi_note": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "sound_ref": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sound_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "choke_group": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "gain_db": {
+            "type": "number"
+          },
+          "pan": {
+            "type": "number"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "kit_master": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "number",
+          "string",
+          "boolean"
+        ]
+      }
+    },
+    "lanes": {
+      "type": "array",
+      "description": "Step lanes (kind=sequence).",
+      "items": {
+        "type": "object",
+        "required": [
+          "steps"
+        ],
+        "properties": {
+          "target_slot": {
+            "type": "integer"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "step"
+              ],
+              "properties": {
+                "step": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "velocity": {
+                  "type": "number"
+                },
+                "gate": {
+                  "type": "number"
+                },
+                "ratchet": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "prob": {
+                  "type": "number"
+                },
+                "micro_ms": {
+                  "type": "integer"
+                },
+                "pitch": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "kits": {
+      "type": "array",
+      "description": "Kit references (kind=patch). Multi-kit patches are allowed from day one.",
+      "items": {
+        "type": "object",
+        "required": [
+          "ref"
+        ],
+        "properties": {
+          "ref": {
+            "type": "string"
+          },
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "missing": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "sequences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "ref"
+        ],
+        "properties": {
+          "ref": {
+            "type": "string"
+          },
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "slot": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "missing": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "global_fx": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "number",
+          "string",
+          "boolean"
+        ]
+      }
+    },
+    "macros": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "targets"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "dst"
+              ],
+              "properties": {
+                "dst": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "embedded": {
+      "type": "object",
+      "description": "Self-contained export (P-09): referenced assets inlined so one file works anywhere. Object keyed by asset id -> full asset document. A reference whose file is missing but whose id is a key here is resolved from this block.",
+      "additionalProperties": true
+    },
+    "chunks": {
+      "type": "object",
+      "description": "Engine-private structured state that has no scalar representation.",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

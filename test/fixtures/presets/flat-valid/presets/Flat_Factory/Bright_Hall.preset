@@ -1,0 +1,38 @@
+{
+  "schema": "apc-preset/1.0",
+  "kind": "preset",
+  "id": "pre_00000000-0000-4000-8000-000000000003",
+  "name": "Bright Hall",
+  "author": "Fixture Author",
+  "created": "2026-11-01T10:00:00Z",
+  "app_version": "1.0.0",
+  "meta": {
+    "category": "reverb",
+    "subcategory": "hall",
+    "axes": {
+      "bri": "bright",
+      "war": "neutral",
+      "agg": "gentle",
+      "wid": "ultra",
+      "dep": "thin",
+      "mov": "breathing"
+    },
+    "moods": [
+      "ethereal",
+      "dreamy"
+    ],
+    "tags": [
+      "airy",
+      "long"
+    ],
+    "desc": "Large bright hall."
+  },
+  "params": {
+    "decay_s": 6.5,
+    "predelay_ms": 30,
+    "lowcut_hz": 200,
+    "highcut_hz": 14000,
+    "mix_pct": 35,
+    "mode": "hall"
+  }
+}

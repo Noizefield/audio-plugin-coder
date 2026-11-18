@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>APC UI kit - panels demo (flat check of context panel, header/footer, settings, presets, licence, update)</title>
+<!-- Visual check page, not a test (lives in tests/demo/). Hash: #day | #night  &  &open=context | settings | license | update | presets | tooltip -->
+<link rel="stylesheet" href="../../apc-core.css">
+<link rel="stylesheet" href="../../apc-components.css">
+<link rel="stylesheet" href="../../apc-widgets.css">
+<style>:root { --cols: 50; --rows: 30; } #plate { display: grid; grid-template-rows: 2.5rem 1fr 2rem; } .body { padding: 1rem; display: flex; gap: 1.5rem; align-items: flex-start; }</style>
+</head>
+<body>
+<div id="plate" class="apc-plate">
+  <header data-apc="header" data-product="Example Synth" data-manufacturer="Example Audio"></header>
+  <div class="body">
+    <div data-apc="knob" data-param="cutoff_hz" data-label="CUTOFF"></div>
+    <div data-apc="slider" data-param="mix_pct" data-label="MIX"></div>
+    <div data-apc="selector" data-param="osc_wave" data-label="WAVE" style="width:8rem"></div>
+    <div data-apc="toggle" data-param="bypass" data-label="BYPASS"></div>
+    <div data-apc="presets" style="width:24rem;height:18rem"></div>
+  </div>
+  <footer data-apc="footer"></footer>
+</div>
+<script src="../../apc-fit.js"></script>
+<script src="../../apc-kit.js"></script>
+<script src="../../apc-mock.js"></script>
+<script src="../../apc-controls.js"></script>
+<script src="../../apc-widgets.js"></script>
+<script src="../../apc-context.js"></script>
+<script src="../../apc-help.js"></script>
+<script src="../../apc-chrome.js"></script>
+<script src="../../apc-presets.js"></script>
+<script src="../../apc-settings.js"></script>
+<script src="../../apc-license-ui.js"></script>
+<script src="../../apc-update-ui.js"></script>
+<script>
+(function () {
+  var hash = location.hash.replace(/^#/, "").split("&");
+  document.documentElement.setAttribute("data-theme", hash.indexOf("day") >= 0 ? "day" : "night");
+  APC.mount(document);
+  var open = (hash.filter(function (h) { return h.indexOf("open=") === 0; })[0] || "").slice(5);
+  setTimeout(function () {
+    if (open === "context") { var k = document.querySelector(".apc-knob"); var r = k.getBoundingClientRect(); APC.context.open(k.__apcCtl, { x: r.right + 10, y: r.top, via: "pointer" }); }
+    else if (open === "settings") APC.emit("settings:open", {});
+    else if (open === "license") APC.emit("license:open", { verb: "PresetSave" });
+    else if (open === "update") { APC.mock.scenario("update-available"); APC.emit("update:open", {}); }
+    else if (open === "tooltip") { APC.toast.error("Could not complete apc.param.set: the plugin did not answer"); APC.toast.info("Preset saved"); }
+    document.documentElement.setAttribute("data-ready", "1");
+  }, 500);
+})();
+</script>
+</body>
+</html>

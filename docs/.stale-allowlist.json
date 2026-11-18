@@ -1,0 +1,96 @@
+{
+  "schema": "apc-docs-allowlist/1",
+  "_comment": [
+    "Exceptions for `apc docs check` (see .agents/guides/docs-ci.md).",
+    "Entry fields: rule (finding rule id), file (repo-relative glob, * = one segment, ** = any depth), contains (substring of the offending line or message), pattern (regex, case-insensitive), reason (required).",
+    "An entry needs at least one of file / contains / pattern; a bare rule entry never matches (it would silence the rule everywhere).",
+    "\"debt\": true marks a KNOWN-STALE item that is tolerated until its owner fixes it. Debt is counted and listed separately in the report and becomes an error again under `apc docs check --strict`.",
+    "Delete an entry as soon as it stops matching -- the checker warns about unused entries on a full run."
+  ],
+  "allow": [
+    {
+      "rule": "juce-8",
+      "file": ".agents/troubleshooting/resolutions/**",
+      "reason": "Historical resolution write-ups about JUCE 8 behaviour / the JUCE 8 migration; the version number is the subject of the document."
+    },
+    {
+      "rule": "*",
+      "file": ".agents/guides/docs-ci.md",
+      "reason": "This guide documents the stale-string rules themselves, so it must quote the stale forms."
+    },
+    {
+      "rule": "plugins-dir-assumption",
+      "file": ".agents/skills/apc-setup/SKILL.md",
+      "contains": "is **optional**",
+      "reason": "States that a ./plugins junction/symlink is optional; it is not an assumption."
+    },
+
+    {
+      "rule": "bare-primary-command",
+      "file": ".agents/skills/**",
+      "debt": true,
+      "reason": "Skill headers still say 'Trigger: /dream' etc. as the primary form. Skills are outside the docs-pass scope; update to /apc-* with the bare form noted as an alias."
+    },
+    {
+      "rule": "bare-primary-command",
+      "file": ".agents/rules/agent.md",
+      "debt": true,
+      "reason": "Phase table uses bare /dream /plan /design /impl /ship as the primary trigger; update to /apc-*."
+    },
+    {
+      "rule": "bare-primary-command",
+      "file": ".agents/guides/documentation-system.md",
+      "debt": true,
+      "reason": "Uses bare /ship, /design, /plan as phase names; update to /apc-*."
+    },
+    {
+      "rule": "juce-8",
+      "file": ".agents/WEBVIEW-DOCUMENTATION-SUMMARY.md",
+      "debt": true,
+      "reason": "Top-level summary still describes 'JUCE 8 WebView plugins'; APC targets JUCE 9."
+    },
+    {
+      "rule": "juce-8",
+      "file": ".agents/workflows/apc-impl.md",
+      "debt": true,
+      "reason": "'JUCE 8 CRITICAL SYSTEM PROTOCOLS' heading in the impl workflow; rename for JUCE 9."
+    },
+    {
+      "rule": "juce-8",
+      "file": ".agents/skills/skill_design_webview/**",
+      "debt": true,
+      "reason": "WebView skill known-issues still headed 'JUCE 8 API Changes'; re-verify against JUCE 9 and retitle."
+    },
+    {
+      "rule": "broken-link",
+      "file": "docs/command-reference.md",
+      "contains": "integrations/dsh/README.md",
+      "debt": true,
+      "reason": "The DSH section references integrations/dsh/ which has never existed in git history. Either add the adapter or remove the section."
+    },
+    {
+      "rule": "json-invalid",
+      "file": ".agents/guides/state-management-guide.md",
+      "debt": true,
+      "reason": "Illustrative status.json template (value 1-5 / a|b); mark the fence `json no-check`."
+    },
+    {
+      "rule": "json-invalid",
+      "file": ".agents/skills/plan/SKILL.md",
+      "debt": true,
+      "reason": "Illustrative JSON template; mark the fence `json no-check`."
+    },
+    {
+      "rule": "powershell-syntax",
+      "file": ".agents/skills/plan/SKILL.md",
+      "debt": true,
+      "reason": "PowerShell block uses [Placeholder] tokens that are not valid syntax; mark the fence `powershell no-check` or use <Placeholder>."
+    },
+    {
+      "rule": "powershell-syntax",
+      "file": ".agents/rules/agent.md",
+      "debt": true,
+      "reason": "PowerShell blocks use [Placeholder] tokens that are not valid syntax; mark the fence `powershell no-check` or use <Placeholder>."
+    }
+  ]
+}

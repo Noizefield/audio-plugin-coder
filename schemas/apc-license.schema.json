@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apc.audio/schemas/apc-license.schema.json",
+  "title": "APC license file",
+  "description": "Signed license (framework standard apc-license/1.0). The plugin ONLY verifies this file (common/apc/ApcLicense.h); both issuing methods (signed-file, online-activation) produce it. signature_ed25519 is base64 of the 64-byte Ed25519 signature over the canonical JSON (apc-canon/1: keys sorted by UTF-8 bytes, no whitespace, integers only, see common/apc/ApcCanonicalJson.h) of this document WITHOUT the \"signature_ed25519\" member. The signing key is the dedicated LICENSE key - never the update key. All numbers MUST be integers. This file proves the developer issued it; it does not stop copying (see .agents/guides/licensing-methods.md).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "product", "customer_name", "customer_email", "order_id", "issued_at", "expires_at", "license_type", "allowed_seats", "signature_ed25519"],
+  "dependentRequired": { "machine_min_match": ["machine_components"] },
+  "properties": {
+    "schema": { "const": "apc-license/1.0" },
+    "product": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+      "description": "Must equal the product identifier compiled into the plugin (LicenseConfig::product); a license for another product is UNVERIFIED."
+    },
+    "customer_name": { "type": "string", "maxLength": 256, "description": "Shown in the plugin as \"Licensed to ...\"." },
+    "customer_email": { "type": "string", "maxLength": 320 },
+    "order_id": { "type": "string", "maxLength": 128 },
+    "issued_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "description": "UTC, exactly YYYY-MM-DDTHH:MM:SSZ, a real calendar date."
+    },
+    "expires_at": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "description": "null = never expires. Otherwise UTC, exactly YYYY-MM-DDTHH:MM:SSZ. The member must be present (a missing expires_at is rejected by the plugin). now >= expires_at degrades the plugin to DEMO. subscription and trial licenses need a date."
+    },
+    "license_type": { "enum": ["commercial_perpetual", "subscription", "trial", "nfr"] },
+    "allowed_seats": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9999,
+      "description": "Informational inside the file: the plugin shows it, it cannot enforce it. Method B enforces seats on the issuer."
+    },
+    "machine_components": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true,
+      "description": "Optional. Salted component hashes: hex of the first 8 bytes of SHA-256(\"apc-machine/1\" 0x00 product 0x00 label 0x00 raw-value), computed by the plugin (machineComponentHash in ApcLicense.h). Absent = unbound license (e.g. nfr). Never contains raw hardware identifiers.",
+      "items": { "type": "string", "pattern": "^[0-9a-f]{16}$" }
+    },
+    "machine_min_match": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 16,
+      "description": "Optional k of the k-of-n machine match (must not exceed the number of machine_components; the plugin clamps to [1, n]). Absent = the plugin's configured default (2)."
+    },
+    "signature_ed25519": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9+/]{86}==$",
+      "description": "base64 (standard alphabet, padded) of exactly 64 raw signature bytes."
+    }
+  }
+}

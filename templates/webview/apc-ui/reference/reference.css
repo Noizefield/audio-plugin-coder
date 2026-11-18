@@ -1,0 +1,41 @@
+/* =============================================================================
+   reference.css - layout helpers of the APC FILTER reference plugin.
+   No colours, fonts or sizes of its own: everything comes from the design tokens
+   (design_library/<id>/tokens.css) and the kit. Only the cell addressing lives here.
+
+   One rhythm for the whole plate: every region sits on a half-cell grid, and the half cell IS the kit's
+   --pad (.5rem). So the gap between two panels, the margin between a panel and the plate edge, the header
+   and footer, and the inner padding of a panel are all exactly --pad; every labelled control row is
+   --ctl-h high (plus its caption); the header controls are --ctl-h with --ctl-gap between them.
+   test/hub-reference.test.js measures all of this in a real browser.
+   ============================================================================= */
+:root { --cols: 120; --rows: 70; }
+
+/* a region addressed in grid cells: style="--x:..;--y:..;--w:..;--h:.." (1 rem = 1 cell) */
+.apc-plate .rp {
+  position: absolute; box-sizing: border-box;
+  left: calc(var(--x) * 1rem); top: calc(var(--y) * 1rem);
+  width: calc(var(--w) * 1rem); height: calc(var(--h) * 1rem);
+}
+
+/* header: the logo lockup sits left of the brand (both on the plate's --pad margin), the centre slot is centred;
+   its controls (and the header padding / gaps) come from the kit (--ctl-h, --ctl-gap, --pad) */
+.apc-plate .rp-header { padding-left: 9.5rem; border-bottom: var(--stroke) solid var(--rule-2); }
+.apc-plate .rp-header .apc-header__slot { justify-content: center; }
+.apc-plate .rp-logo { z-index: 3; display: flex; align-items: center; }
+.apc-plate .rp-footer { border-top: var(--stroke) solid var(--rule-2); padding-right: 3rem; }
+
+/* small captions over visualisations: label role, micro size */
+.apc-plate .rp-cap { white-space: nowrap; overflow: hidden; }
+.apc-plate .rp-note { line-height: 1.3; overflow: hidden; }
+.apc-plate .rp-stack { display: flex; flex-direction: column; gap: .25rem; }
+
+/* tab pages */
+.apc-plate .rp-tabrow { display: flex; gap: var(--pad); align-items: flex-start; }
+.apc-plate .rp-tabrow > * { flex: 1 1 0; min-width: 0; }
+
+/* the selector (legacy control) puts its caption below the knob-style readout; on this plate every labelled form control
+   has its caption above, left-aligned, so captions share one baseline per row */
+.apc-plate [data-apc="selector"] { align-items: stretch; gap: .25rem; }
+.apc-plate [data-apc="selector"] > .apc-ctl-label { order: -1; }
+.apc-plate [data-apc="toggle"] { justify-content: flex-start; }

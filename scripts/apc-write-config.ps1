@@ -16,7 +16,8 @@ param(
     [hashtable]$PhaseModels,
     [switch]$EnableCodexOrchestration,
     [switch]$EnableCodexEscalation,
-    [switch]$InstallCodexProfiles
+    [switch]$InstallCodexProfiles,
+    [hashtable]$Standards
 )
 
 $ErrorActionPreference = "Stop"
@@ -59,6 +60,18 @@ if ($PSBoundParameters.ContainsKey('Vst3InstallDir')) {
 $cfg.defaults.ui_framework_preference = $UiPreference
 $cfg.defaults.enable_visage = [bool]$EnableVisage
 $cfg.models.profile = $ModelProfile
+
+# Global defaults for the locked Plugin Product Standards (apc-standards/1.0).
+# Only global-scope option ids are accepted here; per-plugin answers live in
+# the plugin's status.json. Validate with: apc standards validate
+if ($Standards -and $Standards.Count -gt 0) {
+    if (-not $cfg.standards) {
+        $cfg | Add-Member -NotePropertyName standards -NotePropertyValue ([pscustomobject]@{}) -Force
+    }
+    foreach ($key in $Standards.Keys) {
+        $cfg.standards | Add-Member -NotePropertyName $key -NotePropertyValue $Standards[$key] -Force
+    }
+}
 
 if ($PhaseModels) {
     if (-not $cfg.models.phases) {

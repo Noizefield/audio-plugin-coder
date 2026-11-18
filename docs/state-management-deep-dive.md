@@ -75,7 +75,7 @@ Every plugin has a `status.json` file with this structure:
 
 ## PowerShell Functions
 
-The [`state-management.ps1`](scripts/state-management.ps1) script provides these functions:
+The [`state-management.ps1`](../scripts/state-management.ps1) script provides these functions:
 
 ### New-PluginState
 

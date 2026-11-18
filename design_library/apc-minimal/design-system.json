@@ -1,0 +1,4875 @@
+{
+  "name": "APC Minimal",
+  "id": "apc-minimal",
+  "version": "1.1.0",
+  "spec": "apc-design-system/1",
+  "description": "The APC Minimal WebView design library, aligned to the canonical visual source hub/_design/apc_filter_f30_annotate_v006.html: deep teal plates, raised blue-green surfaces, a coral signal accent, cyan status and spectrum colour, compact rounded corners, subtle material depth, and mono numerals. It is a complete starting point; copy the folder to make a new design.",
+  "referenceSource": {
+    "file": "hub/_design/apc_filter_f30_annotate_v006.html",
+    "route": "/kit-demo/_reference?surface=night|day",
+    "serving": "The Hub serves the source HTML byte for byte; optional token previews and saved element tuning are applied at runtime only."
+  },
+  "tokensFile": "tokens.css",
+  "_note": "The canonical visual reference is hub/_design/apc_filter_f30_annotate_v006.html and is served byte for byte by the Hub. tokens.css is the global token contract for APC UI kit components; this file documents the same token values (tokens.night / tokens.day), intent, WCAG ratios, element spec and elementTuning overrides saved through APC Hub 09C. scripts/design-tokens-check.js and test/design-tokens.test.js fail when the token documents drift, an element references a token that does not exist, or a registered kit element has no entry. Change global values in tokens.css first; use 09C Element Spec for validated per-element geometry and line tuning.",
+  "philosophy": "One coral signal on a deep teal instrument surface, with cyan for healthy activity and multi-hue data series for analysis. Information comes from shape, position, type and colour together.",
+  "principles": [
+    "A deep teal plate and graduated blue-green control surfaces establish layers; small restrained shadows and knob gradients add material depth without hiding boundaries.",
+    "Compact 2-3px control and panel radii soften the instrument surfaces while keeping a precise grid.",
+    "Hairline rules define most boundaries; stronger control borders and focus rings stay visible against both plate modes.",
+    "Coral (--accent) marks active signal and focus. Cyan (--ok) marks healthy activity; separate accessible series colours distinguish visualisation data.",
+    "Uppercase, letter-spaced labels pair with tabular mono numerals. Longer sentences use the text sans.",
+    "High contrast and accessible: text pairs >= 4.5:1, graphics and control boundaries >= 3:1 in both modes; visualisation series also differ by dash pattern.",
+    "Motion off by default; any transition must respect prefers-reduced-motion."
+  ],
+  "palette": {
+    "night": {
+      "--apc-letterbox": {
+        "value": "#0B1A22",
+        "role": "Window letterbox outside the plate. Always black."
+      },
+      "--surface": {
+        "value": "#0B1A22",
+        "role": "Page / deepest layer."
+      },
+      "--plate": {
+        "value": "#122935",
+        "role": "Plugin background. The reference background for every text pair."
+      },
+      "--plate-2": {
+        "value": "#1A3644",
+        "role": "Raised panel and control body, separated from the plate by surface colour and subtle material depth."
+      },
+      "--inset": {
+        "value": "#0E222C",
+        "role": "Wells: fields, tracks, graph backgrounds."
+      },
+      "--rule": {
+        "value": "#5A8492",
+        "role": "Control borders and dividers that must be seen (>= 3:1, WCAG 1.4.11)."
+      },
+      "--rule-2": {
+        "value": "#234250",
+        "role": "Quiet dividers and grid lines. Decorative only: carries no information."
+      },
+      "--grip-ink": {
+        "value": "#5A8492",
+        "role": "Resize gripper hatching."
+      },
+      "--ink": {
+        "value": "#EAF2F3",
+        "role": "Primary text, pointers, values."
+      },
+      "--ink-2": {
+        "value": "#9FBDC6",
+        "role": "Labels, units, secondary text (>= 4.5:1 on plate, plate-2, inset, surface)."
+      },
+      "--accent": {
+        "value": "#FB543D",
+        "role": "THE signal colour: active, selected, value arc, focus. One per design."
+      },
+      "--accent-ink": {
+        "value": "#1A0A08",
+        "role": "Text / icon drawn on an --accent fill."
+      },
+      "--accent-text": {
+        "value": "#FF7B64",
+        "role": "Accent-coloured TEXT (tooltip value, badge, link, mode label). >= 4.5:1 on --plate, --plate-2, --inset."
+      },
+      "--ok": {
+        "value": "#5BC7D2",
+        "role": "Success, meter ok, playhead."
+      },
+      "--ok-text": {
+        "value": "#5BC7D2",
+        "role": "Success TEXT (licensed badge, ok message): --ok where it already clears 4.5:1 (night), a darker teal in day mode. Use --ok for lamps, fills and meters."
+      },
+      "--apc-danger": {
+        "value": "#FB543D",
+        "role": "Error, clip, destructive action."
+      },
+      "--apc-danger-text": {
+        "value": "#FB543D",
+        "role": "Error / destructive TEXT: --apc-danger where it already clears 4.5:1 (night), a darker red in day mode (same value as --accent-text). Use --apc-danger for borders, fills and lamps."
+      },
+      "--apc-focus": {
+        "value": "var(--accent)",
+        "role": "Focus ring colour (follows --accent)."
+      },
+      "--apc-overlay": {
+        "value": "rgba(4, 12, 17, .62)",
+        "role": "Scrim behind popups and dialogs."
+      }
+    },
+    "day": {
+      "--apc-letterbox": {
+        "value": "#C9D6DA",
+        "role": "Window letterbox outside the plate. Always black."
+      },
+      "--surface": {
+        "value": "#D3DEE1",
+        "role": "Page / deepest layer."
+      },
+      "--plate": {
+        "value": "#E3EAEC",
+        "role": "Plugin background. The reference background for every text pair."
+      },
+      "--plate-2": {
+        "value": "#F2F7F8",
+        "role": "Raised panel and control body, separated from the plate by surface colour and subtle material depth."
+      },
+      "--inset": {
+        "value": "#E9F1F2",
+        "role": "Wells: fields, tracks, graph backgrounds."
+      },
+      "--rule": {
+        "value": "#6F8A94",
+        "role": "Control borders and dividers that must be seen (>= 3:1, WCAG 1.4.11)."
+      },
+      "--rule-2": {
+        "value": "#DCE6E8",
+        "role": "Quiet dividers and grid lines. Decorative only: carries no information."
+      },
+      "--grip-ink": {
+        "value": "#6F8A94",
+        "role": "Resize gripper hatching."
+      },
+      "--ink": {
+        "value": "#122935",
+        "role": "Primary text, pointers, values."
+      },
+      "--ink-2": {
+        "value": "#46626E",
+        "role": "Labels, units, secondary text (>= 4.5:1 on plate, plate-2, inset, surface)."
+      },
+      "--accent": {
+        "value": "#D0442C",
+        "role": "THE signal colour in day mode: fills, value arcs, focus, selected. A graphic colour (>= 3:1 everywhere); for accent-coloured TEXT use --accent-text."
+      },
+      "--accent-ink": {
+        "value": "#FFFFFF",
+        "role": "Text / icon drawn on an --accent fill."
+      },
+      "--accent-text": {
+        "value": "#A6331F",
+        "role": "Accent-coloured TEXT in day mode: a darker coral than --accent so it stays >= 4.5:1 on --plate, --plate-2, --inset and --surface. Use --accent for fills, rings and lines, --accent-text for text."
+      },
+      "--ok": {
+        "value": "#2A8F9B",
+        "role": "Success, meter ok, playhead."
+      },
+      "--ok-text": {
+        "value": "#217180",
+        "role": "Success TEXT (licensed badge, ok message): --ok where it already clears 4.5:1 (night), a darker teal in day mode. Use --ok for lamps, fills and meters."
+      },
+      "--apc-danger": {
+        "value": "#D0442C",
+        "role": "Error, clip, destructive action."
+      },
+      "--apc-danger-text": {
+        "value": "#A6331F",
+        "role": "Error / destructive TEXT: --apc-danger where it already clears 4.5:1 (night), a darker red in day mode (same value as --accent-text). Use --apc-danger for borders, fills and lamps."
+      },
+      "--apc-focus": {
+        "value": "var(--accent)",
+        "role": "Focus ring colour (follows --accent)."
+      },
+      "--apc-overlay": {
+        "value": "rgba(18, 41, 53, .45)",
+        "role": "Scrim behind popups and dialogs."
+      }
+    }
+  },
+  "contrast": {
+    "method": "WCAG 2.x relative luminance ratio of solid colours. Text >= 4.5:1, graphics and control boundaries >= 3:1. Computed by scripts/design-tokens-check.js; the test recomputes every pair.",
+    "exempt": {
+      "--rule-2": "quiet divider / grid line, decorative: removing it loses no information",
+      "--led-off": "off state of an LED; the on state and the control label carry the meaning",
+      "--accent as text": "use --accent-text for accent-coloured text. --accent itself is a graphic colour (fills, rings, lines): in day mode it is >= 3:1 everywhere but NOT 4.5:1 on --plate-2 / --inset (4.15 / 3.86), so it is never used as text colour by the kit"
+    },
+    "pairs": [
+      {
+        "mode": "night",
+        "fg": "--ink",
+        "bg": "--plate",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 13.26,
+        "role": "primary text on the plugin background"
+      },
+      {
+        "mode": "night",
+        "fg": "--ink",
+        "bg": "--plate-2",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 11.17,
+        "role": "primary text on a raised panel"
+      },
+      {
+        "mode": "night",
+        "fg": "--ink",
+        "bg": "--inset",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 14.4,
+        "role": "values inside wells and fields"
+      },
+      {
+        "mode": "night",
+        "fg": "--ink",
+        "bg": "--surface",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 15.61,
+        "role": "primary text on the page layer"
+      },
+      {
+        "mode": "night",
+        "fg": "--ink-2",
+        "bg": "--plate",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 7.58,
+        "role": "labels and units on the plugin background"
+      },
+      {
+        "mode": "night",
+        "fg": "--ink-2",
+        "bg": "--plate-2",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 6.39,
+        "role": "labels and units on a raised panel"
+      },
+      {
+        "mode": "night",
+        "fg": "--ink-2",
+        "bg": "--inset",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 8.23,
+        "role": "labels, axis text inside wells"
+      },
+      {
+        "mode": "night",
+        "fg": "--ink-2",
+        "bg": "--surface",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 8.92,
+        "role": "secondary text on the page layer"
+      },
+      {
+        "mode": "night",
+        "fg": "--accent",
+        "bg": "--plate",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 4.62,
+        "role": "accent used as TEXT (active tab, selected item): allowed on --plate only"
+      },
+      {
+        "mode": "night",
+        "fg": "--accent-ink",
+        "bg": "--accent",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 5.9,
+        "role": "text on an accent fill (primary button, selected row)"
+      },
+      {
+        "mode": "night",
+        "fg": "--ok",
+        "bg": "--plate",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 7.56,
+        "role": "success text on the plugin background"
+      },
+      {
+        "mode": "night",
+        "fg": "--apc-danger",
+        "bg": "--plate",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 4.62,
+        "role": "error text on the plugin background"
+      },
+      {
+        "mode": "night",
+        "fg": "--viz-axis",
+        "bg": "--inset",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 5.93,
+        "role": "axis labels in graphs"
+      },
+      {
+        "mode": "night",
+        "fg": "--rule",
+        "bg": "--plate",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 3.69,
+        "role": "control border on the plugin background"
+      },
+      {
+        "mode": "night",
+        "fg": "--rule",
+        "bg": "--plate-2",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 3.11,
+        "role": "control border on a raised panel"
+      },
+      {
+        "mode": "night",
+        "fg": "--rule",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.01,
+        "role": "field / well border"
+      },
+      {
+        "mode": "night",
+        "fg": "--grip-ink",
+        "bg": "--plate",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 3.69,
+        "role": "resize gripper"
+      },
+      {
+        "mode": "night",
+        "fg": "--accent",
+        "bg": "--plate",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.62,
+        "role": "value arc, selection, focus ring"
+      },
+      {
+        "mode": "night",
+        "fg": "--accent",
+        "bg": "--plate-2",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 3.89,
+        "role": "value arc on a raised panel"
+      },
+      {
+        "mode": "night",
+        "fg": "--accent",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 5.01,
+        "role": "slider fill, step on, LED on"
+      },
+      {
+        "mode": "night",
+        "fg": "--ok",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 8.21,
+        "role": "meter ok, playhead"
+      },
+      {
+        "mode": "night",
+        "fg": "--apc-danger",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 5.01,
+        "role": "clip indicator, error outline"
+      },
+      {
+        "mode": "night",
+        "fg": "--viz-line",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 14.4,
+        "role": "primary curve / waveform"
+      },
+      {
+        "mode": "night",
+        "fg": "--meter-warn",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 5.77,
+        "role": "meter warning segment"
+      },
+      {
+        "mode": "night",
+        "fg": "--viz-1",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 5.77,
+        "role": "data series 1"
+      },
+      {
+        "mode": "night",
+        "fg": "--viz-2",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 7.09,
+        "role": "data series 2"
+      },
+      {
+        "mode": "night",
+        "fg": "--viz-3",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.78,
+        "role": "data series 3"
+      },
+      {
+        "mode": "night",
+        "fg": "--viz-4",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 12.37,
+        "role": "data series 4"
+      },
+      {
+        "mode": "night",
+        "fg": "--apc-mod-1",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 7.26,
+        "role": "modulation source 1"
+      },
+      {
+        "mode": "night",
+        "fg": "--apc-mod-2",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 7.09,
+        "role": "modulation source 2"
+      },
+      {
+        "mode": "night",
+        "fg": "--apc-mod-3",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.78,
+        "role": "modulation source 3"
+      },
+      {
+        "mode": "night",
+        "fg": "--apc-mod-4",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 12.37,
+        "role": "modulation source 4"
+      },
+      {
+        "mode": "night",
+        "fg": "--apc-mod-5",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 5.42,
+        "role": "modulation source 5"
+      },
+      {
+        "mode": "night",
+        "fg": "--apc-mod-6",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.23,
+        "role": "modulation source 6"
+      },
+      {
+        "mode": "night",
+        "fg": "--apc-mod-7",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 5.34,
+        "role": "modulation source 7"
+      },
+      {
+        "mode": "night",
+        "fg": "--apc-mod-8",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 8.25,
+        "role": "modulation source 8"
+      },
+      {
+        "mode": "day",
+        "fg": "--ink",
+        "bg": "--plate",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 12.37,
+        "role": "primary text on the plugin background"
+      },
+      {
+        "mode": "day",
+        "fg": "--ink",
+        "bg": "--plate-2",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 13.94,
+        "role": "primary text on a raised panel"
+      },
+      {
+        "mode": "day",
+        "fg": "--ink",
+        "bg": "--inset",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 13.15,
+        "role": "values inside wells and fields"
+      },
+      {
+        "mode": "day",
+        "fg": "--ink",
+        "bg": "--surface",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 10.98,
+        "role": "primary text on the page layer"
+      },
+      {
+        "mode": "day",
+        "fg": "--ink-2",
+        "bg": "--plate",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 5.34,
+        "role": "labels and units on the plugin background"
+      },
+      {
+        "mode": "day",
+        "fg": "--ink-2",
+        "bg": "--plate-2",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 6.01,
+        "role": "labels and units on a raised panel"
+      },
+      {
+        "mode": "day",
+        "fg": "--ink-2",
+        "bg": "--inset",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 5.67,
+        "role": "labels, axis text inside wells"
+      },
+      {
+        "mode": "day",
+        "fg": "--ink-2",
+        "bg": "--surface",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 4.73,
+        "role": "secondary text on the page layer"
+      },
+      {
+        "mode": "day",
+        "fg": "--accent",
+        "bg": "--plate",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 3.79,
+        "role": "accent used as TEXT (active tab, selected item): allowed on --plate only",
+        "waiver": "day --accent is the graphic signal colour (spectrum-free controls); accent TEXT must use --accent-text, which passes 4.5 on every surface"
+      },
+      {
+        "mode": "day",
+        "fg": "--accent-ink",
+        "bg": "--accent",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 4.62,
+        "role": "text on an accent fill (primary button, selected row)"
+      },
+      {
+        "mode": "day",
+        "fg": "--ok",
+        "bg": "--plate",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 3.14,
+        "role": "success text on the plugin background",
+        "waiver": "day --ok is the graphic energy colour (meter body, spectrum bars, LED); it is never text"
+      },
+      {
+        "mode": "day",
+        "fg": "--apc-danger",
+        "bg": "--plate",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 3.79,
+        "role": "error text on the plugin background",
+        "waiver": "day --apc-danger is the graphic clip/limit colour (LED, meter clip zone); text uses --ink on the danger well"
+      },
+      {
+        "mode": "day",
+        "fg": "--viz-axis",
+        "bg": "--inset",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 4.87,
+        "role": "axis labels in graphs",
+        "waiver": "day axis labels sit on a well at 4.41:1, a hair under 4.5; the axis is a chart annotation, not prose"
+      },
+      {
+        "mode": "day",
+        "fg": "--rule",
+        "bg": "--plate",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 3.01,
+        "role": "control border on the plugin background"
+      },
+      {
+        "mode": "day",
+        "fg": "--rule",
+        "bg": "--plate-2",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 3.39,
+        "role": "control border on a raised panel"
+      },
+      {
+        "mode": "day",
+        "fg": "--rule",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 3.19,
+        "role": "field / well border"
+      },
+      {
+        "mode": "day",
+        "fg": "--grip-ink",
+        "bg": "--plate",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 3.01,
+        "role": "resize gripper"
+      },
+      {
+        "mode": "day",
+        "fg": "--accent",
+        "bg": "--plate",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 3.79,
+        "role": "value arc, selection, focus ring",
+        "waiver": "day --accent is the graphic signal colour (spectrum-free controls); accent TEXT must use --accent-text, which passes 4.5 on every surface"
+      },
+      {
+        "mode": "day",
+        "fg": "--accent",
+        "bg": "--plate-2",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.28,
+        "role": "value arc on a raised panel"
+      },
+      {
+        "mode": "day",
+        "fg": "--accent",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.03,
+        "role": "slider fill, step on, LED on"
+      },
+      {
+        "mode": "night",
+        "fg": "--accent-text",
+        "bg": "--plate",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 5.93,
+        "role": "accent-coloured text (tooltip value, badge, link, mode label) on plate"
+      },
+      {
+        "mode": "night",
+        "fg": "--accent-text",
+        "bg": "--plate-2",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 5,
+        "role": "accent-coloured text (tooltip value, badge, link, mode label) on raised panel"
+      },
+      {
+        "mode": "night",
+        "fg": "--accent-text",
+        "bg": "--inset",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 6.44,
+        "role": "accent-coloured text (tooltip value, badge, link, mode label) on wells and fields"
+      },
+      {
+        "mode": "night",
+        "fg": "--accent-text",
+        "bg": "--surface",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 6.98,
+        "role": "accent-coloured text (tooltip value, badge, link, mode label) on the page layer"
+      },
+      {
+        "mode": "day",
+        "fg": "--accent-text",
+        "bg": "--plate",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 5.54,
+        "role": "accent-coloured text (tooltip value, badge, link, mode label) on plate"
+      },
+      {
+        "mode": "day",
+        "fg": "--accent-text",
+        "bg": "--plate-2",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 6.24,
+        "role": "accent-coloured text (tooltip value, badge, link, mode label) on raised panel"
+      },
+      {
+        "mode": "day",
+        "fg": "--accent-text",
+        "bg": "--inset",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 5.88,
+        "role": "accent-coloured text (tooltip value, badge, link, mode label) on wells and fields"
+      },
+      {
+        "mode": "day",
+        "fg": "--accent-text",
+        "bg": "--surface",
+        "kind": "text",
+        "min": 4.5,
+        "ratio": 4.91,
+        "role": "accent-coloured text (tooltip value, badge, link, mode label) on the page layer"
+      },
+      {
+        "mode": "day",
+        "fg": "--ok",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 3.33,
+        "role": "meter ok, playhead"
+      },
+      {
+        "mode": "day",
+        "fg": "--apc-danger",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.03,
+        "role": "clip indicator, error outline"
+      },
+      {
+        "mode": "day",
+        "fg": "--viz-line",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 13.15,
+        "role": "primary curve / waveform"
+      },
+      {
+        "mode": "day",
+        "fg": "--meter-warn",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.39,
+        "role": "meter warning segment"
+      },
+      {
+        "mode": "day",
+        "fg": "--viz-1",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 3.83,
+        "role": "data series 1"
+      },
+      {
+        "mode": "day",
+        "fg": "--viz-2",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.76,
+        "role": "data series 2"
+      },
+      {
+        "mode": "day",
+        "fg": "--viz-3",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.9,
+        "role": "data series 3"
+      },
+      {
+        "mode": "day",
+        "fg": "--viz-4",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.17,
+        "role": "data series 4"
+      },
+      {
+        "mode": "day",
+        "fg": "--apc-mod-1",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.37,
+        "role": "modulation source 1"
+      },
+      {
+        "mode": "day",
+        "fg": "--apc-mod-2",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.76,
+        "role": "modulation source 2"
+      },
+      {
+        "mode": "day",
+        "fg": "--apc-mod-3",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.9,
+        "role": "modulation source 3"
+      },
+      {
+        "mode": "day",
+        "fg": "--apc-mod-4",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.17,
+        "role": "modulation source 4"
+      },
+      {
+        "mode": "day",
+        "fg": "--apc-mod-5",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.53,
+        "role": "modulation source 5"
+      },
+      {
+        "mode": "day",
+        "fg": "--apc-mod-6",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.15,
+        "role": "modulation source 6"
+      },
+      {
+        "mode": "day",
+        "fg": "--apc-mod-7",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 4.76,
+        "role": "modulation source 7"
+      },
+      {
+        "mode": "day",
+        "fg": "--apc-mod-8",
+        "bg": "--inset",
+        "kind": "graphic",
+        "min": 3,
+        "ratio": 6.02,
+        "role": "modulation source 8"
+      }
+    ]
+  },
+  "typography": {
+    "families": {
+      "ui": {
+        "token": "--font-ui",
+        "value": "\"Inter\", ui-sans-serif, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "use": "labels, values, buttons, tabs - everything that is not a sentence"
+      },
+      "text": {
+        "token": "--font-text",
+        "value": "\"Inter\", ui-sans-serif, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "use": "sentences: help, notes, dialog body, error messages"
+      }
+    },
+    "scale": {
+      "--t-micro": {
+        "value": "max(9px, .5rem)",
+        "use": "smallest text (footers, tick labels); floor 9px"
+      },
+      "--t-label": {
+        "value": "max(10px, .625rem)",
+        "use": "control labels; floor 10px"
+      },
+      "--t-value": {
+        "value": "max(11px, .6875rem)",
+        "use": "numeric values; floor 11px"
+      },
+      "--t-readout": {
+        "value": "max(11px, .75rem)",
+        "use": "larger readouts; floor 11px"
+      },
+      "--t-title": {
+        "value": "max(12px, .875rem)",
+        "use": "panel and dialog titles; floor 12px"
+      },
+      "--t-head": {
+        "value": "max(14px, 1.125rem)",
+        "use": "headings; floor 14px"
+      }
+    },
+    "roles": {
+      "label": {
+        "family": "--font-ui",
+        "size": "--t-label",
+        "transform": "uppercase",
+        "letterSpacing": "--label-spacing",
+        "color": "--ink-2"
+      },
+      "value": {
+        "family": "--font-ui",
+        "size": "--t-value",
+        "fontVariantNumeric": "tabular-nums",
+        "color": "--ink"
+      },
+      "readout": {
+        "family": "--font-ui",
+        "size": "--t-readout",
+        "fontVariantNumeric": "tabular-nums",
+        "color": "--ink"
+      },
+      "title": {
+        "family": "--font-ui",
+        "size": "--t-title",
+        "transform": "uppercase",
+        "letterSpacing": "--label-spacing",
+        "color": "--ink"
+      },
+      "heading": {
+        "family": "--font-ui",
+        "size": "--t-head",
+        "color": "--ink"
+      },
+      "text": {
+        "family": "--font-text",
+        "size": "--t-value",
+        "color": "--ink"
+      }
+    },
+    "labelSpacing": {
+      "token": "--label-spacing",
+      "value": ".12em"
+    },
+    "floors": "Sizes use max(<px floor>, <rem>) so text never shrinks below legible when the kit scales down."
+  },
+  "shape": {
+    "radius": {
+      "--r-control": "0",
+      "--r-panel": "0",
+      "--r-radio": "var(--r-control)",
+      "--r-led": "var(--r-control)"
+    },
+    "stroke": {
+      "--stroke": "1px",
+      "--stroke-2": "2px"
+    },
+    "shadow": {
+      "--sh-recess": "none",
+      "--sh-raised": "none",
+      "--apc-shadow-pop": "none"
+    },
+    "disabledOpacity": ".4",
+    "note": "APC Minimal uses compact 2-3px radii and restrained popup/control shadows. Popups are separated by a --rule border plus the --apc-overlay scrim. --r-radio and --r-led use compact square-mark values unless a design sets them independently."
+  },
+  "spacing": {
+    "unit": "rem (one grid cell; the kit scales as a whole)",
+    "--ctl-h": "1.5rem",
+    "--ctl-gap": ".375rem",
+    "--pad": ".5rem"
+  },
+  "sizing": {
+    "--knob-size": "3rem",
+    "--knob-arc": ".1875rem",
+    "--track-w": ".25rem",
+    "--thumb": ".75rem",
+    "--check": "1rem",
+    "--apc-viz-node": ".625rem",
+    "--apc-logo-h": "1.5rem"
+  },
+  "motion": {
+    "default": "none",
+    "note": "No transitions or animation by default. Anything that moves (meter ballistics, playhead) is functional, not decorative, and must stop or become static under prefers-reduced-motion: reduce.",
+    "reducedMotion": "honoured"
+  },
+  "dataviz": {
+    "series": {
+      "night": [
+        {
+          "token": "--viz-1",
+          "value": "#FF9500"
+        },
+        {
+          "token": "--viz-2",
+          "value": "#56B4E9"
+        },
+        {
+          "token": "--viz-3",
+          "value": "#009E73"
+        },
+        {
+          "token": "--viz-4",
+          "value": "#F0E442"
+        }
+      ],
+      "day": [
+        {
+          "token": "--viz-1",
+          "value": "#B25B00"
+        },
+        {
+          "token": "--viz-2",
+          "value": "#0B6FA8"
+        },
+        {
+          "token": "--viz-3",
+          "value": "#00765A"
+        },
+        {
+          "token": "--viz-4",
+          "value": "#7F7400"
+        }
+      ]
+    },
+    "modulation": {
+      "night": [
+        {
+          "token": "--apc-mod-1",
+          "value": "#e69f00"
+        },
+        {
+          "token": "--apc-mod-2",
+          "value": "#56b4e9"
+        },
+        {
+          "token": "--apc-mod-3",
+          "value": "#009e73"
+        },
+        {
+          "token": "--apc-mod-4",
+          "value": "#f0e442"
+        },
+        {
+          "token": "--apc-mod-5",
+          "value": "#3d9be0"
+        },
+        {
+          "token": "--apc-mod-6",
+          "value": "#d55e00"
+        },
+        {
+          "token": "--apc-mod-7",
+          "value": "#cc79a7"
+        },
+        {
+          "token": "--apc-mod-8",
+          "value": "#b8b8b8"
+        }
+      ],
+      "day": [
+        {
+          "token": "--apc-mod-1",
+          "value": "#a35f00"
+        },
+        {
+          "token": "--apc-mod-2",
+          "value": "#0b6fa8"
+        },
+        {
+          "token": "--apc-mod-3",
+          "value": "#00765a"
+        },
+        {
+          "token": "--apc-mod-4",
+          "value": "#7f7400"
+        },
+        {
+          "token": "--apc-mod-5",
+          "value": "#0072b2"
+        },
+        {
+          "token": "--apc-mod-6",
+          "value": "#c24f00"
+        },
+        {
+          "token": "--apc-mod-7",
+          "value": "#a8467f"
+        },
+        {
+          "token": "--apc-mod-8",
+          "value": "#5a5a5a"
+        }
+      ]
+    },
+    "semantic": [
+      "--viz-line",
+      "--viz-accent",
+      "--viz-fill",
+      "--viz-grid",
+      "--viz-axis",
+      "--meter-ok",
+      "--meter-warn",
+      "--meter-clip",
+      "--led-on",
+      "--led-off",
+      "--step-off",
+      "--step-on",
+      "--step-accent",
+      "--step-playhead"
+    ],
+    "note": "Series and modulation colours follow the Okabe-Ito colour-blind-safe set; day mode uses darker variants so they stay >= 3:1 on --inset. Series must also differ by dash pattern / marker, never by colour alone."
+  },
+  "tokens": {
+    "night": {
+      "--apc-letterbox": "#0B1A22",
+      "--surface": "#0B1A22",
+      "--plate": "#122935",
+      "--plate-2": "#1A3644",
+      "--inset": "#0E222C",
+      "--rule": "#5A8492",
+      "--rule-2": "#234250",
+      "--grip-ink": "#5A8492",
+      "--ink": "#EAF2F3",
+      "--ink-2": "#9FBDC6",
+      "--accent": "#FB543D",
+      "--accent-ink": "#1A0A08",
+      "--accent-text": "#FF7B64",
+      "--ok": "#5BC7D2",
+      "--ok-text": "#5BC7D2",
+      "--apc-danger": "#FB543D",
+      "--apc-danger-text": "#FB543D",
+      "--apc-focus": "var(--accent)",
+      "--apc-overlay": "rgba(4, 12, 17, .62)",
+      "--viz-line": "var(--ink)",
+      "--viz-accent": "var(--accent)",
+      "--viz-fill": "rgba(251, 84, 61, .15)",
+      "--viz-grid": "rgba(91, 199, 210, .10)",
+      "--viz-axis": "var(--ink-3)",
+      "--viz-1": "#ED7941",
+      "--viz-2": "#56B4E9",
+      "--viz-3": "#009E73",
+      "--viz-4": "#F0E442",
+      "--meter-ok": "var(--ok)",
+      "--meter-warn": "#ED7941",
+      "--meter-clip": "var(--apc-danger)",
+      "--led-on": "var(--accent)",
+      "--led-off": "var(--rule-2)",
+      "--step-off": "var(--inset)",
+      "--step-on": "var(--accent)",
+      "--step-accent": "var(--ink)",
+      "--step-playhead": "var(--ok)",
+      "--apc-mod-1": "#e69f00",
+      "--apc-mod-2": "#56b4e9",
+      "--apc-mod-3": "#009e73",
+      "--apc-mod-4": "#f0e442",
+      "--apc-mod-5": "#3d9be0",
+      "--apc-mod-6": "#d55e00",
+      "--apc-mod-7": "#cc79a7",
+      "--apc-mod-8": "#b8b8b8",
+      "--r-control": "2px",
+      "--r-panel": "3px",
+      "--r-radio": "2px",
+      "--r-led": "1px",
+      "--sh-recess": "inset 0 1px 0 rgba(255, 255, 255, .05)",
+      "--sh-raised": "0 1px 2px rgba(4, 12, 17, .55)",
+      "--apc-shadow-pop": "0 10px 30px rgba(4, 12, 17, .62)",
+      "--stroke": "1px",
+      "--stroke-2": "2px",
+      "--disabled-opacity": ".4",
+      "--font-ui": "\"Inter\", ui-sans-serif, \"Segoe UI\", Roboto, Arial, sans-serif",
+      "--font-text": "\"Inter\", ui-sans-serif, \"Segoe UI\", Roboto, Arial, sans-serif",
+      "--t-micro": "max(9px, .5rem)",
+      "--t-label": "max(10px, .625rem)",
+      "--t-value": "max(11px, .6875rem)",
+      "--t-readout": "max(11px, .75rem)",
+      "--t-title": "max(12px, .875rem)",
+      "--t-head": "max(14px, 1.125rem)",
+      "--label-spacing": ".14em",
+      "--ctl-h": "1.5rem",
+      "--ctl-gap": ".375rem",
+      "--pad": ".5rem",
+      "--knob-size": "3rem",
+      "--knob-arc": ".1875rem",
+      "--track-w": ".25rem",
+      "--thumb": ".75rem",
+      "--check": "1rem",
+      "--apc-viz-node": ".625rem",
+      "--apc-logo-h": "1.5rem",
+      "--plate-3": "#224A5A",
+      "--wash": "rgba(234, 242, 243, .06)",
+      "--ink-3": "#80A1AC",
+      "--r-well": "3px",
+      "--sh-knob": "0 3px 7px rgba(4, 12, 17, .55), inset 0 1px 0 rgba(255, 255, 255, .16)",
+      "--halo": "rgba(251, 84, 61, .24)",
+      "--memory": "#F2B29E",
+      "--knob": "#20404F",
+      "--font-num": "\"JetBrains Mono\", ui-monospace, \"Cascadia Mono\", Menlo, Consolas, monospace"
+    },
+    "day": {
+      "--apc-letterbox": "#C9D6DA",
+      "--surface": "#D3DEE1",
+      "--plate": "#E3EAEC",
+      "--plate-2": "#F2F7F8",
+      "--inset": "#E9F1F2",
+      "--rule": "#6F8A94",
+      "--rule-2": "#DCE6E8",
+      "--grip-ink": "#6F8A94",
+      "--ink": "#122935",
+      "--ink-2": "#46626E",
+      "--accent": "#D0442C",
+      "--accent-ink": "#FFFFFF",
+      "--accent-text": "#A6331F",
+      "--ok": "#2A8F9B",
+      "--ok-text": "#217180",
+      "--apc-danger": "#D0442C",
+      "--apc-danger-text": "#A6331F",
+      "--apc-focus": "var(--accent)",
+      "--apc-overlay": "rgba(18, 41, 53, .45)",
+      "--viz-line": "var(--ink)",
+      "--viz-accent": "var(--accent)",
+      "--viz-fill": "rgba(208, 68, 44, .16)",
+      "--viz-grid": "rgba(18, 41, 53, .06)",
+      "--viz-axis": "var(--ink-3)",
+      "--viz-1": "#C25A28",
+      "--viz-2": "#0B6FA8",
+      "--viz-3": "#00765A",
+      "--viz-4": "#7F7400",
+      "--meter-ok": "var(--ok)",
+      "--meter-warn": "#B0552A",
+      "--meter-clip": "var(--apc-danger)",
+      "--led-on": "var(--accent)",
+      "--led-off": "var(--rule-2)",
+      "--step-off": "var(--inset)",
+      "--step-on": "var(--accent)",
+      "--step-accent": "var(--ink)",
+      "--step-playhead": "var(--ok)",
+      "--apc-mod-1": "#a35f00",
+      "--apc-mod-2": "#0b6fa8",
+      "--apc-mod-3": "#00765a",
+      "--apc-mod-4": "#7f7400",
+      "--apc-mod-5": "#0072b2",
+      "--apc-mod-6": "#c24f00",
+      "--apc-mod-7": "#a8467f",
+      "--apc-mod-8": "#5a5a5a",
+      "--r-control": "2px",
+      "--r-panel": "3px",
+      "--r-radio": "2px",
+      "--r-led": "1px",
+      "--sh-recess": "inset 0 1px 0 rgba(255, 255, 255, .70)",
+      "--sh-raised": "0 1px 2px rgba(18, 41, 53, .14)",
+      "--apc-shadow-pop": "0 10px 26px rgba(18, 41, 53, .18)",
+      "--stroke": "1px",
+      "--stroke-2": "2px",
+      "--disabled-opacity": ".4",
+      "--font-ui": "\"Inter\", ui-sans-serif, \"Segoe UI\", Roboto, Arial, sans-serif",
+      "--font-text": "\"Inter\", ui-sans-serif, \"Segoe UI\", Roboto, Arial, sans-serif",
+      "--t-micro": "max(9px, .5rem)",
+      "--t-label": "max(10px, .625rem)",
+      "--t-value": "max(11px, .6875rem)",
+      "--t-readout": "max(11px, .75rem)",
+      "--t-title": "max(12px, .875rem)",
+      "--t-head": "max(14px, 1.125rem)",
+      "--label-spacing": ".14em",
+      "--ctl-h": "1.5rem",
+      "--ctl-gap": ".375rem",
+      "--pad": ".5rem",
+      "--knob-size": "3rem",
+      "--knob-arc": ".1875rem",
+      "--track-w": ".25rem",
+      "--thumb": ".75rem",
+      "--check": "1rem",
+      "--apc-viz-node": ".625rem",
+      "--apc-logo-h": "1.5rem",
+      "--plate-3": "#E7EFF1",
+      "--wash": "rgba(18, 41, 53, .06)",
+      "--ink-3": "#506C79",
+      "--r-well": "3px",
+      "--sh-knob": "0 2px 5px rgba(18, 41, 53, .16), inset 0 1px 0 rgba(255, 255, 255, .90)",
+      "--halo": "rgba(208, 68, 44, .20)",
+      "--memory": "#F2B29E",
+      "--knob": "#F7FBFC",
+      "--font-num": "\"JetBrains Mono\", ui-monospace, \"Cascadia Mono\", Menlo, Consolas, monospace"
+    }
+  },
+  "elements": {
+    "knob": {
+      "title": "Knob",
+      "group": "Rotary & linear",
+      "summary": "Rotary parameter control: vertical drag. A quiet 270 deg track (open 90 deg at the bottom), one accent value arc, a gradient disc with a soft shadow and a rim pointer; name above the dial, value below.",
+      "parts": {
+        "track": {
+          "stroke": "--rule-2",
+          "width": "2px",
+          "sweep": "270 deg, 90 deg gap at the bottom",
+          "cap": "round"
+        },
+        "arc": {
+          "stroke": "--accent",
+          "width": "2px",
+          "cap": "round"
+        },
+        "face": {
+          "fill": "linear-gradient(145deg, --plate-2, --knob)",
+          "border": "--stroke solid --rule-2",
+          "radius": "50%",
+          "shadow": "--sh-knob",
+          "inset": "12% of the dial square",
+          "outline": "none"
+        },
+        "pointer": {
+          "fill": "--ink",
+          "width": "2.5px",
+          "length": "19% of the dial",
+          "offset": "10% from the rim",
+          "pivot": "dial centre"
+        },
+        "modBand": {
+          "stroke": "--memory",
+          "width": "1.5px",
+          "radius": "42 of 50 (inside the track)"
+        },
+        "marker": {
+          "fill": "--memory",
+          "stroke": "--plate"
+        },
+        "label": {
+          "font": "--font-ui",
+          "size": "--t-label",
+          "weight": "500",
+          "letter-spacing": "--label-spacing",
+          "transform": "uppercase",
+          "color": "--ink-3",
+          "position": "above the dial",
+          "opacity": "1"
+        },
+        "value": {
+          "font": "--font-num",
+          "size": "--t-value",
+          "color": "--ink",
+          "position": "below the dial"
+        }
+      },
+      "states": {
+        "hover": {
+          "face.shadow": "--sh-knob (the plate has no hover ring)"
+        },
+        "active": {
+          "face.shadow": "--sh-knob, 0 0 .55rem --halo",
+          "arc.width": "2px"
+        },
+        "focus": {
+          "face.outline": "--stroke-2 solid --apc-focus, offset .15rem"
+        },
+        "disabled": {
+          "label.opacity": "--disabled-opacity"
+        },
+        "error": {
+          "arc.stroke": "--apc-danger",
+          "label.color": "--apc-danger-text"
+        }
+      },
+      "sizes": {
+        "default": "--knob-size",
+        "overridable": [
+          "data-size",
+          "--knob-size"
+        ]
+      },
+      "options": [
+        "data-param",
+        "data-label",
+        "data-size",
+        "data-readout",
+        "data-unit",
+        "data-ticks",
+        "data-bipolar",
+        "data-disabled"
+      ],
+      "a11y": {
+        "role": "slider",
+        "keys": "Arrows nudge (Shift fine, PageUp/PageDown coarse), Home/End min/max, Enter opens value entry, Alt+click or double-click resets"
+      }
+    },
+    "slider": {
+      "title": "Slider",
+      "group": "Rotary & linear",
+      "summary": "Linear parameter control (vertical or horizontal). A 2px quiet rail with an accent fill and a thin tall cap; name above the value.",
+      "parts": {
+        "rail": {
+          "fill": "--rule-2",
+          "width": "--track-w",
+          "radius": "1px"
+        },
+        "fill": {
+          "fill": "--accent",
+          "radius": "1px"
+        },
+        "cap": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "1px",
+          "size": ".7rem x 1.35rem",
+          "shadow": "--sh-knob",
+          "outline": "none"
+        },
+        "ticks": {
+          "display": "none"
+        },
+        "label": {
+          "font": "--font-ui",
+          "size": "--t-label",
+          "weight": "500",
+          "letter-spacing": "--label-spacing",
+          "color": "--ink-3",
+          "position": "above the value",
+          "opacity": "1"
+        },
+        "value": {
+          "font": "--font-num",
+          "size": "--t-value",
+          "color": "--ink"
+        }
+      },
+      "states": {
+        "hover": {
+          "cap.border": "--ink-2"
+        },
+        "active": {
+          "cap.border": "--accent",
+          "cap.shadow": "--sh-knob, 0 0 .45rem --halo"
+        },
+        "focus": {
+          "cap.outline": "--stroke-2 solid --apc-focus"
+        },
+        "disabled": {
+          "label.opacity": "--disabled-opacity"
+        }
+      },
+      "sizes": {
+        "default": "6rem (track length)",
+        "overridable": [
+          "data-size",
+          "--slider-len"
+        ]
+      },
+      "options": [
+        "data-param",
+        "data-label",
+        "data-size",
+        "data-orient",
+        "data-readout",
+        "data-unit",
+        "data-ticks",
+        "data-bipolar",
+        "data-disabled"
+      ],
+      "a11y": {
+        "role": "slider",
+        "keys": "Arrows nudge (Shift fine, PageUp/PageDown coarse), Home/End min/max, Enter opens value entry, Alt+click or double-click resets"
+      }
+    },
+    "button": {
+      "title": "Button",
+      "group": "Buttons & switches",
+      "summary": "Flat chip on the raised control body. Active and chosen states invert to ink; there is no filled signal button in this language.",
+      "parts": {
+        "body": {
+          "fill": "--plate-3",
+          "border": "--stroke solid --rule-2",
+          "radius": "--r-control",
+          "color": "--ink-2",
+          "outline": "none",
+          "opacity": "1"
+        },
+        "label": {
+          "font": "--font-ui",
+          "size": "--t-label",
+          "weight": "500",
+          "letter-spacing": "--label-spacing",
+          "color": "--ink-2"
+        },
+        "led": {
+          "fill": "--led-off",
+          "radius": "1px",
+          "size": ".5rem square"
+        }
+      },
+      "states": {
+        "hover": {
+          "body.fill": "--wash",
+          "body.border": "--rule",
+          "body.color": "--ink"
+        },
+        "active": {
+          "body.fill": "--ink",
+          "body.color": "--plate",
+          "body.border": "--ink"
+        },
+        "checked": {
+          "body.fill": "--ink",
+          "body.color": "--plate",
+          "body.border": "--ink"
+        },
+        "focus": {
+          "body.outline": "--stroke-2 solid --apc-focus"
+        },
+        "disabled": {
+          "body.opacity": "--disabled-opacity"
+        }
+      },
+      "sizes": {
+        "default": "--ctl-h",
+        "overridable": [
+          "data-size",
+          "--w-h"
+        ]
+      },
+      "options": [
+        "data-label",
+        "data-aria-label",
+        "data-title",
+        "data-size",
+        "data-disabled",
+        "data-variant",
+        "data-led",
+        "data-icon",
+        "data-pressed",
+        "data-action",
+        "data-param"
+      ],
+      "a11y": {
+        "role": "button",
+        "keys": "Enter / Space; latch variant exposes aria-pressed; with data-param Enter/Space press on keydown and release on keyup"
+      }
+    },
+    "buttons": {
+      "title": "Button group",
+      "group": "Buttons & switches",
+      "summary": "One choice of N shown as a joined row (or column) of buttons; binds to a choice or stepped parameter.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "segment": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "0",
+          "height": "--ctl-h",
+          "padding": "0 .75rem",
+          "color": "--ink-2",
+          "font": "--font-ui",
+          "size": "--t-label",
+          "weight": "600",
+          "letter-spacing": "--label-spacing",
+          "transform": "uppercase"
+        },
+        "group": {
+          "gap": "0 (neighbouring borders overlap by --stroke)"
+        }
+      },
+      "states": {
+        "focus": {
+          "host.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "host.opacity": "--disabled-opacity"
+        },
+        "hover": {
+          "segment.color": "--ink",
+          "segment.border": "--accent"
+        },
+        "selected": {
+          "segment.fill": "--accent",
+          "segment.color": "--accent-ink",
+          "segment.border": "--accent"
+        },
+        "error": {
+          "segment.border": "--apc-danger"
+        }
+      },
+      "sizes": {
+        "default": "--ctl-h",
+        "overridable": [
+          "data-size",
+          "--w-h"
+        ]
+      },
+      "options": [
+        "data-label",
+        "data-aria-label",
+        "data-title",
+        "data-size",
+        "data-disabled",
+        "data-param",
+        "data-items",
+        "data-value",
+        "data-orient"
+      ],
+      "a11y": {
+        "role": "radiogroup > radio",
+        "keys": "Roving tabindex; arrows move and select (wrap), Home/End, Space/Enter select the focused one"
+      }
+    },
+    "segmented": {
+      "title": "Segmented",
+      "group": "Buttons & switches",
+      "summary": "One body of chips split by hairlines; the chosen chip inverts to ink. Never a row of separate buttons.",
+      "parts": {
+        "body": {
+          "fill": "--plate-3",
+          "border": "--stroke solid --rule-2",
+          "radius": "--r-control",
+          "outline": "none"
+        },
+        "chip": {
+          "fill": "--plate-3",
+          "color": "--ink-2",
+          "border": "--stroke solid --rule-2",
+          "outline": "none",
+          "opacity": "1"
+        },
+        "label": {
+          "font": "--font-ui",
+          "size": "--t-label",
+          "weight": "500",
+          "letter-spacing": "--label-spacing"
+        }
+      },
+      "states": {
+        "hover": {
+          "chip.fill": "--wash",
+          "chip.color": "--ink"
+        },
+        "checked": {
+          "chip.fill": "--ink",
+          "chip.color": "--plate",
+          "chip.border": "--ink"
+        },
+        "focus": {
+          "body.outline": "--stroke-2 solid --apc-focus"
+        },
+        "disabled": {
+          "chip.opacity": "--disabled-opacity"
+        }
+      },
+      "sizes": {
+        "default": "--ctl-h",
+        "overridable": [
+          "data-size",
+          "--w-h"
+        ]
+      },
+      "options": [
+        "data-label",
+        "data-aria-label",
+        "data-title",
+        "data-size",
+        "data-disabled",
+        "data-param",
+        "data-items",
+        "data-value",
+        "data-orient"
+      ],
+      "a11y": {
+        "role": "radiogroup > radio",
+        "keys": "Roving tabindex; arrows move and select (wrap), Home/End, Space/Enter select the focused one"
+      }
+    },
+    "toggle": {
+      "title": "Toggle",
+      "group": "Buttons & switches",
+      "summary": "Miniature switch: a 2px-radius track with a square cam. Off = raised body with an ink cam; on = the whole track fills with the signal colour and the cam goes dark.",
+      "parts": {
+        "track": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "size": "1.75rem x .875rem",
+          "outline": "none",
+          "opacity": "1"
+        },
+        "cam": {
+          "fill": "--ink-3",
+          "radius": "1px",
+          "size": ".625rem square",
+          "offset": ".125rem from the track edge"
+        },
+        "label": {
+          "font": "--font-ui",
+          "size": "--t-label",
+          "weight": "500",
+          "letter-spacing": "--label-spacing",
+          "transform": "uppercase",
+          "color": "--ink-2"
+        }
+      },
+      "states": {
+        "hover": {
+          "track.border": "--ink-2"
+        },
+        "checked": {
+          "track.fill": "--accent",
+          "track.border": "--accent",
+          "cam.fill": "--plate"
+        },
+        "focus": {
+          "track.outline": "--stroke-2 solid --apc-focus"
+        },
+        "disabled": {
+          "track.opacity": "--disabled-opacity"
+        }
+      },
+      "sizes": {
+        "default": "2rem x 1rem (switch)",
+        "overridable": [
+          "data-size",
+          "--w-h"
+        ]
+      },
+      "options": [
+        "data-param",
+        "data-label",
+        "data-variant",
+        "data-size",
+        "data-disabled"
+      ],
+      "a11y": {
+        "role": "switch",
+        "keys": "Space / Enter toggle; arrows set on/off"
+      }
+    },
+    "checkbox": {
+      "title": "Checkbox",
+      "group": "Buttons & switches",
+      "summary": "Boolean with a 1.2-cell square mark (2px radius). Checked = accent edge plus an accent inset square; mixed = one ink hairline across.",
+      "parts": {
+        "box": {
+          "fill": "--plate-3",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "size": "1.2rem square",
+          "outline": "none"
+        },
+        "mark": {
+          "fill": "--accent",
+          "radius": "1px",
+          "inset": ".3rem"
+        },
+        "dash": {
+          "stroke": "--ink",
+          "width": "--stroke"
+        },
+        "label": {
+          "font": "--font-ui",
+          "size": "--t-label",
+          "color": "--ink-2",
+          "opacity": "1"
+        }
+      },
+      "states": {
+        "hover": {
+          "box.border": "--ink-2"
+        },
+        "checked": {
+          "box.border": "--accent",
+          "mark.fill": "--accent"
+        },
+        "focus": {
+          "box.outline": "--stroke-2 solid --apc-focus"
+        },
+        "disabled": {
+          "label.opacity": "--disabled-opacity"
+        }
+      },
+      "sizes": {
+        "default": "--check",
+        "overridable": [
+          "data-size",
+          "--w-h"
+        ]
+      },
+      "options": [
+        "data-label",
+        "data-aria-label",
+        "data-title",
+        "data-size",
+        "data-disabled",
+        "data-param",
+        "data-checked",
+        "data-indeterminate"
+      ],
+      "a11y": {
+        "role": "checkbox",
+        "keys": "Space toggles (click on box or label); aria-checked true | false | mixed"
+      }
+    },
+    "radio": {
+      "title": "Radio group",
+      "group": "Buttons & switches",
+      "summary": "One choice from a set. Same square mark as the checkbox (the plate uses one mark language); selected = accent edge plus an accent inset square.",
+      "parts": {
+        "box": {
+          "fill": "--plate-3",
+          "border": "--stroke solid --rule",
+          "radius": "--r-radio",
+          "size": "1.2rem square",
+          "outline": "none"
+        },
+        "mark": {
+          "fill": "--accent",
+          "radius": "1px",
+          "inset": ".3rem"
+        },
+        "label": {
+          "font": "--font-ui",
+          "size": "--t-label",
+          "letter-spacing": "--label-spacing",
+          "color": "--ink-2",
+          "opacity": "1"
+        }
+      },
+      "states": {
+        "hover": {
+          "box.border": "--ink-2"
+        },
+        "selected": {
+          "box.border": "--accent",
+          "mark.fill": "--accent"
+        },
+        "focus": {
+          "box.outline": "--stroke-2 solid --apc-focus"
+        },
+        "disabled": {
+          "label.opacity": "--disabled-opacity"
+        }
+      },
+      "sizes": {
+        "default": "--check",
+        "overridable": [
+          "data-size",
+          "--w-h"
+        ]
+      },
+      "options": [
+        "data-label",
+        "data-aria-label",
+        "data-title",
+        "data-size",
+        "data-disabled",
+        "data-param",
+        "data-items",
+        "data-value",
+        "data-orient"
+      ],
+      "a11y": {
+        "role": "radiogroup > radio",
+        "keys": "Roving tabindex; arrows move and select (wrap), Home/End"
+      }
+    },
+    "selector": {
+      "title": "Selector",
+      "group": "Selection",
+      "summary": "A raised field with a structural edge; the value is mono, the arrows are quiet and only wash on hover.",
+      "parts": {
+        "body": {
+          "fill": "--plate-3",
+          "border": "--stroke solid --rule-2",
+          "radius": "--r-control",
+          "outline": "none",
+          "color": "--ink"
+        },
+        "arrow": {
+          "color": "--ink-2",
+          "size": "2rem"
+        },
+        "value": {
+          "font": "--font-num",
+          "size": "--t-value",
+          "color": "--ink",
+          "letter-spacing": ".08em"
+        },
+        "label": {
+          "font": "--font-ui",
+          "size": "--t-label",
+          "color": "--ink-3"
+        }
+      },
+      "states": {
+        "hover": {
+          "body.fill": "--wash",
+          "body.border": "--rule",
+          "arrow.color": "--ink"
+        },
+        "active": {
+          "body.fill": "--ink",
+          "body.color": "--plate"
+        },
+        "focus": {
+          "body.outline": "--stroke-2 solid --apc-focus"
+        },
+        "disabled": {
+          "label.color": "--ink-3"
+        }
+      },
+      "sizes": {
+        "default": "--ctl-h",
+        "overridable": [
+          "data-size",
+          "--w-h"
+        ]
+      },
+      "options": [
+        "data-param",
+        "data-label",
+        "data-size",
+        "data-steppers",
+        "data-disabled"
+      ],
+      "a11y": {
+        "role": "slider (aria-valuetext = the choice label)",
+        "keys": "ArrowUp/ArrowRight next, ArrowDown/ArrowLeft previous, Home/End first/last, Enter or click opens the menu, Alt+click resets"
+      }
+    },
+    "dropdown": {
+      "title": "Dropdown",
+      "group": "Selection",
+      "summary": "Closed field that opens a popup listbox (optionally searchable); binds to a choice or stepped parameter.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "field": {
+          "fill": "--inset",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "height": "--ctl-h",
+          "min-width": "6rem",
+          "padding": "0 .5rem",
+          "color": "--ink",
+          "font": "--font-ui",
+          "size": "--t-value"
+        },
+        "placeholder": {
+          "color": "--ink-2"
+        },
+        "caret": {
+          "stroke": "--ink-2",
+          "size": ".75rem"
+        },
+        "label": {
+          "font": "--font-ui",
+          "size": "--t-label",
+          "weight": "600",
+          "letter-spacing": "--label-spacing",
+          "transform": "uppercase",
+          "color": "--ink-2"
+        },
+        "popup": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "--r-panel",
+          "shadow": "--apc-shadow-pop",
+          "max-height": "16rem"
+        },
+        "search": {
+          "fill": "--inset",
+          "color": "--ink",
+          "size": "--t-value",
+          "border": "--stroke solid --rule (bottom only)"
+        },
+        "option": {
+          "fill": "transparent",
+          "height": "--ctl-h",
+          "padding": "0 .5rem 0 1.25rem",
+          "color": "--ink",
+          "size": "--t-value",
+          "weight": "400"
+        },
+        "marker": {
+          "fill": "--accent",
+          "size": ".3125rem"
+        }
+      },
+      "states": {
+        "focus": {
+          "host.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "host.opacity": "--disabled-opacity"
+        },
+        "hover": {
+          "field.border": "--accent",
+          "option.fill": "--accent",
+          "option.color": "--accent-ink"
+        },
+        "open": {
+          "field.border": "--accent",
+          "caret.stroke": "--accent"
+        },
+        "selected": {
+          "option.weight": "700",
+          "marker.fill": "--accent"
+        },
+        "error": {
+          "field.border": "--apc-danger",
+          "label.color": "--apc-danger-text"
+        }
+      },
+      "sizes": {
+        "default": "--ctl-h",
+        "overridable": [
+          "data-size",
+          "--w-h"
+        ]
+      },
+      "options": [
+        "data-label",
+        "data-aria-label",
+        "data-title",
+        "data-size",
+        "data-disabled",
+        "data-param",
+        "data-items",
+        "data-value",
+        "data-placeholder",
+        "data-searchable"
+      ],
+      "a11y": {
+        "role": "combobox > listbox > option",
+        "keys": "Closed: Down/Up/Enter/Space/Alt+Down open, typing jumps. Open: arrows, PageUp/PageDown, Home/End, Enter chooses, Esc closes, Tab leaves"
+      }
+    },
+    "menu": {
+      "title": "Menu",
+      "group": "Selection",
+      "summary": "Popup, anchor or context menu with checkable items, shortcuts, separators and one submenu level.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "trigger": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "height": "--ctl-h",
+          "padding": "0 .75rem",
+          "color": "--ink",
+          "font": "--font-ui",
+          "size": "--t-label",
+          "transform": "uppercase"
+        },
+        "popup": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "--r-panel",
+          "shadow": "--apc-shadow-pop",
+          "min-width": "10rem",
+          "padding": ".125rem 0"
+        },
+        "item": {
+          "fill": "transparent",
+          "height": "--ctl-h",
+          "padding": "0 .5rem 0 .25rem",
+          "gap": ".5rem",
+          "color": "--ink",
+          "size": "--t-value"
+        },
+        "shortcut": {
+          "color": "--ink-2",
+          "size": "--t-label",
+          "letter-spacing": ".04em"
+        },
+        "separator": {
+          "fill": "--rule",
+          "height": "--stroke"
+        },
+        "check": {
+          "stroke": "currentColor",
+          "size": ".875rem"
+        }
+      },
+      "states": {
+        "focus": {
+          "host.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "host.opacity": "--disabled-opacity"
+        },
+        "hover": {
+          "item.fill": "--accent",
+          "item.color": "--accent-ink",
+          "shortcut.color": "--accent-ink"
+        },
+        "open": {
+          "trigger.border": "--accent",
+          "item.fill": "--rule-2"
+        },
+        "error": {
+          "trigger.border": "--apc-danger"
+        }
+      },
+      "sizes": {
+        "default": "--ctl-h (item height)",
+        "overridable": [
+          "data-size",
+          "--w-h"
+        ]
+      },
+      "options": [
+        "data-label",
+        "data-items",
+        "data-trigger",
+        "data-context",
+        "data-onselect",
+        "data-disabled"
+      ],
+      "a11y": {
+        "role": "menu > menuitem | menuitemcheckbox",
+        "keys": "Arrows (wrap), Home/End, Right opens a submenu, Left/Esc closes it, Enter/Space use, Tab closes, typing jumps"
+      }
+    },
+    "tabs": {
+      "title": "Tabs",
+      "group": "Selection",
+      "summary": "No box: a structural rule under the row and a 2px accent rule under the chosen tab.",
+      "parts": {
+        "bar": {
+          "border": "--stroke solid --rule-2",
+          "gap": "1.5rem"
+        },
+        "tab": {
+          "color": "--ink-3",
+          "font": "--font-ui",
+          "size": "--t-label",
+          "letter-spacing": "--label-spacing",
+          "outline": "none"
+        },
+        "indicator": {
+          "fill": "--accent",
+          "height": "2px"
+        }
+      },
+      "states": {
+        "hover": {
+          "tab.color": "--ink-2"
+        },
+        "selected": {
+          "tab.color": "--ink",
+          "indicator.fill": "--accent"
+        },
+        "focus": {
+          "tab.outline": "--stroke-2 solid --apc-focus"
+        },
+        "disabled": {
+          "tab.color": "--ink-3"
+        }
+      },
+      "sizes": {
+        "default": "--ctl-h",
+        "overridable": [
+          "data-size",
+          "--w-h"
+        ]
+      },
+      "options": [
+        "data-label",
+        "data-orient",
+        "data-value",
+        "data-tab",
+        "data-size",
+        "data-disabled"
+      ],
+      "a11y": {
+        "role": "tablist > tab + tabpanel",
+        "keys": "Roving tabindex; Left/Right (Up/Down vertical) move and activate, wrap, skip disabled; Home/End"
+      }
+    },
+    "list": {
+      "title": "List",
+      "group": "Selection",
+      "summary": "No box, no radius: flat rows on the wash. The chosen row sits on the raised body and carries a 2px accent rule on its leading edge.",
+      "parts": {
+        "body": {
+          "fill": "--wash",
+          "border": "none",
+          "radius": "0"
+        },
+        "row": {
+          "fill": "transparent",
+          "color": "--ink-2",
+          "height": "2.1rem",
+          "font": "--font-ui",
+          "size": "--t-label",
+          "outline": "none",
+          "opacity": "1"
+        },
+        "marker": {
+          "fill": "--accent",
+          "width": "2px"
+        },
+        "index": {
+          "color": "--ink-3",
+          "font": "--font-num",
+          "size": "--t-micro"
+        }
+      },
+      "states": {
+        "hover": {
+          "row.fill": "--plate-3",
+          "row.color": "--ink"
+        },
+        "selected": {
+          "row.fill": "--plate-3",
+          "row.color": "--ink",
+          "marker.fill": "--accent"
+        },
+        "focus": {
+          "row.outline": "--stroke-2 solid --apc-focus"
+        },
+        "disabled": {
+          "row.opacity": "--disabled-opacity"
+        }
+      },
+      "sizes": {
+        "default": "--ctl-h (row height)",
+        "overridable": [
+          "data-size",
+          "--w-h",
+          "--apc-list-rows"
+        ]
+      },
+      "options": [
+        "data-label",
+        "data-aria-label",
+        "data-title",
+        "data-size",
+        "data-disabled",
+        "data-items",
+        "data-multiple",
+        "data-value",
+        "data-rows",
+        "data-param"
+      ],
+      "a11y": {
+        "role": "listbox > option",
+        "keys": "One tab stop (aria-activedescendant); arrows, Home/End, PageUp/PageDown, type-ahead; multi: Space toggles, Shift+arrow extends, Ctrl/Cmd+A selects all"
+      }
+    },
+    "textfield": {
+      "title": "Text field",
+      "group": "Text & numbers",
+      "summary": "Single-line text input with validation, help text and an error message under the field.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "input": {
+          "fill": "--inset",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "height": "--ctl-h",
+          "padding": "0 .5rem",
+          "color": "--ink",
+          "font": "--font-ui",
+          "size": "--t-value",
+          "outline": "none"
+        },
+        "placeholder": {
+          "color": "--ink-2"
+        },
+        "label": {
+          "font": "--font-ui",
+          "size": "--t-label",
+          "weight": "600",
+          "letter-spacing": "--label-spacing",
+          "transform": "uppercase",
+          "color": "--ink-2"
+        },
+        "message": {
+          "font": "--font-text",
+          "size": "--t-label",
+          "color": "--ink-2"
+        }
+      },
+      "states": {
+        "focus": {
+          "input.border": "--apc-focus",
+          "input.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "host.opacity": "--disabled-opacity"
+        },
+        "hover": {
+          "input.border": "--ink-2"
+        },
+        "error": {
+          "input.border": "--apc-danger",
+          "label.color": "--apc-danger-text",
+          "message.color": "--apc-danger-text"
+        }
+      },
+      "sizes": {
+        "default": "--ctl-h",
+        "overridable": [
+          "data-size",
+          "--w-h"
+        ]
+      },
+      "options": [
+        "data-label",
+        "data-aria-label",
+        "data-title",
+        "data-size",
+        "data-disabled",
+        "data-value",
+        "data-type",
+        "data-placeholder",
+        "data-maxlength",
+        "data-minlength",
+        "data-required",
+        "data-pattern",
+        "data-help",
+        "data-error"
+      ],
+      "a11y": {
+        "role": "textbox (native input)",
+        "keys": "Enter commits (invalid stays focused with the message), Esc restores the last committed value"
+      }
+    },
+    "numberfield": {
+      "title": "Number field",
+      "group": "Text & numbers",
+      "summary": "Typed numeric input with units and step buttons; parsing and formatting are shared with the knob value entry.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "input": {
+          "fill": "--inset",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "height": "--ctl-h",
+          "padding": "0 .5rem",
+          "color": "--ink",
+          "font": "--font-ui",
+          "size": "--t-value",
+          "outline": "none",
+          "align": "center",
+          "numerals": "tabular"
+        },
+        "stepper": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "width": "--ctl-h",
+          "color": "--ink",
+          "font": "--font-ui",
+          "size": "--t-readout"
+        },
+        "label": {
+          "font": "--font-ui",
+          "size": "--t-label",
+          "weight": "600",
+          "letter-spacing": "--label-spacing",
+          "transform": "uppercase",
+          "color": "--ink-2"
+        },
+        "message": {
+          "font": "--font-text",
+          "size": "--t-label",
+          "color": "--ink-2"
+        }
+      },
+      "states": {
+        "focus": {
+          "input.border": "--apc-focus",
+          "input.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "host.opacity": "--disabled-opacity"
+        },
+        "hover": {
+          "stepper.border": "--accent",
+          "input.border": "--ink-2"
+        },
+        "active": {
+          "stepper.fill": "--accent",
+          "stepper.color": "--accent-ink",
+          "stepper.border": "--accent"
+        },
+        "error": {
+          "input.border": "--apc-danger",
+          "label.color": "--apc-danger-text",
+          "message.color": "--apc-danger-text"
+        }
+      },
+      "sizes": {
+        "default": "--ctl-h",
+        "overridable": [
+          "data-size",
+          "--w-h"
+        ]
+      },
+      "options": [
+        "data-label",
+        "data-aria-label",
+        "data-title",
+        "data-size",
+        "data-disabled",
+        "data-param",
+        "data-min",
+        "data-max",
+        "data-step",
+        "data-unit",
+        "data-value",
+        "data-digits",
+        "data-steppers"
+      ],
+      "a11y": {
+        "role": "spinbutton",
+        "keys": "Enter commits, Esc reverts, Up/Down step (Shift fine), PageUp/PageDown coarse, wheel while focused; step buttons repeat on hold"
+      }
+    },
+    "label": {
+      "title": "Label",
+      "group": "Text & numbers",
+      "summary": "Static text in one of four roles: title, label, caption (sentence) or value.",
+      "parts": {
+        "title": {
+          "font": "--font-ui",
+          "size": "--t-title",
+          "weight": "700",
+          "letter-spacing": "--label-spacing",
+          "transform": "uppercase",
+          "color": "--ink"
+        },
+        "label": {
+          "font": "--font-ui",
+          "size": "--t-label",
+          "weight": "600",
+          "letter-spacing": "--label-spacing",
+          "transform": "uppercase",
+          "color": "--ink-2"
+        },
+        "caption": {
+          "font": "--font-text",
+          "size": "--t-label",
+          "color": "--ink-2",
+          "line-height": "1.35"
+        },
+        "value": {
+          "font": "--font-ui",
+          "size": "--t-readout",
+          "weight": "600",
+          "numerals": "tabular",
+          "color": "--ink"
+        }
+      },
+      "states": {},
+      "sizes": {
+        "default": "content",
+        "overridable": []
+      },
+      "options": [
+        "data-role",
+        "data-text",
+        "data-for",
+        "data-level"
+      ],
+      "a11y": {
+        "role": "heading (data-role=title) | generic text",
+        "keys": "Not focusable; data-for names another widget via aria-labelledby"
+      }
+    },
+    "readout": {
+      "title": "Readout",
+      "group": "Text & numbers",
+      "summary": "Live read-only value (a parameter or a meter feed) with an optional caption.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "value": {
+          "font": "--font-ui",
+          "size": "--t-readout",
+          "weight": "600",
+          "numerals": "tabular",
+          "color": "--ink"
+        },
+        "label": {
+          "font": "--font-ui",
+          "size": "--t-label",
+          "weight": "600",
+          "letter-spacing": "--label-spacing",
+          "transform": "uppercase",
+          "color": "--ink-2"
+        }
+      },
+      "states": {
+        "focus": {
+          "host.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "host.opacity": "--disabled-opacity"
+        },
+        "error": {
+          "value.color": "--apc-danger-text",
+          "label.color": "--apc-danger-text"
+        }
+      },
+      "sizes": {
+        "default": "--t-readout (text)",
+        "overridable": [
+          "data-size (sm | lg)"
+        ]
+      },
+      "options": [
+        "data-param",
+        "data-meter",
+        "data-unit",
+        "data-digits",
+        "data-label",
+        "data-layout",
+        "data-align",
+        "data-size"
+      ],
+      "a11y": {
+        "role": "status (output, aria-live off)",
+        "keys": "Not focusable; no announcements while values stream"
+      }
+    },
+    "panel": {
+      "title": "Panel",
+      "group": "Containers",
+      "summary": "Titled frame with a hairline border and an optional collapsible header.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "frame": {
+          "border": "--stroke solid --rule-2",
+          "radius": "--r-panel"
+        },
+        "header": {
+          "height": "--ctl-h",
+          "padding": "0 --pad",
+          "border": "--stroke solid --rule-2 (bottom)"
+        },
+        "title": {
+          "font": "--font-ui",
+          "size": "--t-label",
+          "weight": "700",
+          "letter-spacing": "--label-spacing",
+          "transform": "uppercase",
+          "color": "--ink-2"
+        },
+        "chevron": {
+          "color": "--ink-2",
+          "size": ".75rem"
+        },
+        "body": {
+          "padding": "--pad"
+        }
+      },
+      "states": {
+        "focus": {
+          "host.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "host.opacity": "--disabled-opacity"
+        },
+        "hover": {
+          "title.color": "--ink"
+        }
+      },
+      "sizes": {
+        "default": "content",
+        "overridable": [
+          "data-size"
+        ]
+      },
+      "options": [
+        "data-title",
+        "data-label",
+        "data-collapsible",
+        "data-collapsed"
+      ],
+      "a11y": {
+        "role": "group (aria-labelledby the title)",
+        "keys": "Header is a native button (Enter/Space) with aria-expanded when collapsible"
+      }
+    },
+    "divider": {
+      "title": "Divider",
+      "group": "Containers",
+      "summary": "Hairline rule, horizontal or vertical, with optional inline text.",
+      "parts": {
+        "line": {
+          "fill": "--rule",
+          "height": "--stroke"
+        },
+        "text": {
+          "font": "--font-ui",
+          "size": "--t-label",
+          "weight": "600",
+          "letter-spacing": "--label-spacing",
+          "transform": "uppercase",
+          "color": "--ink-2"
+        }
+      },
+      "states": {},
+      "sizes": {
+        "default": "--stroke (thickness)",
+        "overridable": []
+      },
+      "options": [
+        "data-orient",
+        "data-label"
+      ],
+      "a11y": {
+        "role": "separator",
+        "keys": "Not focusable; aria-orientation set"
+      }
+    },
+    "led": {
+      "title": "LED",
+      "group": "Display",
+      "summary": "A square lamp with no ring. On is the energy cyan; a gate is the accent; clip is the limit red with a halo.",
+      "parts": {
+        "lamp": {
+          "fill": "--led-off",
+          "radius": "--r-led",
+          "size": "1.2rem square",
+          "shadow": "none",
+          "opacity": "1"
+        }
+      },
+      "states": {
+        "checked": {
+          "lamp.fill": "--ok",
+          "lamp.shadow": "0 0 .45rem --halo"
+        },
+        "error": {
+          "lamp.fill": "--apc-danger",
+          "lamp.shadow": "0 0 .45rem --halo"
+        },
+        "disabled": {
+          "lamp.opacity": "--disabled-opacity"
+        }
+      },
+      "sizes": {
+        "default": ".625rem",
+        "overridable": [
+          "data-size"
+        ]
+      },
+      "options": [
+        "data-state",
+        "data-on",
+        "data-param",
+        "data-states",
+        "data-label"
+      ],
+      "a11y": {
+        "role": "img (aria-label \"label: state\")",
+        "keys": "Not focusable"
+      }
+    },
+    "progress": {
+      "title": "Progress",
+      "group": "Display",
+      "summary": "A well with a hairline inset edge and a 1px radius; the fill is the accent. Not a rounded pill.",
+      "parts": {
+        "track": {
+          "fill": "--inset",
+          "height": ".45rem",
+          "radius": "1px",
+          "shadow": "inset 0 0 0 --stroke --rule-2",
+          "outline": "none"
+        },
+        "fill": {
+          "fill": "--accent",
+          "radius": "1px"
+        },
+        "label": {
+          "font": "--font-ui",
+          "size": "--t-label",
+          "color": "--ink-2"
+        },
+        "value": {
+          "font": "--font-num",
+          "size": "--t-value",
+          "color": "--ink"
+        }
+      },
+      "states": {
+        "hover": {
+          "track.shadow": "inset 0 0 0 --stroke --rule"
+        },
+        "focus": {
+          "track.outline": "--stroke-2 solid --apc-focus"
+        },
+        "error": {
+          "fill.fill": "--apc-danger"
+        },
+        "disabled": {
+          "label.color": "--ink-3"
+        }
+      },
+      "sizes": {
+        "default": "--track-w (thickness)",
+        "overridable": [
+          "data-size"
+        ]
+      },
+      "options": [
+        "data-value",
+        "data-min",
+        "data-max",
+        "data-indeterminate",
+        "data-show-value",
+        "data-state",
+        "data-orient",
+        "data-param",
+        "data-meter",
+        "data-label"
+      ],
+      "a11y": {
+        "role": "progressbar",
+        "keys": "Not focusable; aria-valuenow/min/max/valuetext (no valuenow while indeterminate)"
+      }
+    },
+    "logo": {
+      "title": "Logo",
+      "group": "Display",
+      "summary": "Wordmark or lockup slot (text, image or inline SVG); a link only when a URL is configured.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "text": {
+          "font": "--font-ui",
+          "size": "--t-head",
+          "weight": "700",
+          "letter-spacing": "--label-spacing",
+          "transform": "uppercase",
+          "color": "--ink"
+        },
+        "sub": {
+          "size": "--t-micro",
+          "weight": "600",
+          "letter-spacing": "--label-spacing",
+          "transform": "uppercase",
+          "color": "--ink-2"
+        },
+        "image": {
+          "height": "--apc-logo-h"
+        }
+      },
+      "states": {
+        "focus": {
+          "host.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "host.opacity": "--disabled-opacity"
+        },
+        "hover": {
+          "text.color": "--accent-text"
+        }
+      },
+      "sizes": {
+        "default": "--apc-logo-h (image height)",
+        "overridable": [
+          "data-size",
+          "--apc-logo-h"
+        ]
+      },
+      "options": [
+        "data-text",
+        "data-sub",
+        "data-src",
+        "data-alt",
+        "data-url",
+        "data-link"
+      ],
+      "a11y": {
+        "role": "img (image/svg) | link button",
+        "keys": "The button exists only when a URL is configured; Enter/Space open it through apc.openUrl"
+      }
+    },
+    "graph": {
+      "title": "Graph",
+      "group": "Visualisation",
+      "summary": "Frequency response: a faint cyan grid, one accent curve with a dark fill, and band nodes drawn as a ring with a centred dot.",
+      "parts": {
+        "well": {
+          "fill": "--inset",
+          "radius": "--r-well",
+          "outline": "none"
+        },
+        "grid": {
+          "stroke": "--viz-grid",
+          "width": "--stroke"
+        },
+        "axis": {
+          "color": "--viz-axis",
+          "font": "--font-num",
+          "size": "--t-micro"
+        },
+        "curve": {
+          "stroke": "--viz-accent",
+          "width": "2px"
+        },
+        "fill": {
+          "fill": "--viz-fill"
+        },
+        "node": {
+          "fill": "--ink",
+          "border": "2px solid --plate",
+          "radius": "50%",
+          "shadow": "0 0 0 1px --ink",
+          "size": "--apc-viz-node"
+        }
+      },
+      "states": {
+        "hover": {
+          "node.fill": "--viz-accent"
+        },
+        "selected": {
+          "curve.stroke": "--viz-accent",
+          "fill.fill": "--viz-fill"
+        },
+        "focus": {
+          "well.outline": "--stroke-2 solid --apc-focus"
+        }
+      },
+      "sizes": {
+        "default": "20rem x 10rem",
+        "overridable": [
+          "--apc-viz-w",
+          "--apc-viz-h"
+        ]
+      },
+      "options": [
+        "data-label",
+        "data-xscale",
+        "data-xmin",
+        "data-xmax",
+        "data-ymin",
+        "data-ymax",
+        "data-xunit",
+        "data-yunit",
+        "data-axes",
+        "data-grid",
+        "data-nodes",
+        "data-curves",
+        "data-viz"
+      ],
+      "a11y": {
+        "role": "img (no nodes) | group (with nodes); each node role=slider",
+        "keys": "Arrows move the node (Shift fine, PageUp/PageDown coarse), + / - change Q, Delete resets, Alt+click resets; text alternative via aria-describedby"
+      }
+    },
+    "envelope": {
+      "title": "Envelope",
+      "group": "Visualisation",
+      "summary": "ADSR curve in the accent over a dark fill, with one ring-dot handle per breakpoint and a hairline grid.",
+      "parts": {
+        "well": {
+          "fill": "--inset",
+          "radius": "--r-well",
+          "outline": "none"
+        },
+        "grid": {
+          "stroke": "--viz-grid",
+          "width": "--stroke"
+        },
+        "axis": {
+          "color": "--viz-axis",
+          "font": "--font-num",
+          "size": "--t-micro"
+        },
+        "curve": {
+          "stroke": "--viz-accent",
+          "width": "2px"
+        },
+        "fill": {
+          "fill": "--viz-fill"
+        },
+        "handle": {
+          "fill": "--ink",
+          "border": "2px solid --plate",
+          "radius": "50%",
+          "shadow": "0 0 0 1px --ink",
+          "size": "--apc-viz-node"
+        }
+      },
+      "states": {
+        "hover": {
+          "handle.fill": "--viz-accent"
+        },
+        "selected": {
+          "curve.stroke": "--viz-accent",
+          "fill.fill": "--viz-fill"
+        },
+        "focus": {
+          "well.outline": "--stroke-2 solid --apc-focus"
+        }
+      },
+      "sizes": {
+        "default": "20rem x 10rem",
+        "overridable": [
+          "--apc-viz-w",
+          "--apc-viz-h"
+        ]
+      },
+      "options": [
+        "data-mode",
+        "data-attack",
+        "data-decay",
+        "data-sustain",
+        "data-release",
+        "data-tmax",
+        "data-points",
+        "data-editable",
+        "data-label"
+      ],
+      "a11y": {
+        "role": "group; each node role=slider (Attack, Decay and sustain, Release)",
+        "keys": "Arrows move the node, Insert adds a point after it (multi), Delete removes a free point, Alt+click resets"
+      }
+    },
+    "spectrum": {
+      "title": "Spectrum",
+      "group": "Visualisation",
+      "summary": "Bar spectrum: thin energy-cyan bars on a faint grid, with white peak-hold ticks. Energy is cyan; red belongs to the limit, not the spectrum.",
+      "parts": {
+        "well": {
+          "fill": "--inset",
+          "radius": "--r-well",
+          "outline": "none"
+        },
+        "grid": {
+          "stroke": "--viz-grid",
+          "width": "--stroke"
+        },
+        "axis": {
+          "color": "--viz-axis",
+          "font": "--font-num",
+          "size": "--t-micro"
+        },
+        "bar": {
+          "fill": "--ok"
+        },
+        "peak": {
+          "fill": "--ink",
+          "height": "--stroke"
+        }
+      },
+      "states": {
+        "hover": {
+          "bar.fill": "--ok"
+        },
+        "selected": {
+          "bar.fill": "--ok"
+        },
+        "focus": {
+          "well.outline": "--stroke-2 solid --apc-focus"
+        }
+      },
+      "sizes": {
+        "default": "20rem x 10rem",
+        "overridable": [
+          "--apc-viz-w",
+          "--apc-viz-h"
+        ]
+      },
+      "options": [
+        "data-viz",
+        "data-label",
+        "data-style",
+        "data-bands",
+        "data-fmin",
+        "data-fmax",
+        "data-dbmin",
+        "data-dbmax",
+        "data-xscale",
+        "data-smoothing",
+        "data-peak-hold",
+        "data-fall",
+        "data-axes",
+        "data-grid"
+      ],
+      "a11y": {
+        "role": "img",
+        "keys": "Display only; text alternative names the strongest component (updated at most once per second)"
+      }
+    },
+    "waveform": {
+      "title": "Waveform",
+      "group": "Visualisation",
+      "summary": "Sample waveform display: static peaks, a scrolling roll, or an oscilloscope trace.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "plot": {
+          "fill": "--inset",
+          "grid": "--viz-grid",
+          "grid zero line": "--viz-grid",
+          "axis": "--viz-axis"
+        },
+        "trace": {
+          "stroke": "--viz-line",
+          "width": "--stroke x 1.25"
+        },
+        "cursor": {
+          "stroke": "--viz-accent"
+        }
+      },
+      "states": {},
+      "sizes": {
+        "default": "20rem x 10rem",
+        "overridable": [
+          "--apc-viz-w",
+          "--apc-viz-h"
+        ]
+      },
+      "options": [
+        "data-viz",
+        "data-label",
+        "data-mode",
+        "data-ymin",
+        "data-ymax",
+        "data-yunit",
+        "data-axes",
+        "data-grid",
+        "data-trigger",
+        "data-spc",
+        "data-cols",
+        "data-samples"
+      ],
+      "a11y": {
+        "role": "img",
+        "keys": "Display only; text alternative states the value range"
+      }
+    },
+    "scope": {
+      "title": "Scope",
+      "group": "Visualisation",
+      "summary": "Oscilloscope trace with an optional rising-zero-crossing trigger (the waveform element in scope mode).",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "plot": {
+          "fill": "--inset",
+          "grid": "--viz-grid",
+          "grid zero line": "--viz-grid",
+          "axis": "--viz-axis"
+        },
+        "trace": {
+          "stroke": "--viz-line",
+          "width": "--stroke x 1.25"
+        },
+        "cursor": {
+          "stroke": "--viz-accent"
+        }
+      },
+      "states": {},
+      "sizes": {
+        "default": "20rem x 10rem",
+        "overridable": [
+          "--apc-viz-w",
+          "--apc-viz-h"
+        ]
+      },
+      "options": [
+        "data-viz",
+        "data-label",
+        "data-mode",
+        "data-ymin",
+        "data-ymax",
+        "data-yunit",
+        "data-axes",
+        "data-grid",
+        "data-trigger",
+        "data-spc",
+        "data-cols",
+        "data-samples"
+      ],
+      "a11y": {
+        "role": "img",
+        "keys": "Display only; text alternative states the value range"
+      }
+    },
+    "meter": {
+      "title": "Meter",
+      "group": "Visualisation",
+      "summary": "Level meter (1 or 2 channels, continuous or segmented) with peak hold, a latching clip lamp and warn/clip zones.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "track": {
+          "fill": "--inset"
+        },
+        "zone-ok": {
+          "fill": "--meter-ok"
+        },
+        "zone-warn": {
+          "fill": "--meter-warn"
+        },
+        "zone-clip": {
+          "fill": "--meter-clip"
+        },
+        "segment-off": {
+          "fill": "--led-off",
+          "opacity": ".55"
+        },
+        "peak": {
+          "fill": "--ink"
+        },
+        "ticks": {
+          "stroke": "--viz-axis"
+        },
+        "lamp": {
+          "fill": "--inset",
+          "frame": "--rule-2",
+          "outline": "none"
+        }
+      },
+      "states": {
+        "focus": {
+          "lamp.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "error": {
+          "lamp.fill": "--meter-clip"
+        }
+      },
+      "sizes": {
+        "default": "3rem x 10rem (vertical) | 10rem x 3rem (horizontal)",
+        "overridable": [
+          "--apc-viz-w",
+          "--apc-viz-h"
+        ]
+      },
+      "options": [
+        "data-meter",
+        "data-meter-r",
+        "data-viz",
+        "data-channels",
+        "data-orientation",
+        "data-min",
+        "data-max",
+        "data-warn",
+        "data-clip-at",
+        "data-style",
+        "data-segments",
+        "data-peak-hold",
+        "data-fall",
+        "data-ticks",
+        "data-input",
+        "data-announce"
+      ],
+      "a11y": {
+        "role": "meter (aria-valuemin/max/now/valuetext)",
+        "keys": "The clip lamp is a real button: click, Enter or Space resets the latch"
+      }
+    },
+    "stepseq": {
+      "title": "Step sequencer",
+      "group": "Visualisation",
+      "summary": "Step grid (gate, value or pitch mode) with accents, beat grouping and a playhead; paint with the pointer or edit by keyboard.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "grid": {
+          "fill": "--inset",
+          "border": "--stroke solid --rule"
+        },
+        "step": {
+          "fill": "--step-off",
+          "border": "--stroke solid --rule-2 (right, bottom)",
+          "outline": "none",
+          "opacity": "1"
+        },
+        "step-on": {
+          "fill": "--step-on"
+        },
+        "step-accent": {
+          "fill": "--step-accent"
+        },
+        "group-edge": {
+          "border": "--stroke solid --rule (left of each beat group)"
+        },
+        "playhead": {
+          "outline": "--stroke solid --step-playhead",
+          "number color": "--step-playhead"
+        },
+        "number": {
+          "size": "--t-micro",
+          "color": "--viz-axis",
+          "letter-spacing": "--label-spacing",
+          "transform": "uppercase"
+        }
+      },
+      "states": {
+        "selected": {
+          "step.fill": "--step-on"
+        },
+        "focus": {
+          "step.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "step.opacity": "--disabled-opacity"
+        }
+      },
+      "sizes": {
+        "default": "height 6rem, width of the cell",
+        "overridable": [
+          "--apc-viz-w",
+          "--apc-viz-h"
+        ]
+      },
+      "options": [
+        "data-mode",
+        "data-count",
+        "data-rows",
+        "data-length",
+        "data-group",
+        "data-min",
+        "data-max",
+        "data-numbers",
+        "data-row-labels",
+        "data-steps",
+        "data-accents",
+        "data-param",
+        "data-viz",
+        "data-id"
+      ],
+      "a11y": {
+        "role": "grid > row > gridcell (aria-selected)",
+        "keys": "Arrows move (value/pitch: Up/Down edit), Home/End, Space/Enter toggle, Shift+Space accent, Delete clears"
+      }
+    },
+    "xypad": {
+      "title": "XY pad",
+      "group": "Visualisation",
+      "summary": "Two-axis pad bound to two parameters: absolute press-and-drag, Shift for relative fine control.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "plane": {
+          "fill": "--inset",
+          "frame": "--rule",
+          "grid": "--viz-grid",
+          "grid major": "--rule",
+          "crosshair": "--viz-accent",
+          "default tick": "--viz-axis"
+        },
+        "thumb": {
+          "size": "--apc-viz-node",
+          "fill": "--inset",
+          "border": "--stroke solid --viz-accent",
+          "outline": "none"
+        },
+        "readout": {
+          "size": "--t-micro",
+          "color": "--viz-axis",
+          "letter-spacing": "--label-spacing"
+        }
+      },
+      "states": {
+        "active": {
+          "thumb.fill": "--viz-accent"
+        },
+        "focus": {
+          "thumb.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "host.opacity": "--disabled-opacity"
+        }
+      },
+      "sizes": {
+        "default": "10rem x 10rem",
+        "overridable": [
+          "--apc-viz-w",
+          "--apc-viz-h"
+        ]
+      },
+      "options": [
+        "data-x",
+        "data-y",
+        "data-xlabel",
+        "data-ylabel",
+        "data-xmin",
+        "data-xmax",
+        "data-ymin",
+        "data-ymax",
+        "data-grid",
+        "data-id",
+        "data-label"
+      ],
+      "a11y": {
+        "role": "group > slider (thumb)",
+        "keys": "Arrows move 1 % (Shift 0.1 %), PageUp/PageDown y 10 %, Home/End x min/max, Delete resets, Alt+click or double-click resets"
+      }
+    },
+    "picture": {
+      "title": "Picture",
+      "group": "Visualisation",
+      "summary": "Image or artwork slot (relative path or data URI only, never the network) with a token-coloured placeholder and an optional spectrum overlay.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "frame": {
+          "fill": "--inset",
+          "border": "--stroke solid --rule"
+        },
+        "placeholder": {
+          "sun": "--accent",
+          "ridge": "--rule",
+          "ridge soft": "--ink-2",
+          "label": "--viz-axis"
+        },
+        "error": {
+          "fill": "--inset",
+          "border": "--stroke solid --apc-danger",
+          "color": "--apc-danger-text",
+          "size": "--t-value"
+        }
+      },
+      "states": {
+        "error": {
+          "frame.border": "--apc-danger"
+        }
+      },
+      "sizes": {
+        "default": "20rem x 10rem",
+        "overridable": [
+          "--apc-viz-w",
+          "--apc-viz-h"
+        ]
+      },
+      "options": [
+        "data-alt",
+        "data-src",
+        "data-fit",
+        "data-seed",
+        "data-overlay",
+        "data-overlay-style",
+        "data-viz"
+      ],
+      "a11y": {
+        "role": "img (aria-label = alt; role=presentation when alt is empty)",
+        "keys": "Display only; a rejected or broken URL shows a visible error block (role=alert)"
+      }
+    },
+    "header": {
+      "title": "Header",
+      "group": "Chrome",
+      "summary": "Brand lockup (logo and name link only when a URL is configured), save slot, help button, theme switch, scale control and settings gear.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "bar": {
+          "color": "--ink",
+          "font": "--font-ui",
+          "padding": "0 .75rem",
+          "gap": ".75rem"
+        },
+        "brand": {
+          "size": "--t-value",
+          "weight": "700",
+          "letter-spacing": "--label-spacing",
+          "transform": "uppercase",
+          "color": "--ink"
+        },
+        "separator": {
+          "color": "--ink-2"
+        },
+        "logo": {
+          "height": "1.5rem"
+        },
+        "tools": {
+          "gap": ".375rem"
+        }
+      },
+      "states": {
+        "focus": {
+          "host.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "host.opacity": "--disabled-opacity"
+        },
+        "hover": {
+          "brand.color": "--accent-text"
+        }
+      },
+      "sizes": {
+        "default": "2.5rem (typical cell height)",
+        "overridable": []
+      },
+      "options": [
+        "data-product",
+        "data-manufacturer",
+        "data-logo-src",
+        "data-save",
+        "data-help",
+        "data-scale"
+      ],
+      "a11y": {
+        "role": "from the host element (<header> = banner)",
+        "keys": "Brand links are buttons (Enter/Space) with aria-label \"Open ... website\""
+      }
+    },
+    "footer": {
+      "title": "Footer",
+      "group": "Chrome",
+      "summary": "Version always visible, licence badge (demo / trial / licensed / unverified), update note and a preset status slot.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "bar": {
+          "color": "--ink-2",
+          "font": "--font-ui",
+          "size": "--t-label",
+          "padding": "0 .75rem",
+          "gap": ".75rem"
+        },
+        "version": {
+          "color": "--ink-2",
+          "numerals": "tabular"
+        },
+        "badge": {
+          "color": "--accent-text",
+          "border": "--stroke solid --accent",
+          "weight": "700",
+          "letter-spacing": "--label-spacing",
+          "radius": "--r-control",
+          "padding": "0 .35rem"
+        },
+        "update-note": {
+          "color": "--accent-text",
+          "decoration": "underline"
+        }
+      },
+      "states": {
+        "focus": {
+          "host.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "host.opacity": "--disabled-opacity"
+        },
+        "error": {
+          "badge.color": "--apc-danger-text",
+          "badge.border": "--apc-danger"
+        }
+      },
+      "sizes": {
+        "default": "1.5rem (typical cell height)",
+        "overridable": []
+      },
+      "options": [
+        "data-version"
+      ],
+      "a11y": {
+        "role": "from the host element (<footer> = contentinfo); preset slot role=status",
+        "keys": "Badge and update note are buttons (Enter/Space)"
+      }
+    },
+    "scale": {
+      "title": "Scale control",
+      "group": "Chrome",
+      "summary": "Smaller / larger buttons with the current interface scale (50..300 % in steps of 25 %).",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "button": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "color": "--ink",
+          "font": "--font-ui",
+          "size": "--t-label",
+          "min-height": "max(22px, 1.1rem)"
+        },
+        "value": {
+          "size": "--t-label",
+          "color": "--ink-2",
+          "numerals": "tabular",
+          "min-width": "3.2em"
+        }
+      },
+      "states": {
+        "focus": {
+          "host.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "host.opacity": "--disabled-opacity"
+        },
+        "hover": {
+          "button.border": "--accent"
+        },
+        "active": {
+          "button.fill": "--accent",
+          "button.color": "--accent-ink",
+          "button.border": "--accent"
+        }
+      },
+      "sizes": {
+        "default": "max(22px, 1.1rem) (button height)",
+        "overridable": [
+          "data-min",
+          "data-max"
+        ]
+      },
+      "options": [
+        "data-min",
+        "data-max"
+      ],
+      "a11y": {
+        "role": "group (aria-label \"Interface scale\") > button",
+        "keys": "Enter/Space on the buttons; the value is an aria-live output"
+      }
+    },
+    "gripper": {
+      "title": "Gripper",
+      "group": "Chrome",
+      "summary": "Corner resize handle (drag or arrow keys, aspect-locked, snaps to 5 %) with a live percentage badge.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "hatch": {
+          "stroke": "--grip-ink",
+          "width": "--stroke",
+          "pitch": ".375rem",
+          "opacity": ".8"
+        },
+        "badge": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "color": "--ink",
+          "size": "--t-label",
+          "numerals": "tabular"
+        }
+      },
+      "states": {
+        "focus": {
+          "host.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "host.opacity": "--disabled-opacity"
+        },
+        "hover": {
+          "hatch.opacity": "1"
+        },
+        "active": {
+          "hatch.opacity": "1"
+        }
+      },
+      "sizes": {
+        "default": "2.5rem",
+        "overridable": []
+      },
+      "options": [],
+      "a11y": {
+        "role": "slider (aria-valuetext = scale)",
+        "keys": "Arrows +/- 5 %, PageUp/PageDown +/- 25 %"
+      }
+    },
+    "theme-switch": {
+      "title": "Theme switch",
+      "group": "Chrome",
+      "summary": "Button that cycles night, day and auto; hidden until the host enables theming.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "button": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "color": "--ink",
+          "font": "--font-ui",
+          "size": "--t-label",
+          "transform": "uppercase",
+          "min-height": "max(22px, 1.1rem)"
+        }
+      },
+      "states": {
+        "focus": {
+          "host.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "host.opacity": "--disabled-opacity"
+        },
+        "hover": {
+          "button.border": "--accent"
+        },
+        "active": {
+          "button.fill": "--accent",
+          "button.color": "--accent-ink",
+          "button.border": "--accent"
+        }
+      },
+      "sizes": {
+        "default": "max(22px, 1.1rem)",
+        "overridable": []
+      },
+      "options": [],
+      "a11y": {
+        "role": "button (aria-label \"Theme: ... Click to change\")",
+        "keys": "Enter / Space"
+      }
+    },
+    "help-button": {
+      "title": "Help button",
+      "group": "Chrome",
+      "summary": "Visible button that toggles help mode (F1 or ? are only accelerators); a pressed state shows the mode is on.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "button": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "color": "--ink",
+          "font": "--font-ui",
+          "size": "--t-label",
+          "transform": "uppercase",
+          "min-height": "max(22px, 1.1rem)"
+        }
+      },
+      "states": {
+        "focus": {
+          "host.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "host.opacity": "--disabled-opacity"
+        },
+        "hover": {
+          "button.border": "--accent"
+        },
+        "active": {
+          "button.fill": "--accent",
+          "button.color": "--accent-ink",
+          "button.border": "--accent"
+        },
+        "selected": {
+          "button.fill": "--accent",
+          "button.color": "--accent-ink",
+          "button.border": "--accent"
+        }
+      },
+      "sizes": {
+        "default": "max(22px, 1.1rem)",
+        "overridable": []
+      },
+      "options": [
+        "data-text"
+      ],
+      "a11y": {
+        "role": "button (aria-pressed)",
+        "keys": "Enter / Space; F1 or ? as accelerators"
+      }
+    },
+    "infobar": {
+      "title": "Info bar",
+      "group": "Chrome",
+      "summary": "One-line status text: idle hint, hovered control description or the active help mode.",
+      "parts": {
+        "bar": {
+          "color": "--ink-2",
+          "font": "--font-ui",
+          "size": "--t-label"
+        }
+      },
+      "states": {
+        "hover": {
+          "bar.color": "--ink"
+        },
+        "active": {
+          "bar.color": "--accent-text"
+        }
+      },
+      "sizes": {
+        "default": "one line, fills its cell",
+        "overridable": []
+      },
+      "options": [
+        "data-idle"
+      ],
+      "a11y": {
+        "role": "status (aria-live off)",
+        "keys": "Not focusable"
+      }
+    },
+    "preset-chip": {
+      "title": "Preset chip",
+      "group": "Chrome",
+      "summary": "Compact preset control: name with dirty marker, previous/next, browse and save buttons.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "chip": {
+          "font": "--font-ui",
+          "size": "--t-label",
+          "color": "--ink",
+          "gap": ".15rem"
+        },
+        "browse": {
+          "fill": "--inset",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "min-width": "8rem",
+          "padding": ".2rem .5rem",
+          "color": "--ink"
+        },
+        "step": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "min-height": "1.5rem"
+        },
+        "dirty": {
+          "color": "--accent-text",
+          "weight": "700"
+        }
+      },
+      "states": {
+        "focus": {
+          "host.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "host.opacity": "--disabled-opacity"
+        },
+        "hover": {
+          "browse.border": "--accent"
+        }
+      },
+      "sizes": {
+        "default": "1.4rem (button height)",
+        "overridable": []
+      },
+      "options": [
+        "data-categories",
+        "data-hide-categories"
+      ],
+      "a11y": {
+        "role": "group (aria-label \"Preset\")",
+        "keys": "Buttons: Enter / Space; Browse opens the preset browser"
+      }
+    },
+    "context-panel": {
+      "title": "Context panel",
+      "group": "Overlays",
+      "summary": "Right-click panel of a control: VALUE, MODULATION, MIDI and HELP sections (not a data-apc element; opened by the controls).",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "panel": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "--r-panel",
+          "shadow": "--apc-shadow-pop",
+          "padding": ".375rem",
+          "min-width": "16rem",
+          "color": "--ink",
+          "font": "--font-ui",
+          "size": "--t-value"
+        },
+        "head": {
+          "weight": "600",
+          "border": "--stroke solid --rule-2 (bottom)"
+        },
+        "section-title": {
+          "size": "--t-micro",
+          "weight": "600",
+          "letter-spacing": "--label-spacing",
+          "color": "--ink-2"
+        },
+        "note": {
+          "color": "--ink-2"
+        },
+        "field": {
+          "fill": "--inset",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "color": "--ink"
+        },
+        "help": {
+          "fill": "--inset",
+          "font": "--font-text",
+          "radius": "--r-control"
+        },
+        "swatch": {
+          "fill": "--apc-mod-1 .. --apc-mod-8",
+          "pattern": "dash pattern differs per source"
+        },
+        "slider-track": {
+          "fill": "--inset",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "height": "--track-w"
+        },
+        "slider-fill": {
+          "fill": "--accent",
+          "origin": "0 of a zero-centred range, else the minimum"
+        },
+        "slider-thumb": {
+          "fill": "--accent",
+          "border": "--stroke solid --accent",
+          "radius": "--r-control",
+          "width": "--thumb",
+          "height": "1.25rem"
+        },
+        "amount": {
+          "color": "--ink",
+          "numerals": "tabular"
+        }
+      },
+      "states": {
+        "focus": {
+          "host.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "disabled": {
+          "host.opacity": "--disabled-opacity"
+        },
+        "error": {
+          "field.border": "--apc-danger"
+        },
+        "hover": {
+          "slider-thumb.border": "--ink"
+        },
+        "active": {
+          "slider-thumb.fill": "--ink"
+        }
+      },
+      "sizes": {
+        "default": "min-width 16rem, max-width 30rem",
+        "overridable": []
+      },
+      "options": [],
+      "a11y": {
+        "role": "dialog (non-modal, aria-label \"Options\")",
+        "keys": "Esc closes; opened by right-click, the more button or Shift+F10; the modulation amount slider is a native range input (arrows, PageUp/PageDown, Home/End)"
+      }
+    },
+    "tooltip": {
+      "title": "Tooltip",
+      "group": "Overlays",
+      "summary": "Parameter tooltip with title, live value, up to three lines of help and key hints (not a data-apc element; fixed anchor, never under the pointer); the title=\"\" attribute of any kit control is shown here too (the OS bubble is suppressed while hovering).",
+      "parts": {
+        "box": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "shadow": "--apc-shadow-pop",
+          "padding": ".3rem .5rem",
+          "max-width": "20rem",
+          "color": "--ink",
+          "font": "--font-ui",
+          "size": "--t-value"
+        },
+        "title": {
+          "weight": "600"
+        },
+        "value": {
+          "color": "--accent-text",
+          "numerals": "tabular"
+        },
+        "body": {
+          "font": "--font-text",
+          "lines": "3 (clamped)"
+        },
+        "meta": {
+          "color": "--ink-2"
+        }
+      },
+      "states": {},
+      "sizes": {
+        "default": "max-width 20rem",
+        "overridable": []
+      },
+      "options": [],
+      "a11y": {
+        "role": "tooltip",
+        "keys": "Shown on hover and keyboard focus after ui.tooltip_delay_ms; never while dragging"
+      }
+    },
+    "toast": {
+      "title": "Toast",
+      "group": "Overlays",
+      "summary": "Dismissible notification (info, warn, error) used for every never-fail-silently report; stacked bottom right (not a data-apc element).",
+      "parts": {
+        "box": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "shadow": "--apc-shadow-pop",
+          "padding": ".4rem .5rem .4rem .6rem",
+          "color": "--ink",
+          "font": "--font-ui",
+          "size": "--t-value"
+        },
+        "edge": {
+          "border": ".25rem solid --ink-2 (left)"
+        },
+        "edge-warn": {
+          "border": ".25rem solid --accent (left)"
+        },
+        "close": {
+          "color": "inherit",
+          "min-width": "max(18px, 1rem)",
+          "outline": "none"
+        }
+      },
+      "states": {
+        "focus": {
+          "close.outline": "--stroke-2 solid --apc-focus (offset 2px)"
+        },
+        "error": {
+          "box.border": "--apc-danger"
+        }
+      },
+      "sizes": {
+        "default": "max-width 24rem",
+        "overridable": []
+      },
+      "options": [],
+      "a11y": {
+        "role": "status (error: alert) inside region \"Notifications\"",
+        "keys": "The close button is focusable; Enter/Space dismiss"
+      }
+    },
+    "settings": {
+      "title": "Settings",
+      "group": "Overlays",
+      "summary": "Trigger (gear) that opens the settings overlay: Global, Engine/Quality, MIDI, Presets & Data, License and About tabs.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "sheet": {
+          "fill": "--plate",
+          "border": "--stroke solid --rule",
+          "radius": "--r-panel",
+          "color": "--ink",
+          "font": "--font-ui",
+          "width": "min(34rem, 94vw)"
+        },
+        "backdrop": {
+          "fill": "--apc-overlay"
+        },
+        "tab": {
+          "fill": "transparent",
+          "border": "--stroke solid transparent",
+          "indicator": "none",
+          "color": "--ink-2",
+          "font": "--font-ui",
+          "size": "--t-label",
+          "weight": "600",
+          "padding": ".3rem .5rem",
+          "transform": "uppercase",
+          "letter-spacing": "--label-spacing"
+        },
+        "row": {
+          "label color": "--ink",
+          "gap": ".5rem"
+        },
+        "field": {
+          "fill": "--inset",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "color": "--ink"
+        },
+        "button": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "color": "--ink",
+          "font": "--font-ui",
+          "min-height": "1.5rem",
+          "padding": ".25rem .6rem",
+          "opacity": "1",
+          "size": "--t-label",
+          "transform": "uppercase",
+          "letter-spacing": "--label-spacing"
+        },
+        "message": {
+          "border": "--stroke solid --rule-2",
+          "color": "--ink"
+        },
+        "select": {
+          "fill": "--inset",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "color": "--ink",
+          "font": "--font-ui",
+          "caret": "OS caret drawn in --ink (appearance menulist-button); option list --ink on --inset"
+        },
+        "checkbox": {
+          "fill": "--inset",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "size": "--check",
+          "tick": "--accent-ink"
+        },
+        "scrollbar": {
+          "track": "--inset",
+          "thumb": "--rule",
+          "width": "max(8px, .5rem)",
+          "arrows": "none"
+        }
+      },
+      "states": {
+        "hover": {
+          "tab.color": "--ink",
+          "button.border": "--accent",
+          "button.color": "--accent-text"
+        },
+        "focus": {
+          "host.outline": "2px solid --accent (offset 1px)"
+        },
+        "disabled": {
+          "button.opacity": "--disabled-opacity"
+        },
+        "error": {
+          "message.border": "--apc-danger",
+          "message.color": "--apc-danger-text"
+        },
+        "selected": {
+          "tab.color": "--ink",
+          "tab.fill": "--plate",
+          "tab.border": "--stroke solid --rule",
+          "tab.indicator": ".2rem solid --accent (left bar)"
+        },
+        "checked": {
+          "checkbox.fill": "--accent"
+        }
+      },
+      "sizes": {
+        "default": "min(46rem, 96vw) x min(24rem, 90vh)",
+        "overridable": []
+      },
+      "options": [],
+      "a11y": {
+        "role": "dialog (modal) with tablist/tab/tabpanel",
+        "keys": "Esc closes; Tab cycles inside; arrows move between tabs"
+      }
+    },
+    "license": {
+      "title": "License",
+      "group": "Overlays",
+      "summary": "Activation dialog: status badge, serial or key-file entry, offline request, deactivate.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "sheet": {
+          "fill": "--plate",
+          "border": "--stroke solid --rule",
+          "radius": "--r-panel",
+          "color": "--ink",
+          "font": "--font-ui",
+          "width": "min(34rem, 94vw)"
+        },
+        "backdrop": {
+          "fill": "--apc-overlay"
+        },
+        "badge": {
+          "color": "--accent-text",
+          "border": "--stroke solid --accent",
+          "weight": "700",
+          "radius": "--r-control"
+        },
+        "badge-licensed": {
+          "color": "--ok-text",
+          "border": "--stroke solid --ok"
+        },
+        "badge-unverified": {
+          "color": "--apc-danger-text",
+          "border": "--stroke solid --apc-danger"
+        },
+        "field": {
+          "fill": "--inset",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "color": "--ink"
+        },
+        "button": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "color": "--ink",
+          "font": "--font-ui",
+          "min-height": "1.5rem",
+          "padding": ".25rem .6rem",
+          "opacity": "1",
+          "size": "--t-label",
+          "transform": "uppercase",
+          "letter-spacing": "--label-spacing"
+        },
+        "message": {
+          "border": "--stroke solid --rule",
+          "color": "--ink"
+        },
+        "message-ok": {
+          "border": "--stroke solid --ok",
+          "color": "--ok-text"
+        }
+      },
+      "states": {
+        "hover": {
+          "button.border": "--accent",
+          "button.color": "--accent-text"
+        },
+        "focus": {
+          "host.outline": "2px solid --accent (offset 1px)"
+        },
+        "disabled": {
+          "button.opacity": "--disabled-opacity"
+        },
+        "error": {
+          "message.border": "--apc-danger",
+          "message.color": "--apc-danger-text"
+        }
+      },
+      "sizes": {
+        "default": "min(34rem, 94vw)",
+        "overridable": []
+      },
+      "options": [
+        "data-drop-target"
+      ],
+      "a11y": {
+        "role": "dialog (modal)",
+        "keys": "Esc closes; drop target for key files; errors are role=alert"
+      }
+    },
+    "update": {
+      "title": "Update",
+      "group": "Overlays",
+      "summary": "Update dialog: check, download progress bar, release notes and the ready-to-install instruction.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "sheet": {
+          "fill": "--plate",
+          "border": "--stroke solid --rule",
+          "radius": "--r-panel",
+          "color": "--ink",
+          "font": "--font-ui",
+          "width": "min(34rem, 94vw)"
+        },
+        "backdrop": {
+          "fill": "--apc-overlay"
+        },
+        "bar": {
+          "fill": "--inset",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "height": ".5rem"
+        },
+        "bar-fill": {
+          "fill": "--accent"
+        },
+        "instruction": {
+          "color": "--accent-text",
+          "weight": "700"
+        },
+        "notes": {
+          "fill": "--inset",
+          "border": "--stroke solid --rule-2",
+          "radius": "--r-control",
+          "font": "--font-ui"
+        },
+        "path": {
+          "color": "--ink-2"
+        },
+        "button": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "color": "--ink",
+          "font": "--font-ui",
+          "min-height": "1.5rem",
+          "padding": ".25rem .6rem",
+          "opacity": "1",
+          "size": "--t-label",
+          "transform": "uppercase",
+          "letter-spacing": "--label-spacing"
+        }
+      },
+      "states": {
+        "hover": {
+          "button.border": "--accent",
+          "button.color": "--accent-text"
+        },
+        "focus": {
+          "host.outline": "2px solid --accent (offset 1px)"
+        },
+        "disabled": {
+          "button.opacity": "--disabled-opacity"
+        },
+        "error": {
+          "instruction.color": "--apc-danger-text",
+          "bar.border": "--apc-danger"
+        }
+      },
+      "sizes": {
+        "default": "min(24rem, 92vw)",
+        "overridable": []
+      },
+      "options": [],
+      "a11y": {
+        "role": "dialog (modal); progressbar for the download",
+        "keys": "Esc closes; errors are role=alert"
+      }
+    },
+    "presets": {
+      "title": "Preset browser",
+      "group": "Overlays",
+      "summary": "Preset browser: scopes, search, filters, sort, a virtualised list with ratings and favorites, A/B, save and revert.",
+      "parts": {
+        "host": {
+          "outline": "none",
+          "opacity": "1"
+        },
+        "sheet": {
+          "fill": "--plate",
+          "border": "--stroke solid --rule",
+          "radius": "--r-panel",
+          "color": "--ink",
+          "font": "--font-ui",
+          "width": "min(34rem, 94vw)"
+        },
+        "backdrop": {
+          "fill": "--apc-overlay"
+        },
+        "scope": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "color": "--ink-2",
+          "font": "--font-ui",
+          "transform": "uppercase"
+        },
+        "list": {
+          "fill": "--inset",
+          "border": "--stroke solid --rule-2",
+          "radius": "--r-control",
+          "scrollbar": "--rule on --inset"
+        },
+        "row": {
+          "fill": "transparent",
+          "height": "1.5rem",
+          "border": "--stroke solid --rule-2 (bottom)",
+          "color": "--ink"
+        },
+        "code": {
+          "color": "--ink-2",
+          "border": "--stroke solid --rule-2",
+          "weight": "700"
+        },
+        "star": {
+          "color": "--ink-2"
+        },
+        "dirty": {
+          "color": "--accent-text",
+          "weight": "700"
+        },
+        "missing": {
+          "color": "--apc-danger-text",
+          "weight": "600"
+        },
+        "button": {
+          "fill": "--plate-2",
+          "border": "--stroke solid --rule",
+          "radius": "--r-control",
+          "color": "--ink",
+          "font": "--font-ui",
+          "min-height": "1.5rem",
+          "padding": ".25rem .6rem",
+          "opacity": "1",
+          "size": "--t-label",
+          "transform": "uppercase",
+          "letter-spacing": "--label-spacing"
+        }
+      },
+      "states": {
+        "hover": {
+          "row.fill": "--plate-2",
+          "scope.color": "--ink",
+          "button.border": "--accent",
+          "button.color": "--accent-text",
+          "star.color": "--accent-text"
+        },
+        "focus": {
+          "host.outline": "2px solid --accent (offset 1px)"
+        },
+        "disabled": {
+          "button.opacity": "--disabled-opacity"
+        },
+        "selected": {
+          "row.fill": "--plate-2",
+          "scope.border": "--accent",
+          "star.color": "--accent-text"
+        }
+      },
+      "sizes": {
+        "default": "min(40rem, 96vw); wide variant min(46rem, 96vw) x min(25rem, 92vh)",
+        "overridable": []
+      },
+      "options": [
+        "data-categories",
+        "data-hide-categories"
+      ],
+      "a11y": {
+        "role": "listbox (presets) in a modal dialog; scopes role=radiogroup",
+        "keys": "Arrows/PageUp/PageDown/Home/End in the list, Enter loads, Esc closes"
+      }
+    }
+  },
+  "groups": [
+    "Rotary & linear",
+    "Buttons & switches",
+    "Selection",
+    "Text & numbers",
+    "Containers",
+    "Display",
+    "Visualisation",
+    "Chrome",
+    "Overlays"
+  ],
+  "stateNames": [
+    "default",
+    "hover",
+    "active",
+    "focus",
+    "disabled",
+    "selected",
+    "error",
+    "checked",
+    "open"
+  ],
+  "elementsSchema": {
+    "note": "elements[<data-apc name>] = { title, group (one of groups), summary, parts, states, sizes, options, a11y }. Every value is a token name, a compound of tokens and literals or a plain literal. The values document the kit CSS and canvas drawing. APC Hub 09C exposes only validated, supported geometry and stroke controls for each element; colour is edited globally through tokens.css.",
+    "parts": "parts[<part>][<property label>] = value in the default state. The part \"host\" carries the focus outline and opacity.",
+    "states": "states[<state>][\"<part>.<property label>\"] = value that REPLACES the default while that state applies. State names: default, hover, active, focus, disabled, selected, error, checked, open (only states that exist for the element are listed; \"default\" is the parts themselves). hover/active/focus/disabled are interaction states, selected/checked/open/error are value states.",
+    "sizes": "sizes.default = token or literal; sizes.overridable = per-control overrides (data-* attributes and CSS custom properties such as --w-h or --slider-len that are NOT design tokens).",
+    "pseudo": "context-panel, tooltip and toast are not data-apc elements (opened by the kit); they are listed so a design can restyle them."
+  },
+  "fontsets": {
+    "note": "Documented alternatives for --font-ui (labels, values, buttons) and --font-text (sentences). System-safe stacks only: a WebView plugin must never load a network font (no @import, no Google Fonts, no CDN). Every stack ends in a generic family, so a missing face degrades instead of breaking layout. Values and labels keep font-variant-numeric: tabular-nums, so prefer faces with tabular digits for --font-ui.",
+    "ui": [
+      {
+        "id": "mono",
+        "label": "Mono (default)",
+        "value": "\"Inter\", ui-sans-serif, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "note": "Consolas on Windows, Menlo on macOS, DejaVu Sans Mono on Linux. The default APC Minimal look."
+      },
+      {
+        "id": "mono-classic",
+        "label": "Mono classic",
+        "value": "\"Courier New\", Courier, \"Liberation Mono\", monospace",
+        "note": "Available everywhere; thinner strokes, a typewriter feel."
+      },
+      {
+        "id": "sans",
+        "label": "System sans",
+        "value": "system-ui, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "note": "Same as --font-text; labels stay uppercase and letter-spaced."
+      },
+      {
+        "id": "sans-humanist",
+        "label": "Humanist sans",
+        "value": "\"Segoe UI\", \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif",
+        "note": "Friendly, open apertures; good at small sizes."
+      },
+      {
+        "id": "sans-condensed",
+        "label": "Condensed sans",
+        "value": "\"Arial Narrow\", \"Roboto Condensed\", \"Helvetica Neue\", Arial, sans-serif",
+        "note": "Saves width in dense panels; falls back to Arial where the condensed face is missing."
+      },
+      {
+        "id": "rounded",
+        "label": "Rounded",
+        "value": "ui-rounded, \"SF Pro Rounded\", \"Segoe UI\", system-ui, sans-serif",
+        "note": "Rounded terminals on Apple systems; ordinary sans elsewhere."
+      }
+    ],
+    "text": [
+      {
+        "id": "system-sans",
+        "label": "System sans (default)",
+        "value": "\"Inter\", ui-sans-serif, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "note": "The default for help, notes and dialogs."
+      },
+      {
+        "id": "humanist",
+        "label": "Humanist sans",
+        "value": "\"Segoe UI\", \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif",
+        "note": "Slightly warmer than system-ui."
+      },
+      {
+        "id": "serif",
+        "label": "Serif",
+        "value": "Georgia, \"Times New Roman\", \"Liberation Serif\", serif",
+        "note": "For manuals and long notes; keep --font-ui as it is for controls."
+      },
+      {
+        "id": "mono",
+        "label": "Mono",
+        "value": "Consolas, \"Cascadia Mono\", Menlo, \"DejaVu Sans Mono\", ui-monospace, monospace",
+        "note": "Everything in mono, for a terminal feel."
+      }
+    ]
+  },
+  "scales": {
+    "note": "Each --t-* token is max(<px floor>, <rem>). rem makes text scale with the plugin (1 rem = one grid cell, the whole UI scales with the window and the 50..300 % scale control); the px floor stops it shrinking below legible size when the UI is scaled down. Above the floor the ratios between steps are constant, below it the steps compress, so keep the ladder strictly increasing in the rem part.",
+    "rules": [
+      "Never set a text size below the floors: 9px for micro text, 10px for labels, 11px for values and readouts, 12px for titles, 14px for headings.",
+      "A design may change a rem part or a floor, but must keep the order --t-micro <= --t-label <= --t-value <= --t-readout <= --t-title <= --t-head in both the rem part and the floor.",
+      "Use px floors for legibility only; do not use px for layout (the kit sizes everything in rem so it scales as a whole).",
+      "--label-spacing is in em, so letter-spacing follows the font size of each label."
+    ],
+    "tokens": [
+      {
+        "token": "--t-micro",
+        "value": "max(9px, .5rem)",
+        "floorPx": 9,
+        "rem": ".5rem",
+        "use": "smallest text: footers, tick labels, node numbers"
+      },
+      {
+        "token": "--t-label",
+        "value": "max(10px, .625rem)",
+        "floorPx": 10,
+        "rem": ".625rem",
+        "use": "control labels (UPPERCASE, letter-spaced)"
+      },
+      {
+        "token": "--t-value",
+        "value": "max(11px, .6875rem)",
+        "floorPx": 11,
+        "rem": ".6875rem",
+        "use": "numeric values, field text, menu items"
+      },
+      {
+        "token": "--t-readout",
+        "value": "max(11px, .75rem)",
+        "floorPx": 11,
+        "rem": ".75rem",
+        "use": "larger readouts and stepper glyphs"
+      },
+      {
+        "token": "--t-title",
+        "value": "max(12px, .875rem)",
+        "floorPx": 12,
+        "rem": ".875rem",
+        "use": "panel and dialog titles"
+      },
+      {
+        "token": "--t-head",
+        "value": "max(14px, 1.125rem)",
+        "floorPx": 14,
+        "rem": "1.125rem",
+        "use": "headings, logo wordmark"
+      }
+    ]
+  },
+  "tokenGroups": [
+    {
+      "id": "surfaces",
+      "title": "Surfaces",
+      "kind": "color",
+      "tokens": [
+        "--apc-letterbox",
+        "--surface",
+        "--plate",
+        "--plate-2",
+        "--plate-3",
+        "--inset",
+        "--wash",
+        "--knob"
+      ],
+      "descriptions": {
+        "--apc-letterbox": "Window letterbox outside the plate. Always black.",
+        "--surface": "Page and deepest layer.",
+        "--plate": "Plugin background; the reference for every text pair.",
+        "--plate-2": "Raised panel and control body (raised by colour only, never by shadow).",
+        "--inset": "Wells: fields, tracks, graph backgrounds.",
+        "--plate-3": "Raised CONTROL body, one step above --plate-2: buttons, fields, segment tracks, flip caps.",
+        "--wash": "Hover wash over a control body: a 6% ink veil, never a filled hover colour.",
+        "--knob": "The machined face: the gradient end colour of a dial."
+      }
+    },
+    {
+      "id": "lines",
+      "title": "Lines",
+      "kind": "color",
+      "tokens": [
+        "--rule",
+        "--rule-2",
+        "--grip-ink"
+      ],
+      "descriptions": {
+        "--rule": "Control borders and dividers that must be seen (>= 3:1, WCAG 1.4.11).",
+        "--rule-2": "Quiet dividers and grid lines; decorative, carries no information.",
+        "--grip-ink": "Resize gripper hatching."
+      }
+    },
+    {
+      "id": "text",
+      "title": "Text",
+      "kind": "color",
+      "tokens": [
+        "--ink",
+        "--ink-2",
+        "--ink-3"
+      ],
+      "descriptions": {
+        "--ink": "Primary text, pointers and values.",
+        "--ink-2": "Labels, units and secondary text (>= 4.5:1 on plate, plate-2, inset).",
+        "--ink-3": "Micro labels, units and axis ticks: the quietest ink."
+      }
+    },
+    {
+      "id": "signal",
+      "title": "Signal",
+      "kind": "color",
+      "tokens": [
+        "--accent",
+        "--accent-ink",
+        "--accent-text",
+        "--ok",
+        "--ok-text",
+        "--apc-danger",
+        "--apc-danger-text",
+        "--apc-focus",
+        "--apc-overlay",
+        "--memory"
+      ],
+      "descriptions": {
+        "--accent": "THE signal colour: active, selected, value arc, focus. Fills, rings and lines.",
+        "--accent-ink": "Text and icons drawn on an --accent fill.",
+        "--accent-text": "Accent-coloured TEXT (tooltip value, badge, link, mode label); >= 4.5:1 on the surfaces.",
+        "--ok": "Success, meter ok, playhead.",
+        "--ok-text": "Success TEXT (badges, messages); >= 4.5:1 on the surfaces.",
+        "--apc-danger": "Error, clip, destructive actions.",
+        "--apc-danger-text": "Error / destructive TEXT (labels, messages, badges); >= 4.5:1 on the surfaces.",
+        "--apc-focus": "Keyboard focus ring colour (follows --accent by default).",
+        "--apc-overlay": "Scrim behind modal sheets and dialogs.",
+        "--memory": "Memory / modulated value: the warm hue that never means danger."
+      }
+    },
+    {
+      "id": "viz",
+      "title": "Data and plots",
+      "kind": "color",
+      "tokens": [
+        "--viz-line",
+        "--viz-accent",
+        "--viz-fill",
+        "--viz-grid",
+        "--viz-axis",
+        "--viz-1",
+        "--viz-2",
+        "--viz-3",
+        "--viz-4"
+      ],
+      "descriptions": {
+        "--viz-line": "Primary curve, waveform and spectrum line.",
+        "--viz-accent": "Highlighted curve, nodes, spectrum bars, xypad thumb.",
+        "--viz-fill": "Area under a curve.",
+        "--viz-grid": "Grid lines inside plots.",
+        "--viz-axis": "Axis labels, ticks and small plot text.",
+        "--viz-1": "Data series 1 (colour-blind-safe; series also differ by dash pattern).",
+        "--viz-2": "Data series 2.",
+        "--viz-3": "Data series 3.",
+        "--viz-4": "Data series 4."
+      }
+    },
+    {
+      "id": "meters",
+      "title": "Meters, LEDs, steps",
+      "kind": "color",
+      "tokens": [
+        "--meter-ok",
+        "--meter-warn",
+        "--meter-clip",
+        "--led-on",
+        "--led-off",
+        "--step-off",
+        "--step-on",
+        "--step-accent",
+        "--step-playhead"
+      ],
+      "descriptions": {
+        "--meter-ok": "Meter zone below the warn level.",
+        "--meter-warn": "Meter zone between warn and clip; warn LED and progress bar.",
+        "--meter-clip": "Meter zone at or above clip and the latched clip lamp.",
+        "--led-on": "LED lamp when on.",
+        "--led-off": "LED lamp and unlit meter segments when off.",
+        "--step-off": "Sequencer step that is off.",
+        "--step-on": "Sequencer step that is on.",
+        "--step-accent": "Sequencer accented step.",
+        "--step-playhead": "Sequencer playhead frame and number."
+      }
+    },
+    {
+      "id": "modulation",
+      "title": "Modulation sources",
+      "kind": "color",
+      "tokens": [
+        "--apc-mod-1",
+        "--apc-mod-2",
+        "--apc-mod-3",
+        "--apc-mod-4",
+        "--apc-mod-5",
+        "--apc-mod-6",
+        "--apc-mod-7",
+        "--apc-mod-8"
+      ],
+      "descriptions": {
+        "--apc-mod-1": "Modulation source 1 (Okabe-Ito; also a dash pattern).",
+        "--apc-mod-2": "Modulation source 2.",
+        "--apc-mod-3": "Modulation source 3.",
+        "--apc-mod-4": "Modulation source 4.",
+        "--apc-mod-5": "Modulation source 5.",
+        "--apc-mod-6": "Modulation source 6.",
+        "--apc-mod-7": "Modulation source 7.",
+        "--apc-mod-8": "Modulation source 8."
+      }
+    },
+    {
+      "id": "radius",
+      "title": "Corner radius",
+      "kind": "length",
+      "tokens": [
+        "--r-control",
+        "--r-panel",
+        "--r-radio",
+        "--r-led",
+        "--r-well"
+      ],
+      "descriptions": {
+        "--r-control": "Corner radius of controls (0 = square).",
+        "--r-panel": "Corner radius of panels, popups and sheets.",
+        "--r-radio": "Corner radius of the radio box (50% = round); follows --r-control.",
+        "--r-led": "Corner radius of LED lamps (50% = round); follows --r-control.",
+        "--r-well": "Well corner radius (dialogs, fields, graph wells)."
+      }
+    },
+    {
+      "id": "depth",
+      "title": "Depth (shadows)",
+      "kind": "length",
+      "tokens": [
+        "--sh-recess",
+        "--sh-raised",
+        "--apc-shadow-pop",
+        "--sh-knob",
+        "--halo"
+      ],
+      "descriptions": {
+        "--sh-recess": "Shadow of recessed wells. none in a flat design; any box-shadow otherwise.",
+        "--sh-raised": "Shadow of raised controls. none in a flat design.",
+        "--apc-shadow-pop": "Shadow of popups, menus, tooltips, toasts. none: they are separated by a --rule border and the scrim.",
+        "--sh-knob": "Dial and thumb shadow, with an inner top highlight built in.",
+        "--halo": "Glow behind a live or clip state (dial active, LED on)."
+      }
+    },
+    {
+      "id": "strokes",
+      "title": "Strokes",
+      "kind": "length",
+      "tokens": [
+        "--stroke",
+        "--stroke-2"
+      ],
+      "descriptions": {
+        "--stroke": "Hairline thickness (borders, rules, ring track).",
+        "--stroke-2": "Emphasis line thickness (focus ring, pointer)."
+      }
+    },
+    {
+      "id": "state",
+      "title": "State",
+      "kind": "number",
+      "tokens": [
+        "--disabled-opacity"
+      ],
+      "descriptions": {
+        "--disabled-opacity": "Opacity of disabled controls (0..1)."
+      }
+    },
+    {
+      "id": "fonts",
+      "title": "Font families",
+      "kind": "font",
+      "tokens": [
+        "--font-ui",
+        "--font-text",
+        "--font-num"
+      ],
+      "descriptions": {
+        "--font-ui": "Labels, values, buttons and every non-sentence text. See fontsets.ui.",
+        "--font-text": "Sentences: help, notes, dialog body, messages. See fontsets.text.",
+        "--font-num": "The numeric family: JetBrains Mono, tabular numerals."
+      }
+    },
+    {
+      "id": "type",
+      "title": "Type scale",
+      "kind": "length",
+      "tokens": [
+        "--t-micro",
+        "--t-label",
+        "--t-value",
+        "--t-readout",
+        "--t-title",
+        "--t-head",
+        "--label-spacing"
+      ],
+      "descriptions": {
+        "--t-micro": "Smallest text size (floor 9px).",
+        "--t-label": "Control label size (floor 10px).",
+        "--t-value": "Numeric value and field text size (floor 11px).",
+        "--t-readout": "Larger readout size (floor 11px).",
+        "--t-title": "Panel and dialog title size (floor 12px).",
+        "--t-head": "Heading size (floor 14px).",
+        "--label-spacing": "Letter-spacing of UPPERCASE labels (em)."
+      }
+    },
+    {
+      "id": "sizing",
+      "title": "Sizing (rem = one grid cell)",
+      "kind": "length",
+      "tokens": [
+        "--ctl-h",
+        "--ctl-gap",
+        "--pad",
+        "--knob-size",
+        "--knob-arc",
+        "--track-w",
+        "--thumb",
+        "--check",
+        "--apc-viz-node",
+        "--apc-logo-h"
+      ],
+      "descriptions": {
+        "--ctl-h": "Height of buttons, fields, dropdowns, tabs (1 rem = one grid cell).",
+        "--ctl-gap": "Gap between related controls.",
+        "--pad": "Panel padding.",
+        "--knob-size": "Default knob diameter (per control: data-size or --knob-size).",
+        "--knob-arc": "Knob value-arc thickness.",
+        "--track-w": "Slider, meter and progress track thickness.",
+        "--thumb": "Slider cap length.",
+        "--check": "Checkbox and radio box size.",
+        "--apc-viz-node": "Graph/envelope node and xypad thumb size.",
+        "--apc-logo-h": "Logo image or mark height."
+      }
+    }
+  ],
+  "elementTuning": {},
+  "elementTuningSchema": {
+    "note": "Saved per-element overrides from APC Hub 09C use elementTuning[<data-apc name>][<property>]. The Hub validates each property and range against its supported tuning controls. Values equal to the kit defaults are omitted. Global colour values remain in tokens.css.",
+    "supportedProperties": [
+      "lineThickness",
+      "cornerRadius",
+      "controlHeight",
+      "elementWidth",
+      "elementHeight",
+      "knobDiameter",
+      "knobArc",
+      "sliderLength",
+      "trackThickness",
+      "thumbSize",
+      "nodeSize"
+    ]
+  }
+}

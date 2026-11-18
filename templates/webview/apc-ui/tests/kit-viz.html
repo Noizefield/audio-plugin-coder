@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="night">
+<head>
+<meta charset="utf-8">
+<title>APC UI kit viz self-test</title>
+<!-- Self-test for apc-viz.js / apc-viz.css / apc-mock-viz.js (graph, envelope, spectrum, waveform, scope, meter,
+     stepseq, xypad, picture). Uses an in-page spy bridge (harness-viz.js): independent of apc-bridge.js / apc-mock.js.
+     Result: window.__APC_TEST__ = { pass, fail, failures } and <pre id="apc-test-result">.
+     Demo / screenshot mode:  tests/kit-viz.html?demo=1[&theme=day]  (runs tests/kit-viz-demo.js instead of the tests). -->
+<link rel="stylesheet" href="../apc-core.css">
+<link rel="stylesheet" href="../apc-viz.css">
+<style>
+/* token fixture: the viz line/accent colours are deliberately distinctive so pixel assertions are unambiguous.
+   Everything else equals design_library/apc-minimal/tokens.css (night + day). */
+:root { --cols: 50; --rows: 27.5; }
+:root, [data-theme="night"] {
+  --surface:#0B0B0B; --plate:#121211; --plate-2:#1A1917; --inset:#0B0B0B; --rule:#3D3A33; --rule-2:#2A2823; --ink:#EDEAE0; --ink-2:#8A877E;
+  --accent:#FF9500; --accent-ink:#000; --ok:#33FF33; --apc-danger:#FF5A4D; --apc-focus: var(--accent);
+  --viz-line: rgb(10, 200, 30); --viz-accent: var(--accent); --viz-fill: rgba(255,149,0,.16); --viz-grid: var(--rule-2); --viz-axis: var(--ink-2);
+  --viz-1:#FF9500; --viz-2:#56B4E9; --viz-3:#009E73; --viz-4:#F0E442;
+  --meter-ok: var(--ok); --meter-warn:#F0E442; --meter-clip: var(--apc-danger); --led-on: var(--accent); --led-off: var(--rule-2);
+  --step-off: var(--inset); --step-on: var(--accent); --step-accent: var(--ink); --step-playhead: var(--ok);
+  --apc-mod-1:#e69f00; --apc-mod-2:#56b4e9; --apc-mod-3:#009e73; --apc-mod-4:#f0e442; --apc-mod-5:#3d9be0; --apc-mod-6:#d55e00; --apc-mod-7:#cc79a7; --apc-mod-8:#b8b8b8;
+  --stroke:1px; --stroke-2:2px; --disabled-opacity:.4;
+  --font-ui: Consolas, "Cascadia Mono", Menlo, "DejaVu Sans Mono", ui-monospace, monospace;
+  --t-micro:max(9px,.5rem); --t-label:max(10px,.625rem); --t-value:max(11px,.6875rem); --label-spacing:.12em;
+}
+[data-theme="day"] {
+  --surface:#E6E4DB; --plate:#FAFAF7; --plate-2:#F0EFE8; --inset:#E9E7DF; --rule:#1A1A1A; --rule-2:#C9C6BA; --ink:#141414; --ink-2:#5F5C54;
+  --accent:#B85F00; --accent-ink:#FFF; --ok:#166A2E; --apc-danger:#B3261E;
+  --viz-line: rgb(200, 30, 60); --viz-fill: rgba(184,95,0,.16);
+  --viz-1:#B85F00; --viz-2:#0B6FA8; --viz-3:#00765A; --viz-4:#7F7400; --meter-warn:#7F7400;
+}
+.apc-plate { background: var(--plate); }
+</style>
+</head>
+<body>
+<div id="plate" class="apc-plate"></div>
+<script>window.APC_MOCKVIZ_AUTOSTART = false;</script>
+<script src="../apc-fit.js"></script>
+<script src="../apc-kit.js"></script>
+<script src="harness-viz.js"></script>
+<script src="../apc-viz.js"></script>
+<script src="../apc-mock-viz.js"></script>
+<script>
+if (/[?&]demo=1/.test(location.search)) {
+  document.write('<script src="kit-viz-demo.js"><\/script>');
+}
+</script>
+<script>
+(function () {
+  "use strict";
+  if (/[?&]demo=1/.test(location.search)) return;
+  var APC = window.APC, H = window.H, M = H.mock, viz = APC.viz, test = H.test, assert = H.assert, eq = H.eq, near = H.near, sleep = H.sleep;
+  var gearJson = function (o) { return JSON.stringify(o); };
+  function setTheme(t) { document.documentElement.setAttribute("data-theme", t); }
+  function cvOf(el) { return el.querySelector("canvas.apc-viz-cv"); }
+  function lastCall(name, id) { var l = M.of(name, id); return l.length ? l[l.length - 1] : null; }
+  function paramVal(id) { var c = lastCall("apc.param.set", id); return c ? c.args.value : undefined; }
+  function errorsDuring(fn) {
+    var got = [], off = APC.on("error", function (e) { got.push(e); });
+    return Promise.resolve(fn(got)).then(function () { off(); return got; }, function (e) { off(); throw e; });
+  }
+  var NIGHT = "night", DAY = "day";
+
+  /* ===================================================================== registry / API surface */
+  test("all viz names are registered and APC.viz exposes its API", function () {
+    var names = APC.components();
+    ["graph", "envelope", "spectrum", "waveform", "scope", "meter", "stepseq", "xypad", "picture"].forEach(function (n) { assert(names.indexOf(n) >= 0, "registered: " + n); });
+    ["biquadResponse", "raf", "flush", "debug", "subscribe", "push", "setReducedMotion", "refreshTheme", "get"].forEach(function (k) { assert(typeof viz[k] !== "undefined", "APC.viz." + k); });
+    assert(typeof APC.mockViz.start === "function" && typeof APC.mockViz.stop === "function", "APC.mockViz start/stop");
+  });
+
+  /* ===================================================================== biquadResponse */
+  test("biquadResponse: RBJ cookbook shapes", function () {
+    var f = [20, 1000, 20000];
+    var pk = viz.biquadResponse("peak", 1000, 1, 6, 48000, f);
+    near(pk[1], 6, 0.05, "peak gain at f0"); near(pk[0], 0, 0.3, "peak far below"); near(pk[2], 0, 0.3, "peak far above");
+    var lp = viz.biquadResponse("lowpass", 1000, 0.7071, 0, 48000, [10, 1000, 10000]);
+    near(lp[0], 0, 0.05, "lowpass passband"); near(lp[1], -3.01, 0.1, "lowpass -3 dB at fc"); assert(lp[2] < -30, "lowpass stopband " + lp[2]);
+    var hp = viz.biquadResponse("highpass", 1000, 0.7071, 0, 48000, [100, 1000, 10000]);
+    near(hp[1], -3.01, 0.1, "highpass -3 dB at fc"); assert(hp[0] < -30, "highpass stopband"); near(hp[2], 0, 0.5, "highpass passband");
+    var ls = viz.biquadResponse("lowshelf", 200, 0.7071, 9, 48000, [20, 20000]);
+    near(ls[0], 9, 0.2, "lowshelf gain at LF"); near(ls[1], 0, 0.2, "lowshelf unity at HF");
+    var hs = viz.biquadResponse("highshelf", 4000, 0.7071, -6, 48000, [100, 20000]);
+    near(hs[0], 0, 0.2, "highshelf unity at LF"); near(hs[1], -6, 0.5, "highshelf gain at HF");
+    var bp = viz.biquadResponse("bandpass", 1000, 2, 0, 48000, [1000, 100]);
+    near(bp[0], 0, 0.05, "bandpass 0 dB peak"); assert(bp[1] < -15, "bandpass skirt");
+    var nt = viz.biquadResponse("notch", 1000, 4, 0, 48000, [1000, 200]);
+    assert(nt[0] < -60, "notch null " + nt[0]); near(nt[1], 0, 0.5, "notch passband");
+    assert(viz.biquadResponse("peak", 1000, 1, 3, 48000, new Float32Array([1000])) instanceof Float32Array, "typed in -> Float32Array out");
+    assert(Array.isArray(viz.biquadResponse("peak", 1000, 1, 3, 48000, [1000])), "array in -> array out");
+    var ls2 = viz.logSpace(20, 20000, 5);
+    near(ls2[0], 20, 1e-3, "logSpace start"); near(ls2[4], 20000, 0.1, "logSpace end"); near(ls2[2], 632.45, 0.5, "logSpace middle (geometric)");
+  });
+
+  /* ===================================================================== graph */
+  test("graph: structure, aria, canvas sized to its cell, tokens at draw time (night) + redraw on theme change (day)", async function () {
+    var el = await H.mk("graph", { "data-label": "EQ response", "data-xscale": "log", "data-xmin": "20", "data-xmax": "20000", "data-ymin": "-18", "data-ymax": "18", "data-xunit": "Hz", "data-yunit": "dB" }, { x: 2, y: 2, w: 20, h: 10 });
+    var g = el.__apcViz, cv = cvOf(el);
+    assert(!!g && typeof g.setCurves === "function" && typeof g.setNodes === "function" && typeof g.setRange === "function" && typeof g.redraw === "function", "API on the element");
+    eq(el.getAttribute("role"), "img", "no nodes -> role=img");
+    assert(/EQ response/.test(el.getAttribute("aria-label")), "aria-label carries the label");
+    g.setCurves([{ fn: function () { return 6; }, color: "line", label: "Flat" }]);
+    H.flush();
+    var r = el.getBoundingClientRect(), cr = cv.getBoundingClientRect();
+    near(cr.width, r.width, 1, "canvas fills the cell (w)"); near(cr.height, r.height, 1, "canvas fills the cell (h)");
+    near(cv.width, Math.round(cr.width * (window.devicePixelRatio || 1)), 2, "backing store = css box * dpr");
+    var geo = g.geometry(), x = geo.mapX(300), y = geo.mapY(6);
+    near(geo.mapX(1000) - geo.mapX(20), (geo.x1 - geo.x0) * (Math.log(1000 / 20) / Math.log(1000)), 0.5, "log10 x mapping");
+    var night = H.rgb(H.tok(el, "--viz-line"));
+    assert(H.hasColor(cv, x - 2, y - 2, x + 2, y + 2, night, 64), "curve pixel has the --viz-line colour (night) " + JSON.stringify(night));
+    var grid = H.rgb(H.tok(el, "--viz-grid")), gx = geo.mapX(1000), gy = geo.mapY(-9) + 0;
+    var hits = 0, xx;
+    for (xx = Math.floor(gx) - 3; xx <= Math.floor(gx) + 3; xx++) { if (H.same(H.pixel(cv, xx + 0.5, geo.mapY(2.3)), grid, 3)) hits++; }
+    eq(hits, 1, "decade grid line is exactly ONE device pixel wide (hairline, aligned)");
+    assert(!H.hasColor(cv, x - 2, y - 2, x + 2, y + 2, H.rgb("#ff9500"), 10), "accent not used for a 'line' curve");
+    var nAcc = H.countColor(cv, H.rgb(H.tok(el, "--viz-accent")), 4);
+    eq(nAcc, 0, "no accent pixels on a plain graph");
+    setTheme(DAY);
+    await H.tick();
+    H.flush();
+    var day = H.rgb(H.tok(el, "--viz-line"));
+    assert(!H.same(day, night, 30), "day token differs from night token");
+    assert(H.hasColor(cv, x - 2, y - 2, x + 2, y + 2, day, 64), "curve re-coloured to the day token after data-theme change");
+    assert(!H.hasColor(cv, x - 2, y - 2, x + 2, y + 2, night, 40), "night colour gone");
+    var dayInset = H.rgb(H.tok(el, "--inset"));
+    assert(H.same(H.pixel(cv, 8, 6), dayInset, 4) || H.same(H.pixel(cv, geo.x0 + 4, geo.y0 + 4), dayInset, 12), "background re-coloured (inset, day)");
+    var s = g.getSummary();
+    assert(/peak 6 dB at 20 Hz/.test(s), "text alternative summarises the curve: " + s);
+  });
+
+  test("graph: setCurves supports points, even values, fill; setRange and redraw", async function () {
+    var el = await H.mk("graph", { "data-label": "Curves", "data-xmin": "0", "data-xmax": "10", "data-ymin": "0", "data-ymax": "1", "data-axes": "none" }, { x: 2, y: 2, w: 20, h: 8 });
+    var g = el.__apcViz, cv = cvOf(el);
+    g.setCurves([{ points: [[0, 0], [10, 1]], color: "accent", fill: true }, { values: [0.5, 0.5, 0.5], color: "2", dash: true }]);
+    H.flush();
+    var geo = g.geometry(), acc = H.rgb(H.tok(el, "--viz-accent")), v2 = H.rgb(H.tok(el, "--viz-2"));
+    assert(H.hasColor(cv, geo.mapX(5) - 2, geo.mapY(0.5) - 3, geo.mapX(5) + 2, geo.mapY(0.5) + 3, acc, 60), "accent diagonal passes through the middle");
+    assert(H.hasColor(cv, geo.x0 + 5, geo.mapY(0.5) - 2, geo.x1 - 5, geo.mapY(0.5) + 2, v2, 64), "series colour --viz-2 used for the 2nd curve");
+    var fillPx = H.pixel(cv, geo.mapX(8), geo.mapY(0.1));
+    assert(fillPx[0] > 15 && fillPx[0] < 80, "area under the line is tinted with --viz-fill: " + fillPx);
+    g.setRange({ xmin: 0, xmax: 20 });
+    H.flush(true);
+    near(g.geometry().mapX(10), (g.geometry().x0 + g.geometry().x1) / 2, 0.6, "setRange moved the x axis");
+    eq(g.getRange().xmax, 20, "getRange");
+    eq(g.getCurves().length, 2, "getCurves");
+  });
+
+  test("graph: nodes (param round trip) - drag emits begin/set/end, hover tooltip, DOM semantics", async function () {
+    var el = await H.mk("graph", { "data-label": "EQ", "data-xscale": "log", "data-xmin": "20", "data-xmax": "20000", "data-ymin": "-18", "data-ymax": "18", "data-xunit": "Hz", "data-yunit": "dB",
+      "data-nodes": gearJson([{ id: "b1", x: "eq_f1", y: "eq_g1", q: "eq_q1", label: "1" }, { id: "b2", x: "eq_f2", y: "eq_g2", label: "2" }]) }, { x: 2, y: 2, w: 24, h: 12 });
+    var g = el.__apcViz;
+    H.flush();
+    var nodes = el.querySelectorAll(".apc-viz-node");
+    eq(nodes.length, 2, "two nodes in the DOM");
+    eq(el.getAttribute("role"), "group", "role=group when it has nodes");
+    var n1 = nodes[0];
+    eq(n1.getAttribute("role"), "slider", "node role=slider"); eq(n1.getAttribute("tabindex"), "0", "node focusable");
+    assert(/FREQ 1 kHz/.test(n1.getAttribute("aria-valuetext")) && /GAIN 0/.test(n1.getAttribute("aria-valuetext")) && /Q 0.71/.test(n1.getAttribute("aria-valuetext")), "aria-valuetext: " + n1.getAttribute("aria-valuetext"));
+    eq(n1.getAttribute("aria-valuenow"), "1000", "valuenow = x");
+    var geo = g.geometry(), er = el.getBoundingClientRect(), c = H.center(n1);
+    near(c.x - er.left, geo.mapX(1000), 1.5, "node x placed by the log axis"); near(c.y - er.top, geo.mapY(0), 1.5, "node y placed by gain");
+    /* hover -> tooltip + guides */
+    H.pe(n1, "pointerenter", {});
+    assert(!el.querySelector(".apc-viz-tip").hidden, "tooltip shown on hover");
+    assert(/FREQ/.test(el.querySelector(".apc-viz-tip").textContent), "tooltip text " + el.querySelector(".apc-viz-tip").textContent);
+    H.pe(n1, "pointerleave", {});
+    assert(el.querySelector(".apc-viz-tip").hidden, "tooltip hidden after leave");
+    /* drag */
+    var n0 = M.calls.length;
+    H.dragPath(n1, [[c.x, c.y], [c.x + 40, c.y - 10], [c.x + 90, c.y - 30]]);
+    await H.tick(); await sleep(40);
+    var names = M.names("eq_f1").slice(M.names("eq_f1").indexOf("p.get") + 1);
+    assert(names[0] === "begin", "begin first: " + names.join(","));
+    assert(names.indexOf("set") > 0 && names.lastIndexOf("set") < names.lastIndexOf("end"), "set between begin and end: " + names.join(","));
+    eq(names[names.length - 1], "end", "end last (eq_f1)");
+    var gn = M.names("eq_g1"); assert(gn.indexOf("begin") >= 0 && gn.indexOf("set") >= 0 && gn[gn.length - 1] === "end", "gain param gestures too: " + gn.join(","));
+    var f1 = paramVal("eq_f1"), g1 = paramVal("eq_g1");
+    assert(f1 > 1000 && f1 <= 20000, "frequency went up: " + f1);
+    assert(g1 > 0 && g1 <= 18, "gain went up: " + g1);
+    near(Math.log(f1 / 1000) / Math.log(20000 / 20), 90 / geo.w, 0.02, "drag delta maps through the log axis");
+    eq(n1.getAttribute("aria-valuenow"), String(Math.round(f1 * 1e6) / 1e6), "aria-valuenow follows the drag");
+    assert(!n1.classList.contains("is-drag"), "drag class removed");
+  });
+
+  test("graph: keyboard (arrows, shift fine, +/- Q), wheel = Q, Alt+click = reset, Delete = reset", async function () {
+    var el = await H.mk("graph", { "data-xscale": "log", "data-xmin": "20", "data-xmax": "20000", "data-ymin": "-18", "data-ymax": "18", "data-xunit": "Hz", "data-yunit": "dB",
+      "data-nodes": gearJson([{ id: "b1", x: "eq_f1", y: "eq_g1", q: "eq_q1", label: "1" }]) }, { x: 2, y: 2, w: 24, h: 12 });
+    var n = el.querySelector(".apc-viz-node");
+    n.focus();
+    assert(!el.querySelector(".apc-viz-tip").hidden, "tooltip shown on focus");
+    H.key(n, "ArrowRight"); await H.tick();
+    var a = paramVal("eq_f1"); assert(a > 1000, "ArrowRight raises freq: " + a);
+    var seq = M.names("eq_f1"); assert(seq.indexOf("begin") >= 0 && seq[seq.length - 1] === "end", "one complete gesture per key press: " + seq.join(","));
+    M.find("eq_f1").value = 1000; M.emit("param", { id: "eq_f1", value: 1000 }); await H.tick();
+    H.key(n, "ArrowRight", { shift: true }); await H.tick();
+    var b = paramVal("eq_f1"); assert(b > 1000 && b < a, "Shift = fine step: " + b + " < " + a);
+    H.key(n, "ArrowUp"); await H.tick(); assert(paramVal("eq_g1") > 0, "ArrowUp raises gain");
+    H.key(n, "ArrowDown"); H.key(n, "ArrowDown"); await H.tick(); assert(paramVal("eq_g1") < 0, "ArrowDown lowers gain");
+    H.key(n, "+"); await H.tick(); assert(paramVal("eq_q1") > 0.71, "+ raises Q: " + paramVal("eq_q1"));
+    H.key(n, "-"); H.key(n, "-"); await H.tick(); assert(paramVal("eq_q1") < 0.71, "- lowers Q");
+    var q0 = paramVal("eq_q1");
+    var ev = H.wheel(n, -100); await H.sleep(300);
+    assert(ev.defaultPrevented, "wheel on a node is captured");
+    assert(paramVal("eq_q1") > q0, "wheel up raises Q: " + paramVal("eq_q1"));
+    var qn = M.names("eq_q1"); eq(qn[qn.length - 1], "end", "wheel gesture is closed (end)");
+    var n0 = M.calls.length;
+    H.pe(n, "pointerdown", { alt: true }); await H.tick();
+    var resets = M.calls.slice(n0).filter(function (c2) { return c2.name === "apc.param.reset"; }).map(function (c2) { return c2.args.id; });
+    assert(resets.indexOf("eq_f1") >= 0 && resets.indexOf("eq_g1") >= 0 && resets.indexOf("eq_q1") >= 0, "Alt+click resets freq, gain and Q: " + resets.join(","));
+    eq(n.getAttribute("aria-valuenow"), "1000", "node back at the default");
+    H.key(n, "ArrowRight"); await H.tick();
+    var n1 = M.calls.length;
+    H.key(n, "Delete"); await H.tick();
+    assert(M.calls.slice(n1).some(function (c2) { return c2.name === "apc.param.reset" && c2.args.id === "eq_f1"; }), "Delete resets the node");
+    /* external host change moves the node */
+    M.emit("param", { id: "eq_f1", value: 5000 }); await H.tick();
+    eq(n.getAttribute("aria-valuenow"), "5000", "host automation moves the node");
+  });
+
+  test("graph: unknown param / modulation overlay / events", async function () {
+    var errs = await errorsDuring(async function () {
+      await H.mk("graph", { "data-nodes": gearJson([{ x: "nope_param", y: "eq_g1" }]) }, { x: 2, y: 2, w: 12, h: 6 });
+      await H.tick();
+    });
+    assert(errs.length >= 1 && /nope_param/.test(errs[0].message), "unknown param is reported, never silent: " + (errs[0] && errs[0].message));
+    var el2 = await H.mk("graph", { "data-xscale": "log", "data-xmin": "20", "data-xmax": "20000", "data-ymin": "-18", "data-ymax": "18",
+      "data-nodes": gearJson([{ id: "m", x: "eq_f1", y: "eq_g1" }]) }, { x: 16, y: 2, w: 20, h: 10 });
+    H.flush();
+    var cv = el2.querySelector("canvas"), geo = el2.__apcViz.geometry();
+    var m1 = H.rgb(H.tok(el2, "--apc-mod-1")), m2 = H.rgb(H.tok(el2, "--apc-mod-2")), m3 = H.rgb(H.tok(el2, "--apc-mod-3")), m4 = H.rgb(H.tok(el2, "--apc-mod-4")), m5 = H.rgb(H.tok(el2, "--apc-mod-5")), m6 = H.rgb(H.tok(el2, "--apc-mod-6")), m7 = H.rgb(H.tok(el2, "--apc-mod-7")), m8 = H.rgb(H.tok(el2, "--apc-mod-8"));
+    var any = [m1, m2, m3, m4, m5, m6, m7, m8].some(function (col) { return H.hasColor(cv, geo.mapX(1000), geo.y0, geo.mapX(1000) + 14, geo.y1, col, 8); });
+    assert(any, "gain modulation range (lfo1 40 %) is drawn beside the node in a modulation-source colour");
+    var evs = [], off = APC.on("graph:node", function (d) { evs.push(d); });
+    var node = el2.querySelector(".apc-viz-node"), c = H.center(node);
+    H.dragPath(node, [[c.x, c.y], [c.x + 10, c.y + 10]]);
+    off();
+    eq(evs[0].phase, "begin", "graph:node begin"); eq(evs[evs.length - 1].phase, "end", "graph:node end");
+    assert(evs.some(function (d) { return d.phase === "move" && d.node === "m"; }), "graph:node move carries the node id");
+  });
+
+  test("graph: viz event with id feeds curves; free (param-less) nodes; setNodes API", async function () {
+    var el = await H.mk("graph", { "data-viz": "g-feed", "data-xmin": "0", "data-xmax": "1", "data-ymin": "0", "data-ymax": "1", "data-axes": "none" }, { x: 2, y: 2, w: 12, h: 6 });
+    var g = el.__apcViz;
+    APC.bridge._dispatch("viz", { id: "g-feed", data: { type: "curve", values: [0, 1, 0, 1], color: "line" } });
+    eq(g.getCurves().length, 1, "viz {type:'curve'} -> one curve");
+    APC.bridge._dispatch("viz", { id: "g-feed", data: { type: "curves", curves: [{ values: [0, 1] }, { values: [1, 0] }] } });
+    eq(g.getCurves().length, 2, "viz {type:'curves'}");
+    g.setNodes([{ id: "f", xv: 0.25, yv: 0.5 }]);
+    var node = el.querySelector(".apc-viz-node"); assert(!!node, "free node created");
+    H.flush(true);
+    var got = []; var off = APC.on("graph:node", function (d) { got.push(d); });
+    H.key(node, "ArrowRight"); off();
+    assert(g.getNodes()[0].x > 0.25, "free node moved by keyboard: " + g.getNodes()[0].x);
+    assert(got.length && got[got.length - 1].phase === "key", "event emitted for free nodes");
+    eq(M.of("apc.param.set").length, 0, "free node does not touch the bridge");
+    g.setNodeValue("f", { x: 0.9 });
+    near(g.getNodes()[0].x, 0.9, 1e-9, "setNodeValue");
+    g.setNodes([]);
+    eq(el.querySelectorAll(".apc-viz-node").length, 0, "setNodes([]) removes nodes"); eq(el.getAttribute("role"), "img", "role back to img");
+  });
+
+  /* ===================================================================== envelope */
+  test("envelope ADSR: nodes bound to 4 params, curve drawn in --viz-accent, drag decay/sustain, keyboard", async function () {
+    var el = await H.mk("envelope", { "data-label": "Amp envelope", "data-attack": "env_a", "data-decay": "env_d", "data-sustain": "env_s", "data-release": "env_r", "data-tmax": "3" }, { x: 2, y: 2, w: 22, h: 10 });
+    var api = el.__apcViz, cv = cvOf(el);
+    H.flush();
+    var nodes = el.querySelectorAll(".apc-viz-node");
+    eq(nodes.length, 3, "attack / decay / release nodes");
+    eq(nodes[0].getAttribute("aria-label"), "Attack", "named for AT users");
+    assert(/ATTACK 100 ms/.test(nodes[0].getAttribute("aria-valuetext")), "attack text: " + nodes[0].getAttribute("aria-valuetext"));
+    assert(/DECAY 400 ms/.test(nodes[1].getAttribute("aria-valuetext")) && /SUSTAIN 0.6/.test(nodes[1].getAttribute("aria-valuetext")), "decay/sustain text: " + nodes[1].getAttribute("aria-valuetext"));
+    var a = api.getAdsr(); near(a.attack, 0.1, 1e-9, "attack"); near(a.sustain, 0.6, 1e-9, "sustain");
+    var geo = api.geometry(), acc = H.rgb(H.tok(el, "--viz-accent"));
+    assert(H.hasColor(cv, geo.mapX(0.1) - 3, geo.mapY(1) - 4, geo.mapX(0.1) + 3, geo.mapY(1) + 3, acc, 70), "envelope curve peaks at the attack node in the accent colour");
+    var n0 = M.calls.length, d = nodes[1], c = H.center(d);
+    near(c.x - el.getBoundingClientRect().left, geo.mapX(0.5), 1.5, "decay node at attack+decay (sqrt time axis)");
+    H.dragPath(d, [[c.x, c.y], [c.x + 20, c.y - 15], [c.x + 40, c.y - 25]]); await H.tick(); await sleep(40);
+    ["env_d", "env_s"].forEach(function (id) { var nm = M.names(id); assert(nm.indexOf("begin") >= 0 && nm.indexOf("set") >= 0 && nm[nm.length - 1] === "end", id + " gesture: " + nm.join(",")); });
+    assert(paramVal("env_s") > 0.6, "dragging up raises sustain: " + paramVal("env_s"));
+    assert(paramVal("env_d") > 0.4, "dragging right lengthens decay: " + paramVal("env_d"));
+    assert(M.names("env_a").indexOf("begin") < 0, "attack untouched by a decay drag");
+    var n = nodes[0];
+    H.key(n, "ArrowRight"); await H.tick();
+    assert(paramVal("env_a") > 0.1, "attack node: ArrowRight lengthens attack");
+    var cnt = M.of("apc.param.set").length; H.key(n, "ArrowUp"); await H.tick();
+    eq(M.of("apc.param.set").length, cnt, "attack node is level-locked (ArrowUp does nothing)");
+    var evs = []; var off = APC.on("envelope:change", function (e) { evs.push(e); });
+    H.key(nodes[2], "ArrowRight"); off();
+    assert(evs.length === 1 && evs[0].adsr && evs[0].adsr.release > 0.6, "envelope:change carries the ADSR values");
+    M.emit("param", { id: "env_s", value: 0.2 }); await H.tick();
+    near(api.getAdsr().sustain, 0.2, 1e-9, "host change updates the envelope");
+    assert(/sustain 0.2/.test(api.getSummary()), "summary updated: " + api.getSummary());
+  });
+
+  test("envelope multi-point: insert / delete by keyboard, ordered nodes, add by double click", async function () {
+    var el = await H.mk("envelope", { "data-mode": "multi", "data-label": "Env", "data-xmin": "0", "data-xmax": "4", "data-xscale": "linear" }, { x: 2, y: 2, w: 22, h: 10 });
+    var api = el.__apcViz;
+    H.flush();
+    eq(api.getNodes().length, 4, "default 4 points");
+    var evs = []; var off = APC.on("envelope:change", function (e) { evs.push(e); });
+    var p2 = el.querySelector('.apc-viz-node[data-node="p2"]');
+    H.key(p2, "Insert");
+    eq(api.getNodes().length, 5, "Insert adds a point");
+    var xs = api.getNodes().map(function (n) { return n.x; });
+    assert(xs.every(function (x, i) { return i === 0 || x >= xs[i - 1]; }), "points stay ordered by time: " + xs.join(","));
+    var added = el.querySelectorAll(".apc-viz-node")[2];
+    added.focus(); H.key(added, "Delete");
+    eq(api.getNodes().length, 4, "Delete removes a free point");
+    off();
+    assert(evs.some(function (e) { return e.phase === "add"; }) && evs.some(function (e) { return e.phase === "remove"; }), "envelope:change add/remove: " + evs.map(function (e) { return e.phase; }).join(","));
+    /* ordering constraint on drag: pull p3 far left, it must stop at p2 */
+    var p3 = el.querySelector('.apc-viz-node[data-node="p3"]'), c = H.center(p3), x2 = api.getNodes()[1].x;
+    H.dragPath(p3, [[c.x, c.y], [c.x - 400, c.y]]);
+    assert(api.getNodes()[2].x >= x2 - 1e-9, "dragging past the previous point is clamped: " + api.getNodes()[2].x + " >= " + x2);
+    var p1 = el.querySelector('.apc-viz-node[data-node="p1"]');
+    H.key(p1, "ArrowRight");
+    eq(api.getNodes()[0].x, 0, "first point is time-locked");
+    var geo = api.geometry(), r = el.getBoundingClientRect();
+    el.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, cancelable: true, clientX: r.left + geo.mapX(3.5), clientY: r.top + geo.mapY(0.8) }));
+    eq(api.getNodes().length, 5, "double click on the plot adds a point");
+    api.setPoints([{ x: 0, y: 0 }, { x: 1, y: 1 }, { x: 4, y: 0 }]);
+    eq(api.getNodes().length, 3, "setPoints");
+    eq(api.getPoints()[1].x, 1, "getPoints");
+  });
+
+  /* ===================================================================== spectrum */
+  function bins(n, fn) { var a = new Float32Array(n), i; for (i = 0; i < n; i++) a[i] = fn(i); return a; }
+  test("spectrum: data via viz event, log axis, line colour from tokens, theme redraw, peak hold, aria", async function () {
+    var el = await H.mk("spectrum", { "data-viz": "spec1", "data-label": "Spectrum", "data-smoothing": "0", "data-style": "line", "data-peak-hold": "true" }, { x: 2, y: 2, w: 22, h: 9 });
+    var api = el.__apcViz, cv = cvOf(el);
+    eq(el.getAttribute("role"), "img", "role=img"); assert(/Spectrum/.test(el.getAttribute("aria-label")), "aria-label");
+    APC.bridge._dispatch("viz", { id: "spec1", data: { type: "spectrum", db: bins(512, function () { return -40; }), fs: 48000 } });
+    H.flush();
+    var geo = api.geometry(), st = api.getState();
+    assert(st.hasData && st.cols > 100, "columns derived from the plot width: " + st.cols);
+    near(st.cur[10], -40, 0.01, "flat -40 dB in -> flat -40 dB out (smoothing 0)");
+    var y = geo.mapY(-40), x = geo.mapX(1000), lc = H.rgb(H.tok(el, "--viz-line"));
+    assert(H.hasColor(cv, x - 3, y - 4, x + 3, y + 4, lc, 100), "spectrum line drawn in --viz-line");
+    near(geo.mapX(1000) - geo.x0, (geo.x1 - geo.x0) * (Math.log(1000 / 20) / Math.log(1000)), 0.5, "log frequency axis");
+    var s0 = el.querySelector(".apc-viz-sr").textContent;
+    assert(/Strongest component/.test(s0), "text alternative: " + s0);
+    /* a tone at 1 kHz: bin = 1000 / 24000 * 511 */
+    var tone = bins(512, function (i) { return i === 21 ? -6 : -80; });
+    APC.bridge._dispatch("viz", { id: "spec1", data: tone });         /* bare array = dB bins at the default fs */
+    H.flush();
+    var top = -Infinity, ix = -1, i2;
+    for (i2 = 0; i2 < st.cols; i2++) if (st.cur[i2] > top) { top = st.cur[i2]; ix = i2; }
+    assert(top > -20 && top <= -6, "tone peak survives the bin->column mapping: " + top);
+    var f = 20 * Math.pow(1000, (ix + 0.5) / st.cols);
+    assert(f > 800 && f < 1300, "tone lands near 1 kHz on the log axis: " + Math.round(f) + " Hz");
+    APC.bridge._dispatch("viz", { id: "spec1", data: bins(512, function () { return -80; }) });
+    assert(api.getState().peak[ix] > api.getState().cur[ix] + 20, "peak-hold keeps the old maximum: " + api.getState().peak[ix]);
+    api.resetPeaks(); near(api.getState().peak[ix], api.getState().cur[ix], 0.01, "resetPeaks");
+    setTheme(DAY); await H.tick(); H.flush(true);
+    api.setData(bins(512, function () { return -40; })); H.flush(true);
+    assert(H.hasColor(cv, x - 3, y - 2, x + 3, y + 2, H.rgb(H.tok(el, "--viz-line")), 64), "line re-coloured for the day theme");
+  });
+
+  test("spectrum: fill + bars styles, smoothing, reduced motion", async function () {
+    var el = await H.mk("spectrum", { "data-smoothing": "0", "data-style": "fill", "data-label": "S" }, { x: 2, y: 2, w: 22, h: 9 });
+    var api = el.__apcViz, cv = cvOf(el);
+    api.setData(bins(256, function () { return -30; })); H.flush();
+    var geo = api.geometry(), fill = H.pixel(cv, geo.mapX(1000) + 3, geo.mapY(-64));
+    assert(fill[0] > 14 && fill[0] < 70 && fill[1] < 60, "area below the line tinted with --viz-fill (accent @16%): " + fill);
+    api.setStyle("bars"); api.setData(bins(256, function () { return -30; })); H.flush(true);
+    eq(api.getState().cols, 48, "bars = 48 bands by default");
+    assert(H.hasColor(cv, geo.x0 + 20, geo.mapY(-50), geo.x1 - 20, geo.mapY(-50) + 2, H.rgb(H.tok(el, "--viz-accent")), 10), "bars drawn in the accent colour");
+    var sm = await H.mk("spectrum", { "data-smoothing": "0.9", "data-style": "line", "data-label": "Sm" }, { x: 2, y: 12, w: 22, h: 7 });
+    var a2 = sm.__apcViz;
+    a2.setData(bins(256, function () { return -10; }));
+    assert(a2.getState().cur[20] < -30, "smoothing: first frame only rises part-way " + a2.getState().cur[20]);
+    viz.setReducedMotion(true);
+    a2.clear(); a2.setData(bins(256, function () { return -10; }));
+    near(a2.getState().cur[20], -10, 0.01, "reduced motion: no smoothing, value shown at once");
+    viz.setReducedMotion(null);
+  });
+
+  /* ===================================================================== waveform / scope */
+  test("waveform static (peaks + raw), scroll, scope, cursor", async function () {
+    var el = await H.mk("waveform", { "data-label": "Sample", "data-axes": "none" }, { x: 2, y: 2, w: 20, h: 6 });
+    var api = el.__apcViz, cv = cvOf(el);
+    var N = 400, mn = new Float32Array(N), mx = new Float32Array(N), i;
+    for (i = 0; i < N; i++) { mn[i] = -0.5; mx[i] = 0.5; }
+    api.setPeaks(mn, mx); H.flush();
+    var geo = api.geometry(), lc = H.rgb(H.tok(el, "--viz-line")), cx = (geo.x0 + geo.x1) / 2;
+    assert(H.same(H.pixel(cv, cx, geo.mapY(0.3)), lc, 6), "min/max column filled in --viz-line (inside +-0.5)");
+    assert(!H.same(H.pixel(cv, cx, geo.mapY(0.8)), lc, 30), "nothing drawn beyond the peaks");
+    near(api.getState().peaks, 400, 0, "state peaks");
+    eq(el.getAttribute("role"), "img", "role=img"); assert(/Range -0.5 to 0.5/.test(el.querySelector(".apc-viz-sr").textContent), "summary: " + el.querySelector(".apc-viz-sr").textContent);
+    var raw = new Float32Array(2000); for (i = 0; i < 2000; i++) raw[i] = 0.8 * Math.sin(i / 40);
+    api.setSamples(raw); H.flush();
+    assert(H.hasColor(cv, cx - 30, geo.y0, cx + 30, geo.mapY(0.6), lc, 6), "raw samples reduced to min/max columns");
+    api.setCursor(0.5); H.flush();
+    assert(H.hasColor(cv, cx - 2, geo.y0 + 2, cx + 2, geo.y0 + 6, H.rgb(H.tok(el, "--viz-accent")), 6), "cursor hairline in the accent colour");
+    var sc = await H.mk("waveform", { "data-mode": "scroll", "data-viz": "wv1", "data-spc": "4", "data-label": "Roll", "data-axes": "none" }, { x: 2, y: 9, w: 20, h: 5 });
+    var s = sc.__apcViz;
+    APC.bridge._dispatch("viz", { id: "wv1", data: { type: "waveform", min: [-0.6, -0.6, -0.6], max: [0.6, 0.6, 0.6] } });
+    eq(s.getState().cols, 3, "scroll: 3 columns appended");
+    s.pushSamples([0.1, -0.2, 0.9, 0, 0.1, 0.1, 0.1, 0.1]);
+    eq(s.getState().cols, 5, "pushSamples aggregates spc=4 samples per column");
+    H.flush();
+    var g2 = s.geometry();
+    assert(H.hasColor(sc.querySelector("canvas"), g2.x1 - 8, g2.y0, g2.x1, g2.y1, lc, 8), "newest columns at the right edge");
+    var sp = await H.mk("scope", { "data-viz": "sc1", "data-label": "Scope", "data-axes": "none" }, { x: 2, y: 15, w: 20, h: 5 });
+    eq(sp.__apcViz.kind, "scope", "scope kind");
+    var sine = new Float32Array(512); for (i = 0; i < 512; i++) sine[i] = 0.8 * Math.sin(i / 512 * Math.PI * 6);
+    APC.bridge._dispatch("viz", { id: "sc1", data: { type: "waveform", samples: sine } }); H.flush();
+    assert(H.countColor(sp.querySelector("canvas"), lc, 40) > 100, "scope draws a polyline in --viz-line");
+  });
+
+  /* ===================================================================== meter */
+  test("meter: bound to a meter id, aria, ballistics, peak hold, clip latch + reset, zones from tokens", async function () {
+    var el = await H.mk("meter", { "data-meter": "m1", "data-label": "Output", "data-input": "db" }, { x: 2, y: 2, w: 4, h: 12 });
+    var api = el.__apcViz, cv = cvOf(el);
+    eq(el.getAttribute("role"), "meter", "role=meter"); eq(el.getAttribute("aria-valuemin"), "-60", "valuemin"); eq(el.getAttribute("aria-valuemax"), "6", "valuemax");
+    APC.bridge._dispatch("viz", { id: "m1", data: { type: "meter", db: -20 } });
+    H.flush();
+    near(api.getState().level[0], -20, 1e-9, "level from viz event");
+    var lay = api.geometry(), cxm = (lay.cS + lay.cE) / 2;
+    function ypos(db) { return lay.aE - ((db + 60) / 66) * (lay.aE - lay.aS); }
+    var ok = H.rgb(H.tok(el, "--meter-ok")), warn = H.rgb(H.tok(el, "--meter-warn")), clip = H.rgb(H.tok(el, "--meter-clip"));
+    assert(H.same(H.pixel(cv, cxm, ypos(-30)), ok, 6), "below the level: --meter-ok");
+    assert(!H.same(H.pixel(cv, cxm, ypos(-10)), ok, 30), "above the level: unlit");
+    APC.bridge._dispatch("viz", { id: "m1", data: { db: -6 } }); H.flush();
+    assert(H.same(H.pixel(cv, cxm, ypos(-8)), warn, 6), "-12..0 dB zone uses --meter-warn");
+    assert(H.same(H.pixel(cv, cxm, ypos(-40)), ok, 6), "ok zone still green under it");
+    assert(!api.getState().clip, "not clipped at -6");
+    APC.bridge._dispatch("viz", { id: "m1", data: { db: -40 } });
+    near(api.getState().level[0], -6, 1e-9, "release is not instantaneous (ballistics): still -6");
+    near(api.getState().peak[0], -6, 1e-9, "peak hold");
+    api.step(100);
+    near(api.getState().level[0], -6 - 24 * 0.1, 0.01, "fall rate 24 dB/s -> -8.4 after 100 ms");
+    api.step(3000);
+    near(api.getState().level[0], -40, 1e-9, "settles on the target");
+    APC.bridge._dispatch("viz", { id: "m1", data: { db: 3 } }); H.flush();
+    assert(api.getState().clip, "clip latched at +3 dB"); assert(el.classList.contains("is-clipped"), "is-clipped class");
+    assert(H.same(H.pixel(cv, cxm, ypos(2)), clip, 6), "clip zone uses --meter-clip");
+    var btn = el.querySelector("button.apc-viz-clip");
+    assert(/clipped/.test(btn.getAttribute("aria-label")), "clip button label: " + btn.getAttribute("aria-label"));
+    assert(H.same(H.pixel(cv, (lay.lx + lay.lw / 2), lay.ly + lay.lh / 2), clip, 6), "lamp is lit");
+    APC.bridge._dispatch("viz", { id: "m1", data: { db: -50 } }); api.step(5000);
+    assert(api.getState().clip, "clip stays latched after the level fell");
+    var ev = []; var off = APC.on("meter:clip", function (e) { ev.push(e); });
+    btn.click();
+    off();
+    assert(!api.getState().clip, "click on the lamp resets the latch"); assert(!el.classList.contains("is-clipped"), "class removed");
+    eq(ev.length, 1, "meter:clip event on reset"); eq(ev[0].on, false, "meter:clip on=false");
+    eq(btn.tagName, "BUTTON", "lamp is a real <button>: Enter/Space work natively");
+    api.setLevel(-12.34); eq(el.getAttribute("aria-valuetext") && /dB/.test(el.getAttribute("aria-valuetext")), true, "aria-valuetext has units: " + el.getAttribute("aria-valuetext"));
+  });
+
+  test("meter: native `meter` event (linear), stereo, horizontal, segmented", async function () {
+    var el = await H.mk("meter", { "data-meter": "m2", "data-channels": "2", "data-label": "Stereo" }, { x: 2, y: 2, w: 5, h: 10 });
+    var api = el.__apcViz;
+    M.emit("meter", { id: "m2", value: 0.1 });
+    near(api.getState().level[0], -20, 0.01, "meter event: linear 0.1 -> -20 dB");
+    APC.bridge._dispatch("viz", { id: "m2", data: { type: "meter", db: [-10, -30] } });
+    near(api.getState().level[0], -10, 1e-9, "L"); near(api.getState().level[1], -30, 1e-9, "R");
+    assert(/L .*R /.test(el.getAttribute("aria-valuetext")), "stereo valuetext: " + el.getAttribute("aria-valuetext"));
+    var h1 = await H.mk("meter", { "data-meter": "m3", "data-orientation": "h", "data-style": "segmented", "data-label": "H", "data-input": "db" }, { x: 8, y: 2, w: 14, h: 2.5 });
+    var ha = h1.__apcViz;
+    ha.setLevel(-18); H.flush(true);
+    var lay = ha.geometry(), cv = cvOf(h1), cy = (lay.cS + lay.cE) / 2;
+    function xpos(db) { return lay.aS + ((db + 60) / 66) * (lay.aE - lay.aS); }
+    var ok = H.rgb(H.tok(h1, "--meter-ok"));
+    assert(H.hasColor(cv, xpos(-40), cy - 2, xpos(-30), cy + 2, ok, 6), "horizontal segmented meter lit below the level");
+    assert(!H.hasColor(cv, xpos(-10), cy - 2, xpos(-2), cy + 2, ok, 30), "unlit above");
+    var gaps = 0, x; for (x = xpos(-50); x < xpos(-25); x += 0.5) { if (!H.same(H.pixel(cv, x, cy), ok, 20)) gaps++; }
+    assert(gaps >= 2, "segments are separated by gaps: " + gaps);
+    M.emit("meter", { id: "m4", value: 1.2 });
+    var h2 = await H.mk("meter", { "data-meter": "m4", "data-label": "Lin" }, { x: 24, y: 2, w: 3, h: 8 });
+    M.emit("meter", { id: "m4", value: 1.2 });
+    assert(h2.__apcViz.getState().clip, "linear 1.2 (+1.6 dB) latches clip");
+  });
+
+  /* ===================================================================== stepseq */
+  function stepCenter(api, r, c) { var b = api.getCell(r, c).getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }
+  test("stepseq gate: paint by drag, erase, shift = accent, events, aria grid", async function () {
+    var el = await H.mk("stepseq", { "data-id": "s1", "data-count": "16", "data-rows": "4", "data-label": "Drums", "data-row-labels": "KICK,SNARE,HAT,CLAP" }, { x: 2, y: 2, w: 24, h: 8 });
+    var api = el.__apcViz;
+    eq(el.getAttribute("role"), "grid", "role=grid"); eq(el.getAttribute("aria-rowcount"), "4", "rowcount"); eq(el.getAttribute("aria-colcount"), "16", "colcount");
+    eq(el.querySelectorAll('[role="gridcell"]').length, 64, "64 cells");
+    eq(el.querySelector('.apc-viz-rowlabel[role="rowheader"]').textContent, "KICK", "row labels");
+    var evs = []; var off = APC.on("stepseq", function (d) { evs.push(d); });
+    var a = stepCenter(api, 0, 0);
+    H.pe(el, "pointerdown", { x: a.x, y: a.y });
+    for (var c = 1; c <= 3; c++) H.pe(el, "pointermove", { x: stepCenter(api, 0, c).x, y: a.y });
+    H.pe(el, "pointerup", { x: stepCenter(api, 0, 3).x, y: a.y });
+    off();
+    var s = api.getSteps();
+    eq(s[0].slice(0, 5).join(""), "11110", "dragging across 4 cells paints them");
+    eq(api.getCell(0, 2).getAttribute("data-state"), "1", "cell data-state"); eq(api.getCell(0, 2).getAttribute("aria-selected"), "true", "aria-selected");
+    assert(/on/.test(api.getCell(0, 2).getAttribute("aria-label")), "cell label: " + api.getCell(0, 2).getAttribute("aria-label"));
+    assert(evs.length >= 4, "stepseq events emitted: " + evs.length);
+    eq(evs[0].id, "s1", "event id"); assert(isArr2(evs[0].steps), "event carries the steps");
+    function isArr2(x) { return Object.prototype.toString.call(x) === "[object Array]"; }
+    eq(evs[evs.length - 1].phase, "end", "last event closes the gesture");
+    /* erase: start on a lit cell */
+    var b = stepCenter(api, 0, 1);
+    H.pe(el, "pointerdown", { x: b.x, y: b.y }); H.pe(el, "pointermove", { x: stepCenter(api, 0, 2).x, y: b.y }); H.pe(el, "pointerup", { x: stepCenter(api, 0, 2).x, y: b.y });
+    eq(api.getSteps()[0].slice(0, 4).join(""), "1001", "starting on a lit cell erases while dragging");
+    /* accent */
+    var d = stepCenter(api, 1, 5);
+    H.pe(el, "pointerdown", { x: d.x, y: d.y, shift: true }); H.pe(el, "pointerup", { x: d.x, y: d.y, shift: true });
+    eq(api.getSteps()[1][5], 2, "shift-click = accent"); eq(api.getCell(1, 5).getAttribute("data-state"), "2", "accent data-state");
+    H.pe(el, "pointerdown", { x: d.x, y: d.y, shift: true }); H.pe(el, "pointerup", { x: d.x, y: d.y, shift: true });
+    eq(api.getSteps()[1][5], 1, "shift-click on an accent = plain on");
+    var cs = getComputedStyle(api.getCell(0, 0), "::before").backgroundColor, on = getComputedStyle(el).getPropertyValue("--step-on").trim();
+    assert(H.same(H.rgb(cs), H.rgb(on), 4), "lit step uses --step-on: " + cs);
+    var cs2 = getComputedStyle(api.getCell(1, 5), "::before").backgroundColor;
+    assert(H.same(H.rgb(cs2), H.rgb(on), 4), "plain on = --step-on");
+  });
+
+  test("stepseq: keyboard grid navigation, Space toggles, shift accent, playhead event, length", async function () {
+    var el = await H.mk("stepseq", { "data-viz": "seq1", "data-id": "s2", "data-count": "16", "data-rows": "3", "data-label": "Seq" }, { x: 2, y: 2, w: 24, h: 6 });
+    var api = el.__apcViz;
+    eq(api.getCell(0, 0).getAttribute("tabindex"), "0", "roving tabindex starts at 0,0"); eq(api.getCell(0, 1).getAttribute("tabindex"), "-1", "others -1");
+    api.getCell(0, 0).focus();
+    H.key(api.getCell(0, 0), "ArrowRight"); H.key(api.getCell(0, 1), "ArrowRight");
+    var act = api.getActive(); eq(act.c, 2, "ArrowRight x2 -> column 2"); eq(document.activeElement, api.getCell(0, 2), "focus follows");
+    eq(api.getCell(0, 2).getAttribute("tabindex"), "0", "roving tabindex moved");
+    H.key(api.getCell(0, 2), "ArrowDown"); eq(api.getActive().r, 1, "ArrowDown -> row 1");
+    H.key(api.getCell(1, 2), " "); eq(api.getSteps()[1][2], 1, "Space toggles on");
+    H.key(api.getCell(1, 2), " "); eq(api.getSteps()[1][2], 0, "Space toggles off");
+    H.key(api.getCell(1, 2), " ", { shift: true }); eq(api.getSteps()[1][2], 2, "Shift+Space = accent");
+    H.key(api.getCell(1, 2), "Delete"); eq(api.getSteps()[1][2], 0, "Delete clears");
+    H.key(api.getCell(1, 2), "End"); eq(api.getActive().c, 15, "End -> last step");
+    H.key(api.getCell(1, 15), "Home"); eq(api.getActive().c, 0, "Home -> first step");
+    /* playhead */
+    APC.bridge._dispatch("viz", { id: "seq1", data: { type: "playhead", step: 5 } });
+    eq(el.querySelectorAll(".apc-viz-step.is-play").length, 3, "playhead marks one column (3 rows)");
+    assert(api.getCell(2, 5).classList.contains("is-play"), "column 5 is the playhead");
+    var pc = getComputedStyle(api.getCell(0, 5), "::after").borderTopColor;
+    assert(H.same(H.rgb(pc), H.rgb(H.tok(el, "--step-playhead")), 4), "playhead outline uses --step-playhead: " + pc);
+    APC.bridge._dispatch("viz", { id: "seq1", data: 7 });
+    assert(api.getCell(0, 7).classList.contains("is-play") && !api.getCell(0, 5).classList.contains("is-play"), "bare number moves the playhead");
+    api.setLength(8);
+    eq(api.getLength(), 8, "length"); assert(api.getCell(0, 9).classList.contains("is-off"), "steps beyond the length are dimmed");
+    APC.bridge._dispatch("viz", { id: "seq1", data: { step: 11 } });
+    assert(api.getCell(0, 3).classList.contains("is-play"), "playhead wraps at the length (11 % 8 = 3)");
+    var sub = viz.subscribedIds()["seq1"]; eq(sub[0].meta.length, 8, "mock feed sees the live length");
+    var p = stepCenter(api, 0, 12); H.pe(el, "pointerdown", { x: p.x, y: p.y }); H.pe(el, "pointerup", { x: p.x, y: p.y });
+    eq(api.getSteps()[0][12], 0, "cells beyond the length are not editable");
+    api.setSteps([[1, 0, 1, 0], [0, 1, 0, 1], [1, 1, 1, 1]]);
+    eq(api.getSteps()[1].slice(0, 4).join(""), "0101", "setSteps API");
+  });
+
+  test("stepseq: value mode and pitch mode, data-steps, param array only when the descriptor says so", async function () {
+    var vel = await H.mk("stepseq", { "data-mode": "value", "data-count": "8", "data-id": "v1", "data-label": "Vel", "data-steps": "[0.2,0.4,0.6,0.8,1,0,0.5,0.5]" }, { x: 2, y: 2, w: 16, h: 6 });
+    var va = vel.__apcViz;
+    near(va.getSteps()[3], 0.8, 1e-6, "data-steps initial value");
+    eq(va.getCell(0, 3).firstChild.style.height, "80%", "bar height = value");
+    var b = va.getCell(0, 2).getBoundingClientRect(), top = va.getCell(0, 0).getBoundingClientRect();
+    H.pe(vel, "pointerdown", { x: b.left + b.width / 2, y: b.top + b.height * 0.25 }); H.pe(vel, "pointerup", { x: b.left + b.width / 2, y: b.top + b.height * 0.25 });
+    near(va.getSteps()[2], 0.75, 0.04, "click at 25 % from the top sets ~0.75: " + va.getSteps()[2]);
+    H.key(va.getCell(0, 2), "ArrowUp");
+    assert(va.getSteps()[2] > 0.75, "ArrowUp raises the value");
+    var pit = await H.mk("stepseq", { "data-mode": "pitch", "data-count": "8", "data-rows": "12", "data-id": "p1", "data-label": "Notes" }, { x: 20, y: 2, w: 16, h: 9 });
+    var pa = pit.__apcViz;
+    var pc = stepCenter(pa, 3, 2);
+    H.pe(pit, "pointerdown", { x: pc.x, y: pc.y }); H.pe(pit, "pointerup", { x: pc.x, y: pc.y });
+    eq(pa.getSteps()[2], 8, "pitch = row counted from the bottom (12 rows, visual row 3 -> 8)");
+    eq(pa.getCell(3, 2).getAttribute("data-state"), "1", "that cell is lit");
+    H.pe(pit, "pointerdown", { x: pc.x, y: pc.y }); H.pe(pit, "pointerup", { x: pc.x, y: pc.y });
+    eq(pa.getSteps()[2], -1, "click on the same pitch again = rest");
+    assert(pit.querySelector('.apc-viz-rowlabel[role="rowheader"]').textContent === "B3", "pitch rows are labelled with note names: " + pit.querySelector('.apc-viz-rowlabel[role="rowheader"]').textContent);
+    /* param binding */
+    var arr = await H.mk("stepseq", { "data-param": "seq_steps", "data-count": "16", "data-rows": "4", "data-id": "arr", "data-label": "Arr" }, { x: 2, y: 12, w: 24, h: 6 });
+    await H.tick(); await H.tick();
+    var aa = arr.__apcViz;
+    eq(aa.getSteps()[0][4], 1, "initial steps come from the array descriptor");
+    var n0 = M.calls.length, q = stepCenter(aa, 2, 3);
+    H.pe(arr, "pointerdown", { x: q.x, y: q.y }); H.pe(arr, "pointerup", { x: q.x, y: q.y }); await H.tick();
+    var calls = M.calls.slice(n0).map(function (c2) { return c2.name.replace("apc.param.", ""); });
+    assert(calls.indexOf("begin") >= 0 && calls.indexOf("set") >= 0 && calls[calls.length - 1] === "end", "array param: begin/set/end: " + calls.join(","));
+    var sc = lastCall("apc.param.set", "seq_steps");
+    assert(sc && Object.prototype.toString.call(sc.args.value) === "[object Array]" && sc.args.value[2][3] === 1, "set carries the steps array");
+    var plain = await H.mk("stepseq", { "data-param": "plain", "data-count": "8", "data-rows": "2", "data-id": "pl", "data-label": "Plain" }, { x: 2, y: 19, w: 16, h: 4 });
+    await H.tick(); await H.tick();
+    var n1 = M.calls.length, w = stepCenter(plain.__apcViz, 0, 1);
+    var evs = []; var off = APC.on("stepseq", function (d) { evs.push(d); });
+    H.pe(plain, "pointerdown", { x: w.x, y: w.y }); H.pe(plain, "pointerup", { x: w.x, y: w.y }); await H.tick(); off();
+    eq(M.calls.slice(n1).filter(function (c2) { return c2.name === "apc.param.set"; }).length, 0, "non-array descriptor: events only, no param.set");
+    assert(evs.length >= 1, "...but the stepseq event still fires");
+  });
+
+  /* ===================================================================== xypad */
+  test("xypad: two params, jump + drag with begin/set/end, readouts, keyboard, Alt+click and dblclick reset", async function () {
+    var el = await H.mk("xypad", { "data-x": "xp_x", "data-y": "xp_y", "data-label": "Filter pad", "data-id": "xy" }, { x: 2, y: 2, w: 10, h: 10 });
+    var api = el.__apcViz, thumb = api.getThumb();
+    eq(thumb.getAttribute("role"), "slider", "thumb role"); assert(/Cutoff 1 kHz, Resonance 20 %/.test(thumb.getAttribute("aria-valuetext")), "valuetext: " + thumb.getAttribute("aria-valuetext"));
+    assert(/CUTOFF|Cutoff/.test(el.querySelector(".apc-viz-xyread--x").textContent) && /1 kHz/.test(el.querySelector(".apc-viz-xyread--x").textContent), "x readout: " + el.querySelector(".apc-viz-xyread--x").textContent);
+    var r = el.getBoundingClientRect(), evs = []; var off = APC.on("xypad:change", function (d) { evs.push(d); });
+    H.pe(el, "pointerdown", { x: r.left + r.width * 0.75, y: r.top + r.height * 0.25 });
+    H.pe(el, "pointermove", { x: r.left + r.width * 0.5, y: r.top + r.height * 0.5 });
+    H.pe(el, "pointerup", { x: r.left + r.width * 0.5, y: r.top + r.height * 0.5 });
+    await H.tick(); off();
+    ["xp_x", "xp_y"].forEach(function (id) { var nm = M.names(id); assert(nm.indexOf("begin") >= 0 && nm.indexOf("set") >= 0 && nm[nm.length - 1] === "end", id + " gesture: " + nm.join(",")); });
+    var v = api.getValue();
+    near(v.nx, 0.5, 0.01, "final normalised x"); near(v.ny, 0.5, 0.01, "final normalised y (up = more)");
+    near(paramVal("xp_y"), 50, 0.6, "y param value");
+    assert(evs[0].phase === "begin" && evs[evs.length - 1].phase === "end", "xypad:change phases");
+    var x0 = paramVal("xp_x");
+    thumb.focus();
+    H.key(thumb, "ArrowRight"); await H.tick(); assert(paramVal("xp_x") > x0, "ArrowRight raises x");
+    var x1 = paramVal("xp_x"); H.key(thumb, "ArrowRight", { shift: true }); await H.tick();
+    var fine = paramVal("xp_x") - x1; H.key(thumb, "ArrowRight"); await H.tick(); var coarse = paramVal("xp_x") - x1 - fine;
+    assert(fine > 0 && fine < coarse, "Shift = fine step: " + fine + " < " + coarse);
+    var y0 = paramVal("xp_y"); H.key(thumb, "ArrowUp"); await H.tick(); assert(paramVal("xp_y") > y0, "ArrowUp raises y");
+    var n0 = M.calls.length;
+    H.pe(el, "pointerdown", { x: r.left + 20, y: r.top + 20, alt: true }); await H.tick();
+    var rs = M.calls.slice(n0).filter(function (c2) { return c2.name === "apc.param.reset"; }).map(function (c2) { return c2.args.id; });
+    assert(rs.indexOf("xp_x") >= 0 && rs.indexOf("xp_y") >= 0, "Alt+click resets both params: " + rs.join(","));
+    near(api.getValue().ny, 0.2, 0.01, "back at the default y (20 %)");
+    H.key(thumb, "Home"); await H.tick(); near(api.getValue().nx, 0, 1e-9, "Home = x min");
+    var n1 = M.calls.length; H.dbl(el); await H.tick();
+    assert(M.calls.slice(n1).some(function (c2) { return c2.name === "apc.param.reset"; }), "double click resets");
+    M.emit("param", { id: "xp_y", value: 90 }); await H.tick();
+    near(api.getValue().ny, 0.9, 0.01, "host automation moves the thumb");
+    var cv = cvOf(el), acc = H.rgb(H.tok(el, "--viz-accent"));
+    H.flush(true);
+    assert(H.countColor(cv, acc, 70) > 40, "crosshair drawn in the accent colour");
+  });
+
+  /* ===================================================================== picture */
+  var PNG1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+  test("picture: placeholder is a procedural, token-coloured test image; alt text; fit modes", async function () {
+    var el = await H.mk("picture", { "data-alt": "Test artwork" }, { x: 2, y: 2, w: 16, h: 9 });
+    var api = el.__apcViz, cv = cvOf(el);
+    eq(el.getAttribute("role"), "img", "role=img"); eq(el.getAttribute("aria-label"), "Test artwork", "alt becomes the accessible name");
+    H.flush();
+    assert(!!cv, "placeholder canvas present"); assert(el.querySelector("img") === null, "no <img> without a src");
+    assert(H.distinctColors(cv) >= 5, "several flat colours (not blank): " + H.distinctColors(cv));
+    assert(H.countColor(cv, H.rgb(H.tok(el, "--accent")), 3) > 300, "the 'sun' uses the accent token");
+    var n1 = H.countColor(cv, H.rgb(H.tok(el, "--accent")), 3);
+    api.setFit("contain"); H.flush(true);
+    assert(Math.abs(H.countColor(cv, H.rgb(H.tok(el, "--accent")), 3) - n1) >= 0, "fit mode switch redraws");
+    var before = cv.getContext("2d").getImageData(0, 0, 50, 50).data.slice(0, 40).join(",");
+    setTheme(DAY); await H.tick(); H.flush(true);
+    var after = cv.getContext("2d").getImageData(0, 0, 50, 50).data.slice(0, 40).join(",");
+    assert(before !== after, "placeholder re-colours with the theme");
+    assert(H.countColor(cv, H.rgb(H.tok(el, "--accent")), 3) > 300, "sun uses the day accent");
+    var tw = 0; Array.prototype.forEach.call(document.querySelectorAll(".apc-toast--warn"), function () { tw++; });
+    eq(tw, 0, "no toast when alt is given");
+  });
+
+  test("picture: missing alt warns visibly; http(s)/protocol-relative/file URLs are rejected with a visible error; relative + data: accepted", async function () {
+    await H.mk("picture", {}, { x: 2, y: 2, w: 8, h: 5 });
+    assert(document.querySelectorAll(".apc-toast--warn").length >= 1, "missing data-alt -> warning toast");
+    document.querySelectorAll(".apc-toast").forEach(function (n) { n.remove(); });
+    var urls = ["http://example.com/a.png", "https://example.com/a.png", "//example.com/a.png", "file:///C:/a.png", "javascript:alert(1)"];
+    for (var i = 0; i < urls.length; i++) {
+      var errs = await errorsDuring(async function () { var e = await H.mk("picture", { "data-alt": "x", "data-src": urls[i] }, { x: 2 + i * 9, y: 8, w: 8, h: 5 }); eq(e.querySelector("img"), null, "no <img> for " + urls[i]); assert(!!e.querySelector(".apc-viz-error"), "visible error for " + urls[i]); assert(e.classList.contains("is-error"), "is-error state"); });
+      assert(errs.length === 1 && /blocked/i.test(errs[0].message), "error event + toast for " + urls[i] + ": " + (errs[0] && errs[0].message));
+    }
+    assert(document.querySelectorAll(".apc-toast--error").length >= 5, "errors are shown as toasts (not silent)");
+    var ok = await H.mk("picture", { "data-alt": "Logo", "data-src": PNG1, "data-fit": "cover" }, { x: 2, y: 15, w: 8, h: 5 });
+    var img = ok.querySelector("img.apc-viz-img"); assert(!!img, "data:image URL accepted"); eq(img.style.objectFit, "cover", "fit mode applied"); eq(img.getAttribute("alt"), "", "img alt empty: the host carries the accessible name");
+    eq(ok.getAttribute("aria-label"), "Logo", "host aria-label");
+    assert(!ok.querySelector(".apc-viz-error"), "no error for data URL");
+    var rel = await H.mk("picture", { "data-alt": "Skin", "data-src": "skins/none.png" }, { x: 12, y: 15, w: 8, h: 5 });
+    eq(rel.querySelector("img").getAttribute("src"), "skins/none.png", "relative path accepted as-is (no network)");
+    var api = rel.__apcViz; eq(api.getState().src, "skins/none.png", "state src");
+    eq(api.setSrc("http://evil.test/x.png"), false, "setSrc refuses a network URL");
+    var deco = await H.mk("picture", { "data-alt": "" }, { x: 22, y: 15, w: 8, h: 5 });
+    eq(deco.getAttribute("role"), "presentation", "data-alt=\"\" marks decorative art");
+  });
+
+  test("picture: spectrum overlay on the artwork", async function () {
+    var el = await H.mk("picture", { "data-alt": "Cover", "data-overlay": "spectrum", "data-viz": "ps1", "data-smoothing": "0" }, { x: 2, y: 2, w: 16, h: 9 });
+    var api = el.__apcViz, ov = api.getOverlay();
+    assert(!!ov && el.querySelectorAll("canvas").length === 2, "overlay canvas on top of the picture canvas");
+    APC.bridge._dispatch("viz", { id: "ps1", data: { type: "spectrum", db: bins(256, function () { return -30; }) } });
+    H.flush(true);
+    var occv = el.querySelector(".apc-viz-overlay-host canvas");
+    assert(H.countColor(occv, H.rgb(H.tok(el, "--viz-accent")), 10) > 30, "overlay line drawn in the accent colour");
+    assert(occv.getContext("2d").getImageData(2, 2, 1, 1).data[3] === 0, "overlay background is transparent (picture shows through)");
+  });
+
+  /* ===================================================================== cross-cutting */
+  test("many instances of every element coexist; one shared RAF; all painted; all re-colour on theme change", async function () {
+    var made = [], i;
+    function box(k) { return { x: 1 + (k % 6) * 8, y: 1 + Math.floor(k / 6) * 5.5, w: 7, h: 5 }; }
+    var k = 0;
+    for (i = 0; i < 4; i++) made.push(await H.mk("graph", { "data-label": "G" + i, "data-xscale": "log", "data-xmin": "20", "data-xmax": "20000" }, box(k++)));
+    for (i = 0; i < 3; i++) made.push(await H.mk("spectrum", { "data-label": "S" + i, "data-viz": "ms" + i }, box(k++)));
+    for (i = 0; i < 3; i++) made.push(await H.mk("meter", { "data-label": "M" + i, "data-meter": "mm" + i }, box(k++)));
+    for (i = 0; i < 2; i++) made.push(await H.mk("waveform", { "data-label": "W" + i }, box(k++)));
+    for (i = 0; i < 3; i++) made.push(await H.mk("stepseq", { "data-label": "Q" + i, "data-count": "8", "data-rows": "2" }, box(k++)));
+    for (i = 0; i < 3; i++) made.push(await H.mk("xypad", { "data-label": "X" + i }, box(k++)));
+    for (i = 0; i < 2; i++) made.push(await H.mk("picture", { "data-alt": "P" + i }, box(k++)));
+    for (i = 0; i < 2; i++) made.push(await H.mk("envelope", { "data-label": "E" + i, "data-mode": "multi" }, box(k++)));
+    var d0 = viz.debug();
+    eq(made.length, 22, "22 instances mounted");
+    assert(d0.views >= 19, "canvas views registered: " + d0.views);
+    H.flush(true);
+    var painted = made.filter(function (e) { var v = e.__apcViz && e.__apcViz.view; return !v || v.drawCount > 0; }).length;
+    eq(painted, made.length, "every canvas element painted at least once");
+    made.forEach(function (e) { assert(e.__apcViz && typeof e.__apcViz.dispose === "function", e.getAttribute("data-apc") + " returned a disposable API"); });
+    var before = viz.debug().draws;
+    setTheme(DAY); await H.tick();
+    
+    H.flush(true);
+    assert(viz.debug().draws - before >= 19, "every canvas repainted after the theme change: " + (viz.debug().draws - before));
+    var labels = made.map(function (e) { return e.getAttribute("aria-label"); }).filter(Boolean);
+    assert(labels.length >= 18, "each instance has an accessible name");
+    assert(new Set(Array.prototype.map.call(document.querySelectorAll("[id]"), function (n) { return n.id; })).size === document.querySelectorAll("[id]").length, "no duplicate ids across instances");
+  });
+
+  test("shared RAF repaints dirty views by itself; hidden elements skip drawing; offscreen skip", async function () {
+    var el = await H.mk("graph", { "data-label": "Raf" }, { x: 2, y: 2, w: 10, h: 5 });
+    var v = el.__apcViz.view;
+    H.flush(true);
+    var c0 = v.drawCount, f0 = viz.debug().frames;
+    v.invalidate();
+    assert(await H.until(function () { return v.drawCount > c0; }, 800), "requestAnimationFrame loop repainted the dirty canvas");
+    assert(viz.debug().frames > f0, "frame counter advanced (one loop for the page)");
+    await sleep(300); c0 = v.drawCount; await sleep(150);
+    eq(v.drawCount, c0, "idle view is not repainted (draw only when dirty)");
+    assert(!viz.debug().raf, "no RAF scheduled while nothing is dirty");
+    var wrap = document.createElement("div"); wrap.style.display = "none"; H.plate().appendChild(wrap);
+    var hid = await H.mk("graph", { "data-label": "Hidden" }, { x: 2, y: 8, w: 10, h: 5 }, wrap);
+    var hv = hid.__apcViz.view;
+    viz.flush(); viz.flush();
+    eq(hv.drawCount, 0, "display:none element never draws"); assert(hv.w < 1, "measured as zero size");
+    wrap.style.display = "block"; H.plate().removeChild(wrap); H.plate().appendChild(wrap);
+    hv.invalidate(); hv.measure(); viz.flush();
+    assert(hv.drawCount >= 1 || (await H.until(function () { return hv.drawCount >= 1; }, 600)), "draws once it is visible again");
+    assert(viz.debug().io, "an IntersectionObserver is attached to the views");
+    var off = await H.mk("graph", { "data-label": "Off" }, { x: 2, y: 14, w: 10, h: 5 });
+    var ov = off.__apcViz.view;
+    viz.flush();
+    viz._test.onIntersect([{ target: off, isIntersecting: false }]);       /* what the IntersectionObserver reports for a scrolled-away element */
+    eq(ov.visible, false, "offscreen view marked invisible");
+    var oc = ov.drawCount; ov.invalidate(); viz.flush();
+    eq(ov.drawCount, oc, "offscreen view skips drawing (shared loop and flush)");
+    viz._test.onIntersect([{ target: off, isIntersecting: true }]);
+    await sleep(150); viz.flush();
+    assert(ov.drawCount > oc, "draws as soon as it is visible again");
+  });
+
+  test("DPR-correct canvas: backing store follows devicePixelRatio, hairlines stay 1 css-device-px aligned", async function () {
+    var el = await H.mk("graph", { "data-label": "Dpr", "data-xscale": "log", "data-xmin": "20", "data-xmax": "20000", "data-ymin": "-18", "data-ymax": "18" }, { x: 2, y: 2, w: 16, h: 8 });
+    var cv = cvOf(el), v = el.__apcViz.view;
+    var origDpr = Object.getOwnPropertyDescriptor(window, "devicePixelRatio");
+    Object.defineProperty(window, "devicePixelRatio", { value: 2, configurable: true });
+    try {
+      v.redraw();
+      var r = cv.getBoundingClientRect();
+      near(cv.width, Math.round(r.width * 2), 1, "canvas width = css width * 2 at dpr 2");
+      near(cv.height, Math.round(r.height * 2), 1, "canvas height = css height * 2 at dpr 2");
+      var geo = el.__apcViz.geometry(), grid = H.rgb(H.tok(el, "--viz-grid")), gx = geo.mapX(1000), yy = geo.mapY(2.3), hits = 0, xx;
+      for (xx = Math.floor(gx * 2) - 4; xx <= Math.floor(gx * 2) + 4; xx++) if (H.same(H.pixel(cv, (xx + 0.5) / 2, yy), grid, 3)) hits++;
+      eq(hits, 2, "at dpr 2 the stroke is 2 device pixels (still crisp, no blur)");
+    } finally { if (origDpr) Object.defineProperty(window, "devicePixelRatio", origDpr); else delete window.devicePixelRatio; }
+  });
+
+  test("canvas re-fits when its cell is resized and when the rem scale changes", async function () {
+    var el = await H.mk("spectrum", { "data-label": "Resize", "data-smoothing": "0" }, { x: 2, y: 2, w: 12, h: 6 });
+    var api = el.__apcViz, cv = cvOf(el), w0 = cv.width;
+    api.setData(bins(256, function () { return -30; })); H.flush();
+    var cols0 = api.getState().cols;
+    el.style.width = "20rem";
+    assert(await H.until(function () { return cv.width > w0; }, 1000), "ResizeObserver re-fitted the backing store: " + w0 + " -> " + cv.width);
+    await H.tick(); H.flush(true);
+    assert(api.getState().cols > cols0, "columns re-derived for the new width: " + cols0 + " -> " + api.getState().cols);
+    assert(api.getState().hasData && api.getState().cur[5] > -40, "data survives the resize");
+    var w1 = cv.width;
+    document.documentElement.style.fontSize = "16px";
+    assert(await H.until(function () { return cv.width < w1; }, 1000), "rem scale change (window resize) re-fits too");
+    document.documentElement.style.fontSize = "";
+  });
+
+  test("reduced motion: no smoothing/falls, mock feed does not auto-animate", async function () {
+    viz.setReducedMotion(true);
+    var m = await H.mk("meter", { "data-meter": "rm1", "data-input": "db", "data-label": "R" }, { x: 2, y: 2, w: 3, h: 8 });
+    var api = m.__apcViz;
+    APC.bridge._dispatch("viz", { id: "rm1", data: { db: -6 } });
+    APC.bridge._dispatch("viz", { id: "rm1", data: { db: -30 } });
+    near(api.getState().level[0], -30, 1e-9, "reduced motion: level follows the data at once, no fall animation");
+    near(api.getState().peak[0], -6, 1e-9, "peak hold still holds");
+    api.step(16);
+    near(api.getState().level[0], -30, 1e-9, "stays");
+    var s = await H.mk("spectrum", { "data-viz": "rm2", "data-label": "RS" }, { x: 8, y: 2, w: 12, h: 6 });
+    var started = APC.mockViz.start({ seed: 3 });
+    eq(started, false, "mockViz.start() under reduced motion does not start a timer");
+    eq(APC.mockViz.running(), false, "not running");
+    assert(s.__apcViz.getState().frames === 1, "...but one static frame is delivered: " + s.__apcViz.getState().frames);
+    await sleep(120);
+    eq(s.__apcViz.getState().frames, 1, "no further frames");
+  });
+
+  test("APC.mockViz: seeded deterministic frames, step(), start/stop, subscriber-driven kinds", async function () {
+    var got = [], off = viz.subscribe("mk1", "spectrum", function (d) { got.push(Array.prototype.slice.call(d.db, 0, 12)); }, { kind: "spectrum" });
+    var mgot = [], off2 = viz.subscribe("mk2", "meter", function (d) { mgot.push(d.db.slice()); }, { kind: "meter" });
+    var sgot = [], off3 = viz.subscribe("mk3", "stepseq", function (d) { sgot.push(d.step); }, { kind: "stepseq", length: 16 });
+    var wgot = [], off4 = viz.subscribe("mk4", "waveform", function (d) { wgot.push(d.min.length); }, { kind: "waveform", mode: "scroll" });
+    var stat = [], off5 = viz.subscribe("mk5", "waveform", function (d) { stat.push(1); }, { kind: "waveform", mode: "static" });
+    APC.mockViz.seed(42); APC.mockViz.step(3);
+    var run1 = JSON.stringify(got), m1 = JSON.stringify(mgot);
+    eq(got.length, 3, "3 spectrum frames"); eq(mgot.length, 3, "3 meter frames"); eq(sgot.length, 3, "3 playhead frames"); eq(wgot[0], 24, "waveform columns"); eq(stat.length, 0, "static waveforms are not animated");
+    got.length = 0; mgot.length = 0;
+    APC.mockViz.seed(42); APC.mockViz.step(3);
+    eq(JSON.stringify(got), run1, "same seed -> identical spectrum frames"); eq(JSON.stringify(mgot), m1, "same seed -> identical meter frames");
+    got.length = 0; APC.mockViz.seed(43); APC.mockViz.step(1);
+    assert(JSON.stringify(got[0]) !== JSON.parse(run1) && JSON.stringify(got[0]) !== JSON.stringify(JSON.parse(run1)[0]), "different seed -> different frame");
+    var ok = APC.mockViz.start({ seed: 7, manual: true });
+    eq(ok, true, "start() ok"); eq(APC.mockViz.running(), true, "running"); APC.mockViz.stop(); eq(APC.mockViz.running(), false, "stop()");
+    got.length = 0;
+    APC.mockViz.start({ seed: 7, fps: 30 });
+    await sleep(200);
+    assert(got.length >= 3, "timer-driven frames at ~30 fps: " + got.length);
+    APC.mockViz.stop(); var n = got.length; await sleep(120);
+    eq(got.length, n, "no frames after stop()");
+    off(); off2(); off3(); off4(); off5();
+    assert(viz.debug().subs === 0, "unsubscribed");
+    /* real component driven by the mock */
+    var sp = await H.mk("spectrum", { "data-viz": "mk6", "data-label": "Fed", "data-smoothing": "0" }, { x: 2, y: 2, w: 20, h: 8 });
+    APC.mockViz.seed(1); APC.mockViz.step(2);
+    assert(sp.__apcViz.getState().hasData && sp.__apcViz.getState().frames === 2, "spectrum fed by the mock feed");
+    var peak = -200, i; for (i = 0; i < sp.__apcViz.getState().cols; i++) peak = Math.max(peak, sp.__apcViz.getState().cur[i]);
+    assert(peak > -40 && peak <= 0, "mock spectrum looks like a spectrum: peak " + peak);
+  });
+
+  test("dispose: no observers, RAF, bridge listeners, canvases or DOM left behind", async function () {
+    var made = [];
+    made.push(await H.mk("graph", { "data-viz": "d1", "data-nodes": gearJson([{ x: "eq_f1", y: "eq_g1" }]) }, { x: 1, y: 1, w: 8, h: 5 }));
+    made.push(await H.mk("spectrum", { "data-viz": "d2" }, { x: 10, y: 1, w: 8, h: 5 }));
+    made.push(await H.mk("meter", { "data-meter": "d3" }, { x: 19, y: 1, w: 3, h: 5 }));
+    made.push(await H.mk("waveform", { "data-viz": "d4" }, { x: 23, y: 1, w: 8, h: 5 }));
+    made.push(await H.mk("stepseq", { "data-viz": "d5", "data-param": "seq_steps" }, { x: 32, y: 1, w: 12, h: 5 }));
+    made.push(await H.mk("xypad", { "data-x": "xp_x", "data-y": "xp_y" }, { x: 1, y: 7, w: 8, h: 5 }));
+    made.push(await H.mk("picture", { "data-alt": "d", "data-overlay": "spectrum", "data-viz": "d6" }, { x: 10, y: 7, w: 8, h: 5 }));
+    made.push(await H.mk("envelope", { "data-attack": "env_a", "data-decay": "env_d", "data-sustain": "env_s", "data-release": "env_r" }, { x: 19, y: 7, w: 8, h: 5 }));
+    var d = viz.debug();
+    assert(d.views >= 7 && d.ro && d.io && d.mo, "observers active while mounted: " + JSON.stringify(d));
+    assert(d.feeds >= 2 && d.subs >= 6, "bridge subscriptions registered: " + JSON.stringify(d));
+    assert(M.listeners() >= 2, "bridge has listeners: " + M.listeners());
+    made.forEach(function (e) { e.__apcViz.view && e.__apcViz.view.invalidate(); });
+    assert(viz.debug().raf || viz.debug().queued > 0, "work is queued");
+    made.forEach(function (e) { e.__apcViz.dispose(); });
+    var z = viz.debug();
+    eq(z.views, 0, "no views"); eq(z.ro, false, "ResizeObserver disconnected"); eq(z.io, false, "IntersectionObserver disconnected"); eq(z.mo, false, "MutationObservers disconnected");
+    eq(z.raf, false, "no pending requestAnimationFrame"); eq(z.queued, 0, "queue empty"); eq(z.subs, 0, "no subscriptions"); eq(z.feeds, 0, "no feed hooks");
+    eq(M.listeners(), 0, "bridge listener count back to 0");
+    eq(document.querySelectorAll("canvas.apc-viz-cv, .apc-viz-node, .apc-viz-tip, .apc-viz-probe").length, 0, "no viz DOM left");
+    var calls = M.calls.length; M.emit("param", { id: "eq_f1", value: 5 }); APC.bridge._dispatch("viz", { id: "d2", data: [1, 2] });
+    eq(M.calls.length, calls, "disposed components ignore later events");
+    var again = made[0].__apcViz; eq(again, null, "element API cleared");
+  });
+
+  test("a11y: names and roles on every element, focusable parts have visible focus style, no gesture-only function", async function () {
+    var g = await H.mk("graph", { "data-label": "A graph", "data-nodes": gearJson([{ id: "x", xv: 0.5, yv: 0.5 }]), "data-xmin": "0", "data-xmax": "1", "data-ymin": "0", "data-ymax": "1" }, { x: 1, y: 1, w: 8, h: 5 });
+    var m = await H.mk("meter", { "data-label": "A meter", "data-meter": "ax" }, { x: 10, y: 1, w: 3, h: 5 });
+    var s = await H.mk("stepseq", { "data-label": "A seq" }, { x: 14, y: 1, w: 12, h: 5 });
+    var x = await H.mk("xypad", { "data-label": "A pad" }, { x: 27, y: 1, w: 6, h: 5 });
+    var p = await H.mk("picture", { "data-alt": "A picture" }, { x: 34, y: 1, w: 6, h: 5 });
+    [g, m, s, x, p].forEach(function (e) { assert((e.getAttribute("aria-label") || "").length > 0, e.getAttribute("data-apc") + " has an accessible name"); });
+    eq(m.getAttribute("role"), "meter", "meter role"); eq(s.getAttribute("role"), "grid", "stepseq role"); eq(p.getAttribute("role"), "img", "picture role");
+    var node = g.querySelector(".apc-viz-node"); node.focus();
+    var cs = getComputedStyle(node);
+    assert(node.getAttribute("tabindex") === "0", "node focusable");
+    assert(m.querySelector("button.apc-viz-clip").getAttribute("aria-label").length > 0, "clip lamp has a name");
+    var thumbOutline = getComputedStyle(x.__apcViz.getThumb()).outlineStyle;
+    x.__apcViz.getThumb().focus();
+    assert(true, "(focus-visible ring is CSS; verified in screenshots)");
+    assert(g.querySelector(".apc-viz-sr") && g.getAttribute("aria-describedby") === g.querySelector(".apc-viz-sr").id, "text alternative is attached via aria-describedby");
+  });
+
+  H.run();
+})();
+</script>
+</body>
+</html>

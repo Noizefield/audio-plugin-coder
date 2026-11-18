@@ -398,3 +398,101 @@ test('build translates CLI flags to .ps1 parameters', () => {
   assert.equal(r.status, 0);
   assert.match(r.stdout, /STUB build name=Demo noinstall=True/);
 });
+
+// ─── product standards (apc-standards/1.0) ──────────────────────────────────
+const REGISTRY = JSON.parse(
+  fs.readFileSync(path.join(REPO_ROOT, 'schemas', 'apc-standards.json'), 'utf8'),
+);
+
+function standardsRoot(extra = {}) {
+  return makeRoot({
+    'package.json': pkgFixture('9.9.9'),
+    'schemas/apc-standards.json': JSON.stringify(REGISTRY, null, 2),
+    'apc.config.json': JSON.stringify({
+      version: 1,
+      paths: { plugins_dir: 'plugins', build_dir: 'build', release_dir: 'release' },
+      standards: {},
+    }, null, 2),
+    ...extra,
+  });
+}
+
+test('standards list --json exposes the locked registry', () => {
+  const root = standardsRoot();
+  const r = run(['standards', 'list', '--json'], root);
+  assert.equal(r.status, 0);
+  const out = JSON.parse(r.stdout);
+  assert.equal(out.schema, 'apc-standards/1.0');
+  const ids = out.groups.flatMap((g) => g.options.map((o) => o.id));
+  assert.ok(ids.includes('preset.hierarchy'));
+  assert.ok(ids.includes('ux.theme'));
+  assert.ok(ids.includes('license.mode'));
+});
+
+test('standards set --global writes apc.config.json', () => {
+  const root = standardsRoot();
+  const r = run(['standards', 'set', 'ux.theme', 'night', '--global'], root);
+  assert.equal(r.status, 0);
+  const cfg = JSON.parse(fs.readFileSync(path.join(root, 'apc.config.json'), 'utf8'));
+  assert.equal(cfg.standards['ux.theme'], 'night');
+});
+
+test('standards set refuses a plugin-scope option globally', () => {
+  const root = standardsRoot();
+  const r = run(['standards', 'set', 'preset.hierarchy', 'flat', '--global'], root);
+  assert.equal(r.status, 2);
+  const cfg = JSON.parse(fs.readFileSync(path.join(root, 'apc.config.json'), 'utf8'));
+  assert.equal(cfg.standards['preset.hierarchy'], undefined);
+});
+
+test('standards set --plugin writes the plugin status.json', () => {
+  const root = standardsRoot({ 'plugins/Demo/status.json': goodStatus('Demo', 'plan_complete') });
+  const r = run(['standards', 'set', 'preset.hierarchy', 'flat', '--plugin', 'Demo'], root);
+  assert.equal(r.status, 0);
+  const s = readStatusJson(root, 'Demo');
+  assert.equal(s.standards['preset.hierarchy'], 'flat');
+});
+
+test('standards plan lists only unanswered plugin questions', () => {
+  const root = standardsRoot({ 'plugins/Demo/status.json': goodStatus('Demo', 'plan_complete') });
+  assert.equal(run(['standards', 'set', 'preset.hierarchy', 'typed', '--plugin', 'Demo'], root).status, 0);
+  const r = run(['standards', 'plan', '--plugin', 'Demo', '--json'], root);
+  assert.equal(r.status, 0);
+  const ids = JSON.parse(r.stdout).questions.map((q) => q.id);
+  assert.ok(!ids.includes('preset.hierarchy'));
+  assert.ok(ids.includes('license.mode'));
+});
+
+test('standards validate flags unknown options and missing required answers', () => {
+  const root = standardsRoot({
+    'plugins/Demo/status.json': JSON.stringify({
+      ...JSON.parse(goodStatus('Demo', 'plan_complete')),
+      standards: { 'nope.option': 1 },
+    }),
+  });
+  const r = run(['standards', 'validate', '--plugin', 'Demo'], root);
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /unknown standard option/);
+  assert.match(r.stdout, /is required at plan time/);
+});
+
+test('standards validate rejects an invalid enum value', () => {
+  const root = standardsRoot({
+    'plugins/Demo/status.json': JSON.stringify({
+      ...JSON.parse(goodStatus('Demo', 'plan_complete')),
+      standards: { 'preset.hierarchy': 'sideways' },
+    }),
+  });
+  const r = run(['standards', 'validate', '--plugin', 'Demo'], root);
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /expected one of/);
+});
+
+test('standards validate accepts a fully answered plugin', () => {
+  const root = standardsRoot({ 'plugins/Demo/status.json': goodStatus('Demo', 'plan_complete') });
+  for (const [id, value] of [['preset.hierarchy', 'typed'], ['preset.data_root', 'per-user'], ['license.mode', 'free']]) {
+    assert.equal(run(['standards', 'set', id, value, '--plugin', 'Demo'], root).status, 0);
+  }
+  const r = run(['standards', 'validate', '--plugin', 'Demo'], root);
+  assert.equal(r.status, 0);
+});

@@ -1,0 +1,32 @@
+{
+  "name": "Audio Plugin Coder",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "args": {
+      "NODE_MAJOR": "24"
+    }
+  },
+  "remoteUser": "ubuntu",
+  "containerEnv": {
+    "APC_DEVCONTAINER": "1",
+    "DISPLAY": ":99"
+  },
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "8gb"
+  },
+  "postCreateCommand": "bash scripts/lib/juce-shallow-clone.sh --quiet; node bin/apc.js doctor",
+  "postStartCommand": "pgrep Xvfb > /dev/null || (nohup Xvfb :99 -screen 0 1280x720x24 > /tmp/xvfb.log 2>&1 &)",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools"
+      ],
+      "settings": {
+        "cmake.configureOnOpen": false
+      }
+    }
+  }
+}

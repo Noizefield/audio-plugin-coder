@@ -1,0 +1,37 @@
+{
+  "schema": "apc-param-manifest/1.0",
+  "plugin": "FixturePlugin",
+  "app_version": "1.0.0",
+  "params": [
+    {
+      "id": "osc1_wave",
+      "type": "choice",
+      "choices": [
+        "saw",
+        "square"
+      ],
+      "default": "saw"
+    },
+    {
+      "id": "filter_cutoff_hz",
+      "type": "float",
+      "min": 20,
+      "max": 20000,
+      "default": 1000
+    },
+    {
+      "id": "filter_res",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0.2
+    },
+    {
+      "id": "drive_amount",
+      "type": "float",
+      "min": 0,
+      "max": 1,
+      "default": 0
+    }
+  ]
+}

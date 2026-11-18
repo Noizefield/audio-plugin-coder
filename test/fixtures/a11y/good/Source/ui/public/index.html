@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="night">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GoodFixture</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="plate">
+  <h1 id="ttl">Good Fixture</h1>
+  <button id="bypass" class="btn" aria-label="Bypass">Bypass</button>
+  <div class="knob" id="gain" role="slider" tabindex="0" aria-label="Gain"
+       aria-valuemin="0" aria-valuemax="1" aria-valuenow="0.5" data-param="gain"></div>
+  <label for="mode">Mode</label>
+  <select id="mode"><option>Clean</option><option>Warm</option></select>
+  <canvas id="meter" role="img" aria-label="Output level meter"></canvas>
+  <span class="led" aria-hidden="true"></span>
+  <p class="hint">Version 1.0.0 &mdash; clip indicator turns red</p>
+</main>
+<script>
+  // Meter redraw rate is capped well below the 60 Hz budget.
+  const METER_HZ = 30;
+  function draw() { /* paint meter */ }
+  setInterval(draw, 1000 / METER_HZ);
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+</script>
+</body>
+</html>

@@ -22,6 +22,10 @@
 
     // CRITICAL: Create WebBrowserComponent with proper Windows WebView2 configuration
     webView = std::make_unique<juce::WebBrowserComponent>(
+#if APC_UI_KIT
+        // opt-in UI kit: registers every apc.* bridge function of CONTRACT.md on these options (closed below)
+        apc::web::addApcNativeFunctions (
+#endif
         juce::WebBrowserComponent::Options()
             .withBackend(juce::WebBrowserComponent::Options::Backend::webview2)
             .withWinWebView2Options(
@@ -77,6 +81,9 @@
                         (double) audioProcessor.apvts.state.getProperty ("uiScale", 1.0));
                     complete (juce::var (prefs));
                 })
+#if APC_UI_KIT
+        , apcBridge)
+#endif
     );
 
     addAndMakeVisible(*webView);
@@ -99,6 +106,20 @@
 
     // CRITICAL: Load embedded web content (NOT data URI!)
     webView->goToURL(juce::WebBrowserComponent::getResourceProviderRoot());
+
+#if APC_UI_KIT
+    // AFTER goToURL: on some platforms the JUCE JS side does not exist before the first navigation.
+    apcBridge.attach (*webView);
+    // apc.ui.setScale (kit gripper / scale steps) -> the same resize path as the existing "setUiScale" function.
+    audioProcessor.apcBackend.setScale = [this] (const juce::var& a)
+    {
+        const double s = juce::jlimit (kMinUiScale, kMaxUiScale, (double) a.getProperty ("scale", 1.0));
+        setUiScaleAndSize (s);
+        auto* o = new juce::DynamicObject();
+        o->setProperty ("scale", s);
+        return juce::var (o);
+    };
+#endif
 }
 
 void {{PLUGIN_NAME}}AudioProcessorEditor::setUiScaleAndSize (double s)
@@ -124,6 +145,10 @@ void {{PLUGIN_NAME}}AudioProcessorEditor::snapWindowToAspect()
 
 {{PLUGIN_NAME}}AudioProcessorEditor::~{{PLUGIN_NAME}}AudioProcessorEditor()
 {
+#if APC_UI_KIT
+    // the backend outlives the editor: never leave a lambda that captures `this` behind
+    audioProcessor.apcBackend.setScale = nullptr;
+#endif
 }
 
 //==============================================================================

@@ -1,0 +1,9 @@
+{
+  "plugin_name": "BadFixture",
+  "ui_framework": "webview",
+  "current_phase": "design_complete",
+  "perf_budget": {
+    "webview_overhead_mb": 120,
+    "measured": { "webview_overhead_mb": 210 }
+  }
+}

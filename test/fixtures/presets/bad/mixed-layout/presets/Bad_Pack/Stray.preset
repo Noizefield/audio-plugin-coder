@@ -1,0 +1,38 @@
+{
+  "schema": "apc-preset/1.0",
+  "kind": "preset",
+  "id": "pre_00000000-0000-4000-8000-000000000055",
+  "name": "Stray",
+  "author": "Fixture Author",
+  "created": "2026-11-01T10:00:00Z",
+  "app_version": "1.0.0",
+  "meta": {
+    "category": "reverb",
+    "subcategory": "plate",
+    "axes": {
+      "bri": "neutral",
+      "war": "warm",
+      "agg": "gentle",
+      "wid": "wide",
+      "dep": "mid",
+      "mov": "static",
+      "spa": "hall"
+    },
+    "moods": [
+      "warm",
+      "serene"
+    ],
+    "tags": [
+      "smooth"
+    ],
+    "desc": "Fixture reverb preset."
+  },
+  "params": {
+    "decay_s": 2.4,
+    "predelay_ms": 18,
+    "lowcut_hz": 120,
+    "highcut_hz": 9000,
+    "mix_pct": 28,
+    "mode": "plate"
+  }
+}

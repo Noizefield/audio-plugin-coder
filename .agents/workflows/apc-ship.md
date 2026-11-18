@@ -252,6 +252,23 @@ release/{PluginName}-v{version}/
 
 ---
 
+## Framework release tooling
+
+Run from the repo root (guides: `.agents/guides/signing-and-provenance.md`, `.agents/guides/updater.md`):
+
+```bash
+node bin/apc.js audio <Name> --fail-on-skip      # last gate before shipping
+node bin/apc.js sbom <Name>                      # CycloneDX 1.5 SBOM + provenance record
+node bin/apc.js release manifest --plugin <Name> --key <update-key.pem>   # signed apc-update/1.0 manifest
+node bin/apc.js release verify <manifest> --pubkey <pub> --current <prev-version>
+```
+
+- Signing scripts are env-var driven with `--dry-run`: `scripts/installer/sign-windows.ps1`, `sign-macos.sh`, `create-linux-packages.sh`. They skip with a message when unconfigured; real signing is the user's responsibility - never invent credentials.
+- The update manifest key is **separate from the license key** (X-11). Hash artifacts after OS code signing.
+- Updates end in `ReadyToInstall` (close the DAW, run the installer); never silent replacement.
+- Crash handling is local-only (X-10); do not add upload code.
+- Factory packs install to the installing user's folder by default (`preset.factory_install`); mention the multi-account caveat in the release notes when shipping presets.
+
 ## Next Steps
 
 - Test installers on target platforms
